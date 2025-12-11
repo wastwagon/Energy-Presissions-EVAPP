@@ -16,7 +16,7 @@ INSERT INTO users (
     currency,
     status,
     email_verified,
-    tenant_id,
+    vendor_id,
     created_at,
     updated_at
 ) VALUES (
@@ -31,7 +31,7 @@ INSERT INTO users (
     'GHS',
     'Active',
     TRUE,
-    1, -- Default tenant
+    1, -- Default vendor
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO UPDATE
@@ -57,7 +57,7 @@ INSERT INTO users (
     currency,
     status,
     email_verified,
-    tenant_id,
+    vendor_id,
     created_at,
     updated_at
 ) VALUES (
@@ -71,7 +71,7 @@ INSERT INTO users (
     'GHS',
     'Active',
     FALSE,
-    1, -- Default tenant
+    1, -- Default vendor
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO NOTHING;

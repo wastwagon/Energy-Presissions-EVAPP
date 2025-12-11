@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS connection_logs (
     ip_address VARCHAR(45), -- Client IP address
     user_agent TEXT, -- User agent string
     request_url TEXT, -- Full request URL
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE SET NULL,
+    vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
     metadata JSONB, -- Additional debug information
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_connection_logs_charge_point_id ON connection_log
 CREATE INDEX IF NOT EXISTS idx_connection_logs_event_type ON connection_logs(event_type);
 CREATE INDEX IF NOT EXISTS idx_connection_logs_status ON connection_logs(status);
 CREATE INDEX IF NOT EXISTS idx_connection_logs_created_at ON connection_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_connection_logs_tenant_id ON connection_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_connection_logs_vendor_id ON connection_logs(vendor_id);
 
 -- Trigger to update connection statistics
 CREATE OR REPLACE FUNCTION update_connection_statistics()

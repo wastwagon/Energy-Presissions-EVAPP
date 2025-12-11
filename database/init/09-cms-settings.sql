@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS cms_content (
     content TEXT,
     content_type VARCHAR(50) NOT NULL, -- 'text', 'html', 'markdown', 'image', 'file'
     section VARCHAR(100), -- 'homepage', 'about', 'footer', 'header', etc.
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE, -- NULL for global content
+    vendor_id INTEGER REFERENCES vendors(id) ON DELETE CASCADE, -- NULL for global content
     is_active BOOLEAN DEFAULT TRUE,
     metadata JSONB, -- Additional metadata (e.g., image dimensions, file size, etc.)
     created_at TIMESTAMP DEFAULT NOW(),
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS branding_assets (
     mime_type VARCHAR(100),
     width INTEGER,
     height INTEGER,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE, -- NULL for global branding
+    vendor_id INTEGER REFERENCES vendors(id) ON DELETE CASCADE, -- NULL for global branding
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -49,9 +49,9 @@ CREATE TABLE IF NOT EXISTS branding_assets (
 CREATE INDEX IF NOT EXISTS idx_system_settings_category ON system_settings(category);
 CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key);
 CREATE INDEX IF NOT EXISTS idx_cms_content_section ON cms_content(section);
-CREATE INDEX IF NOT EXISTS idx_cms_content_tenant ON cms_content(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_cms_content_vendor ON cms_content(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_branding_assets_type ON branding_assets(asset_type);
-CREATE INDEX IF NOT EXISTS idx_branding_assets_tenant ON branding_assets(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_branding_assets_vendor ON branding_assets(vendor_id);
 
 -- Triggers
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings
@@ -90,8 +90,8 @@ COMMENT ON TABLE cms_content IS 'Content management for frontend pages';
 COMMENT ON TABLE branding_assets IS 'Branding assets (logos, images, etc.)';
 COMMENT ON COLUMN system_settings.category IS 'Category of setting: branding, billing, ocpp, payment, notification, general';
 COMMENT ON COLUMN system_settings.is_public IS 'Whether this setting can be accessed by frontend without authentication';
-COMMENT ON COLUMN cms_content.tenant_id IS 'NULL for global content, or specific tenant ID for tenant-specific content';
-COMMENT ON COLUMN branding_assets.tenant_id IS 'NULL for global branding, or specific tenant ID for tenant-specific branding';
+COMMENT ON COLUMN cms_content.vendor_id IS 'NULL for global content, or specific vendor ID for vendor-specific content';
+COMMENT ON COLUMN branding_assets.vendor_id IS 'NULL for global branding, or specific vendor ID for vendor-specific branding';
 
 
 

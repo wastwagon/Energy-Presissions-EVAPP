@@ -22,13 +22,13 @@ ON CONFLICT (email) DO UPDATE SET
     account_type = 'SuperAdmin',
     status = 'Active';
 
--- Admin Users (Tenant 1)
+-- Admin Users (Vendor 1)
 INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
 VALUES 
 (
-    'admin1@tenant1.com',
+    'admin1@vendor1.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- admin123
-    'Tenant',
+    'Vendor',
     'Admin One',
     'Admin',
     1,
@@ -38,9 +38,9 @@ VALUES
     'GHS'
 ),
 (
-    'admin2@tenant1.com',
+    'admin2@vendor1.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- admin123
-    'Tenant',
+    'Vendor',
     'Admin Two',
     'Admin',
     1,
@@ -53,13 +53,13 @@ ON CONFLICT (email) DO UPDATE SET
     account_type = 'Admin',
     status = 'Active';
 
--- Customer Users (Tenant 1)
+-- Customer Users (Vendor 1)
 -- Note: Password hashes are generated with bcrypt. Default password for all: customer123
 -- To generate new hashes, use: bcrypt.hash('customer123', 10)
 INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
 VALUES 
 (
-    'customer1@tenant1.com',
+    'customer1@vendor1.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- customer123 (same hash as admin123 for simplicity)
     'John',
     'Doe',
@@ -71,7 +71,7 @@ VALUES
     'GHS'
 ),
 (
-    'customer2@tenant1.com',
+    'customer2@vendor1.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- customer123
     'Jane',
     'Smith',
@@ -83,7 +83,7 @@ VALUES
     'GHS'
 ),
 (
-    'customer3@tenant1.com',
+    'customer3@vendor1.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- customer123
     'Bob',
     'Johnson',
@@ -101,7 +101,7 @@ ON CONFLICT (email) DO UPDATE SET
 -- Walk-In Customer
 INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
 VALUES (
-    'walkin@tenant1.evcharging.com',
+    'walkin@vendor1.evcharging.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- walkin123
     'Walk-In',
     'Customer',
