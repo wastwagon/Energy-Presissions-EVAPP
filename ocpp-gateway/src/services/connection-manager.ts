@@ -4,54 +4,54 @@ import { logger } from '../utils/logger';
 interface Connection {
   ws: WebSocket;
   chargePointId: string;
-  tenantId?: number;
+  vendorId?: number;
   connectedAt: Date;
   lastMessageAt?: Date;
 }
 
 export class ConnectionManager {
   private connections: Map<string, Connection> = new Map();
-  private tenantStatusCallbacks: Map<number, Set<(status: string) => void>> = new Map();
+  private vendorStatusCallbacks: Map<number, Set<(status: string) => void>> = new Map();
 
-  addConnection(chargePointId: string, ws: WebSocket, tenantId?: number): void {
+  addConnection(chargePointId: string, ws: WebSocket, vendorId?: number): void {
     const connection: Connection = {
       ws,
       chargePointId,
-      tenantId,
+      vendorId,
       connectedAt: new Date()
     };
     
     this.connections.set(chargePointId, connection);
-    logger.info(`Connection registered for charge point: ${chargePointId}${tenantId ? ` (tenant: ${tenantId})` : ''}`);
+    logger.info(`Connection registered for charge point: ${chargePointId}${vendorId ? ` (vendor: ${vendorId})` : ''}`);
   }
 
   /**
-   * Set tenantId for a connection (called after tenant resolution)
+   * Set vendorId for a connection (called after vendor resolution)
    */
-  setTenantId(chargePointId: string, tenantId: number): void {
+  setVendorId(chargePointId: string, vendorId: number): void {
     const connection = this.connections.get(chargePointId);
     if (connection) {
-      connection.tenantId = tenantId;
+      connection.vendorId = vendorId;
     }
   }
 
   /**
-   * Get all connections for a tenant
+   * Get all connections for a vendor
    */
-  getConnectionsByTenant(tenantId: number): Connection[] {
-    return Array.from(this.connections.values()).filter(conn => conn.tenantId === tenantId);
+  getConnectionsByVendor(vendorId: number): Connection[] {
+    return Array.from(this.connections.values()).filter(conn => conn.vendorId === vendorId);
   }
 
   /**
-   * Close all connections for a tenant
+   * Close all connections for a vendor
    */
-  closeTenantConnections(tenantId: number, code: number, reason: string): void {
-    const connections = this.getConnectionsByTenant(tenantId);
+  closeVendorConnections(vendorId: number, code: number, reason: string): void {
+    const connections = this.getConnectionsByVendor(vendorId);
     for (const connection of connections) {
       try {
         connection.ws.close(code, reason);
         this.connections.delete(connection.chargePointId);
-        logger.info(`Closed connection for charge point ${connection.chargePointId} (tenant ${tenantId}): ${reason}`);
+        logger.info(`Closed connection for charge point ${connection.chargePointId} (vendor ${vendorId}): ${reason}`);
       } catch (error) {
         logger.error(`Error closing connection for ${connection.chargePointId}:`, error);
       }

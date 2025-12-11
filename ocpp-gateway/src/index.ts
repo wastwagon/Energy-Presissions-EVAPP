@@ -7,7 +7,7 @@ import { logger } from './utils/logger';
 import { ConnectionManager } from './services/connection-manager';
 import { CommandManager } from './services/command-manager';
 import { MessageRouter } from './services/message-router';
-import { TenantResolver } from './services/tenant-resolver';
+import { VendorResolver } from './services/vendor-resolver';
 import { ConnectionLogger } from './services/connection-logger';
 
 // Load environment variables
@@ -128,57 +128,57 @@ const wss = new WebSocketServer({
 const connectionManager = new ConnectionManager();
 const commandManager = new CommandManager();
 const messageRouter = new MessageRouter(connectionManager, commandManager);
-const tenantResolver = new TenantResolver();
+const vendorResolver = new VendorResolver();
 
-// Initialize Redis for tenant status pub/sub
+// Initialize Redis for vendor status pub/sub
 const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
 const redisSubscriber = new Redis(redisUrl);
-const TENANT_STATUS_CHANNEL = 'tenant.status.changed';
+const VENDOR_STATUS_CHANNEL = 'vendor.status.changed';
 
-// Subscribe to tenant status changes
-redisSubscriber.subscribe(TENANT_STATUS_CHANNEL);
+// Subscribe to vendor status changes
+redisSubscriber.subscribe(VENDOR_STATUS_CHANNEL);
 redisSubscriber.on('message', (channel, message) => {
-  if (channel === TENANT_STATUS_CHANNEL) {
+  if (channel === VENDOR_STATUS_CHANNEL) {
     try {
       const payload = JSON.parse(message);
-      handleTenantStatusChange(payload);
+      handleVendorStatusChange(payload);
     } catch (error) {
-      logger.error('Error parsing tenant status change message:', error);
+      logger.error('Error parsing vendor status change message:', error);
     }
   }
 });
 
-// Handle tenant status changes
-async function handleTenantStatusChange(payload: {
-  tenantId: number;
+// Handle vendor status changes
+async function handleVendorStatusChange(payload: {
+  vendorId: number;
   status: 'active' | 'suspended' | 'disabled';
   reason?: string;
   at: string;
 }) {
-  logger.info(`Tenant status changed: ${payload.tenantId} -> ${payload.status}`);
+  logger.info(`Vendor status changed: ${payload.vendorId} -> ${payload.status}`);
 
   if (payload.status === 'disabled') {
-    // Close all connections for disabled tenant
-    connectionManager.closeTenantConnections(
-      payload.tenantId,
-      4003, // Custom close code for tenant_disabled
-      'tenant_disabled',
+    // Close all connections for disabled vendor
+    connectionManager.closeVendorConnections(
+      payload.vendorId,
+      4003, // Custom close code for vendor_disabled
+      'vendor_disabled',
     );
   } else if (payload.status === 'suspended') {
     // Option A: Close connections with suspended code
     // Option B: Keep connections but block commands (implemented in command handler)
     // For now, we'll close connections to be safe
-    connectionManager.closeTenantConnections(
-      payload.tenantId,
-      4002, // Custom close code for tenant_suspended
-      'tenant_suspended',
+    connectionManager.closeVendorConnections(
+      payload.vendorId,
+      4002, // Custom close code for vendor_suspended
+      'vendor_suspended',
     );
   }
 
-  // Clear tenant cache
-  const connections = connectionManager.getConnectionsByTenant(payload.tenantId);
+  // Clear vendor cache
+  const connections = connectionManager.getConnectionsByVendor(payload.vendorId);
   for (const conn of connections) {
-    tenantResolver.clearCache(conn.chargePointId);
+    vendorResolver.clearCache(conn.chargePointId);
   }
 }
 
@@ -214,15 +214,15 @@ wss.on('connection', async (ws, req) => {
   const userAgent = req.headers['user-agent'];
   await ConnectionLogger.logConnectionAttempt(chargePointId, ipAddress, userAgent, req.url);
   
-  // Resolve tenant and check status before accepting connection
+  // Resolve vendor and check status before accepting connection
   try {
-    const tenantId = await tenantResolver.resolveTenantId(chargePointId);
+    const vendorId = await vendorResolver.resolveVendorId(chargePointId);
     
-    if (tenantId) {
-      // Check tenant status via CSMS API
+    if (vendorId) {
+      // Check vendor status via CSMS API
       try {
         const statusResponse = await axios.get(
-          `${process.env.CSMS_API_URL || 'http://csms-api:3000'}/api/internal/tenants/${tenantId}/status`,
+          `${process.env.CSMS_API_URL || 'http://csms-api:3000'}/api/internal/vendors/${vendorId}/status`,
           {
             headers: {
               Authorization: `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
@@ -231,84 +231,84 @@ wss.on('connection', async (ws, req) => {
           },
         );
 
-        const tenantStatus = statusResponse.data.status;
+        const vendorStatus = statusResponse.data.status;
 
-        if (tenantStatus === 'disabled') {
-          logger.warn(`Connection rejected: Tenant ${tenantId} is disabled for charge point ${chargePointId}`);
+        if (vendorStatus === 'disabled') {
+          logger.warn(`Connection rejected: Vendor ${vendorId} is disabled for charge point ${chargePointId}`);
           await ConnectionLogger.logConnectionFailure(
             chargePointId,
-            'TENANT_DISABLED',
-            `Tenant ${tenantId} is disabled`,
+            'VENDOR_DISABLED',
+            `Vendor ${vendorId} is disabled`,
             4003,
-            'tenant_disabled',
-            tenantId,
+            'vendor_disabled',
+            vendorId,
             { ipAddress, userAgent },
           );
-          ws.close(4003, 'tenant_disabled');
+          ws.close(4003, 'vendor_disabled');
           return;
         }
 
-        if (tenantStatus === 'suspended') {
-          logger.warn(`Connection accepted but tenant ${tenantId} is suspended for charge point ${chargePointId}`);
+        if (vendorStatus === 'suspended') {
+          logger.warn(`Connection accepted but vendor ${vendorId} is suspended for charge point ${chargePointId}`);
           // Allow connection but commands will be blocked
         }
 
-        // Register connection with tenantId
-        connectionManager.addConnection(chargePointId, ws, tenantId);
+        // Register connection with vendorId
+        connectionManager.addConnection(chargePointId, ws, vendorId);
         
         // Log successful connection
-        await ConnectionLogger.logConnectionSuccess(chargePointId, tenantId, {
+        await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
           ipAddress,
           userAgent,
         });
       } catch (error: any) {
-        logger.error(`Error checking tenant status for ${chargePointId}:`, error.message);
+        logger.error(`Error checking vendor status for ${chargePointId}:`, error.message);
         await ConnectionLogger.logError(
           chargePointId,
-          'TENANT_STATUS_CHECK_FAILED',
-          `Error checking tenant status: ${error.message}`,
-          tenantId,
+          'VENDOR_STATUS_CHECK_FAILED',
+          `Error checking vendor status: ${error.message}`,
+          vendorId,
           { ipAddress, userAgent },
         );
         // If status check fails, allow connection but log warning
         connectionManager.addConnection(chargePointId, ws);
-        // Try to resolve tenantId asynchronously
-        tenantResolver.resolveTenantId(chargePointId).then((resolvedTenantId) => {
-          if (resolvedTenantId) {
-            connectionManager.setTenantId(chargePointId, resolvedTenantId);
+        // Try to resolve vendorId asynchronously
+        vendorResolver.resolveVendorId(chargePointId).then((resolvedVendorId) => {
+          if (resolvedVendorId) {
+            connectionManager.setVendorId(chargePointId, resolvedVendorId);
           }
         });
-        // Log connection success despite tenant check failure
-        await ConnectionLogger.logConnectionSuccess(chargePointId, tenantId, {
+        // Log connection success despite vendor check failure
+        await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
           ipAddress,
           userAgent,
-          warning: 'Tenant status check failed',
+          warning: 'Vendor status check failed',
         });
       }
     } else {
-      // No tenant resolved, register without tenantId (backward compatibility)
+      // No vendor resolved, register without vendorId (backward compatibility)
       connectionManager.addConnection(chargePointId, ws);
       await ConnectionLogger.logConnectionSuccess(chargePointId, undefined, {
         ipAddress,
         userAgent,
-        note: 'No tenant resolved',
+        note: 'No vendor resolved',
       });
     }
   } catch (error: any) {
-    logger.error(`Error resolving tenant for ${chargePointId}:`, error.message);
+    logger.error(`Error resolving vendor for ${chargePointId}:`, error.message);
     await ConnectionLogger.logError(
       chargePointId,
-      'TENANT_RESOLUTION_FAILED',
-      `Error resolving tenant: ${error.message}`,
+      'VENDOR_RESOLUTION_FAILED',
+      `Error resolving vendor: ${error.message}`,
       undefined,
       { ipAddress, userAgent },
     );
-    // Allow connection even if tenant resolution fails (backward compatibility)
+    // Allow connection even if vendor resolution fails (backward compatibility)
     connectionManager.addConnection(chargePointId, ws);
     await ConnectionLogger.logConnectionSuccess(chargePointId, undefined, {
       ipAddress,
       userAgent,
-      warning: 'Tenant resolution failed',
+      warning: 'Vendor resolution failed',
     });
   }
   
@@ -332,7 +332,7 @@ wss.on('connection', async (ws, req) => {
         'FORMAT_VIOLATION',
         `Invalid JSON format: ${error.message}`,
         rawMessage,
-        connection?.tenantId,
+        connection?.vendorId,
       );
       // Send OCPP error response
       sendError(ws, 'FORMAT_VIOLATION', 'Invalid JSON format');

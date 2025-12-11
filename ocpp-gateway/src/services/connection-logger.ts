@@ -32,7 +32,7 @@ export class ConnectionLogger {
     ipAddress?: string;
     userAgent?: string;
     requestUrl?: string;
-    tenantId?: number;
+    vendorId?: number;
     metadata?: Record<string, any>;
   }): Promise<void> {
     try {
