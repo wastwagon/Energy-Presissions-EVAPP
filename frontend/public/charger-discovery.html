@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charger Discovery & Configuration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #ed6c02 0%, #e65100 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            color: #ed6c02;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .device-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .device-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .device-card:hover {
+            border-color: #ed6c02;
+            box-shadow: 0 4px 12px rgba(237, 108, 2, 0.2);
+        }
+        .device-card.suspected {
+            border-color: #ed6c02;
+            background: #fff3e0;
+        }
+        .device-info {
+            flex: 1;
+        }
+        .device-info strong {
+            color: #ed6c02;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .device-actions {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background: #ed6c02;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #e65100;
+        }
+        button.secondary {
+            background: #666;
+        }
+        button.secondary:hover {
+            background: #444;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.online {
+            background: #4caf50;
+            color: white;
+        }
+        .status.offline {
+            background: #f44336;
+            color: white;
+        }
+        .config-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #ed6c02;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .log-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-entry.success {
+            color: #4caf50;
+        }
+        .log-entry.error {
+            color: #f44336;
+        }
+        .log-entry.info {
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 EV Charger Discovery & Configuration</h1>
+        <p class="subtitle">Discover and configure your EV charger connected via LAN cable</p>
+
+        <div class="section">
+            <h2>📡 Network Scan</h2>
+            <button onclick="scanNetwork()">Scan Network for Devices</button>
+            <div id="deviceList" class="device-list"></div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ OCPP Configuration</h2>
+            <div class="info-box">
+                <strong>Your OCPP Gateway:</strong><br>
+                <code>ws://192.168.0.166:9000/ocpp/{CHARGE_POINT_ID}</code>
+            </div>
+            <div class="config-form">
+                <div class="form-group">
+                    <label>Charger IP Address:</label>
+                    <input type="text" id="chargerIP" placeholder="192.168.0.199" value="192.168.0.199">
+                </div>
+                <div class="form-group">
+                    <label>Charge Point ID:</label>
+                    <input type="text" id="chargePointId" placeholder="CP001" value="CP001" maxlength="16">
+                </div>
+                <div class="form-group">
+                    <label>OCPP Server URL (auto-generated):</label>
+                    <input type="text" id="ocppUrl" readonly value="ws://192.168.0.166:9000/ocpp/CP001">
+                </div>
+                <button onclick="testConnection()">Test Connection</button>
+                <button onclick="openChargerWebInterface()" class="secondary">Open Charger Web Interface</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Connection Monitor</h2>
+            <button onclick="startMonitoring()">Start Monitoring</button>
+            <button onclick="stopMonitoring()" class="secondary">Stop Monitoring</button>
+            <div id="logArea" class="log-area"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Quick Reference</h2>
+            <div class="info-box">
+                <strong>Configuration Steps:</strong><br>
+                1. Scan network to find your charger<br>
+                2. Open charger web interface (if available)<br>
+                3. Login with: <code>SN:SERIAL_NUMBER</code><br>
+                4. Enter Charge Point ID and OCPP URL<br>
+                5. Click "Set and Reboot"<br>
+                6. Monitor for connection
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        const API_BASE = window.location.origin;
+
+        // Update OCPP URL when Charge Point ID changes
+        document.getElementById('chargePointId').addEventListener('input', function() {
+            const cpId = this.value || 'CP001';
+            document.getElementById('ocppUrl').value = `ws://192.168.0.166:9000/ocpp/${cpId}`;
+        });
+
+        async function scanNetwork() {
+            const deviceList = document.getElementById('deviceList');
+            deviceList.innerHTML = '<p>Scanning network... Please wait.</p>';
+            
+            addLog('info', 'Starting network scan...');
+            
+            // Simulate network scan (in real implementation, this would call backend API)
+            const devices = [
+                { ip: '192.168.0.199', hostname: 'Unknown', status: 'online', suspected: true },
+                { ip: '192.168.0.159', hostname: 'iphone', status: 'offline', suspected: false },
+            ];
+
+            setTimeout(() => {
+                deviceList.innerHTML = '';
+                devices.forEach(device => {
+                    const card = document.createElement('div');
+                    card.className = `device-card ${device.suspected ? 'suspected' : ''}`;
+                    card.innerHTML = `
+                        <div class="device-info">
+                            <strong>${device.ip}</strong>
+                            <span>Hostname: ${device.hostname}</span>
+                            <span class="status ${device.status}">${device.status.toUpperCase()}</span>
+                            ${device.suspected ? '<span style="color: #ed6c02; font-weight: bold;">⚠️ Possible Charger</span>' : ''}
+                        </div>
+                        <div class="device-actions">
+                            <button onclick="testDevice('${device.ip}')">Test</button>
+                            <button onclick="openDevice('${device.ip}')" class="secondary">Open</button>
+                        </div>
+                    `;
+                    deviceList.appendChild(card);
+                });
+                addLog('success', `Found ${devices.length} devices on network`);
+            }, 2000);
+        }
+
+        function testDevice(ip) {
+            addLog('info', `Testing device ${ip}...`);
+            window.open(`http://${ip}:80`, '_blank');
+        }
+
+        function openDevice(ip) {
+            addLog('info', `Opening device ${ip}...`);
+            window.open(`http://${ip}:80`, '_blank');
+        }
+
+        function openChargerWebInterface() {
+            const ip = document.getElementById('chargerIP').value;
+            addLog('info', `Opening charger web interface: http://${ip}:80`);
+            window.open(`http://${ip}:80`, '_blank');
+        }
+
+        async function testConnection() {
+            const ip = document.getElementById('chargerIP').value;
+            addLog('info', `Testing connection to ${ip}...`);
+            
+            try {
+                // Test OCPP Gateway health
+                const response = await fetch(`http://192.168.0.166:9000/health`);
+                if (response.ok) {
+                    addLog('success', 'OCPP Gateway is accessible and healthy');
+                } else {
+                    addLog('error', 'OCPP Gateway health check failed');
+                }
+            } catch (error) {
+                addLog('error', `Connection test failed: ${error.message}`);
+            }
+        }
+
+        function startMonitoring() {
+            if (monitoringInterval) {
+                addLog('info', 'Monitoring already running');
+                return;
+            }
+            
+            addLog('info', 'Starting connection monitoring...');
+            addLog('info', 'Watching for device connections to OCPP Gateway...');
+            
+            // In real implementation, this would use WebSocket or polling
+            monitoringInterval = setInterval(async () => {
+                try {
+                    // Check for recent connections (would need backend API)
+                    addLog('info', 'Checking for new connections...');
+                } catch (error) {
+                    addLog('error', `Monitoring error: ${error.message}`);
+                }
+            }, 5000);
+        }
+
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                addLog('info', 'Monitoring stopped');
+            }
+        }
+
+        function addLog(type, message) {
+            const logArea = document.getElementById('logArea');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // Auto-scan on load
+        window.addEventListener('load', () => {
+            addLog('info', 'EV Charger Discovery Tool loaded');
+            addLog('info', 'Ready to scan network and configure charger');
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,590 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Grid,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Tabs,
+  Tab,
+  Badge,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
+import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`devices-tabpanel-${index}`}
+      aria-labelledby={`devices-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+export function DevicesPage() {
+  const navigate = useNavigate();
+  const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
+  const [filteredChargePoints, setFilteredChargePoints] = useState<ChargePoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
+  
+  // Connection logs state
+  const [selectedChargePoint, setSelectedChargePoint] = useState<ChargePoint | null>(null);
+  const [logsDialogOpen, setLogsDialogOpen] = useState(false);
+  const [connectionLogs, setConnectionLogs] = useState<ConnectionLog[]>([]);
+  const [connectionStats, setConnectionStats] = useState<ConnectionStatistics | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [recentErrors, setRecentErrors] = useState<ConnectionLog[]>([]);
+
+  useEffect(() => {
+    loadChargePoints();
+    loadRecentErrors();
+  }, []);
+
+  useEffect(() => {
+    // Filter charge points based on search term
+    if (!searchTerm.trim()) {
+      setFilteredChargePoints(chargePoints);
+    } else {
+      const filtered = chargePoints.filter(
+        (cp) =>
+          cp.chargePointId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (cp.vendor && cp.vendor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (cp.model && cp.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (cp.serialNumber && cp.serialNumber.toLowerCase().includes(searchTerm.toLowerCase())),
+      );
+      setFilteredChargePoints(filtered);
+    }
+  }, [searchTerm, chargePoints]);
+
+  const loadChargePoints = async () => {
+    try {
+      setError(null);
+      const data = await chargePointsApi.getAll(searchTerm || undefined);
+      setChargePoints(data);
+      setFilteredChargePoints(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load charge points');
+      console.error('Error loading charge points:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRecentErrors = async () => {
+    try {
+      const errors = await connectionLogsApi.getRecentErrors(10);
+      setRecentErrors(errors);
+    } catch (err) {
+      // Silently fail - errors are not critical
+      console.error('Error loading recent errors:', err);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      loadChargePoints();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      setError(null);
+      const data = await chargePointsApi.getAll(searchTerm);
+      setChargePoints(data);
+      setFilteredChargePoints(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to search charge points');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewLogs = async (chargePoint: ChargePoint) => {
+    setSelectedChargePoint(chargePoint);
+    setLogsDialogOpen(true);
+    setLogsLoading(true);
+
+    try {
+      const [logs, stats] = await Promise.all([
+        connectionLogsApi.getLogs(chargePoint.chargePointId, undefined, 50),
+        connectionLogsApi.getStatistics(chargePoint.chargePointId),
+      ]);
+      setConnectionLogs(logs.logs);
+      setConnectionStats(stats);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load connection logs');
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Available':
+        return 'success';
+      case 'Charging':
+        return 'info';
+      case 'Offline':
+        return 'default';
+      case 'Faulted':
+        return 'error';
+      default:
+        return 'warning';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const getErrorCount = (chargePointId: string) => {
+    return recentErrors.filter((log) => log.chargePointId === chargePointId).length;
+  };
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Device Inventory
+        </Typography>
+        <TextField
+          placeholder="Search devices..."
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => {
+                  setSearchTerm('');
+                  loadChargePoints();
+                }}>
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{ minWidth: 300 }}
+        />
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="All Devices" />
+          <Tab 
+            label={
+              <Badge badgeContent={recentErrors.length} color="error">
+                Recent Errors
+              </Badge>
+            } 
+          />
+        </Tabs>
+
+        <TabPanel value={activeTab} index={0}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredChargePoints.length === 0 ? (
+            <Paper sx={{ p: 3, mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                {searchTerm ? 'No devices found matching your search.' : 'No charge points registered yet.'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {searchTerm
+                  ? 'Try a different search term or clear the search to see all devices.'
+                  : 'Charge points will appear here after they connect and send BootNotification.'}
+              </Typography>
+            </Paper>
+          ) : (
+            <TableContainer sx={{ mt: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Charge Point ID</TableCell>
+                    <TableCell>Vendor</TableCell>
+                    <TableCell>Model</TableCell>
+                    <TableCell>Serial Number</TableCell>
+                    <TableCell>Firmware</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Last Heartbeat</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredChargePoints.map((cp) => {
+                    const errorCount = getErrorCount(cp.chargePointId);
+                    return (
+                      <TableRow key={cp.chargePointId}>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {cp.chargePointId}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{cp.vendor || '-'}</TableCell>
+                        <TableCell>{cp.model || '-'}</TableCell>
+                        <TableCell>{cp.serialNumber || '-'}</TableCell>
+                        <TableCell>{cp.firmwareVersion || '-'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={cp.status}
+                            color={getStatusColor(cp.status) as any}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {cp.lastHeartbeat
+                            ? new Date(cp.lastHeartbeat).toLocaleString()
+                            : 'Never'}
+                        </TableCell>
+                        <TableCell>
+                          {cp.locationAddress || (
+                            cp.locationLatitude && cp.locationLongitude
+                              ? `${cp.locationLatitude.toFixed(6)}, ${cp.locationLongitude.toFixed(6)}`
+                              : '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Tooltip title="View Details">
+                              <IconButton
+                                size="small"
+                                onClick={() => navigate(`/ops/devices/${cp.chargePointId}`)}
+                                color="primary"
+                              >
+                                <SearchIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="View Connection Logs & Debug">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleViewLogs(cp)}
+                                color={errorCount > 0 ? 'error' : 'default'}
+                              >
+                                <Badge badgeContent={errorCount} color="error">
+                                  <BugReportIcon fontSize="small" />
+                                </Badge>
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={1}>
+          {recentErrors.length === 0 ? (
+            <Paper sx={{ p: 3, mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                No recent connection errors.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                All devices are connecting successfully.
+              </Typography>
+            </Paper>
+          ) : (
+            <TableContainer sx={{ mt: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Charge Point ID</TableCell>
+                    <TableCell>Event Type</TableCell>
+                    <TableCell>Error Code</TableCell>
+                    <TableCell>Error Message</TableCell>
+                    <TableCell>Close Code</TableCell>
+                    <TableCell>Timestamp</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {recentErrors.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {log.chargePointId}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={log.eventType}
+                          color={
+                            log.eventType === 'error' || log.eventType === 'connection_failed'
+                              ? 'error'
+                              : 'default'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{log.errorCode || '-'}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {log.errorMessage || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{log.closeCode || '-'}</TableCell>
+                      <TableCell>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            const cp = chargePoints.find((c) => c.chargePointId === log.chargePointId);
+                            if (cp) {
+                              handleViewLogs(cp);
+                            }
+                          }}
+                        >
+                          View Logs
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+      </Paper>
+
+      {/* Connection Logs Dialog */}
+      <Dialog
+        open={logsDialogOpen}
+        onClose={() => setLogsDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Connection Logs & Debug - {selectedChargePoint?.chargePointId}
+        </DialogTitle>
+        <DialogContent>
+          {logsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box>
+              {/* Connection Statistics */}
+              {connectionStats && (
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="caption" color="text.secondary">
+                          Total Attempts
+                        </Typography>
+                        <Typography variant="h6">{connectionStats.totalAttempts}</Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="caption" color="text.secondary">
+                          Successful
+                        </Typography>
+                        <Typography variant="h6" color="success.main">
+                          {connectionStats.successfulConnections}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="caption" color="text.secondary">
+                          Failed
+                        </Typography>
+                        <Typography variant="h6" color="error.main">
+                          {connectionStats.failedConnections}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="caption" color="text.secondary">
+                          Consecutive Failures
+                        </Typography>
+                        <Typography variant="h6" color={connectionStats.consecutiveFailures > 0 ? 'error.main' : 'success.main'}>
+                          {connectionStats.consecutiveFailures}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Last Error */}
+              {connectionStats?.lastErrorCode && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Last Error: {connectionStats.lastErrorCode}
+                  </Typography>
+                  <Typography variant="body2">
+                    {connectionStats.lastErrorMessage}
+                  </Typography>
+                  {connectionStats.lastFailedConnection && (
+                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                      {new Date(connectionStats.lastFailedConnection).toLocaleString()}
+                    </Typography>
+                  )}
+                </Alert>
+              )}
+
+              {/* Connection Logs Table */}
+              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                Recent Connection Events
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Timestamp</TableCell>
+                      <TableCell>Event Type</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Error Code</TableCell>
+                      <TableCell>Error Message</TableCell>
+                      <TableCell>Close Code</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {connectionLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                            No connection logs found
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      connectionLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell>
+                            {new Date(log.createdAt).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={log.eventType}
+                              color={
+                                log.eventType === 'error' || log.eventType === 'connection_failed'
+                                  ? 'error'
+                                  : log.eventType === 'connection_success'
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {log.status && (
+                              <Chip
+                                label={log.status}
+                                color={
+                                  log.status === 'failed' || log.status === 'error'
+                                    ? 'error'
+                                    : log.status === 'success'
+                                    ? 'success'
+                                    : 'default'
+                                }
+                                size="small"
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>{log.errorCode || '-'}</TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {log.errorMessage || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {log.closeCode ? (
+                              <Tooltip title={log.closeReason || ''}>
+                                <Chip label={log.closeCode} size="small" color="error" />
+                              </Tooltip>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogsDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
+
