@@ -123,8 +123,8 @@ export class BillingService {
 
   /**
    * Generate invoice for a transaction
-   * Note: Invoice generation will use tenant branding when generating PDFs
-   * The tenant information is stored in the invoice metadata for receipt generation
+   * Note: Invoice generation will use vendor branding when generating PDFs
+   * The vendor information is stored in the invoice metadata for receipt generation
    */
   async generateInvoice(transactionId: number): Promise<Invoice> {
     const transaction = await this.transactionRepository.findOne({
@@ -162,13 +162,13 @@ export class BillingService {
       return existingInvoice;
     }
 
-    // Get tenant information for branding
-    // Tenant info will be used when generating PDF receipts
-    let tenantId = 1; // Default tenant
-    if (transaction.chargePoint && (transaction.chargePoint as any).tenantId) {
-      tenantId = (transaction.chargePoint as any).tenantId;
-    } else if (transaction.user && (transaction.user as any).tenantId) {
-      tenantId = (transaction.user as any).tenantId;
+    // Get vendor information for branding
+    // Vendor info will be used when generating PDF receipts
+    let vendorId = 1; // Default vendor
+    if (transaction.chargePoint && (transaction.chargePoint as any).vendorId) {
+      vendorId = (transaction.chargePoint as any).vendorId;
+    } else if (transaction.user && (transaction.user as any).vendorId) {
+      vendorId = (transaction.user as any).vendorId;
     }
 
     // Generate invoice number
@@ -179,14 +179,14 @@ export class BillingService {
       transactionId: transaction.transactionId,
       userId: transaction.userId,
       subtotal: transaction.totalCost || 0,
-      tax: 0, // TODO: Calculate tax based on tenant settings
+      tax: 0, // TODO: Calculate tax based on vendor settings
       total: transaction.totalCost || 0,
       currency: transaction.currency,
       status: 'Generated',
     });
 
-    // Note: Tenant branding (logo, business name, address, etc.) will be retrieved
-    // when generating the PDF receipt using the tenantId
+    // Note: Vendor branding (logo, business name, address, etc.) will be retrieved
+    // when generating the PDF receipt using the vendorId
     // This is handled in the invoice generation service/controller
 
     return this.invoiceRepository.save(invoice);

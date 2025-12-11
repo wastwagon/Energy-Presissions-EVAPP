@@ -29,7 +29,7 @@ export class ConnectionLogsService {
     ipAddress?: string;
     userAgent?: string;
     requestUrl?: string;
-    tenantId?: number;
+    vendorId?: number;
     metadata?: Record<string, any>;
   }): Promise<ConnectionLog> {
     const log = this.connectionLogRepository.create(data);
@@ -66,7 +66,7 @@ export class ConnectionLogsService {
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
-      relations: ['tenant'],
+      relations: ['vendor'],
     });
 
     return { logs, total };
@@ -90,7 +90,7 @@ export class ConnectionLogsService {
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
-      relations: ['tenant'],
+      relations: ['vendor'],
     });
 
     return { logs, total };

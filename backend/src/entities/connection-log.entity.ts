@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Tenant } from './tenant.entity';
+import { Vendor } from './vendor.entity';
 
 export type ConnectionEventType =
   | 'connection_attempt'
@@ -53,12 +53,12 @@ export class ConnectionLog {
   @Column({ name: 'request_url', type: 'text', nullable: true })
   requestUrl: string;
 
-  @ManyToOne(() => Tenant, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: Tenant;
+  @ManyToOne(() => Vendor, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor;
 
-  @Column({ name: 'tenant_id', nullable: true })
-  tenantId: number;
+  @Column({ name: 'vendor_id', nullable: true })
+  vendorId: number;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
-import { Tenant } from '../entities/tenant.entity';
+import { Vendor } from '../entities/vendor.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
@@ -12,8 +12,8 @@ export class SeedService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(Tenant)
-    private tenantRepository: Repository<Tenant>,
+    @InjectRepository(Vendor)
+    private vendorRepository: Repository<Vendor>,
   ) {}
 
   async onModuleInit() {
@@ -40,7 +40,7 @@ export class SeedService implements OnModuleInit {
           currency: 'GHS',
           status: 'Active',
           emailVerified: true,
-          tenantId: 1, // Default tenant
+          vendorId: 1, // Default vendor
         });
         await this.userRepository.save(adminUser);
         this.logger.log('✅ Default admin user created: admin@evcharging.com / admin123');
@@ -65,7 +65,7 @@ export class SeedService implements OnModuleInit {
           currency: 'GHS',
           status: 'Active',
           emailVerified: false,
-          tenantId: 1, // Default tenant
+          vendorId: 1, // Default vendor
         });
         await this.userRepository.save(walkInUser);
         this.logger.log('✅ Walk-in customer user created');
@@ -73,10 +73,10 @@ export class SeedService implements OnModuleInit {
         this.logger.log('ℹ️  Walk-in customer user already exists');
       }
 
-      // Create admin users for tenant 1
+      // Create admin users for vendor 1
       const adminUsers = [
-        { email: 'admin1@tenant1.com', firstName: 'Tenant', lastName: 'Admin One' },
-        { email: 'admin2@tenant1.com', firstName: 'Tenant', lastName: 'Admin Two' },
+        { email: 'admin1@vendor1.com', firstName: 'Vendor', lastName: 'Admin One' },
+        { email: 'admin2@vendor1.com', firstName: 'Vendor', lastName: 'Admin Two' },
       ];
 
       for (const adminData of adminUsers) {
@@ -96,7 +96,7 @@ export class SeedService implements OnModuleInit {
             currency: 'GHS',
             status: 'Active',
             emailVerified: true,
-            tenantId: 1, // Default tenant
+            vendorId: 1, // Default vendor
           });
           await this.userRepository.save(adminUser);
           this.logger.log(`✅ Admin user created: ${adminData.email} / admin123`);
@@ -111,11 +111,11 @@ export class SeedService implements OnModuleInit {
         }
       }
 
-      // Create customer users for tenant 1
+      // Create customer users for vendor 1
       const customerUsers = [
-        { email: 'customer1@tenant1.com', firstName: 'John', lastName: 'Doe', balance: 100.00 },
-        { email: 'customer2@tenant1.com', firstName: 'Jane', lastName: 'Smith', balance: 50.00 },
-        { email: 'customer3@tenant1.com', firstName: 'Bob', lastName: 'Johnson', balance: 0.00 },
+        { email: 'customer1@vendor1.com', firstName: 'John', lastName: 'Doe', balance: 100.00 },
+        { email: 'customer2@vendor1.com', firstName: 'Jane', lastName: 'Smith', balance: 50.00 },
+        { email: 'customer3@vendor1.com', firstName: 'Bob', lastName: 'Johnson', balance: 0.00 },
       ];
 
       for (const customerData of customerUsers) {
@@ -135,7 +135,7 @@ export class SeedService implements OnModuleInit {
             currency: 'GHS',
             status: 'Active',
             emailVerified: true,
-            tenantId: 1, // Default tenant
+            vendorId: 1, // Default vendor
           });
           await this.userRepository.save(customerUser);
           this.logger.log(`✅ Customer user created: ${customerData.email} / customer123`);

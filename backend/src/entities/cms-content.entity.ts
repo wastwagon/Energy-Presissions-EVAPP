@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Tenant } from './tenant.entity';
+import { Vendor } from './vendor.entity';
 
 export type ContentType = 'text' | 'html' | 'markdown' | 'image' | 'file';
 
@@ -31,12 +31,12 @@ export class CmsContent {
   @Column({ length: 100, nullable: true })
   section: string;
 
-  @ManyToOne(() => Tenant, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: Tenant;
+  @ManyToOne(() => Vendor, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor;
 
-  @Column({ name: 'tenant_id', nullable: true })
-  tenantId: number;
+  @Column({ name: 'vendor_id', nullable: true })
+  vendorId: number;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

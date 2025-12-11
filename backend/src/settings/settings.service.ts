@@ -98,10 +98,10 @@ export class SettingsService {
   }
 
   // CMS Content Methods
-  async getAllContent(tenantId?: number, section?: string): Promise<CmsContent[]> {
+  async getAllContent(vendorId?: number, section?: string): Promise<CmsContent[]> {
     const where: any = {};
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
     if (section) {
       where.section = section;
@@ -113,10 +113,10 @@ export class SettingsService {
     });
   }
 
-  async getContent(key: string, tenantId?: number): Promise<CmsContent> {
+  async getContent(key: string, vendorId?: number): Promise<CmsContent> {
     const where: any = { key };
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
 
     const content = await this.cmsContentRepository.findOne({ where });
@@ -134,11 +134,11 @@ export class SettingsService {
     content: string,
     contentType: ContentType,
     section?: string,
-    tenantId?: number,
+    vendorId?: number,
     metadata?: Record<string, any>,
   ): Promise<CmsContent> {
     const existing = await this.cmsContentRepository.findOne({
-      where: { key, tenantId: tenantId || null },
+      where: { key, vendorId: vendorId || null },
     });
 
     if (existing) {
@@ -156,17 +156,17 @@ export class SettingsService {
       content,
       contentType,
       section,
-      tenantId,
+      vendorId,
       metadata,
     });
 
     return this.cmsContentRepository.save(cmsContent);
   }
 
-  async deleteContent(key: string, tenantId?: number): Promise<void> {
+  async deleteContent(key: string, vendorId?: number): Promise<void> {
     const where: any = { key };
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
 
     const result = await this.cmsContentRepository.delete(where);
@@ -176,10 +176,10 @@ export class SettingsService {
   }
 
   // Branding Assets Methods
-  async getAllAssets(tenantId?: number, assetType?: AssetType): Promise<BrandingAsset[]> {
+  async getAllAssets(vendorId?: number, assetType?: AssetType): Promise<BrandingAsset[]> {
     const where: any = {};
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
     if (assetType) {
       where.assetType = assetType;
@@ -191,13 +191,13 @@ export class SettingsService {
     });
   }
 
-  async getActiveAsset(assetType: AssetType, tenantId?: number): Promise<BrandingAsset | null> {
+  async getActiveAsset(assetType: AssetType, vendorId?: number): Promise<BrandingAsset | null> {
     const where: any = {
       assetType,
       isActive: true,
     };
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
 
     return this.brandingAssetRepository.findOne({
@@ -214,12 +214,12 @@ export class SettingsService {
     mimeType: string,
     width?: number,
     height?: number,
-    tenantId?: number,
+    vendorId?: number,
   ): Promise<BrandingAsset> {
     // Deactivate other assets of the same type
     const where: any = { assetType, isActive: true };
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId;
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
     }
 
     await this.brandingAssetRepository.update(where, { isActive: false });
@@ -232,7 +232,7 @@ export class SettingsService {
       mimeType,
       width,
       height,
-      tenantId,
+      vendorId,
       isActive: true,
     });
 
