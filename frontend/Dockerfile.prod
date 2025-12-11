@@ -13,11 +13,12 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
 
 # Install dependencies
-# Remove package-lock.json to fix npm optional dependency bug with rollup on Alpine
-RUN rm -f package-lock.json && npm ci
+# Use npm install instead of npm ci to properly handle optional dependencies (rollup native modules)
+# This fixes the @rollup/rollup-linux-x64-musl missing module error on Alpine
+RUN npm install
 
 # Copy application code
 COPY . .
