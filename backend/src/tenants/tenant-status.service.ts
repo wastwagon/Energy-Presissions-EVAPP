@@ -74,8 +74,11 @@ export class TenantStatusService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // Warm up cache with all tenant statuses
-    await this.warmUpCache();
+    // Warm up cache with all tenant statuses (non-blocking)
+    // This will fail gracefully if database tables don't exist yet
+    this.warmUpCache().catch((error) => {
+      this.logger.warn(`Cache warm-up failed: ${error.message}`);
+    });
 
     this.logger.log('TenantStatusService initialized');
   }
@@ -254,15 +257,25 @@ export class TenantStatusService implements OnModuleInit, OnModuleDestroy {
    * Warm up cache with all tenant statuses
    */
   private async warmUpCache(): Promise<void> {
-    const tenants = await this.tenantRepository.find({
-      select: ['id', 'status'],
-    });
+    try {
+      const tenants = await this.tenantRepository.find({
+        select: ['id', 'status'],
+      });
 
-    for (const tenant of tenants) {
-      await this.setTenantStatusCache(tenant.id, tenant.status);
+      for (const tenant of tenants) {
+        await this.setTenantStatusCache(tenant.id, tenant.status);
+      }
+
+      this.logger.log(`Warmed up cache with ${tenants.length} tenants`);
+    } catch (error) {
+      // Handle case where database tables don't exist yet (migrations not run)
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        this.logger.warn('Tenants table does not exist yet. Cache warm-up skipped. Run database migrations first.');
+      } else {
+        this.logger.error(`Failed to warm up cache: ${error.message}`);
+      }
+      // Don't throw - allow app to start even if cache warm-up fails
     }
-
-    this.logger.log(`Warmed up cache with ${tenants.length} tenants`);
   }
 
   /**
