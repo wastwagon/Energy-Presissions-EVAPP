@@ -11,6 +11,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
@@ -36,12 +37,19 @@ export class TenantsController {
   }
 
   @Get(':id')
-  @Roles('SuperAdmin')
-  @SkipTenantCheck()
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get tenant by ID' })
   @ApiResponse({ status: 200, description: 'Tenant details', type: Tenant })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Tenant> {
+  @ApiResponse({ status: 403, description: 'Forbidden - can only access own tenant' })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ): Promise<Tenant> {
+    // SuperAdmin can access any tenant, Admin can only access their own
+    if (req.user?.accountType !== 'SuperAdmin' && req.user?.tenantId !== id) {
+      throw new HttpException('Forbidden - can only access own tenant', HttpStatus.FORBIDDEN);
+    }
     return this.tenantsService.findOne(id);
   }
 
@@ -85,14 +93,19 @@ export class TenantsController {
   }
 
   @Put(':id')
-  @Roles('SuperAdmin')
-  @SkipTenantCheck()
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Update tenant' })
   @ApiResponse({ status: 200, description: 'Tenant updated', type: Tenant })
+  @ApiResponse({ status: 403, description: 'Forbidden - can only update own tenant' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTenantDto: Partial<Tenant>,
+    @Request() req: any,
   ): Promise<Tenant> {
+    // SuperAdmin can update any tenant, Admin can only update their own
+    if (req.user?.accountType !== 'SuperAdmin' && req.user?.tenantId !== id) {
+      throw new HttpException('Forbidden - can only update own tenant', HttpStatus.FORBIDDEN);
+    }
     return this.tenantsService.update(id, updateTenantDto);
   }
 

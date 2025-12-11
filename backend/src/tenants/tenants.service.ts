@@ -32,7 +32,8 @@ export class TenantsService {
   async findOne(id: number): Promise<Tenant> {
     const tenant = await this.tenantRepository.findOne({
       where: { id },
-      relations: ['chargePoints', 'users'],
+      // Removed relations to avoid potential circular dependency issues
+      // Relations can be loaded separately if needed
     });
 
     if (!tenant) {
