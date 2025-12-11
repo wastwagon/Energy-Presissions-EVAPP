@@ -1,7 +1,7 @@
 databases:
   # PostgreSQL Database
   - name: ev-billing-postgres
-    plan: starter
+    plan: free
     databaseName: ev_billing_db
     postgresMajorVersion: "15"
 
