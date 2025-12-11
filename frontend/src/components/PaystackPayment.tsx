@@ -136,9 +136,11 @@ export function PaystackPayment({
       let paymentData: PaymentInitResponse;
 
       if (invoiceId) {
-        paymentData = await paymentsApi.processInvoicePayment(invoiceId, email);
+        paymentData = await paymentsApi.initializePayment(invoiceId, email);
       } else if (transactionId) {
-        paymentData = await paymentsApi.processTransactionPayment(transactionId, email);
+        // For transactions, we need to get the invoice first or use a different endpoint
+        // For now, use initializePayment with a placeholder - this may need backend support
+        throw new Error('Transaction payment initialization not yet supported. Please use invoice payment.');
       } else {
         throw new Error('Either invoiceId or transactionId is required');
       }

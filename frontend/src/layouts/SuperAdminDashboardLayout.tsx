@@ -33,9 +33,9 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 const drawerWidth = 260;
 
 interface MenuItem {
-  text: string;
-  icon: React.ReactNode;
-  path: string;
+  text?: string;
+  icon?: React.ReactNode;
+  path?: string;
   divider?: boolean;
 }
 

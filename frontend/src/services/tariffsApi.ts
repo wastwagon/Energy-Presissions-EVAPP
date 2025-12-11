@@ -39,8 +39,8 @@ export const tariffsApi = {
     timeRate?: number;
     baseFee?: number;
     currency?: string;
-    validFrom?: Date;
-    validTo?: Date;
+    validFrom?: string | Date;
+    validTo?: string | Date;
   }): Promise<Tariff> => {
     const response = await api.post('/admin/tariffs', data);
     return response.data;
