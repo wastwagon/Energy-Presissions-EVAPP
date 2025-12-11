@@ -25,8 +25,8 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install dependencies for native modules and postgresql client for migrations
+RUN apk add --no-cache python3 make g++ postgresql-client
 
 # Copy package files
 COPY package*.json ./
@@ -36,6 +36,9 @@ RUN npm ci --omit=dev
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
+
+# Copy database migration files
+COPY database/ ./database/
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
