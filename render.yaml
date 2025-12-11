@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database
-  - type: pg
+  - type: postgresql
     name: ev-billing-postgres
     plan: starter  # Change to standard or pro for production
     databaseName: ev_billing_db
