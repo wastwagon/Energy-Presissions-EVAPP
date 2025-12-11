@@ -53,7 +53,7 @@ export function SuperAdminDashboardPage() {
           Super Admin Dashboard
         </Typography>
         <Typography variant="body2" sx={{ color: '#64748b' }}>
-          Complete system control and management across all tenants and users.
+          Complete system control and management across all vendors and users.
         </Typography>
       </Box>
 
@@ -272,10 +272,10 @@ export function SuperAdminDashboardPage() {
                 </Box>
                 <Box>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Tenants
+                    Vendors
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Manage tenants
+                    Manage vendors
                   </Typography>
                 </Box>
               </Box>

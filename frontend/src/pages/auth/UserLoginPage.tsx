@@ -18,8 +18,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import { authApi } from '../../services/authApi';
 
 const SAMPLE_USERS = [
-  { email: 'customer1@tenant1.com', password: 'customer123', name: 'Customer 1' },
-  { email: 'customer2@tenant1.com', password: 'customer123', name: 'Customer 2' },
+  { email: 'customer1@vendor1.com', password: 'customer123', name: 'Customer 1' },
+  { email: 'customer2@vendor1.com', password: 'customer123', name: 'Customer 2' },
 ];
 
 export function UserLoginPage() {

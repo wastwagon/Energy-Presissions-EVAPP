@@ -17,8 +17,8 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { authApi } from '../../services/authApi';
 
 const SAMPLE_USERS = [
-  { email: 'admin1@tenant1.com', password: 'admin123', name: 'Tenant Admin 1' },
-  { email: 'admin2@tenant1.com', password: 'admin123', name: 'Tenant Admin 2' },
+  { email: 'admin1@vendor1.com', password: 'admin123', name: 'Vendor Admin 1' },
+  { email: 'admin2@vendor1.com', password: 'admin123', name: 'Vendor Admin 2' },
 ];
 
 export function AdminLoginPage() {

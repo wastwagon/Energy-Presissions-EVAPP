@@ -50,7 +50,7 @@ export function AdminDashboardPage() {
           Admin Dashboard
         </Typography>
         <Typography variant="body2" sx={{ color: '#64748b' }}>
-          Manage your tenant's charging operations and settings.
+          Manage your vendor's charging operations and settings.
         </Typography>
       </Box>
 
@@ -205,7 +205,7 @@ export function AdminDashboardPage() {
                 borderColor: 'warning.main',
               },
             }}
-            onClick={() => navigate('/tenant')}
+            onClick={() => navigate('/vendor')}
           >
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -224,10 +224,10 @@ export function AdminDashboardPage() {
                 </Box>
                 <Box>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Tenant Settings
+                    Vendor Settings
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Configure tenant details
+                    Configure vendor details
                   </Typography>
                 </Box>
               </Box>

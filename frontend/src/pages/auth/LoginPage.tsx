@@ -49,12 +49,12 @@ const SAMPLE_USERS = {
     { email: 'admin@evcharging.com', password: 'admin123', name: 'Super Admin' },
   ],
   Admin: [
-    { email: 'admin1@tenant1.com', password: 'admin123', name: 'Tenant Admin 1' },
-    { email: 'admin2@tenant1.com', password: 'admin123', name: 'Tenant Admin 2' },
+    { email: 'admin1@vendor1.com', password: 'admin123', name: 'Vendor Admin 1' },
+    { email: 'admin2@vendor1.com', password: 'admin123', name: 'Vendor Admin 2' },
   ],
   Customer: [
-    { email: 'customer1@tenant1.com', password: 'customer123', name: 'Customer 1' },
-    { email: 'customer2@tenant1.com', password: 'customer123', name: 'Customer 2' },
+    { email: 'customer1@vendor1.com', password: 'customer123', name: 'Customer 1' },
+    { email: 'customer2@vendor1.com', password: 'customer123', name: 'Customer 2' },
   ],
 };
 

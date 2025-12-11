@@ -32,22 +32,22 @@ export function OperationsDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
-  const [tenantName, setTenantName] = useState<string | null>(null);
+  const [vendorName, setVendorName] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is impersonating a tenant
+    // Check if user is impersonating a vendor
     const impersonating = localStorage.getItem('isImpersonating') === 'true';
-    const tenant = localStorage.getItem('currentTenantName');
+    const vendor = localStorage.getItem('currentVendorName');
     setIsImpersonating(impersonating);
-    setTenantName(tenant);
+    setVendorName(vendor);
   }, []);
 
   const handleExitImpersonation = () => {
-    if (window.confirm('Exit tenant view and return to Super Admin dashboard?')) {
-      localStorage.removeItem('currentTenantId');
-      localStorage.removeItem('currentTenantName');
+    if (window.confirm('Exit vendor view and return to Super Admin dashboard?')) {
+      localStorage.removeItem('currentVendorId');
+      localStorage.removeItem('currentVendorName');
       localStorage.removeItem('isImpersonating');
-      window.location.href = '/admin/tenants';
+      window.location.href = '/superadmin/vendors';
     }
   };
 
@@ -160,13 +160,13 @@ export function OperationsDashboard() {
               onClick={handleExitImpersonation}
               sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
             >
-              Exit Tenant View
+              Exit Vendor View
             </Button>
           )}
         </Box>
-        {isImpersonating && tenantName && (
+        {isImpersonating && vendorName && (
           <Chip
-            label={`Viewing as: ${tenantName}`}
+            label={`Viewing as: ${vendorName}`}
             color="info"
             size="small"
             sx={{ mt: 1 }}
