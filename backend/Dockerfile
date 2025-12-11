@@ -32,7 +32,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ postgresql-client
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install production dependencies only
 RUN npm ci --omit=dev
