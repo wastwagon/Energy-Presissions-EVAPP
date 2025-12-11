@@ -123,12 +123,12 @@ services:
   - type: web
     name: ev-billing-minio
     runtime: docker
-    image: minio/minio:latest
+    dockerfilePath: ./minio/Dockerfile
+    dockerContext: ./minio
     plan: starter
     envVars:
       - key: MINIO_ROOT_USER
         sync: false
       - key: MINIO_ROOT_PASSWORD
         sync: false
-    dockerCommand: server /data --console-address ":9001"
     healthCheckPath: /minio/health/live
