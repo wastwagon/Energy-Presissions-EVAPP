@@ -16,7 +16,8 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+# Remove package-lock.json to fix npm optional dependency bug with rollup on Alpine
+RUN rm -f package-lock.json && npm ci
 
 # Copy application code
 COPY . .
