@@ -1,3 +1,7 @@
+# Full render.yaml with all services (Redis, OCPP Gateway, MinIO)
+# Use this if you want the complete setup later
+# Rename this to render.yaml to use it
+
 databases:
   # PostgreSQL Database
   - name: ev-billing-postgres
@@ -6,6 +10,13 @@ databases:
     postgresMajorVersion: "15"
 
 services:
+  # Redis Cache
+  - type: redis
+    name: ev-billing-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
   # Backend API (NestJS)
   - type: web
     name: ev-billing-api
@@ -23,7 +34,10 @@ services:
           name: ev-billing-postgres
           property: connectionString
       - key: REDIS_URL
-        value: redis://localhost:6379  # Will update after adding Redis
+        fromService:
+          type: redis
+          name: ev-billing-redis
+          property: connectionString
       - key: MINIO_ENDPOINT
         value: ev-billing-minio.onrender.com
       - key: MINIO_PORT
@@ -64,3 +78,43 @@ services:
         value: https://ev-billing-api.onrender.com/api
       - key: REACT_APP_WS_URL
         value: wss://ev-billing-ocpp-gateway.onrender.com/ocpp
+
+  # OCPP Gateway (WebSocket Server)
+  - type: web
+    name: ev-billing-ocpp-gateway
+    runtime: docker
+    dockerfilePath: ./ocpp-gateway/Dockerfile
+    dockerContext: ./ocpp-gateway
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 9000
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ev-billing-redis
+          property: connectionString
+      - key: CSMS_API_URL
+        value: https://ev-billing-api.onrender.com
+      - key: SERVICE_TOKEN
+        sync: false
+      - key: LOG_RAW_FRAMES
+        value: false
+    healthCheckPath: /health
+
+  # MinIO Object Storage
+  - type: web
+    name: ev-billing-minio
+    runtime: docker
+    dockerfilePath: ./minio/Dockerfile
+    dockerContext: ./minio
+    plan: starter
+    envVars:
+      - key: MINIO_ROOT_USER
+        sync: false
+      - key: MINIO_ROOT_PASSWORD
+        sync: false
+    healthCheckPath: /minio/health/live
+
