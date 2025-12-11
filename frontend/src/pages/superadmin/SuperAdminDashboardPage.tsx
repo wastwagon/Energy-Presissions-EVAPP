@@ -253,7 +253,7 @@ export function SuperAdminDashboardPage() {
                 borderColor: 'warning.main',
               },
             }}
-            onClick={() => navigate('/superadmin/tenants')}
+            onClick={() => navigate('/superadmin/vendors')}
           >
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

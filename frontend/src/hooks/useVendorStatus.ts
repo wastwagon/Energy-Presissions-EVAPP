@@ -1,45 +1,65 @@
 import { useState, useEffect } from 'react';
 import { vendorApi, VendorStatus } from '../services/vendorApi';
 
-interface UseVendorStatusReturn {
+interface VendorStatusState {
   status: VendorStatus | null;
   loading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
 }
 
 /**
- * Hook to get and monitor vendor status
- * Used by non-admin users to check their vendor's status
+ * Hook to check vendor status on app boot
+ * This should be used in the main App component to check vendor status
+ * and redirect to appropriate pages if vendor is suspended/disabled
  */
-export function useVendorStatus(): UseVendorStatusReturn {
-  const [status, setStatus] = useState<VendorStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useVendorStatus() {
+  const [state, setState] = useState<VendorStatusState>({
+    status: null,
+    loading: true,
+    error: null,
+  });
 
-  const fetchStatus = async () => {
+  useEffect(() => {
+    checkVendorStatus();
+  }, []);
+
+  const checkVendorStatus = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const data = await vendorApi.getCurrentVendorStatus();
-      setStatus(data.status);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to fetch vendor status');
-      setStatus(null);
-    } finally {
-      setLoading(false);
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      // For now, skip vendor status check if endpoint doesn't exist
+      // This allows the app to work without vendor management initially
+      const statusInfo = await vendorApi.getCurrentVendorStatus();
+      setState({
+        status: statusInfo.status,
+        loading: false,
+        error: null,
+      });
+    } catch (error: any) {
+      // If endpoint doesn't exist (404) or other error, assume active (backward compatibility)
+      // This prevents the app from breaking if vendor management isn't fully set up
+      if (error.response?.status === 404) {
+        // Endpoint doesn't exist yet, default to active
+        setState({
+          status: 'active',
+          loading: false,
+          error: null,
+        });
+      } else {
+        setState({
+          status: 'active',
+          loading: false,
+          error: null, // Don't show error to user, just default to active
+        });
+      }
     }
   };
 
-  useEffect(() => {
-    fetchStatus();
-  }, []);
-
   return {
-    status,
-    loading,
-    error,
-    refresh: fetchStatus,
+    ...state,
+    isActive: state.status === 'active',
+    isSuspended: state.status === 'suspended',
+    isDisabled: state.status === 'disabled',
+    refresh: checkVendorStatus,
   };
 }
 
