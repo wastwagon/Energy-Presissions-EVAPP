@@ -1,3 +1,10 @@
+databases:
+  # PostgreSQL Database
+  - name: ev-billing-postgres
+    plan: starter
+    databaseName: ev_billing_db
+    postgresMajorVersion: "15"
+
 services:
   # Redis Cache
   - type: redis
@@ -18,7 +25,9 @@ services:
       - key: PORT
         value: 3000
       - key: DATABASE_URL
-        sync: false  # Set manually after creating PostgreSQL database
+        fromDatabase:
+          name: ev-billing-postgres
+          property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
