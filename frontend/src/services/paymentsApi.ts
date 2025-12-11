@@ -13,6 +13,13 @@ export interface Payment {
   createdAt: string;
 }
 
+export interface PaymentInitResponse {
+  authorizationUrl: string;
+  reference: string;
+  accessCode: string;
+  publicKey?: string;
+}
+
 export const paymentsApi = {
   /**
    * Get payments for current user
@@ -37,15 +44,39 @@ export const paymentsApi = {
   },
 
   /**
+   * Get Paystack public key
+   */
+  getPublicKey: async (): Promise<{ publicKey: string }> => {
+    const response = await api.get('/payments/paystack/public-key');
+    return response.data;
+  },
+
+  /**
    * Initialize Paystack payment
    */
-  initializePayment: async (invoiceId: number, email: string): Promise<{
-    authorizationUrl: string;
-    reference: string;
-    accessCode: string;
-  }> => {
+  initializePayment: async (invoiceId: number, email: string): Promise<PaymentInitResponse> => {
     const response = await api.post('/payments/initialize', {
       invoiceId,
+      email,
+    });
+    return response.data;
+  },
+
+  /**
+   * Process invoice payment via Paystack
+   */
+  processInvoicePayment: async (invoiceId: number, email: string): Promise<Payment> => {
+    const response = await api.post(`/payments/paystack/invoice/${invoiceId}`, {
+      email,
+    });
+    return response.data;
+  },
+
+  /**
+   * Process transaction payment via Paystack
+   */
+  processTransactionPayment: async (transactionId: number, email: string): Promise<Payment> => {
+    const response = await api.post(`/payments/paystack/transaction/${transactionId}`, {
       email,
     });
     return response.data;

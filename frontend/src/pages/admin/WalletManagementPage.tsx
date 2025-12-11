@@ -187,10 +187,10 @@ export function WalletManagementPage() {
                         <TableCell>
                           <Typography
                             variant="body2"
-                            color={user.balance >= 0 ? 'success.main' : 'error.main'}
+                            color={(user.balance ?? 0) >= 0 ? 'success.main' : 'error.main'}
                             fontWeight="bold"
                           >
-                            {formatCurrency(user.balance, user.currency)}
+                            {formatCurrency(user.balance ?? 0, user.currency)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -304,7 +304,7 @@ export function WalletManagementPage() {
                 User: {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Current Balance: {formatCurrency(selectedUser.balance, selectedUser.currency)}
+                Current Balance: {formatCurrency(selectedUser.balance ?? 0, selectedUser.currency)}
               </Typography>
             </Box>
           )}
@@ -355,7 +355,7 @@ export function WalletManagementPage() {
                 User: {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Current Balance: {formatCurrency(selectedUser.balance, selectedUser.currency)}
+                Current Balance: {formatCurrency(selectedUser.balance ?? 0, selectedUser.currency)}
               </Typography>
               <Alert severity="info" sx={{ mt: 1 }}>
                 Use positive amount to add, negative amount to subtract

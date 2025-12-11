@@ -12,7 +12,6 @@ import {
   Typography,
   Tabs,
   Tab,
-  Divider,
 } from '@mui/material';
 import { paymentsApi, PaymentInitResponse } from '../services/paymentsApi';
 import { walletApi, WalletBalance } from '../services/walletApi';

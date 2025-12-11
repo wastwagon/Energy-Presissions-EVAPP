@@ -112,8 +112,7 @@ export function SuperAdminDashboardLayout() {
     { text: 'Sessions', icon: <HistoryIcon />, path: '/superadmin/ops/sessions' },
     { text: 'Devices', icon: <EvStationIcon />, path: '/superadmin/ops/devices' },
     { text: 'Tenant Settings', icon: <BusinessIcon />, path: '/superadmin/tenant' },
-    { divider: true },
-    { text: 'Super Admin', icon: <SettingsIcon />, path: '/superadmin/settings' },
+    { text: 'Super Admin', icon: <SettingsIcon />, path: '/superadmin/settings', divider: true },
     { text: 'Wallets', icon: <AccountBalanceWalletIcon />, path: '/superadmin/wallets' },
     { text: 'Tenants', icon: <BusinessIcon />, path: '/superadmin/tenants' },
   ];

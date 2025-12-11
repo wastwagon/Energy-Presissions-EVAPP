@@ -177,8 +177,8 @@ export function AdminDashboard() {
         energyRate: tariffForm.energyRate ? parseFloat(tariffForm.energyRate) : undefined,
         timeRate: tariffForm.timeRate ? parseFloat(tariffForm.timeRate) : undefined,
         baseFee: tariffForm.baseFee ? parseFloat(tariffForm.baseFee) : undefined,
-        validFrom: tariffForm.validFrom ? new Date(tariffForm.validFrom) : undefined,
-        validTo: tariffForm.validTo ? new Date(tariffForm.validTo) : undefined,
+        validFrom: tariffForm.validFrom ? new Date(tariffForm.validFrom).toISOString() : undefined,
+        validTo: tariffForm.validTo ? new Date(tariffForm.validTo).toISOString() : undefined,
       };
 
       if (editingTariff) {
