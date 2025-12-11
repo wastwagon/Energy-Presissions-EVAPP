@@ -11,7 +11,7 @@ services:
     name: ev-billing-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: starter
     envVars:
       - key: NODE_ENV

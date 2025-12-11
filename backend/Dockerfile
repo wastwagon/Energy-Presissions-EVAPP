@@ -8,13 +8,16 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install ALL dependencies (including dev for build)
 RUN npm ci
 
 # Copy application code
-COPY . .
+COPY backend/ ./
+
+# Copy database folder from root
+COPY database/ ./database/
 
 # Build the application
 RUN npm run build
