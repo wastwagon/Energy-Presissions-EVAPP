@@ -173,3 +173,65 @@ export class TenantsController {
     return this.tenantsService.loginAsTenant(id, req.user?.id);
   }
 }
+
+// Tenant portal controller (for users to access their own tenant info)
+@ApiTags('Tenant Portal')
+@Controller('tenant')
+@UseGuards(JwtAuthGuard, TenantStatusGuard)
+@ApiBearerAuth()
+export class TenantPortalController {
+  constructor(
+    private readonly tenantsService: TenantsService,
+    private readonly tenantStatusService: TenantStatusService,
+  ) {}
+
+  @Get('status')
+  @ApiOperation({ summary: 'Get current user tenant status' })
+  @ApiResponse({ status: 200, description: 'Tenant status', schema: {
+    type: 'object',
+    properties: {
+      status: { type: 'string', enum: ['active', 'suspended', 'disabled'] },
+      reason: { type: 'string' },
+    },
+  }})
+  async getCurrentTenantStatus(@Request() req: any): Promise<{ status: TenantStatus; reason?: string }> {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('User has no tenant assigned', HttpStatus.BAD_REQUEST);
+    }
+    
+    const status = await this.tenantStatusService.getTenantStatus(tenantId);
+    return { status };
+  }
+}
+
+// Tenant portal controller (for non-admin users to access their own tenant info)
+@ApiTags('Tenant Portal')
+@Controller('tenant')
+@UseGuards(JwtAuthGuard, TenantStatusGuard)
+@ApiBearerAuth()
+export class TenantPortalController {
+  constructor(
+    private readonly tenantsService: TenantsService,
+    private readonly tenantStatusService: TenantStatusService,
+  ) {}
+
+  @Get('status')
+  @ApiOperation({ summary: 'Get current user tenant status' })
+  @ApiResponse({ status: 200, description: 'Tenant status', schema: {
+    type: 'object',
+    properties: {
+      status: { type: 'string', enum: ['active', 'suspended', 'disabled'] },
+      reason: { type: 'string' },
+    },
+  }})
+  async getCurrentTenantStatus(@Request() req: any): Promise<{ status: TenantStatus; reason?: string }> {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('User has no tenant assigned', HttpStatus.BAD_REQUEST);
+    }
+    
+    const status = await this.tenantStatusService.getTenantStatus(tenantId);
+    return { status };
+  }
+}

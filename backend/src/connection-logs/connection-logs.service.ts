@@ -118,16 +118,22 @@ export class ConnectionLogsService {
    * Get recent errors for debugging
    */
   async getRecentErrors(limit: number = 50): Promise<ConnectionLog[]> {
-    return this.connectionLogRepository.find({
-      where: [
-        { eventType: 'error' },
-        { eventType: 'connection_failed' },
-        { eventType: 'message_error' },
-      ],
-      order: { createdAt: 'DESC' },
-      take: limit,
-      relations: ['tenant'],
-    });
+    try {
+      return await this.connectionLogRepository.find({
+        where: [
+          { eventType: 'error' },
+          { eventType: 'connection_failed' },
+          { eventType: 'message_error' },
+        ],
+        order: { createdAt: 'DESC' },
+        take: limit,
+        // Removed relations to avoid potential issues if tenant doesn't exist
+        // relations: ['tenant'],
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching recent connection errors: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**

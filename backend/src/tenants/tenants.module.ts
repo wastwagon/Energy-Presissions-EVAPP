@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TenantsController } from './tenants.controller';
+import { TenantsController, TenantPortalController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 import { TenantStatusService } from './tenant-status.service';
 import { Tenant } from '../entities/tenant.entity';
@@ -20,7 +20,7 @@ import { TenantDisablement } from '../entities/tenant-disablement.entity';
       inject: [ConfigService],
     }),
   ],
-  controllers: [TenantsController],
+  controllers: [TenantsController, TenantPortalController],
   providers: [TenantsService, TenantStatusService],
   exports: [TenantsService, TenantStatusService],
 })
