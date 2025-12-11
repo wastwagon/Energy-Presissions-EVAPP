@@ -19,10 +19,11 @@ import { Tenant, TenantStatus } from '../entities/tenant.entity';
 import { TenantStatusGuard, SkipTenantCheck } from '../common/guards/tenant-status.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Tenants')
 @Controller('admin/tenants')
-@UseGuards(TenantStatusGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantStatusGuard, RolesGuard)
 @ApiBearerAuth()
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
