@@ -19,7 +19,7 @@ export interface CmsContent {
   content?: string;
   contentType: 'text' | 'html' | 'markdown' | 'image' | 'file';
   section?: string;
-  tenantId?: number;
+  vendorId?: number;
   isActive: boolean;
   metadata?: Record<string, any>;
   createdAt: string;
@@ -35,7 +35,7 @@ export interface BrandingAsset {
   mimeType?: string;
   width?: number;
   height?: number;
-  tenantId?: number;
+  vendorId?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -77,16 +77,16 @@ export const settingsApi = {
   },
 
   // CMS Content
-  getAllContent: async (tenantId?: number, section?: string): Promise<CmsContent[]> => {
+  getAllContent: async (vendorId?: number, section?: string): Promise<CmsContent[]> => {
     const params = new URLSearchParams();
-    if (tenantId) params.append('tenantId', tenantId.toString());
+    if (vendorId) params.append('vendorId', vendorId.toString());
     if (section) params.append('section', section);
     const response = await api.get(`/admin/settings/cms?${params.toString()}`);
     return response.data;
   },
 
-  getContent: async (key: string, tenantId?: number): Promise<CmsContent> => {
-    const params = tenantId ? `?tenantId=${tenantId}` : '';
+  getContent: async (key: string, vendorId?: number): Promise<CmsContent> => {
+    const params = vendorId ? `?vendorId=${vendorId}` : '';
     const response = await api.get(`/admin/settings/cms/${key}${params}`);
     return response.data;
   },
@@ -97,22 +97,22 @@ export const settingsApi = {
     content: string;
     contentType: CmsContent['contentType'];
     section?: string;
-    tenantId?: number;
+    vendorId?: number;
     metadata?: Record<string, any>;
   }): Promise<CmsContent> => {
     const response = await api.post('/admin/settings/cms', data);
     return response.data;
   },
 
-  deleteContent: async (key: string, tenantId?: number): Promise<void> => {
-    const params = tenantId ? `?tenantId=${tenantId}` : '';
+  deleteContent: async (key: string, vendorId?: number): Promise<void> => {
+    const params = vendorId ? `?vendorId=${vendorId}` : '';
     await api.delete(`/admin/settings/cms/${key}${params}`);
   },
 
   // Branding Assets
-  getAllAssets: async (tenantId?: number, assetType?: BrandingAsset['assetType']): Promise<BrandingAsset[]> => {
+  getAllAssets: async (vendorId?: number, assetType?: BrandingAsset['assetType']): Promise<BrandingAsset[]> => {
     const params = new URLSearchParams();
-    if (tenantId) params.append('tenantId', tenantId.toString());
+    if (vendorId) params.append('vendorId', vendorId.toString());
     if (assetType) params.append('assetType', assetType);
     const response = await api.get(`/admin/settings/branding?${params.toString()}`);
     return response.data;
@@ -120,9 +120,9 @@ export const settingsApi = {
 
   getActiveBrandingAsset: async (
     assetType: BrandingAsset['assetType'],
-    tenantId?: number,
+    vendorId?: number,
   ): Promise<BrandingAsset | null> => {
-    const params = tenantId ? `?tenantId=${tenantId}` : '';
+    const params = vendorId ? `?vendorId=${vendorId}` : '';
     const response = await api.get(`/admin/settings/branding/active/${assetType}${params}`);
     return response.data;
   },

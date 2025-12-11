@@ -8,10 +8,10 @@ import { HomePage } from './pages/HomePage';
 import { StationsPage } from './pages/StationsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { WalletManagementPage } from './pages/admin/WalletManagementPage';
-import { TenantManagementPage } from './pages/admin/TenantManagementPage';
-import { SuspendedPage } from './pages/tenant/SuspendedPage';
-import { DisabledPage } from './pages/tenant/DisabledPage';
-import { useTenantStatus } from './hooks/useTenantStatus';
+import { VendorManagementPage } from './pages/admin/VendorManagementPage';
+import { SuspendedPage } from './pages/vendor/SuspendedPage';
+import { DisabledPage } from './pages/vendor/DisabledPage';
+import { useVendorStatus } from './hooks/useVendorStatus';
 import { OperationsDashboard } from './pages/ops/OperationsDashboard';
 import { SessionsPage } from './pages/ops/SessionsPage';
 import { DevicesPage } from './pages/ops/DevicesPage';
@@ -23,7 +23,7 @@ import { AdminLoginPage } from './pages/auth/AdminLoginPage';
 import { UserLoginPage } from './pages/auth/UserLoginPage';
 import { CustomerDashboardPage } from './pages/user/CustomerDashboardPage';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
-import { TenantSettingsPage } from './pages/tenant/TenantSettingsPage';
+import { VendorSettingsPage } from './pages/vendor/VendorSettingsPage';
 import { AdminOperationsDashboard } from './pages/admin/AdminOperationsDashboard';
 import { AdminSessionsPage } from './pages/admin/AdminSessionsPage';
 import { AdminDevicesPage } from './pages/admin/AdminDevicesPage';
@@ -33,9 +33,9 @@ import { SuperAdminSessionsPage } from './pages/superadmin/SuperAdminSessionsPag
 import { SuperAdminDevicesPage } from './pages/superadmin/SuperAdminDevicesPage';
 import { SuperAdminDashboardPage } from './pages/superadmin/SuperAdminDashboardPage';
 
-// Component to check tenant status and redirect if needed
-function TenantStatusGuard({ children }: { children: React.ReactNode }) {
-  const { status, loading, isDisabled, isSuspended } = useTenantStatus();
+// Component to check vendor status and redirect if needed
+function VendorStatusGuard({ children }: { children: React.ReactNode }) {
+  const { status, loading, isDisabled, isSuspended } = useVendorStatus();
   const location = useLocation();
 
   useEffect(() => {
@@ -55,15 +55,15 @@ function TenantStatusGuard({ children }: { children: React.ReactNode }) {
   }, [status, loading, isDisabled, isSuspended, location.pathname]);
 
   // Don't block rendering while loading - allow app to render normally
-  // Tenant status check is non-blocking
+  // Vendor status check is non-blocking
   return <>{children}</>;
 }
 
 function App() {
   return (
-    <TenantStatusGuard>
+    <VendorStatusGuard>
       <Routes>
-        {/* Tenant status pages (no guard) */}
+        {/* Vendor status pages (no guard) */}
         <Route path="/suspended" element={<SuspendedPage />} />
         <Route path="/disabled" element={<DisabledPage />} />
 
@@ -72,7 +72,7 @@ function App() {
         <Route path="/login/super-admin" element={<SuperAdminLoginPage />} />
         <Route path="/login/admin" element={<AdminLoginPage />} />
         <Route path="/login/user" element={<UserLoginPage />} />
-        <Route path="/login/tenant" element={<AdminLoginPage />} />
+        <Route path="/login/vendor" element={<AdminLoginPage />} />
         <Route path="/register" element={<UserLoginPage />} />
 
         {/* Public routes */}
@@ -97,9 +97,9 @@ function App() {
               <Route path="wallets" element={<WalletManagementPage />} />
             </Route>
 
-            {/* Tenant routes - Admin layout (for Admin users) */}
-            <Route path="/tenant" element={<AdminDashboardLayout />}>
-              <Route index element={<TenantSettingsPage />} />
+            {/* Vendor routes - Admin layout (for Admin users) */}
+            <Route path="/vendor" element={<AdminDashboardLayout />}>
+              <Route index element={<VendorSettingsPage />} />
             </Route>
 
             {/* SuperAdmin routes - SuperAdmin layout - SuperAdmin-specific pages only */}
@@ -110,17 +110,17 @@ function App() {
               <Route path="ops/sessions/:id" element={<TransactionDetailPage />} />
               <Route path="ops/devices" element={<SuperAdminDevicesPage />} />
               <Route path="ops/devices/:id" element={<ChargePointDetailPage />} />
-              <Route path="tenant" element={<TenantSettingsPage />} />
+              <Route path="vendor" element={<VendorSettingsPage />} />
               <Route path="settings" element={<AdminDashboard />} />
               <Route path="wallets" element={<WalletManagementPage />} />
-              <Route path="tenants" element={<TenantManagementPage />} />
+              <Route path="vendors" element={<VendorManagementPage />} />
               <Route path="users" element={<UserManagementPage />} />
             </Route>
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </TenantStatusGuard>
+    </VendorStatusGuard>
   );
 }
 

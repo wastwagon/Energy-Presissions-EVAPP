@@ -44,7 +44,7 @@ export function SuperAdminDashboardLayout() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
-  const [tenantName, setTenantName] = useState<string | null>(null);
+  const [vendorName, setVendorName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -74,25 +74,25 @@ export function SuperAdminDashboardLayout() {
 
     // Check if impersonating
     const impersonating = localStorage.getItem('isImpersonating') === 'true';
-    const tenant = localStorage.getItem('currentTenantName');
+    const vendor = localStorage.getItem('currentVendorName');
     setIsImpersonating(impersonating);
-    setTenantName(tenant);
+    setVendorName(vendor);
   }, []);
 
   const handleExitImpersonation = () => {
-      if (window.confirm('Exit tenant view and return to Super Admin dashboard?')) {
-        localStorage.removeItem('currentTenantId');
-        localStorage.removeItem('currentTenantName');
+      if (window.confirm('Exit vendor view and return to Super Admin dashboard?')) {
+        localStorage.removeItem('currentVendorId');
+        localStorage.removeItem('currentVendorName');
         localStorage.removeItem('isImpersonating');
-        window.location.href = '/superadmin/tenants';
+        window.location.href = '/superadmin/vendors';
       }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('currentTenantId');
-    localStorage.removeItem('currentTenantName');
+    localStorage.removeItem('currentVendorId');
+    localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
     navigate('/login/super-admin');
   };
@@ -111,10 +111,10 @@ export function SuperAdminDashboardLayout() {
     { text: 'Operations', icon: <DashboardIcon />, path: '/superadmin/ops' },
     { text: 'Sessions', icon: <HistoryIcon />, path: '/superadmin/ops/sessions' },
     { text: 'Devices', icon: <EvStationIcon />, path: '/superadmin/ops/devices' },
-    { text: 'Tenant Settings', icon: <BusinessIcon />, path: '/superadmin/tenant' },
+    { text: 'Vendor Settings', icon: <BusinessIcon />, path: '/superadmin/vendor' },
     { text: 'Super Admin', icon: <SettingsIcon />, path: '/superadmin/settings', divider: true },
     { text: 'Wallets', icon: <AccountBalanceWalletIcon />, path: '/superadmin/wallets' },
-    { text: 'Tenants', icon: <BusinessIcon />, path: '/superadmin/tenants' },
+    { text: 'Vendors', icon: <BusinessIcon />, path: '/superadmin/vendors' },
   ];
 
   const drawer = (
@@ -221,9 +221,9 @@ export function SuperAdminDashboardLayout() {
             }}
           >
             Super Admin Dashboard
-            {isImpersonating && tenantName && (
+            {isImpersonating && vendorName && (
               <Chip
-                label={`Viewing: ${tenantName}`}
+                label={`Viewing: ${vendorName}`}
                 color="error"
                 size="small"
                 sx={{ fontWeight: 600 }}
@@ -238,7 +238,7 @@ export function SuperAdminDashboardLayout() {
               onClick={handleExitImpersonation}
               sx={{ mr: 2, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
             >
-              Exit Tenant View
+              Exit Vendor View
             </Button>
           )}
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>

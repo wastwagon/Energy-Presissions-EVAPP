@@ -22,7 +22,7 @@ export interface ConnectionLog {
   ipAddress?: string;
   userAgent?: string;
   requestUrl?: string;
-  tenantId?: number;
+  vendorId?: number;
   metadata?: Record<string, any>;
   createdAt: string;
 }

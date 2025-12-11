@@ -55,10 +55,10 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add tenant context header if impersonating
-    const tenantId = localStorage.getItem('currentTenantId');
-    if (tenantId) {
-      config.headers['X-Tenant-Id'] = tenantId;
+    // Add vendor context header if impersonating
+    const vendorId = localStorage.getItem('currentVendorId');
+    if (vendorId) {
+      config.headers['X-Vendor-Id'] = vendorId;
     }
     
     return config;
@@ -93,8 +93,8 @@ api.interceptors.response.use(
       // Clear auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      localStorage.removeItem('currentTenantId');
-      localStorage.removeItem('currentTenantName');
+      localStorage.removeItem('currentVendorId');
+      localStorage.removeItem('currentVendorName');
       localStorage.removeItem('isImpersonating');
       
       // Only redirect if not already on a login page

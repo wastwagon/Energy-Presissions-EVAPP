@@ -11,7 +11,7 @@ export interface User {
   currency?: string;
   status: string;
   emailVerified?: boolean;
-  tenantId?: number;
+  vendorId?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,7 +45,7 @@ export const usersApi = {
     phone?: string;
     accountType?: string;
     status?: string;
-    tenantId?: number;
+    vendorId?: number;
   }): Promise<User> => {
     const response = await api.post('/users', data);
     return response.data;

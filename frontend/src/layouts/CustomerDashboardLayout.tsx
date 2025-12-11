@@ -57,8 +57,8 @@ export function CustomerDashboardLayout() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('currentTenantId');
-    localStorage.removeItem('currentTenantName');
+    localStorage.removeItem('currentVendorId');
+    localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
     navigate('/login/user');
   };

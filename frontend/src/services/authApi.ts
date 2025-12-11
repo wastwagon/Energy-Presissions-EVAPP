@@ -8,7 +8,7 @@ export interface LoginResponse {
     firstName: string;
     lastName: string;
     accountType: string;
-    tenantId: number;
+    vendorId: number;
   };
 }
 
@@ -51,8 +51,8 @@ export const authApi = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('currentTenantId');
-    localStorage.removeItem('currentTenantName');
+    localStorage.removeItem('currentVendorId');
+    localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
   },
 };

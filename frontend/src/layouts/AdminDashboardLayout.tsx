@@ -79,8 +79,8 @@ export function AdminDashboardLayout() {
     
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('currentTenantId');
-    localStorage.removeItem('currentTenantName');
+    localStorage.removeItem('currentVendorId');
+    localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
     
     if (accountType === 'SuperAdmin') {
@@ -104,7 +104,7 @@ export function AdminDashboardLayout() {
     { text: 'Operations', icon: <DashboardIcon />, path: '/admin/ops' },
     { text: 'Sessions', icon: <HistoryIcon />, path: '/admin/ops/sessions' },
     { text: 'Devices', icon: <EvStationIcon />, path: '/admin/ops/devices' },
-    { text: 'Tenant Settings', icon: <BusinessIcon />, path: '/tenant' },
+    { text: 'Vendor Settings', icon: <BusinessIcon />, path: '/vendor' },
     { text: 'Wallets', icon: <AccountBalanceWalletIcon />, path: '/admin/wallets' },
   ];
 
