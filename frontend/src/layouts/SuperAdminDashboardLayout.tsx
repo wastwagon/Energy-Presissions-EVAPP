@@ -134,15 +134,20 @@ export function SuperAdminDashboardLayout() {
         </Typography>
       </Box>
       <List sx={{ flex: 1, pt: 2, px: 1.5 }}>
-        {menuItems.map((item, index) => (
-          item.divider ? (
-            <Divider key={`divider-${index}`} sx={{ my: 1.5, borderColor: 'divider' }} />
-          ) : item.path ? (
+        {menuItems.map((item, index) => {
+          if (item.divider) {
+            return <Divider key={`divider-${index}`} sx={{ my: 1.5, borderColor: 'divider' }} />;
+          }
+          if (!item.path) {
+            return null;
+          }
+          const path = item.path;
+          return (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={Link}
-                to={item.path}
-                selected={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
+                to={path}
+                selected={location.pathname === path || location.pathname.startsWith(path + '/')}
                 sx={{
                   borderRadius: 2,
                   py: 1.25,
@@ -166,7 +171,7 @@ export function SuperAdminDashboardLayout() {
                 <ListItemIcon
                   sx={{
                     minWidth: 40,
-                    color: location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 'white' : 'inherit',
+                    color: location.pathname === path || location.pathname.startsWith(path + '/') ? 'white' : 'inherit',
                   }}
                 >
                   {item.icon}
@@ -174,13 +179,13 @@ export function SuperAdminDashboardLayout() {
                 <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{
-                    fontWeight: location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 600 : 500,
+                    fontWeight: location.pathname === path || location.pathname.startsWith(path + '/') ? 600 : 500,
                   }}
                 />
                 </ListItemButton>
               </ListItem>
-          ) : null
-        ))}
+          );
+        })}
       </List>
     </Box>
   );
