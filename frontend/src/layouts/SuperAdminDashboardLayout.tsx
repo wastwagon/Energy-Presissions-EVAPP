@@ -141,7 +141,8 @@ export function SuperAdminDashboardLayout() {
           if (!item.path || !item.text || !item.icon) {
             return null;
           }
-          const path: string = item.path;
+          // TypeScript narrowing: we've checked path exists above
+          const path = item.path as string;
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
