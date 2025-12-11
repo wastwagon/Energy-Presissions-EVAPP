@@ -127,8 +127,8 @@ export class ConnectionLogsService {
         ],
         order: { createdAt: 'DESC' },
         take: limit,
-        // Removed relations to avoid potential issues if tenant doesn't exist
-        // relations: ['tenant'],
+        // Removed relations to avoid potential issues if vendor doesn't exist
+        // relations: ['vendor'],
       });
     } catch (error) {
       this.logger.error(`Error fetching recent connection errors: ${error.message}`, error.stack);

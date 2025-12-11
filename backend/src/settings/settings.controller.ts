@@ -85,11 +85,11 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get all CMS content' })
   @ApiResponse({ status: 200, description: 'List of CMS content', type: [CmsContent] })
   async getAllContent(
-    @Query('tenantId') tenantId?: number,
+    @Query('vendorId') vendorId?: number,
     @Query('section') section?: string,
   ): Promise<CmsContent[]> {
     return this.settingsService.getAllContent(
-      tenantId ? parseInt(tenantId.toString()) : undefined,
+      vendorId ? parseInt(vendorId.toString()) : undefined,
       section,
     );
   }
@@ -99,7 +99,7 @@ export class SettingsController {
   @ApiResponse({ status: 200, description: 'CMS content', type: CmsContent })
   async getContent(
     @Param('key') key: string,
-    @Query('tenantId') tenantId?: number,
+    @Query('vendorId') vendorId?: number,
   ): Promise<CmsContent> {
     return this.settingsService.getContent(key, tenantId ? parseInt(tenantId.toString()) : undefined);
   }
@@ -125,7 +125,7 @@ export class SettingsController {
       body.content,
       body.contentType,
       body.section,
-      body.tenantId,
+      body.vendorId,
       body.metadata,
     );
   }
@@ -135,7 +135,7 @@ export class SettingsController {
   @ApiResponse({ status: 204, description: 'Content deleted' })
   async deleteContent(
     @Param('key') key: string,
-    @Query('tenantId') tenantId?: number,
+    @Query('vendorId') vendorId?: number,
   ): Promise<void> {
     return this.settingsService.deleteContent(key, tenantId ? parseInt(tenantId.toString()) : undefined);
   }
@@ -145,11 +145,11 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get all branding assets' })
   @ApiResponse({ status: 200, description: 'List of branding assets', type: [BrandingAsset] })
   async getAllAssets(
-    @Query('tenantId') tenantId?: number,
+    @Query('vendorId') vendorId?: number,
     @Query('assetType') assetType?: AssetType,
   ): Promise<BrandingAsset[]> {
     return this.settingsService.getAllAssets(
-      tenantId ? parseInt(tenantId.toString()) : undefined,
+      vendorId ? parseInt(vendorId.toString()) : undefined,
       assetType,
     );
   }
@@ -159,11 +159,11 @@ export class SettingsController {
   @ApiResponse({ status: 200, description: 'Active branding asset', type: BrandingAsset })
   async getActiveAsset(
     @Param('assetType') assetType: AssetType,
-    @Query('tenantId') tenantId?: number,
+    @Query('vendorId') vendorId?: number,
   ): Promise<BrandingAsset | null> {
     return this.settingsService.getActiveAsset(
       assetType,
-      tenantId ? parseInt(tenantId.toString()) : undefined,
+      vendorId ? parseInt(vendorId.toString()) : undefined,
     );
   }
 
@@ -176,7 +176,7 @@ export class SettingsController {
       properties: {
         file: { type: 'string', format: 'binary' },
         assetType: { type: 'string', enum: ['logo', 'favicon', 'banner', 'background', 'icon'] },
-        tenantId: { type: 'number' },
+        vendorId: { type: 'number' },
       },
       required: ['file', 'assetType'] as string[],
     },
@@ -185,7 +185,7 @@ export class SettingsController {
   @ApiResponse({ status: 201, description: 'Asset uploaded', type: BrandingAsset })
   async uploadAsset(
     @UploadedFile() file: any,
-    @Body() body: { assetType: AssetType; tenantId?: number },
+    @Body() body: { assetType: AssetType; vendorId?: number },
   ): Promise<BrandingAsset> {
     // TODO: Upload file to MinIO and get file path
     // For now, return a placeholder
