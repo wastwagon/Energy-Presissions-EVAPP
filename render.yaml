@@ -22,8 +22,9 @@ services:
         fromDatabase:
           name: ev-billing-postgres
           property: connectionString
-      - key: REDIS_URL
-        value: redis://localhost:6379
+      # Redis is optional - app will use in-memory cache if not provided
+      # - key: REDIS_URL
+      #   value: redis://your-redis-url:6379
       - key: MINIO_ENDPOINT
         value: s3.amazonaws.com
       - key: MINIO_PORT
