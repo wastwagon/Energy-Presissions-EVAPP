@@ -23,11 +23,16 @@ class WebSocketService {
   private wsUrl: string;
 
   constructor() {
-    // Use WebSocket URL from environment or default
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const host = window.location.hostname;
-    const port = window.location.port || (protocol === 'https:' ? '443' : '80');
-    this.wsUrl = `${protocol}//${host}:${port}`;
+    // Use WebSocket URL from environment variable or construct from API URL
+    if (import.meta.env.VITE_WS_URL) {
+      this.wsUrl = import.meta.env.VITE_WS_URL;
+    } else {
+      // Fallback: construct from current location (for local development)
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.hostname;
+      const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+      this.wsUrl = `${protocol}//${host}:${port}`;
+    }
   }
 
   connect(): void {
@@ -39,7 +44,12 @@ class WebSocketService {
     console.log(`Connecting to WebSocket: ${this.wsUrl}`);
 
     try {
-      this.socket = io(this.wsUrl, {
+      // Ensure we're using wss:// for production HTTPS
+      const wsUrl = this.wsUrl.startsWith('http') 
+        ? this.wsUrl.replace('http://', 'ws://').replace('https://', 'wss://')
+        : this.wsUrl;
+      
+      this.socket = io(wsUrl, {
         path: '/ws',
         transports: ['websocket', 'polling'],
         reconnection: true,

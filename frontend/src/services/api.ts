@@ -4,12 +4,12 @@ import axios from 'axios';
 // When running in browser, use relative URL to go through NGINX proxy
 // When running standalone, use the full URL
 const getApiUrl = () => {
-  // Check for explicit VITE_API_URL
+  // Check for explicit VITE_API_URL (production)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // If running in browser, determine API URL based on current location
+  // If running in browser, determine API URL based on current location (development)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const port = window.location.port;
