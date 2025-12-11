@@ -138,10 +138,10 @@ export function SuperAdminDashboardLayout() {
           if (item.divider) {
             return <Divider key={`divider-${index}`} sx={{ my: 1.5, borderColor: 'divider' }} />;
           }
-          if (!item.path) {
+          if (!item.path || !item.text || !item.icon) {
             return null;
           }
-          const path = item.path;
+          const path: string = item.path;
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
