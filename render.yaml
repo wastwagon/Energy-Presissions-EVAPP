@@ -22,6 +22,8 @@ services:
         fromDatabase:
           name: ev-billing-postgres
           property: connectionString
+      - key: FRONTEND_URL
+        value: https://ev-billing-frontend.onrender.com
       # Redis is optional - app will use in-memory cache if not provided
       # - key: REDIS_URL
       #   value: redis://your-redis-url:6379
