@@ -21,9 +21,14 @@ export class TenantsService {
    * Get all tenants
    */
   async findAll(): Promise<Tenant[]> {
-    return this.tenantRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+    try {
+      return await this.tenantRepository.find({
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching all tenants: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
