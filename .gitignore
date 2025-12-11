@@ -73,6 +73,9 @@ temp/
 
 # Package manager
 package-lock.json
+# Allow package-lock.json in backend and frontend for production builds
+!backend/package-lock.json
+!frontend/package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
