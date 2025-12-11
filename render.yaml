@@ -11,6 +11,7 @@ services:
     name: ev-billing-redis
     plan: starter
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []  # Allow all IPs (empty array means no restrictions)
 
   # Backend API (NestJS)
   - type: web
@@ -54,7 +55,6 @@ services:
           type: web
           name: ev-billing-ocpp-gateway
           property: host
-        value: https://ev-billing-ocpp-gateway.onrender.com
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
@@ -64,7 +64,6 @@ services:
           type: web
           name: ev-billing-api
           property: host
-        value: https://ev-billing-api.onrender.com/api/payments/verify
     healthCheckPath: /health
 
   # Frontend (React)
@@ -82,13 +81,13 @@ services:
           type: web
           name: ev-billing-api
           property: host
-        value: https://ev-billing-api.onrender.com/api
       - key: REACT_APP_WS_URL
         fromService:
           type: web
           name: ev-billing-ocpp-gateway
           property: host
-        value: wss://ev-billing-ocpp-gateway.onrender.com/ocpp
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
 
   # OCPP Gateway (WebSocket Server)
   - type: web
@@ -112,7 +111,6 @@ services:
           type: web
           name: ev-billing-api
           property: host
-        value: https://ev-billing-api.onrender.com
       - key: SERVICE_TOKEN
         sync: false
       - key: LOG_RAW_FRAMES
