@@ -37,8 +37,9 @@ RUN npm ci --omit=dev
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy database migration files
+# Copy database migration files and make script executable
 COPY database/ ./database/
+RUN chmod +x database/run-migrations.sh || true
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
