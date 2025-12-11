@@ -9,7 +9,7 @@ import { IdTag } from '../entities/id-tag.entity';
 import { BillingService } from '../billing/billing.service';
 import { ReservationsService } from '../reservations/reservations.service';
 import { LocalAuthListService } from '../local-auth-list/local-auth-list.service';
-import { TenantsService } from '../tenants/tenants.service';
+import { VendorsService } from '../vendors/vendors.service';
 import { ConnectionLogsService } from '../connection-logs/connection-logs.service';
 import { ConnectionEventType, ConnectionStatus } from '../entities/connection-log.entity';
 
@@ -33,7 +33,7 @@ export class InternalService {
     private billingService: BillingService,
     private reservationsService: ReservationsService,
     private localAuthListService: LocalAuthListService,
-    private tenantsService: TenantsService,
+    private vendorsService: VendorsService,
     private connectionLogsService: ConnectionLogsService,
   ) {}
 
@@ -118,10 +118,10 @@ export class InternalService {
   return chargePoint;
 }
 
-  async getChargePointTenant(chargePointId: string): Promise<{ id: number; chargePointId: string; tenantId: number }> {
+  async getChargePointVendor(chargePointId: string): Promise<{ id: number; chargePointId: string; vendorId: number }> {
     const chargePoint = await this.chargePointRepository.findOne({
       where: { chargePointId },
-      select: ['id', 'chargePointId', 'tenantId'],
+      select: ['id', 'chargePointId', 'vendorId'],
     });
 
     if (!chargePoint) {
@@ -131,12 +131,12 @@ export class InternalService {
     return {
       id: chargePoint.id,
       chargePointId: chargePoint.chargePointId,
-      tenantId: chargePoint.tenantId || 1, // Default to tenant 1 if not set
+      vendorId: chargePoint.vendorId || 1, // Default to vendor 1 if not set
     };
   }
 
-  async getTenantStatus(tenantId: number): Promise<{ status: string; reason?: string; effectiveAt: Date }> {
-    return this.tenantsService.getStatus(tenantId);
+  async getVendorStatus(vendorId: number): Promise<{ status: string; reason?: string; effectiveAt: Date }> {
+    return this.vendorsService.getStatus(vendorId);
   }
 
   async getChargePointStatus(chargePointId: string) {
@@ -490,7 +490,7 @@ export class InternalService {
     ipAddress?: string;
     userAgent?: string;
     requestUrl?: string;
-    tenantId?: number;
+    vendorId?: number;
     metadata?: Record<string, any>;
   }) {
     return this.connectionLogsService.logEvent({

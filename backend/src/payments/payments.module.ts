@@ -8,14 +8,14 @@ import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
 import { BillingModule } from '../billing/billing.module';
 import { WalletModule } from '../wallet/wallet.module';
-import { TenantsModule } from '../tenants/tenants.module';
+import { VendorsModule } from '../vendors/vendors.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment, Invoice, Transaction, User]),
     BillingModule,
     forwardRef(() => WalletModule),
-    TenantsModule,
+    VendorsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

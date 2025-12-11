@@ -17,8 +17,8 @@ import { LocalAuthListVersion } from '../entities/local-auth-list-version.entity
 import { ChargingProfile } from '../entities/charging-profile.entity';
 import { FirmwareJob } from '../entities/firmware-job.entity';
 import { DiagnosticsJob } from '../entities/diagnostics-job.entity';
-import { Tenant } from '../entities/tenant.entity';
-import { TenantDisablement } from '../entities/tenant-disablement.entity';
+import { Vendor } from '../entities/vendor.entity';
+import { VendorDisablement } from '../entities/vendor-disablement.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { CmsContent } from '../entities/cms-content.entity';
 import { BrandingAsset } from '../entities/branding-asset.entity';
@@ -49,8 +49,8 @@ import { ConnectionStatistics } from '../entities/connection-statistics.entity';
           ChargingProfile,
           FirmwareJob,
           DiagnosticsJob,
-    Tenant,
-    TenantDisablement,
+    Vendor,
+    VendorDisablement,
     SystemSetting,
     CmsContent,
     BrandingAsset,

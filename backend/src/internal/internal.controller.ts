@@ -31,14 +31,14 @@ export class InternalController implements OnModuleInit {
     return this.internalService.getChargePointStatus(id);
   }
 
-  @Get('charge-points/:id/tenant')
-  async getChargePointTenant(@Param('id') id: string) {
-    return this.internalService.getChargePointTenant(id);
+  @Get('charge-points/:id/vendor')
+  async getChargePointVendor(@Param('id') id: string) {
+    return this.internalService.getChargePointVendor(id);
   }
 
-  @Get('tenants/:id/status')
-  async getTenantStatus(@Param('id') id: string) {
-    return this.internalService.getTenantStatus(parseInt(id));
+  @Get('vendors/:id/status')
+  async getVendorStatus(@Param('id') id: string) {
+    return this.internalService.getVendorStatus(parseInt(id));
   }
 
   @Post('transactions')

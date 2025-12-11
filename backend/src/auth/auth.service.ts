@@ -43,7 +43,7 @@ export class AuthService {
       firstName: string;
       lastName: string;
       accountType: string;
-      tenantId: number;
+      vendorId: number;
     };
   }> {
     const user = await this.validateUser(email, password);
@@ -56,7 +56,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       accountType: user.accountType,
-      tenantId: user.tenantId,
+      vendorId: user.vendorId,
     };
 
     return {
@@ -67,7 +67,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         accountType: user.accountType,
-        tenantId: user.tenantId,
+        vendorId: user.vendorId,
       },
     };
   }
@@ -78,7 +78,7 @@ export class AuthService {
     firstName?: string;
     lastName?: string;
     phone?: string;
-    tenantId?: number;
+    vendorId?: number;
   }): Promise<User> {
     // Check if user already exists
     const existingUser = await this.usersService.findByEmail(data.email);
@@ -93,7 +93,7 @@ export class AuthService {
       lastName: data.lastName,
       phone: data.phone,
       accountType: 'Customer',
-      tenantId: data.tenantId || 1,
+      vendorId: data.vendorId || 1,
       balance: 0,
       currency: 'GHS',
       status: 'Active',

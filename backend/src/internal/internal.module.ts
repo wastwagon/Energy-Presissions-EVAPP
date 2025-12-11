@@ -13,7 +13,7 @@ import { CommandQueueService } from '../services/command-queue.service';
 import { ChargePointsModule } from '../charge-points/charge-points.module';
 import { ReservationsModule } from '../reservations/reservations.module';
 import { LocalAuthListModule } from '../local-auth-list/local-auth-list.module';
-import { TenantsModule } from '../tenants/tenants.module';
+import { VendorsModule } from '../vendors/vendors.module';
 import { ConnectionLogsModule } from '../connection-logs/connection-logs.module';
 
 @Module({
@@ -30,7 +30,7 @@ import { ConnectionLogsModule } from '../connection-logs/connection-logs.module'
     forwardRef(() => ChargePointsModule),
     ReservationsModule,
     LocalAuthListModule,
-    TenantsModule,
+    VendorsModule,
     ConnectionLogsModule,
   ],
   controllers: [InternalController],

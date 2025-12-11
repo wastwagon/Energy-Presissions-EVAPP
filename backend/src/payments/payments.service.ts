@@ -10,7 +10,7 @@ import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
 import { BillingService } from '../billing/billing.service';
 import { WalletService } from '../wallet/wallet.service';
-import { TenantStatusService } from '../tenants/tenant-status.service';
+import { VendorStatusService } from '../vendors/vendor-status.service';
 
 interface PaystackInitializeResponse {
   status: boolean;
@@ -66,7 +66,7 @@ export class PaymentsService {
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
     private configService: ConfigService,
-    private tenantStatusService: TenantStatusService,
+    private vendorStatusService: VendorStatusService,
   ) {
     this.paystackSecretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY') || '';
     this.paystackPublicKey = this.configService.get<string>('PAYSTACK_PUBLIC_KEY') || '';
@@ -477,19 +477,19 @@ export class PaymentsService {
   }
 
   /**
-   * Get or create walk-in user for a tenant
+   * Get or create walk-in user for a vendor
    */
   private async getOrCreateWalkInUser(chargePointId: string): Promise<User> {
-    // For now, use default tenant (1)
-    // In production, resolve tenant from charge point
-    const tenantId = 1;
+    // For now, use default vendor (1)
+    // In production, resolve vendor from charge point
+    const vendorId = 1;
 
-    // Try to find existing walk-in user for tenant
+    // Try to find existing walk-in user for vendor
     const walkInUser = await this.userRepository.findOne({
       where: { 
-        email: `walkin@tenant${tenantId}.evcharging.com`,
+        email: `walkin@vendor${vendorId}.evcharging.com`,
         accountType: 'WalkIn',
-        tenantId,
+        vendorId,
       },
     });
 
@@ -499,7 +499,7 @@ export class PaymentsService {
 
     // Create new walk-in user
     const newWalkInUser = this.userRepository.create({
-      email: `walkin@tenant${tenantId}.evcharging.com`,
+      email: `walkin@vendor${vendorId}.evcharging.com`,
       passwordHash: await bcrypt.hash('walkin123', 10), // Not used for login
       firstName: 'Walk-In',
       lastName: 'Customer',
@@ -508,7 +508,7 @@ export class PaymentsService {
       currency: 'GHS',
       status: 'Active',
       emailVerified: false,
-      tenantId,
+      vendorId,
     });
 
     return this.userRepository.save(newWalkInUser);

@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Connector } from './connector.entity';
 import { Transaction } from './transaction.entity';
-import { Tenant } from './tenant.entity';
+import { Vendor } from './vendor.entity';
 
 @Entity('charge_points')
 export class ChargePoint {
@@ -20,12 +20,12 @@ export class ChargePoint {
   @Column({ name: 'charge_point_id', unique: true, length: 50 })
   chargePointId: string;
 
-  @ManyToOne(() => Tenant, (tenant) => tenant.chargePoints)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: Tenant;
+  @ManyToOne(() => Vendor, (vendor) => vendor.chargePoints)
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor;
 
-  @Column({ name: 'tenant_id' })
-  tenantId: number;
+  @Column({ name: 'vendor_id' })
+  vendorId: number;
 
   @Column({ length: 100, nullable: true })
   vendor: string;

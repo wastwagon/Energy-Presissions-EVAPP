@@ -18,13 +18,13 @@ import { SmartChargingModule } from './smart-charging/smart-charging.module';
 import { FirmwareModule } from './firmware/firmware.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { WebSocketGateway } from './websocket/websocket.gateway';
-import { TenantsModule } from './tenants/tenants.module';
+import { VendorsModule } from './vendors/vendors.module';
 import { SettingsModule } from './settings/settings.module';
 import { TariffsModule } from './tariffs/tariffs.module';
 import { ConnectionLogsModule } from './connection-logs/connection-logs.module';
 import { SeedService } from './database/seed.service';
 import { User } from './entities/user.entity';
-import { Tenant } from './entities/tenant.entity';
+import { Vendor } from './entities/vendor.entity';
 
 @Module({
   imports: [
@@ -33,7 +33,7 @@ import { Tenant } from './entities/tenant.entity';
       envFilePath: '.env',
     }),
     DatabaseModule,
-    TypeOrmModule.forFeature([User, Tenant]), // For seed service
+    TypeOrmModule.forFeature([User, Vendor]), // For seed service
     AuthModule,
     UsersModule,
     ChargePointsModule,
@@ -46,7 +46,7 @@ import { Tenant } from './entities/tenant.entity';
     SmartChargingModule,
     FirmwareModule,
     DiagnosticsModule,
-    TenantsModule,
+    VendorsModule,
     SettingsModule,
     TariffsModule,
     ConnectionLogsModule,

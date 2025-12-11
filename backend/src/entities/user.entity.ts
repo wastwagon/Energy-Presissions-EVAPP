@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { IdTag } from './id-tag.entity';
 import { Transaction } from './transaction.entity';
-import { Tenant } from './tenant.entity';
+import { Vendor } from './vendor.entity';
 
 @Entity('users')
 export class User {
@@ -20,12 +20,12 @@ export class User {
   @Column({ unique: true, length: 255 })
   email: string;
 
-  @ManyToOne(() => Tenant, (tenant) => tenant.users)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: Tenant;
+  @ManyToOne(() => Vendor, (vendor) => vendor.users)
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor;
 
-  @Column({ name: 'tenant_id' })
-  tenantId: number;
+  @Column({ name: 'vendor_id' })
+  vendorId: number;
 
   @Column({ name: 'password_hash', length: 255 })
   passwordHash: string;

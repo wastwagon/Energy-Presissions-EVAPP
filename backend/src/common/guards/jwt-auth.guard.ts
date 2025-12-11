@@ -28,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
         id: payload.sub,
         email: payload.email,
         accountType: payload.accountType,
-        tenantId: payload.tenantId,
+        vendorId: payload.vendorId || payload.tenantId, // Support both for backward compatibility
       };
       
       return true;

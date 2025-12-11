@@ -4,7 +4,7 @@ import { Repository, LessThan } from 'typeorm';
 import { PendingCommand, CommandStatus } from '../entities/pending-command.entity';
 import { ChargePointsService } from '../charge-points/charge-points.service';
 import { ConfigService } from '@nestjs/config';
-import { TenantStatusService } from '../tenants/tenant-status.service';
+import { VendorStatusService } from '../vendors/vendor-status.service';
 import axios from 'axios';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class CommandQueueService {
     private pendingCommandRepository: Repository<PendingCommand>,
     private chargePointsService: ChargePointsService,
     private configService: ConfigService,
-    private tenantStatusService: TenantStatusService,
+    private vendorStatusService: VendorStatusService,
   ) {
     this.ocppGatewayUrl = process.env.OCPP_GATEWAY_URL || 'http://ocpp-gateway:9000';
   }
@@ -92,20 +92,20 @@ export class CommandQueueService {
 
   /**
    * Process pending commands for a charge point (called when it comes online)
-   * Skips commands if tenant is disabled or suspended
+   * Skips commands if vendor is disabled or suspended
    */
   async processPendingCommands(chargePointId: string): Promise<number> {
-    // Get charge point to resolve tenantId
+    // Get charge point to resolve vendorId
     try {
       const chargePoint = await this.chargePointsService.findOne(chargePointId);
       
-      // Check tenant status
-      if (chargePoint.tenantId) {
-        const tenantStatus = await this.tenantStatusService.getTenantStatus(chargePoint.tenantId);
+      // Check vendor status
+      if (chargePoint.vendorId) {
+        const vendorStatus = await this.vendorStatusService.getVendorStatus(chargePoint.vendorId);
         
-        if (tenantStatus === 'disabled') {
+        if (vendorStatus === 'disabled') {
           this.logger.warn(
-            `Skipping pending commands for charge point ${chargePointId} - tenant ${chargePoint.tenantId} is disabled`,
+            `Skipping pending commands for charge point ${chargePointId} - vendor ${chargePoint.vendorId} is disabled`,
           );
           // Cancel all pending commands
           await this.pendingCommandRepository.update(
@@ -115,9 +115,9 @@ export class CommandQueueService {
           return 0;
         }
         
-        if (tenantStatus === 'suspended') {
+        if (vendorStatus === 'suspended') {
           this.logger.warn(
-            `Skipping pending commands for charge point ${chargePointId} - tenant ${chargePoint.tenantId} is suspended`,
+            `Skipping pending commands for charge point ${chargePointId} - vendor ${chargePoint.vendorId} is suspended`,
           );
           // Cancel all pending commands
           await this.pendingCommandRepository.update(
@@ -128,8 +128,8 @@ export class CommandQueueService {
         }
       }
     } catch (error) {
-      this.logger.error(`Error checking tenant status for charge point ${chargePointId}:`, error);
-      // Continue processing if tenant check fails (backward compatibility)
+      this.logger.error(`Error checking vendor status for charge point ${chargePointId}:`, error);
+      // Continue processing if vendor check fails (backward compatibility)
     }
 
     const pendingCommands = await this.pendingCommandRepository.find({
