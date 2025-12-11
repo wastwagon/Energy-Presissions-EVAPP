@@ -137,7 +137,7 @@ export function SuperAdminDashboardLayout() {
         {menuItems.map((item, index) => (
           item.divider ? (
             <Divider key={`divider-${index}`} sx={{ my: 1.5, borderColor: 'divider' }} />
-          ) : (
+          ) : item.path ? (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={Link}
@@ -177,9 +177,9 @@ export function SuperAdminDashboardLayout() {
                     fontWeight: location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 600 : 500,
                   }}
                 />
-              </ListItemButton>
-            </ListItem>
-          )
+                </ListItemButton>
+              </ListItem>
+          ) : null
         ))}
       </List>
     </Box>
