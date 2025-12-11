@@ -37,8 +37,9 @@ RUN npm ci --omit=dev
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy database migration files and make script executable
-COPY database/ ./database/
+# Copy database migration files from repository root
+# Note: dockerContext is ./backend, so we need to go up one level
+COPY ../database/ ./database/
 RUN chmod +x database/run-migrations.sh || true
 
 # Create non-root user
