@@ -1,227 +1,158 @@
-# Render Blueprint Deployment Guide
+# Render Deployment Guide
 
-This guide will help you deploy your EV Charging Billing System to Render using Blueprint.
+## ✅ What's Pre-filled in `render.yaml`
 
-## Prerequisites
+The following environment variables are **automatically configured** in `render.yaml`:
 
-1. ✅ GitHub repository created (wastwagon/Energy-Presissions-EVAPP)
-2. ✅ GitHub Desktop installed
-3. ✅ Render account created
-4. ✅ `render.yaml` file created (in root directory)
+### Backend API (`ev-billing-api`):
+- ✅ `NODE_ENV` = `production`
+- ✅ `PORT` = `3000`
+- ✅ `DATABASE_URL` = (automatically from PostgreSQL)
+- ✅ `REDIS_URL` = `redis://localhost:6379`
+- ✅ `MINIO_ENDPOINT` = `s3.amazonaws.com`
+- ✅ `MINIO_PORT` = `443`
+- ✅ `MINIO_EXTERNAL_PORT` = `443`
+- ✅ `MINIO_ACCESS_KEY` = `minioadmin` (⚠️ Change in production!)
+- ✅ `MINIO_SECRET_KEY` = `minioadmin123` (⚠️ Change in production!)
+- ✅ `MINIO_BUCKET` = `ev-billing`
+- ✅ `MINIO_USE_SSL` = `true`
+- ✅ `OCPP_GATEWAY_URL` = (automatically from backend service)
+- ✅ `PAYSTACK_CALLBACK_URL` = (automatically from backend service)
 
-## Step 1: Commit and Push to GitHub
+### Frontend (`ev-billing-frontend`):
+- ✅ `NODE_ENV` = `production`
+- ✅ `VITE_API_URL` = `https://ev-billing-api.onrender.com/api`
+- ✅ `VITE_WS_URL` = `wss://ev-billing-api.onrender.com/ws`
 
-### Using GitHub Desktop:
+## 🔐 Secrets You Must Set Manually
 
-1. **Open GitHub Desktop**
-   - Make sure your repository "Energy-Presissions-EVAPP" is open
+Render **cannot** pre-fill secrets for security reasons. You must set these in the Render dashboard:
 
-2. **Stage All Changes**
-   - In the left sidebar, you'll see all changed files
-   - Check the box at the top to "Select all" or manually check:
-     - `render.yaml` (new file)
-     - `.gitignore` (updated)
-     - Any other changes you want to commit
+### Required Secrets (Backend API):
 
-3. **Write Commit Message**
-   - In the bottom left, write a commit message:
-     ```
-     Add Render Blueprint configuration for production deployment
-     ```
+1. **JWT_SECRET**
+   - Generate: Run `./generate-secrets.sh` or `openssl rand -base64 32`
+   - Used for: JWT token signing
 
-4. **Commit**
-   - Click "Commit to main" button
+2. **SERVICE_TOKEN**
+   - Generate: Run `./generate-secrets.sh` or `openssl rand -base64 32`
+   - Used for: Internal service authentication
 
-5. **Push to GitHub**
-   - Click "Push origin" button (top right)
-   - Wait for push to complete
+3. **PAYSTACK_SECRET_KEY**
+   - Get from: [Paystack Dashboard](https://dashboard.paystack.com/#/settings/developer)
+   - Used for: Payment processing
 
-### Verify on GitHub:
-- Go to https://github.com/wastwagon/Energy-Presissions-EVAPP
-- Check that `render.yaml` appears in the file list
-- Check that it's on the `main` branch
+4. **PAYSTACK_PUBLIC_KEY**
+   - Get from: [Paystack Dashboard](https://dashboard.paystack.com/#/settings/developer)
+   - Used for: Payment processing
 
-## Step 2: Create Production Dockerfiles
+## 📋 Step-by-Step Deployment
 
-Before deploying, we need production-ready Dockerfiles. Let me create them:
+### 1. Generate Secrets Locally
 
-### Backend Production Dockerfile
-The backend Dockerfile already exists and looks good, but we may need to adjust it.
+```bash
+./generate-secrets.sh
+```
 
-### Frontend Production Dockerfile
-We need to create a production build for the frontend.
+This will output:
+- `JWT_SECRET` (randomly generated)
+- `SERVICE_TOKEN` (randomly generated)
+- Instructions for Paystack keys
 
-### OCPP Gateway Production Dockerfile
-We need a production Dockerfile for the OCPP Gateway.
+### 2. Push to GitHub
 
-## Step 3: Deploy on Render
+```bash
+git add .
+git commit -m "Configure Render Blueprint with pre-filled values"
+git push origin main
+```
 
-1. **Go to Render Dashboard**
-   - Visit: https://dashboard.render.com
-   - Sign in if needed
+### 3. Deploy on Render
 
-2. **Create New Blueprint**
-   - Click "New +" button
-   - Select "Blueprint"
-   - Or go directly to: https://dashboard.render.com/new/blueprint
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click **"New Blueprint"**
+3. Connect your GitHub repository: `wastwagon/Energy-Presissions-EVAPP`
+4. Select branch: `main`
+5. Review the configuration:
+   - ✅ Database: `ev-billing-postgres` (Free)
+   - ✅ Backend: `ev-billing-api` (Starter - $7/month)
+   - ✅ Frontend: `ev-billing-frontend` (Starter - $7/month)
 
-3. **Connect Repository**
-   - Select "GitHub" as source
-   - Authorize Render if needed
-   - Select repository: `wastwagon/Energy-Presissions-EVAPP`
-   - Select branch: `main`
+### 4. Set Secrets in Render Dashboard
 
-4. **Configure Blueprint**
-   - Blueprint Name: `ev-billing-system` (or your preferred name)
-   - Branch: `main` (should auto-detect)
-   - Render will automatically detect `render.yaml`
+**Before clicking "Apply"**, you need to set the secrets:
 
-5. **Review Configuration**
-   - Render will parse `render.yaml` and show all services
-   - Review each service:
-     - PostgreSQL database
-     - Redis cache
-     - Backend API
-     - Frontend
-     - OCPP Gateway (worker)
-     - MinIO (optional)
+1. In the "Specified configurations" section, find `ev-billing-api`
+2. For each secret (`JWT_SECRET`, `SERVICE_TOKEN`, `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY`):
+   - Click the input field
+   - Paste the value from `generate-secrets.sh` (or your Paystack dashboard)
+   - The value will be hidden (showing as dots)
 
-6. **Set Environment Variables**
-   Before deploying, set these in Render dashboard:
-   
-   **For Backend API:**
-   - `JWT_SECRET` - Generate a strong random string
-   - `SERVICE_TOKEN` - Generate a strong random string
-   - `MINIO_ACCESS_KEY` - Your MinIO access key
-   - `MINIO_SECRET_KEY` - Your MinIO secret key
-   - `PAYSTACK_SECRET_KEY` - Your Paystack secret key
-   - `PAYSTACK_PUBLIC_KEY` - Your Paystack public key
+### 5. Deploy
 
-   **For OCPP Gateway:**
-   - `SERVICE_TOKEN` - Must match the one in Backend API
+1. Click **"Apply"** to start deployment
+2. Wait for all services to build and deploy (~5-10 minutes)
+3. Once deployed, your services will be available at:
+   - Frontend: `https://ev-billing-frontend.onrender.com`
+   - Backend API: `https://ev-billing-api.onrender.com`
+   - Database: Internal (not publicly accessible)
 
-   **For MinIO:**
-   - `MINIO_ROOT_USER` - MinIO admin username
-   - `MINIO_ROOT_PASSWORD` - MinIO admin password
+## 🔍 Verifying Deployment
 
-7. **Deploy**
-   - Click "Apply" or "Deploy" button
-   - Render will start building and deploying all services
-   - This may take 10-20 minutes
+### Check Backend Health:
+```bash
+curl https://ev-billing-api.onrender.com/health
+```
 
-## Step 4: Post-Deployment Configuration
+Expected response:
+```json
+{"status":"ok","timestamp":"2024-..."}
+```
 
-### 1. Update Service URLs
+### Check Frontend:
+Open in browser: `https://ev-billing-frontend.onrender.com`
 
-After deployment, update these environment variables with actual service URLs:
+## ⚠️ Important Notes
 
-**Backend API:**
-- `OCPP_GATEWAY_URL` - Update with OCPP Gateway URL
-- `PAYSTACK_CALLBACK_URL` - Update with your API URL
+1. **MINIO Credentials**: The default `minioadmin` / `minioadmin123` are **not secure**. Change these in production by:
+   - Updating `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` in Render dashboard
+   - Using strong, randomly generated values
 
-**Frontend:**
-- `REACT_APP_API_URL` - Update with Backend API URL
-- `REACT_APP_WS_URL` - Update with OCPP Gateway WebSocket URL
+2. **Frontend Environment Variables**: The frontend URLs are hardcoded in `render.yaml`. If your service names change, update:
+   - `VITE_API_URL` in `render.yaml`
+   - `VITE_WS_URL` in `render.yaml`
 
-**OCPP Gateway:**
-- `CSMS_API_URL` - Update with Backend API URL
-
-### 2. Database Initialization
-
-The database needs to be initialized with tables. You can:
-
-**Option A: Run SQL scripts manually**
-- Connect to PostgreSQL database in Render
-- Run scripts from `database/init/` directory
-
-**Option B: Create initialization script**
-- Add a startup script that runs migrations
-- Or use Render's post-deploy script
-
-### 3. Test Deployment
-
-1. **Check Backend API:**
-   ```
-   https://ev-billing-api.onrender.com/health
+3. **Database Migrations**: After deployment, run migrations:
+   ```bash
+   # Connect to your Render database and run:
+   # See database/run-migrations.sh for migration scripts
    ```
 
-2. **Check Frontend:**
-   ```
-   https://ev-billing-frontend.onrender.com
-   ```
+4. **Cost**: 
+   - Database: Free
+   - Backend: $7/month (Starter plan)
+   - Frontend: $7/month (Starter plan)
+   - **Total: $14/month**
 
-3. **Check OCPP Gateway:**
-   ```
-   https://ev-billing-ocpp-gateway.onrender.com/health
-   ```
+## 🐛 Troubleshooting
 
-## Step 5: Configure Custom Domains (Optional)
+### Frontend Not Showing in Blueprint
+- ✅ **Fixed**: The frontend service is now properly configured in `render.yaml`
+- If still not showing, check that `dockerfilePath` and `dockerContext` are correct
 
-1. **Add Custom Domain in Render**
-   - Go to each service settings
-   - Add your custom domain
-   - Update DNS records as instructed
+### "Field has no values" Error
+- ✅ **Fixed**: All required fields now have values
+- Secrets with `sync: false` will show empty - this is normal, you must fill them manually
 
-2. **Update Environment Variables**
-   - Update all URLs to use custom domain
-   - Redeploy services if needed
-
-## Troubleshooting
-
-### Issue: Build Fails
-
-**Check:**
-- Dockerfile paths are correct
-- All dependencies are in package.json
-- Build commands are correct
-
-**Solution:**
+### Build Fails
+- Check that `Dockerfile.prod` exists in `./frontend/`
+- Verify environment variables are set correctly
 - Check build logs in Render dashboard
-- Fix errors and redeploy
 
-### Issue: Services Can't Connect
+## 📞 Support
 
-**Check:**
-- Environment variables are set correctly
-- Service URLs are correct
-- Database connection string is valid
-
-**Solution:**
-- Verify all `fromService` references in render.yaml
-- Check service names match exactly
-- Review connection strings in Render dashboard
-
-### Issue: OCPP Gateway Not Accessible
-
-**Note:** Render workers don't have public URLs by default. For WebSocket support:
-- Use a web service instead of worker
-- Or use a reverse proxy
-- Or configure WebSocket support in Render
-
-**Solution:**
-- Change OCPP Gateway from `worker` to `web` type in render.yaml
-- This will give it a public URL
-
-## Important Notes
-
-1. **WebSocket Support**: Render supports WebSockets, but you may need to configure it properly
-2. **Database Migrations**: Set up automatic migrations or run them manually
-3. **Environment Variables**: Keep sensitive keys secure, use Render's sync feature
-4. **Scaling**: Adjust plans (starter → standard → pro) based on traffic
-5. **Monitoring**: Use Render's built-in monitoring and logs
-
-## Next Steps
-
-1. ✅ Commit and push `render.yaml` to GitHub
-2. ⬜ Create production Dockerfiles (if needed)
-3. ⬜ Deploy on Render
-4. ⬜ Configure environment variables
-5. ⬜ Initialize database
-6. ⬜ Test all services
-7. ⬜ Configure custom domains (optional)
-
-## Support
-
-- Render Documentation: https://render.com/docs
-- Render Community: https://community.render.com
-- Blueprint Reference: https://render.com/docs/blueprint-spec
+If you encounter issues:
+1. Check Render build logs
+2. Verify all secrets are set
+3. Ensure database migrations have run
+4. Check service health endpoints

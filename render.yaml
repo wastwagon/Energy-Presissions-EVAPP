@@ -23,34 +23,42 @@ services:
           name: ev-billing-postgres
           property: connectionString
       - key: REDIS_URL
-        value: redis://localhost:6379  # Will update after adding Redis
+        value: redis://localhost:6379
       - key: MINIO_ENDPOINT
-        value: ev-billing-minio.onrender.com
+        value: s3.amazonaws.com
       - key: MINIO_PORT
-        value: 9000
+        value: 443
       - key: MINIO_EXTERNAL_PORT
         value: 443
       - key: MINIO_ACCESS_KEY
-        sync: false
+        value: minioadmin
       - key: MINIO_SECRET_KEY
-        sync: false
+        value: minioadmin123
       - key: MINIO_BUCKET
         value: ev-billing
+      - key: MINIO_USE_SSL
+        value: "true"
       - key: JWT_SECRET
         sync: false
       - key: SERVICE_TOKEN
         sync: false
       - key: OCPP_GATEWAY_URL
-        value: https://ev-billing-ocpp-gateway.onrender.com
+        fromService:
+          type: web
+          name: ev-billing-api
+          property: host
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
         sync: false
       - key: PAYSTACK_CALLBACK_URL
-        value: https://ev-billing-api.onrender.com/api/payments/verify
+        fromService:
+          type: web
+          name: ev-billing-api
+          property: host
     healthCheckPath: /health
 
-  # Frontend (React)
+  # Frontend (React + Vite)
   - type: web
     name: ev-billing-frontend
     runtime: docker
@@ -60,7 +68,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: REACT_APP_API_URL
+      - key: VITE_API_URL
         value: https://ev-billing-api.onrender.com/api
-      - key: REACT_APP_WS_URL
-        value: wss://ev-billing-ocpp-gateway.onrender.com/ocpp
+      - key: VITE_WS_URL
+        value: wss://ev-billing-api.onrender.com/ws
