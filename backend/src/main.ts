@@ -26,6 +26,20 @@ async function bootstrap() {
     }),
   );
 
+  // Root endpoint (before API prefix)
+  app.getHttpAdapter().get('/', (req, res) => {
+    res.status(200).json({
+      message: 'CSMS API - Central System Management System for EV Charging Billing',
+      version: '1.0',
+      endpoints: {
+        health: '/health',
+        api: '/api',
+        docs: process.env.NODE_ENV !== 'production' ? '/api/docs' : 'Swagger docs disabled in production',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // Health check endpoint (before API prefix)
   app.getHttpAdapter().get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -34,17 +48,15 @@ async function bootstrap() {
   // API prefix
   app.setGlobalPrefix('api');
 
-  // Swagger documentation
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('CSMS API')
-      .setDescription('Central System Management System API for EV Charging Billing')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
-  }
+  // Swagger documentation (enable in production for API exploration)
+  const config = new DocumentBuilder()
+    .setTitle('CSMS API')
+    .setDescription('Central System Management System API for EV Charging Billing')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   // Health check endpoint with API prefix (for consistency)
   app.getHttpAdapter().get('/api/health', (req, res) => {
