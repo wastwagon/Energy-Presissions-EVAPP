@@ -33,8 +33,15 @@ export class TenantsController {
   @SkipTenantCheck()
   @ApiOperation({ summary: 'Get all tenants' })
   @ApiResponse({ status: 200, description: 'List of tenants', type: [Tenant] })
-  async findAll(): Promise<Tenant[]> {
-    return this.tenantsService.findAll();
+  async findAll(@Request() req: any): Promise<Tenant[]> {
+    try {
+      return await this.tenantsService.findAll();
+    } catch (error: any) {
+      throw new HttpException(
+        `Failed to fetch tenants: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Get(':id')
