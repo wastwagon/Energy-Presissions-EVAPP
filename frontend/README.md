@@ -44,6 +44,7 @@ frontend/
 
 - `VITE_API_URL` - API base URL (default: http://localhost/api)
 - `VITE_WS_URL` - WebSocket URL (default: ws://localhost/ocpp)
+- `VITE_GOOGLE_CLIENT_ID` - Google OAuth Client ID for "Login with Google" (optional)
 
 ## Development
 

@@ -73,4 +73,26 @@ export const usersApi = {
     const response = await api.put(`/users/${id}/role`, { accountType });
     return response.data;
   },
+
+  /**
+   * Get user favorite station IDs
+   */
+  getFavorites: async (id: number): Promise<string[]> => {
+    const response = await api.get(`/users/${id}/favorites`);
+    return response.data;
+  },
+
+  /**
+   * Add station to favorites
+   */
+  addFavorite: async (id: number, chargePointId: string): Promise<void> => {
+    await api.post(`/users/${id}/favorites/${encodeURIComponent(chargePointId)}`);
+  },
+
+  /**
+   * Remove station from favorites
+   */
+  removeFavorite: async (id: number, chargePointId: string): Promise<void> => {
+    await api.delete(`/users/${id}/favorites/${encodeURIComponent(chargePointId)}`);
+  },
 };

@@ -40,7 +40,7 @@ export class MessageRouter {
     this.handlers.set('CancelReservation', new CancelReservationHandler(connectionManager));
   }
 
-  async route(chargePointId: string, message: OCPPMessage): Promise<void> {
+  async route(chargePointId: string, message: OCPPMessage, ws?: any): Promise<void> {
     try {
       // Update last message time
       this.connectionManager.updateLastMessage(chargePointId);
@@ -49,7 +49,7 @@ export class MessageRouter {
       const messageType = this.getMessageType(message);
       
       if (messageType === OCPPMessageType.CALL) {
-        await this.handleCall(chargePointId, message);
+        await this.handleCall(chargePointId, message, ws);
       } else if (messageType === OCPPMessageType.CALLRESULT) {
         await this.handleCallResult(chargePointId, message);
       } else if (messageType === OCPPMessageType.CALLERROR) {
@@ -76,7 +76,7 @@ export class MessageRouter {
     return OCPPMessageType.UNKNOWN;
   }
 
-  private async handleCall(chargePointId: string, message: OCPPMessage): Promise<void> {
+  private async handleCall(chargePointId: string, message: OCPPMessage, ws?: any): Promise<void> {
     if (!Array.isArray(message) || message.length < 3) {
       this.sendError(chargePointId, null, 'FORMAT_VIOLATION', 'Invalid CALL message format');
       return;
@@ -96,9 +96,15 @@ export class MessageRouter {
       return;
     }
 
-    // Handle message
+    // Handle message - pass WebSocket to BootNotification handler for connection mapping
     try {
-      await handler.handle(chargePointId, messageId, payload);
+      if (action === 'BootNotification' && ws) {
+        // BootNotification handler needs WebSocket for connection mapping
+        await (handler as any).handle(chargePointId, messageId, payload, ws);
+      } else {
+        // Other handlers don't need WebSocket
+        await handler.handle(chargePointId, messageId, payload);
+      }
     } catch (error) {
       logger.error(`Error handling ${action} from ${chargePointId}:`, error);
       this.sendError(chargePointId, messageId, 'INTERNAL_ERROR', 'Error processing message');

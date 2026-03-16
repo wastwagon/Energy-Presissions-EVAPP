@@ -1,52 +1,45 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
   AppBar,
   Toolbar,
-  List,
   Typography,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Container,
   Avatar,
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
-  Divider,
   Chip,
   Button,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import EvStationIcon from '@mui/icons-material/EvStation';
-import HistoryIcon from '@mui/icons-material/History';
-import SettingsIcon from '@mui/icons-material/Settings';
-import BusinessIcon from '@mui/icons-material/Business';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
+import { BottomNav } from '../components/BottomNav';
+import { superAdminBottomNavItems } from '../config/menu.config';
 
-const drawerWidth = 260;
-
-interface MenuItem {
-  text?: string;
-  icon?: React.ReactNode;
-  path?: string;
-  divider?: boolean;
-}
+const drawerWidth = 280;
 
 export function SuperAdminDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -105,89 +98,58 @@ export function SuperAdminDashboardLayout() {
     setAnchorEl(null);
   };
 
-  // Super Admin menu items - everything (SuperAdmin-specific routes)
-  const menuItems: MenuItem[] = [
-    { text: 'My Dashboard', icon: <DashboardIcon />, path: '/superadmin/dashboard' },
-    { text: 'Operations', icon: <DashboardIcon />, path: '/superadmin/ops' },
-    { text: 'Sessions', icon: <HistoryIcon />, path: '/superadmin/ops/sessions' },
-    { text: 'Devices', icon: <EvStationIcon />, path: '/superadmin/ops/devices' },
-    { text: 'Vendor Settings', icon: <BusinessIcon />, path: '/superadmin/vendor' },
-    { text: 'Super Admin', icon: <SettingsIcon />, path: '/superadmin/settings', divider: true },
-    { text: 'Wallets', icon: <AccountBalanceWalletIcon />, path: '/superadmin/wallets' },
-    { text: 'Vendors', icon: <BusinessIcon />, path: '/superadmin/vendors' },
-  ];
-
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
+      }}
+    >
       <Box
         sx={{
-          p: 3,
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          p: 3.5,
+          background: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
           color: 'white',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          EV Charging
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.9 }}>
-          Super Admin Portal
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <img 
+            src="/newlog.png" 
+            alt="Clean Motion Ghana" 
+            style={{ height: '32px', objectFit: 'contain' }}
+          />
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                mb: 0.5,
+                fontSize: '1.375rem',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Clean Motion Ghana
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                opacity: 0.95,
+                fontSize: '0.75rem',
+                letterSpacing: '0.02em',
+                fontWeight: 500,
+              }}
+            >
+              Super Admin Portal
+            </Typography>
+          </Box>
+        </Box>
       </Box>
-      <List sx={{ flex: 1, pt: 2, px: 1.5 }}>
-        {menuItems.map((item, index) => {
-          if (item.divider) {
-            return <Divider key={`divider-${index}`} sx={{ my: 1.5, borderColor: 'divider' }} />;
-          }
-          if (!item.path || !item.text || !item.icon) {
-            return null;
-          }
-          // TypeScript narrowing: we've checked path exists above
-          const path = item.path as string;
-          return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={Link}
-                to={path}
-                selected={location.pathname === path || location.pathname.startsWith(path + '/')}
-                sx={{
-                  borderRadius: 2,
-                  py: 1.25,
-                  px: 2,
-                  '&.Mui-selected': {
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: 'white',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      opacity: 0.9,
-                    },
-                    '& .MuiListItemIcon-root': {
-                      color: 'white',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 40,
-                    color: location.pathname === path || location.pathname.startsWith(path + '/') ? 'white' : 'inherit',
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontWeight: location.pathname === path || location.pathname.startsWith(path + '/') ? 600 : 500,
-                  }}
-                />
-                </ListItemButton>
-              </ListItem>
-          );
-        })}
-      </List>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+        <SuperAdminMenu />
+      </Box>
     </Box>
   );
 
@@ -205,7 +167,20 @@ export function SuperAdminDashboardLayout() {
           borderColor: 'divider',
         }}
       >
-        <Toolbar sx={{ px: 3, minHeight: '64px !important' }}>
+        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setMobileOpen(true)}
+            sx={{
+              mr: 2,
+              display: { sm: 'none' },
+              color: '#1e293b',
+            }}
+            aria-label="open menu"
+          >
+            <MenuIcon />
+          </IconButton>
           <Typography
             variant="h6"
             noWrap
@@ -252,6 +227,7 @@ export function SuperAdminDashboardLayout() {
             </Box>
             <IconButton
               onClick={handleMenuOpen}
+              aria-label="User menu"
               sx={{
                 p: 0,
                 border: '2px solid',
@@ -322,6 +298,25 @@ export function SuperAdminDashboardLayout() {
         aria-label="navigation"
       >
         <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
@@ -329,8 +324,9 @@ export function SuperAdminDashboardLayout() {
               boxSizing: 'border-box',
               width: drawerWidth,
               borderRight: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'white',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
             },
           }}
           open
@@ -345,11 +341,15 @@ export function SuperAdminDashboardLayout() {
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           bgcolor: '#f8fafc',
+          pb: showBottomNav ? 10 : 3,
         }}
       >
         <Toolbar />
         <Outlet />
       </Box>
+      {showBottomNav && (
+        <BottomNav items={superAdminBottomNavItems} accentColor="#062540" />
+      )}
     </Box>
   );
 }

@@ -9,16 +9,10 @@ import {
   Typography,
   Alert,
   Link,
-  Grid,
-  Card,
-  CardContent,
   Tabs,
   Tab,
-  Divider,
-  Chip,
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
-import BusinessIcon from '@mui/icons-material/Business';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonIcon from '@mui/icons-material/Person';
 import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
@@ -43,20 +37,6 @@ function TabPanel(props: TabPanelProps) {
     </div>
   );
 }
-
-const SAMPLE_USERS = {
-  SuperAdmin: [
-    { email: 'admin@evcharging.com', password: 'admin123', name: 'Super Admin' },
-  ],
-  Admin: [
-    { email: 'admin1@vendor1.com', password: 'admin123', name: 'Vendor Admin 1' },
-    { email: 'admin2@vendor1.com', password: 'admin123', name: 'Vendor Admin 2' },
-  ],
-  Customer: [
-    { email: 'customer1@vendor1.com', password: 'customer123', name: 'Customer 1' },
-    { email: 'customer2@vendor1.com', password: 'customer123', name: 'Customer 2' },
-  ],
-};
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -93,18 +73,6 @@ export function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (userEmail: string, userPassword: string) => {
-    setEmail(userEmail);
-    setPassword(userPassword);
-    // Auto-submit after a brief delay
-    setTimeout(() => {
-      const form = document.querySelector('form');
-      if (form) {
-        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-      }
-    }, 100);
-  };
-
   return (
     <Box
       sx={{
@@ -113,7 +81,7 @@ export function LoginPage() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
-        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundImage: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
         py: 4,
       }}
     >
@@ -127,8 +95,15 @@ export function LoginPage() {
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <img 
+                src="/newlog.png" 
+                alt="Clean Motion Ghana" 
+                style={{ height: '60px', objectFit: 'contain' }}
+              />
+            </Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
-              EV Charging Billing
+              Clean Motion Ghana
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Sign in to your account
@@ -175,41 +150,11 @@ export function LoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                sx={{ mt: 3, mb: 2 }}
+                sx={{ mt: 3 }}
                 disabled={loading}
               >
                 {loading ? 'Signing in...' : 'Sign In as Super Admin'}
               </Button>
-
-              <Divider sx={{ my: 2 }}>Quick Login</Divider>
-              <Grid container spacing={2}>
-                {SAMPLE_USERS.SuperAdmin.map((user) => (
-                  <Grid item xs={12} key={user.email}>
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                      onClick={() => handleQuickLogin(user.email, user.password)}
-                    >
-                      <CardContent sx={{ py: 1.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {user.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {user.email}
-                            </Typography>
-                          </Box>
-                          <Chip label="Super Admin" color="error" size="small" />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
             </TabPanel>
 
             <TabPanel value={activeTab} index={1}>
@@ -239,41 +184,11 @@ export function LoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                sx={{ mt: 3, mb: 2 }}
+                sx={{ mt: 3 }}
                 disabled={loading}
               >
                 {loading ? 'Signing in...' : 'Sign In as Admin'}
               </Button>
-
-              <Divider sx={{ my: 2 }}>Quick Login</Divider>
-              <Grid container spacing={2}>
-                {SAMPLE_USERS.Admin.map((user) => (
-                  <Grid item xs={12} sm={6} key={user.email}>
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                      onClick={() => handleQuickLogin(user.email, user.password)}
-                    >
-                      <CardContent sx={{ py: 1.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {user.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {user.email}
-                            </Typography>
-                          </Box>
-                          <Chip label="Admin" color="warning" size="small" />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
             </TabPanel>
 
             <TabPanel value={activeTab} index={2}>
@@ -303,41 +218,11 @@ export function LoginPage() {
                 fullWidth
                 variant="contained"
                 size="large"
-                sx={{ mt: 3, mb: 2 }}
+                sx={{ mt: 3 }}
                 disabled={loading}
               >
                 {loading ? 'Signing in...' : 'Sign In as Customer'}
               </Button>
-
-              <Divider sx={{ my: 2 }}>Quick Login</Divider>
-              <Grid container spacing={2}>
-                {SAMPLE_USERS.Customer.map((user) => (
-                  <Grid item xs={12} sm={6} key={user.email}>
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                      onClick={() => handleQuickLogin(user.email, user.password)}
-                    >
-                      <CardContent sx={{ py: 1.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {user.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {user.email}
-                            </Typography>
-                          </Box>
-                          <Chip label="Customer" color="info" size="small" />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
             </TabPanel>
           </form>
 

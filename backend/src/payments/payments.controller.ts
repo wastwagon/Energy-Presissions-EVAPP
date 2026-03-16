@@ -8,14 +8,20 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 class InitializePaymentDto {
   invoiceId: number;
   email: string;
   metadata?: Record<string, any>;
+  channel?: string; // 'card', 'mobile_money', 'bank', 'ussd', 'qr'
+  phone?: string; // For mobile money payments
 }
 
 class ProcessTransactionPaymentDto {
@@ -35,7 +41,13 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Payment initialized successfully' })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async initializePayment(@Body() dto: InitializePaymentDto) {
-    return this.paymentsService.initializePayment(dto.invoiceId, dto.email, dto.metadata);
+    return this.paymentsService.initializePayment(
+      dto.invoiceId,
+      dto.email,
+      dto.metadata,
+      dto.channel,
+      dto.phone,
+    );
   }
 
   @Post('verify/:reference')
@@ -61,14 +73,40 @@ export class PaymentsController {
 
   @Post('transaction/:transactionId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Process payment for transaction' })
-  @ApiBody({ schema: { properties: { email: { type: 'string' } } } })
+  @ApiOperation({ summary: 'Process payment for transaction (supports mobile money)' })
+  @ApiBody({ 
+    schema: { 
+      properties: { 
+        email: { type: 'string' },
+        channel: { type: 'string', description: 'Payment channel: card, mobile_money, bank, ussd, qr' },
+        phone: { type: 'string', description: 'Phone number for mobile money payments' },
+      },
+      required: ['email'],
+    } 
+  })
   @ApiResponse({ status: 200, description: 'Payment initialized' })
   async processTransactionPayment(
     @Param('transactionId', ParseIntPipe) transactionId: number,
     @Body('email') email: string,
+    @Body('channel') channel?: string,
+    @Body('phone') phone?: string,
   ) {
-    return this.paymentsService.processPaymentForTransaction(transactionId, email);
+    return this.paymentsService.processPaymentForTransaction(transactionId, email, channel, phone);
+  }
+
+  @Get('all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'Get all payments (Admin/SuperAdmin)' })
+  @ApiResponse({ status: 200, description: 'List of all payments' })
+  async getAllPayments(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.paymentsService.getAllPayments(
+      limit ? parseInt(limit.toString()) : 100,
+      offset ? parseInt(offset.toString()) : 0,
+    );
   }
 
   @Get(':id')

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Payment } from '../entities/payment.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Transaction } from '../entities/transaction.entity';
@@ -78,11 +78,14 @@ export class PaymentsService {
 
   /**
    * Initialize Paystack payment
+   * Supports multiple payment channels including mobile money (MTN, Vodafone, AirtelTigo)
    */
   async initializePayment(
     invoiceId: number,
     email: string,
     metadata?: Record<string, any>,
+    channel?: string, // 'card', 'mobile_money', 'bank', 'ussd', 'qr'
+    phone?: string, // For mobile money payments
   ): Promise<{ authorizationUrl: string; reference: string; accessCode: string }> {
     const invoice = await this.invoiceRepository.findOne({
       where: { id: invoiceId },
@@ -102,21 +105,37 @@ export class PaymentsService {
     const amountInPesewas = Math.round(invoice.total * 100);
 
     try {
+      // Build payment request
+      const paymentRequest: any = {
+        email,
+        amount: amountInPesewas,
+        currency: invoice.currency || 'GHS',
+        reference: `INV-${invoice.invoiceNumber}-${Date.now()}`,
+        metadata: {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          transactionId: invoice.transactionId,
+          ...metadata,
+        },
+        callback_url: this.configService.get<string>('PAYSTACK_CALLBACK_URL') || '',
+      };
+
+      // Add channel for mobile money or other payment methods
+      if (channel) {
+        paymentRequest.channels = [channel];
+      } else {
+        // Default: allow all channels (card, mobile_money, bank, ussd, qr)
+        paymentRequest.channels = ['card', 'mobile_money', 'bank', 'ussd', 'qr'];
+      }
+
+      // Add phone number for mobile money
+      if (phone && (channel === 'mobile_money' || !channel)) {
+        paymentRequest.metadata.phone = phone;
+      }
+
       const response = await axios.post<PaystackInitializeResponse>(
         `${this.paystackBaseUrl}/transaction/initialize`,
-        {
-          email,
-          amount: amountInPesewas,
-          currency: invoice.currency || 'GHS',
-          reference: `INV-${invoice.invoiceNumber}-${Date.now()}`,
-          metadata: {
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            transactionId: invoice.transactionId,
-            ...metadata,
-          },
-          callback_url: this.configService.get<string>('PAYSTACK_CALLBACK_URL') || '',
-        },
+        paymentRequest,
         {
           headers: {
             Authorization: `Bearer ${this.paystackSecretKey}`,
@@ -129,13 +148,25 @@ export class PaymentsService {
         throw new BadRequestException(response.data.message || 'Failed to initialize payment');
       }
 
+      // Determine payment method from channel
+      let paymentMethod = 'Card';
+      if (channel === 'mobile_money') {
+        paymentMethod = 'Mobile Money';
+      } else if (channel === 'bank') {
+        paymentMethod = 'Bank Transfer';
+      } else if (channel === 'ussd') {
+        paymentMethod = 'USSD';
+      } else if (channel === 'qr') {
+        paymentMethod = 'QR Code';
+      }
+
       // Create payment record
       const payment = this.paymentRepository.create({
         transactionId: invoice.transactionId,
         userId: invoice.userId,
         amount: invoice.total,
         currency: invoice.currency || 'GHS',
-        paymentMethod: 'Card',
+        paymentMethod,
         paymentGateway: 'Paystack',
         paymentGatewayId: response.data.data.reference,
         status: 'Pending',
@@ -229,8 +260,10 @@ export class PaymentsService {
   async processPaymentForInvoice(
     invoiceId: number,
     email: string,
+    channel?: string,
+    phone?: string,
   ): Promise<{ authorizationUrl: string; reference: string }> {
-    const result = await this.initializePayment(invoiceId, email);
+    const result = await this.initializePayment(invoiceId, email, undefined, channel, phone);
     return {
       authorizationUrl: result.authorizationUrl,
       reference: result.reference,
@@ -239,10 +272,13 @@ export class PaymentsService {
 
   /**
    * Process payment for transaction
+   * Supports mobile money with channel and phone parameters
    */
   async processPaymentForTransaction(
     transactionId: number,
     email: string,
+    channel?: string,
+    phone?: string,
   ): Promise<{ authorizationUrl: string; reference: string }> {
     const transaction = await this.transactionRepository.findOne({
       where: { transactionId },
@@ -265,7 +301,7 @@ export class PaymentsService {
       invoice = await this.billingService.generateInvoice(transactionId);
     }
 
-    return this.processPaymentForInvoice(invoice.id, email);
+    return this.processPaymentForInvoice(invoice.id, email, channel, phone);
   }
 
   /**
@@ -282,6 +318,20 @@ export class PaymentsService {
     }
 
     return payment;
+  }
+
+  /**
+   * Get all payments (Admin/SuperAdmin)
+   */
+  async getAllPayments(limit: number = 100, offset: number = 0) {
+    const [payments, total] = await this.paymentRepository.findAndCount({
+      relations: ['transaction', 'user'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+
+    return { payments, total };
   }
 
   /**

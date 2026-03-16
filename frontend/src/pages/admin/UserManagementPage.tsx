@@ -237,7 +237,7 @@ export function UserManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4" component="h1">
           User Management
         </Typography>
@@ -287,7 +287,7 @@ export function UserManagementPage() {
       </Box>
 
       <Paper>
-        <TableContainer>
+        <TableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -334,7 +334,13 @@ export function UserManagementPage() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>GHS {user.balance?.toFixed(2) || '0.00'}</TableCell>
+                    <TableCell>
+                      GHS {user.balance != null 
+                        ? (typeof user.balance === 'number' 
+                          ? user.balance.toFixed(2) 
+                          : parseFloat(String(user.balance)).toFixed(2))
+                        : '0.00'}
+                    </TableCell>
                     <TableCell>
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>

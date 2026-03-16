@@ -3,7 +3,9 @@ import { api } from './api';
 export interface ChargePoint {
   id: number;
   chargePointId: string;
-  vendor?: string;
+  vendor?: string; // Vendor relation (object)
+  vendorId?: number;
+  vendorName?: string; // Vendor name (string column)
   model?: string;
   serialNumber?: string;
   firmwareVersion?: string;
@@ -13,6 +15,9 @@ export interface ChargePoint {
   locationLatitude?: number;
   locationLongitude?: number;
   locationAddress?: string;
+  totalCapacityKw?: number;
+  pricePerKwh?: number;
+  currency?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +57,11 @@ export const chargePointsApi = {
     return response.data;
   },
 
+  update: async (id: string, data: Partial<ChargePoint>): Promise<ChargePoint> => {
+    const response = await api.put(`/charge-points/${id}`, data);
+    return response.data;
+  },
+
   getStatus: async (id: string): Promise<ChargePointStatus> => {
     const response = await api.get(`/charge-points/${id}/status`);
     return response.data;
@@ -71,6 +81,15 @@ export const chargePointsApi = {
     const response = await api.post(`/charge-points/${id}/remote-start`, {
       connectorId,
       idTag,
+    });
+    return response.data;
+  },
+
+  walletStart: async (id: string, connectorId: number, userId: number, amount: number) => {
+    const response = await api.post(`/charge-points/${id}/wallet-start`, {
+      connectorId,
+      userId,
+      amount,
     });
     return response.data;
   },

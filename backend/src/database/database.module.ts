@@ -24,6 +24,7 @@ import { CmsContent } from '../entities/cms-content.entity';
 import { BrandingAsset } from '../entities/branding-asset.entity';
 import { ConnectionLog } from '../entities/connection-log.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
+import { WalletTransaction } from '../entities/wallet-transaction.entity';
 
 @Module({
   imports: [
@@ -49,13 +50,14 @@ import { ConnectionStatistics } from '../entities/connection-statistics.entity';
           ChargingProfile,
           FirmwareJob,
           DiagnosticsJob,
-    Vendor,
-    VendorDisablement,
-    SystemSetting,
-    CmsContent,
-    BrandingAsset,
-    ConnectionLog,
-    ConnectionStatistics,
+          Vendor,
+          VendorDisablement,
+          SystemSetting,
+          CmsContent,
+          BrandingAsset,
+          ConnectionLog,
+          ConnectionStatistics,
+          WalletTransaction,
         ],
         synchronize: false, // Disabled - using SQL initialization scripts
         logging: configService.get<string>('NODE_ENV') === 'development',

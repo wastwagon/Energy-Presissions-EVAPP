@@ -73,7 +73,7 @@ export class BillingService {
   /**
    * Get active tariff for a given date
    */
-  async getActiveTariff(date: Date, currency: string = 'USD'): Promise<Tariff | null> {
+  async getActiveTariff(date: Date, currency: string = 'GHS'): Promise<Tariff | null> {
     const tariffs = await this.tariffRepository.find({
       where: {
         isActive: true,

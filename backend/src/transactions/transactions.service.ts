@@ -17,18 +17,24 @@ export class TransactionsService {
     limit: number = 100,
     offset: number = 0,
     chargePointId?: string,
+    vendorId?: number,
   ): Promise<{ transactions: Transaction[]; total: number }> {
-    const where: any = {};
+    const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
+
     if (chargePointId) {
-      where.chargePointId = chargePointId;
+      queryBuilder.where('tx.charge_point_id = :chargePointId', { chargePointId });
     }
 
-    const [transactions, total] = await this.transactionRepository.findAndCount({
-      where,
-      order: { startTime: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+    // Filter by vendorId via charge point relationship
+    if (vendorId) {
+      queryBuilder
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
+        .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
+
+    const [transactions, total] = await queryBuilder.getManyAndCount();
 
     return { transactions, total };
   }
@@ -45,11 +51,21 @@ export class TransactionsService {
     return transaction;
   }
 
-  async findActive(): Promise<Transaction[]> {
-    return this.transactionRepository.find({
-      where: { status: 'Active' },
-      order: { startTime: 'DESC' },
-    });
+  async findActive(vendorId?: number): Promise<Transaction[]> {
+    const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
+
+    queryBuilder.where('tx.status = :status', { status: 'Active' });
+
+    // Filter by vendorId via charge point relationship
+    if (vendorId) {
+      queryBuilder
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
+        .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    queryBuilder.orderBy('tx.start_time', 'DESC');
+
+    return queryBuilder.getMany();
   }
 
   async getMeterValues(transactionId: number): Promise<MeterSample[]> {
@@ -64,19 +80,29 @@ export class TransactionsService {
     startDate: Date,
     endDate: Date,
     chargePointId?: string,
+    vendorId?: number,
   ): Promise<Transaction[]> {
-    const where: any = {
-      startTime: Between(startDate, endDate),
-    };
+    const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
+
+    queryBuilder.where('tx.start_time BETWEEN :startDate AND :endDate', {
+      startDate,
+      endDate,
+    });
 
     if (chargePointId) {
-      where.chargePointId = chargePointId;
+      queryBuilder.andWhere('tx.charge_point_id = :chargePointId', { chargePointId });
     }
 
-    return this.transactionRepository.find({
-      where,
-      order: { startTime: 'DESC' },
-    });
+    // Filter by vendorId via charge point relationship
+    if (vendorId) {
+      queryBuilder
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
+        .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    queryBuilder.orderBy('tx.start_time', 'DESC');
+
+    return queryBuilder.getMany();
   }
 }
 

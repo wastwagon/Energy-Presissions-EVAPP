@@ -44,6 +44,11 @@ MIGRATIONS=(
     "11-default-user.sql"
     "12-vendor-branding.sql"
     "13-sample-users.sql"
+    "14-ghana-location-enhancements.sql"
+    "15-sample-ghana-stations.sql"
+    "16-charge-point-pricing-capacity.sql"
+    "17-ghana-vendors.sql"
+    "18-transaction-wallet-amount.sql"
 )
 
 MIGRATION_DIR="$(dirname "$0")/init"

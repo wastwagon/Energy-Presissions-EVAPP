@@ -29,11 +29,13 @@ import EmailIcon from '@mui/icons-material/Email';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
 import { transactionsApi } from '../../services/transactionsApi';
 import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
+import { websocketService } from '../../services/websocket';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,35 +68,86 @@ export function CustomerDashboardPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
 
+  // Load user once on mount
   useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        
+        // Verify this is a Customer user - redirect if not
+        if (userData.accountType !== 'Customer' && userData.accountType !== 'WalkIn') {
+          if (userData.accountType === 'SuperAdmin') {
+            window.location.href = '/superadmin/dashboard';
+          } else if (userData.accountType === 'Admin') {
+            window.location.href = '/admin/dashboard';
+          }
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }, []); // Only run once on mount
+
+  // Load dashboard data and set up WebSocket listeners
+  useEffect(() => {
+    if (!user) return; // Wait for user to be loaded
+    
     loadDashboardData();
-  }, []);
+    
+    // Set up WebSocket listeners for real-time updates
+    const unsubscribeTransactionStarted = websocketService.on('transactionStarted', (event) => {
+      // Reload transactions when a new one starts
+      if (event.data.userId === user?.id) {
+        loadDashboardData();
+      }
+    });
+
+    const unsubscribeTransactionStopped = websocketService.on('transactionStopped', (event) => {
+      // Reload dashboard when transaction completes (updates wallet balance, transactions)
+      console.log('Transaction stopped event received:', event);
+      if (event.data.userId === user?.id || !event.data.userId) {
+        loadDashboardData();
+      }
+    });
+
+    const unsubscribeMeterValue = websocketService.on('meterValue', (event) => {
+      // Update active transactions in real-time
+      if (event.data.transactionId) {
+        setTransactions((prev) =>
+          prev.map((tx) =>
+            tx.transactionId === event.data.transactionId
+              ? { ...tx, totalEnergyKwh: event.data.value / 1000 } // Convert Wh to kWh
+              : tx
+          )
+        );
+      }
+    });
+
+    const unsubscribeWalletBalance = websocketService.on('walletBalanceUpdate', (event) => {
+      // Update wallet balance in real-time
+      if (event.data.userId === user?.id) {
+        setWalletBalance(event.data.balance);
+      }
+    });
+
+    // Cleanup
+    return () => {
+      unsubscribeTransactionStarted();
+      unsubscribeTransactionStopped();
+      unsubscribeMeterValue();
+      unsubscribeWalletBalance();
+    };
+  }, [user?.id]); // Only depend on user.id, not the whole user object
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get user from localStorage
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          setUser(userData);
-          
-          // Verify this is a Customer user - redirect if not
-          if (userData.accountType !== 'Customer' && userData.accountType !== 'WalkIn') {
-            if (userData.accountType === 'SuperAdmin') {
-              window.location.href = '/superadmin/dashboard';
-            } else if (userData.accountType === 'Admin') {
-              window.location.href = '/admin/dashboard';
-            }
-            return;
-          }
-        } catch (e) {
-          console.error('Error parsing user data:', e);
-        }
-      }
+      // User is already loaded in separate useEffect, no need to reload here
 
       // Load wallet balance
       try {
@@ -157,22 +210,41 @@ export function CustomerDashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          component="h1"
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              color: '#1e293b',
+              mb: 0.5,
+              fontSize: { xs: '1.75rem', sm: '2rem' },
+            }}
+          >
+            My Dashboard
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
+            Welcome back! Here's an overview of your account.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<LocationOnIcon />}
+          onClick={() => navigate('/stations')}
           sx={{
-            fontWeight: 700,
-            color: '#1e293b',
-            mb: 0.5,
-            fontSize: { xs: '1.75rem', sm: '2rem' },
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 3,
+            background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
+            },
           }}
         >
-          My Dashboard
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
-          Welcome back! Here's an overview of your account.
-        </Typography>
+          Find Stations
+        </Button>
       </Box>
 
       {error && (
@@ -194,11 +266,11 @@ export function CustomerDashboardPage() {
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',
-              background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+              background: 'linear-gradient(135deg, rgba(10, 61, 98, 0.08) 0%, rgba(26, 95, 122, 0.08) 100%)',
               transition: 'all 0.3s ease',
               '&:hover': {
                 transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(102, 126, 234, 0.15)',
+                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
                 borderColor: 'primary.main',
               },
             }}
@@ -209,7 +281,7 @@ export function CustomerDashboardPage() {
                   sx={{
                     p: 1.5,
                     borderRadius: 2,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -230,7 +302,7 @@ export function CustomerDashboardPage() {
                   fontSize: { xs: '1.5rem', sm: '1.75rem' },
                 }}
               >
-                GHS {walletBalance.toFixed(2)}
+                GHS {typeof walletBalance === 'number' && !isNaN(walletBalance) ? walletBalance.toFixed(2) : '0.00'}
               </Typography>
               <Button
                 size="small"
@@ -241,9 +313,9 @@ export function CustomerDashboardPage() {
                   textTransform: 'none',
                   fontWeight: 600,
                   py: 0.75,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%)',
+                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                   },
                 }}
                 onClick={() => navigate('/user/wallet')}
@@ -362,12 +434,12 @@ export function CustomerDashboardPage() {
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',
-              background: 'linear-gradient(135deg, #f59e0b15 0%, #d9770615 100%)',
+              background: 'linear-gradient(135deg, rgba(26, 95, 122, 0.08) 0%, rgba(37, 132, 168, 0.08) 100%)',
               transition: 'all 0.3s ease',
               '&:hover': {
                 transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(245, 158, 11, 0.15)',
-                borderColor: 'warning.main',
+                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
+                borderColor: 'secondary.main',
               },
             }}
           >
@@ -377,7 +449,7 @@ export function CustomerDashboardPage() {
                   sx={{
                     p: 1.5,
                     borderRadius: 2,
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -421,6 +493,9 @@ export function CustomerDashboardPage() {
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             borderBottom: '1px solid',
             borderColor: 'divider',
@@ -445,7 +520,7 @@ export function CustomerDashboardPage() {
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
-          <TableContainer>
+          <TableContainer sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -472,16 +547,26 @@ export function CustomerDashboardPage() {
                         <TableRow
                           key={tx.id}
                           sx={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/user/transactions/${tx.transactionId}`)}
+                          onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
                         >
                       <TableCell>{tx.transactionId}</TableCell>
                       <TableCell>{tx.chargePointId}</TableCell>
-                      <TableCell>{tx.totalEnergyKwh?.toFixed(2) || '-'}</TableCell>
+                      <TableCell>
+                        {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
+                          ? (typeof tx.totalEnergyKwh === 'number' 
+                              ? tx.totalEnergyKwh.toFixed(2)
+                              : parseFloat(String(tx.totalEnergyKwh)).toFixed(2))
+                          : '-'}
+                      </TableCell>
                       <TableCell>
                         {tx.durationMinutes ? `${Math.floor(tx.durationMinutes / 60)}h ${tx.durationMinutes % 60}m` : '-'}
                       </TableCell>
                       <TableCell>
-                        {tx.totalCost ? `GHS ${tx.totalCost.toFixed(2)}` : '-'}
+                        {tx.totalCost !== undefined && tx.totalCost !== null
+                          ? (typeof tx.totalCost === 'number'
+                              ? `GHS ${tx.totalCost.toFixed(2)}`
+                              : `GHS ${parseFloat(String(tx.totalCost)).toFixed(2)}`)
+                          : '-'}
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -508,7 +593,7 @@ export function CustomerDashboardPage() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <TableContainer sx={{ maxHeight: 600 }}>
+          <TableContainer sx={{ maxHeight: 600, overflowX: 'auto' }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -533,7 +618,11 @@ export function CustomerDashboardPage() {
                     <TableRow key={payment.id}>
                       <TableCell>{payment.id}</TableCell>
                       <TableCell>
-                        {payment.currency} {payment.amount.toFixed(2)}
+                        GHS {payment.amount !== undefined && payment.amount !== null
+                          ? (typeof payment.amount === 'number'
+                              ? payment.amount.toFixed(2)
+                              : parseFloat(String(payment.amount)).toFixed(2))
+                          : '0.00'}
                       </TableCell>
                       <TableCell>{payment.paymentMethod}</TableCell>
                       <TableCell>
@@ -563,7 +652,7 @@ export function CustomerDashboardPage() {
                     sx={{
                       p: 4,
                       mb: 3,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                       borderRadius: 2,
                       color: 'white',
                     }}
@@ -722,8 +811,8 @@ export function CustomerDashboardPage() {
                           p: 3,
                           height: '100%',
                           borderLeft: '4px solid',
-                          borderLeftColor: 'warning.main',
-                          background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
+                          borderLeftColor: 'secondary.main',
+                          background: 'linear-gradient(135deg, #e8f4f8 0%, #ffffff 100%)',
                           transition: 'transform 0.2s, box-shadow 0.2s',
                           '&:hover': {
                             transform: 'translateY(-4px)',
@@ -734,7 +823,7 @@ export function CustomerDashboardPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                           <Avatar
                             sx={{
-                              bgcolor: 'warning.main',
+                              bgcolor: 'secondary.main',
                               width: 48,
                               height: 48,
                               mr: 2,
@@ -751,15 +840,15 @@ export function CustomerDashboardPage() {
                               sx={{
                                 fontWeight: 700,
                                 mt: 0.5,
-                                color: 'warning.dark',
+                                color: 'secondary.dark',
                               }}
                             >
-                              GHS {walletBalance.toFixed(2)}
+                              GHS {typeof walletBalance === 'number' && !isNaN(walletBalance) ? walletBalance.toFixed(2) : '0.00'}
                             </Typography>
                             <Button
                               size="small"
                               variant="contained"
-                              color="warning"
+                              color="secondary"
                               startIcon={<EditIcon />}
                               sx={{ mt: 2 }}
                               onClick={() => navigate('/user/wallet')}

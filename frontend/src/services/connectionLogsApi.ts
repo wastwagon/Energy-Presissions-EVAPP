@@ -118,6 +118,24 @@ export const connectionLogsApi = {
     const response = await api.get('/connection-logs/health');
     return response.data;
   },
+
+  /**
+   * Delete resolved connection errors
+   */
+  deleteResolvedErrors: async (olderThanHours?: number, errorCode?: string): Promise<{ deleted: number }> => {
+    const params = new URLSearchParams();
+    if (olderThanHours) params.append('olderThanHours', olderThanHours.toString());
+    if (errorCode) params.append('errorCode', errorCode);
+    const response = await api.delete(`/connection-logs/errors/resolved?${params.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * Delete a specific error log by ID
+   */
+  deleteError: async (id: number): Promise<void> => {
+    await api.delete(`/connection-logs/errors/${id}`);
+  },
 };
 
 

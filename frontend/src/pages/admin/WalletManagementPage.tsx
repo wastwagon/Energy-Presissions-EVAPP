@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -21,8 +21,15 @@ import {
   Grid,
   Card,
   CardContent,
+  InputAdornment,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
 
@@ -32,11 +39,22 @@ export function WalletManagementPage() {
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
-  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [creditDebtDialogOpen, setCreditDebtDialogOpen] = useState(false);
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    accountType: 'Customer',
+    status: 'Active',
+  });
 
   useEffect(() => {
     loadUsers();
@@ -63,49 +81,115 @@ export function WalletManagementPage() {
     }
   };
 
-  const handleTopUp = async () => {
-    if (!selectedUser || !amount) return;
+  const handleCreditDebt = async () => {
+    if (!selectedUser || !amount || amount.trim() === '') {
+      setError('Please enter an amount');
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum === 0) {
+      setError('Please enter a valid amount (cannot be zero)');
+      return;
+    }
 
     setProcessing(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      await walletApi.topUp(selectedUser.id, parseFloat(amount), note);
-      setTopUpDialogOpen(false);
+      if (amountNum > 0) {
+        // Credit (Top Up)
+        await walletApi.topUp(selectedUser.id, amountNum, note || 'Credit adjustment');
+        setSuccess(`Successfully credited ${formatCurrency(amountNum, selectedUser.currency || 'GHS')} to wallet`);
+      } else {
+        // Debt (Negative adjustment)
+        await walletApi.adjust(selectedUser.id, amountNum, note || 'Debt adjustment');
+        setSuccess(`Successfully recorded debt of ${formatCurrency(Math.abs(amountNum), selectedUser.currency || 'GHS')}`);
+      }
+      
+      // Close dialog and reset form
+      setCreditDebtDialogOpen(false);
       setAmount('');
       setNote('');
+      
+      // Reload data
       await loadUsers();
-      if (selectedUser) {
-        await loadUserTransactions(selectedUser.id);
+      
+      // Reload transactions if user is still selected
+      const updatedUser = users.find(u => u.id === selectedUser.id);
+      if (updatedUser) {
+        setSelectedUser(updatedUser);
+        await loadUserTransactions(updatedUser.id);
       }
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to top up wallet');
+      console.error('Credit/Debt error:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          'Failed to process transaction. Please try again.';
+      setError(errorMessage);
+      // Keep dialog open on error so user can retry
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleAdjust = async () => {
-    if (!selectedUser || !amount || !note) return;
+  const handleCreateUser = async () => {
+    if (!newUser.email || !newUser.password || !newUser.firstName || !newUser.lastName) {
+      setError('Please fill in all required fields');
+      return;
+    }
 
     setProcessing(true);
     setError(null);
 
     try {
-      await walletApi.adjust(selectedUser.id, parseFloat(amount), note);
-      setAdjustDialogOpen(false);
-      setAmount('');
-      setNote('');
+      await usersApi.create({
+        email: newUser.email,
+        password: newUser.password,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        phone: newUser.phone || undefined,
+        accountType: newUser.accountType,
+        status: newUser.status,
+      });
+      setSuccess('User created successfully');
+      setCreateUserDialogOpen(false);
+      setNewUser({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        accountType: 'Customer',
+        status: 'Active',
+      });
       await loadUsers();
-      if (selectedUser) {
-        await loadUserTransactions(selectedUser.id);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to adjust wallet');
+      setError(err.response?.data?.message || err.message || 'Failed to create user');
     } finally {
       setProcessing(false);
     }
   };
+
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    
+    const query = searchQuery.toLowerCase();
+    return users.filter(
+      (user) =>
+        user.firstName?.toLowerCase().includes(query) ||
+        user.lastName?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(query)
+    );
+  }, [users, searchQuery]);
 
   const formatCurrency = (amount: number, currency: string = 'GHS') => {
     return new Intl.NumberFormat('en-GH', {
@@ -139,10 +223,18 @@ export function WalletManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" component="h1">
           Wallet Management
         </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={() => setCreateUserDialogOpen(true)}
+          sx={{ minWidth: 140 }}
+        >
+          Create User
+        </Button>
       </Box>
 
       {error && (
@@ -151,14 +243,40 @@ export function WalletManagementPage() {
         </Alert>
       )}
 
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Users
-              </Typography>
-              <TableContainer>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Users ({filteredUsers.length})
+                </Typography>
+              </Box>
+              
+              {/* Search Bar */}
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ mb: 2 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -169,45 +287,64 @@ export function WalletManagementPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {users.map((user) => (
-                      <TableRow
-                        key={user.id}
-                        hover
-                        selected={selectedUser?.id === user.id}
-                        onClick={() => {
-                          setSelectedUser(user);
-                          loadUserTransactions(user.id);
-                        }}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>
-                          {user.firstName} {user.lastName}
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            color={(user.balance ?? 0) >= 0 ? 'success.main' : 'error.main'}
-                            fontWeight="bold"
-                          >
-                            {formatCurrency(user.balance ?? 0, user.currency)}
+                    {filteredUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                            {searchQuery ? 'No users found matching your search' : 'No users found'}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            size="small"
-                            startIcon={<AddIcon />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedUser(user);
-                              setTopUpDialogOpen(true);
-                            }}
-                          >
-                            Top Up
-                          </Button>
-                        </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredUsers.map((user) => {
+                        const balance = user.balance ?? 0;
+                        const hasDebt = balance < 0;
+                        
+                        return (
+                          <TableRow
+                            key={user.id}
+                            hover
+                            selected={selectedUser?.id === user.id}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              loadUserTransactions(user.id);
+                            }}
+                            sx={{ cursor: 'pointer' }}
+                          >
+                            <TableCell>
+                              {user.firstName} {user.lastName}
+                            </TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <Typography
+                                variant="body2"
+                                color={hasDebt ? 'error.main' : 'success.main'}
+                                fontWeight="bold"
+                              >
+                                {formatCurrency(balance, user.currency)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="primary"
+                                startIcon={<AddIcon />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedUser(user);
+                                  setAmount('');
+                                  setNote('');
+                                  setCreditDebtDialogOpen(true);
+                                }}
+                              >
+                                Credit/Debt
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -227,15 +364,19 @@ export function WalletManagementPage() {
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => setAdjustDialogOpen(true)}
+                    onClick={() => {
+                      setAmount('');
+                      setNote('');
+                      setCreditDebtDialogOpen(true);
+                    }}
                   >
-                    Adjust Balance
+                    Credit/Debt
                   </Button>
                 )}
               </Box>
 
               {selectedUser ? (
-                <TableContainer>
+                <TableContainer sx={{ overflowX: 'auto' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
@@ -294,18 +435,34 @@ export function WalletManagementPage() {
         </Grid>
       </Grid>
 
-      {/* Top Up Dialog */}
-      <Dialog open={topUpDialogOpen} onClose={() => setTopUpDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Top Up Wallet</DialogTitle>
+      {/* Credit/Debt Dialog - Unified Form */}
+      <Dialog open={creditDebtDialogOpen} onClose={() => setCreditDebtDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Credit / Debt Wallet</DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                User: {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                User: <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> ({selectedUser.email})
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Current Balance: {formatCurrency(selectedUser.balance ?? 0, selectedUser.currency)}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Current Balance:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight="bold"
+                  color={(selectedUser.balance ?? 0) < 0 ? 'error.main' : 'success.main'}
+                >
+                  {formatCurrency(selectedUser.balance ?? 0, selectedUser.currency)}
+                </Typography>
+              </Box>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2" component="div">
+                  <strong>Credit:</strong> Enter a positive amount (e.g., 100.00) to add funds
+                  <br />
+                  <strong>Debt:</strong> Enter a negative amount (e.g., -50.00) to record debt or subtract funds
+                </Typography>
+              </Alert>
             </Box>
           )}
           <TextField
@@ -314,10 +471,36 @@ export function WalletManagementPage() {
             fullWidth
             margin="normal"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputProps={{ min: 0, step: 0.01 }}
+            onChange={(e) => {
+              const value = e.target.value;
+              setAmount(value);
+              // Clear error when user starts typing
+              if (error && error.includes('amount')) {
+                setError(null);
+              }
+            }}
+            inputProps={{ step: 0.01 }}
             required
             disabled={processing}
+            error={!!error && error.includes('amount')}
+            helperText={
+              amount && !isNaN(parseFloat(amount))
+                ? parseFloat(amount) > 0
+                  ? `Will credit ${formatCurrency(Math.abs(parseFloat(amount)), selectedUser?.currency || 'GHS')}`
+                  : parseFloat(amount) < 0
+                  ? `Will record debt of ${formatCurrency(Math.abs(parseFloat(amount)), selectedUser?.currency || 'GHS')}`
+                  : 'Enter positive amount for credit, negative for debt'
+                : 'Enter positive amount for credit, negative for debt'
+            }
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedUser?.currency || 'GHS'}
+                  </Typography>
+                </InputAdornment>
+              ),
+            }}
           />
           <TextField
             label="Note (Optional)"
@@ -328,75 +511,161 @@ export function WalletManagementPage() {
             multiline
             rows={3}
             disabled={processing}
+            placeholder="e.g., Payment received, Outstanding balance, Refund, etc."
           />
+          {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) !== 0 && selectedUser && (
+            <Alert
+              severity={parseFloat(amount) > 0 ? 'success' : 'warning'}
+              sx={{ mt: 1 }}
+            >
+              <Typography variant="body2">
+                <strong>New Balance:</strong>{' '}
+                {formatCurrency(
+                  (parseFloat(selectedUser.balance?.toString() || '0')) + parseFloat(amount),
+                  selectedUser.currency || 'GHS'
+                )}
+              </Typography>
+            </Alert>
+          )}
+          {error && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {error}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTopUpDialogOpen(false)} disabled={processing}>
+          <Button 
+            onClick={() => {
+              setCreditDebtDialogOpen(false);
+              setAmount('');
+              setNote('');
+              setError(null);
+            }} 
+            disabled={processing}
+          >
             Cancel
           </Button>
           <Button
-            onClick={handleTopUp}
+            onClick={handleCreditDebt}
             variant="contained"
-            disabled={processing || !amount || parseFloat(amount) <= 0}
-            startIcon={processing ? <CircularProgress size={20} /> : null}
+            color={amount && !isNaN(parseFloat(amount)) && parseFloat(amount) < 0 ? 'error' : 'primary'}
+            disabled={
+              processing ||
+              !amount ||
+              amount.trim() === '' ||
+              isNaN(parseFloat(amount)) ||
+              parseFloat(amount) === 0
+            }
+            startIcon={processing ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+            type="button"
           >
-            {processing ? 'Processing...' : 'Top Up'}
+            {processing
+              ? 'Processing...'
+              : amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0
+              ? 'Credit Wallet'
+              : amount && !isNaN(parseFloat(amount)) && parseFloat(amount) < 0
+              ? 'Record Debt'
+              : 'Process'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Adjust Dialog */}
-      <Dialog open={adjustDialogOpen} onClose={() => setAdjustDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Adjust Wallet Balance</DialogTitle>
+      {/* Create User Dialog */}
+      <Dialog open={createUserDialogOpen} onClose={() => setCreateUserDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New User</DialogTitle>
         <DialogContent>
-          {selectedUser && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                User: {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Current Balance: {formatCurrency(selectedUser.balance ?? 0, selectedUser.currency)}
-              </Typography>
-              <Alert severity="info" sx={{ mt: 1 }}>
-                Use positive amount to add, negative amount to subtract
-              </Alert>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              required
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              disabled={processing}
+            />
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              required
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              disabled={processing}
+              helperText="Minimum 6 characters"
+            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="First Name"
+                fullWidth
+                required
+                value={newUser.firstName}
+                onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                disabled={processing}
+              />
+              <TextField
+                label="Last Name"
+                fullWidth
+                required
+                value={newUser.lastName}
+                onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                disabled={processing}
+              />
             </Box>
-          )}
-          <TextField
-            label="Amount"
-            type="number"
-            fullWidth
-            margin="normal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputProps={{ step: 0.01 }}
-            required
-            disabled={processing}
-            helperText="Positive to add, negative to subtract"
-          />
-          <TextField
-            label="Note (Required)"
-            fullWidth
-            margin="normal"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            multiline
-            rows={3}
-            required
-            disabled={processing}
-          />
+            <TextField
+              label="Phone (Optional)"
+              fullWidth
+              value={newUser.phone}
+              onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+              disabled={processing}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Account Type</InputLabel>
+              <Select
+                value={newUser.accountType}
+                label="Account Type"
+                onChange={(e) => setNewUser({ ...newUser, accountType: e.target.value })}
+                disabled={processing}
+              >
+                <MenuItem value="Customer">Customer</MenuItem>
+                <MenuItem value="Admin">Admin</MenuItem>
+                <MenuItem value="SuperAdmin">Super Admin</MenuItem>
+                <MenuItem value="WalkIn">Walk-In</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={newUser.status}
+                label="Status"
+                onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
+                disabled={processing}
+              >
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+                <MenuItem value="Suspended">Suspended</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAdjustDialogOpen(false)} disabled={processing}>
+          <Button onClick={() => setCreateUserDialogOpen(false)} disabled={processing}>
             Cancel
           </Button>
           <Button
-            onClick={handleAdjust}
+            onClick={handleCreateUser}
             variant="contained"
-            disabled={processing || !amount || !note || parseFloat(amount) === 0}
-            startIcon={processing ? <CircularProgress size={20} /> : null}
+            disabled={
+              processing ||
+              !newUser.email ||
+              !newUser.password ||
+              !newUser.firstName ||
+              !newUser.lastName ||
+              newUser.password.length < 6
+            }
+            startIcon={processing ? <CircularProgress size={20} /> : <PersonAddIcon />}
           >
-            {processing ? 'Processing...' : 'Adjust'}
+            {processing ? 'Creating...' : 'Create User'}
           </Button>
         </DialogActions>
       </Dialog>

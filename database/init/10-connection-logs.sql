@@ -90,7 +90,7 @@ CREATE TRIGGER trigger_update_connection_statistics
 COMMENT ON TABLE connection_logs IS 'Detailed logs of all connection attempts, successes, failures, and errors for debugging';
 COMMENT ON TABLE connection_statistics IS 'Aggregated connection statistics for quick lookups and monitoring';
 COMMENT ON COLUMN connection_logs.event_type IS 'Type of event: connection_attempt, connection_success, connection_failed, connection_closed, error, message_error';
-COMMENT ON COLUMN connection_logs.close_code IS 'WebSocket close code (e.g., 1008 = Policy Violation, 4003 = Tenant Disabled)';
+COMMENT ON COLUMN connection_logs.close_code IS 'WebSocket close code (e.g., 1008 = Policy Violation, 4003 = Vendor Disabled)';
 COMMENT ON COLUMN connection_statistics.consecutive_failures IS 'Number of consecutive failed connection attempts (resets on success)';
 
 

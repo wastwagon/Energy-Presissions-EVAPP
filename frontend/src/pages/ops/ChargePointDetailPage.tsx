@@ -30,13 +30,21 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import EditIcon from '@mui/icons-material/Edit';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint, Connector } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
+import { ChargePointSettingsDialog } from '../../components/ChargePointSettingsDialog';
+import { firmwareApi } from '../../services/firmwareApi';
+import { diagnosticsApi } from '../../services/diagnosticsApi';
 
 export function ChargePointDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [chargePoint, setChargePoint] = useState<ChargePoint | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
@@ -46,10 +54,20 @@ export function ChargePointDetailPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [remoteStartDialogOpen, setRemoteStartDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [configKey, setConfigKey] = useState('');
   const [configValue, setConfigValue] = useState('');
   const [remoteStartConnector, setRemoteStartConnector] = useState<number | null>(null);
   const [remoteStartIdTag, setRemoteStartIdTag] = useState('');
+  const [firmwareJobs, setFirmwareJobs] = useState<any[]>([]);
+  const [diagnosticsJobs, setDiagnosticsJobs] = useState<any[]>([]);
+  const [firmwareLocation, setFirmwareLocation] = useState('');
+  const [firmwareRetrieveDate, setFirmwareRetrieveDate] = useState(() =>
+    new Date().toISOString().slice(0, 16)
+  );
+  const [diagnosticsLocation, setDiagnosticsLocation] = useState('');
+  const [firmwareLoading, setFirmwareLoading] = useState(false);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -100,19 +118,60 @@ export function ChargePointDetailPage() {
     if (!id) return;
     try {
       setError(null);
-      const [cp, conns, activeTx] = await Promise.all([
+      const [cp, conns, activeTx, fwJobs, diagJobs] = await Promise.all([
         chargePointsApi.getById(id),
         chargePointsApi.getConnectors(id).catch(() => []),
         transactionsApi.getActive().catch(() => []),
+        firmwareApi.getJobs(id).catch(() => []),
+        diagnosticsApi.getJobs(id).catch(() => []),
       ]);
       setChargePoint(cp);
       setConnectors(conns);
       setActiveTransactions(activeTx.filter((tx: any) => tx.chargePointId === id));
+      setFirmwareJobs(Array.isArray(fwJobs) ? fwJobs : []);
+      setDiagnosticsJobs(Array.isArray(diagJobs) ? diagJobs : []);
     } catch (err: any) {
       setError(err.message || 'Failed to load charge point details');
       console.error('Error loading charge point details:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFirmwareUpdate = async () => {
+    if (!id || !firmwareLocation || !firmwareRetrieveDate) return;
+    try {
+      setFirmwareLoading(true);
+      setError(null);
+      await firmwareApi.update({
+        chargePointId: id,
+        location: firmwareLocation,
+        retrieveDate: new Date(firmwareRetrieveDate).toISOString(),
+      });
+      setSuccess('Firmware update initiated');
+      loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to start firmware update');
+    } finally {
+      setFirmwareLoading(false);
+    }
+  };
+
+  const handleDiagnosticsGet = async () => {
+    if (!id || !diagnosticsLocation) return;
+    try {
+      setDiagnosticsLoading(true);
+      setError(null);
+      await diagnosticsApi.get({
+        chargePointId: id,
+        location: diagnosticsLocation,
+      });
+      setSuccess('Diagnostics request sent');
+      loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to request diagnostics');
+    } finally {
+      setDiagnosticsLoading(false);
     }
   };
 
@@ -224,7 +283,7 @@ export function ChargePointDetailPage() {
   if (!chargePoint) {
     return (
       <Box>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/ops')} sx={{ mb: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(opsBase)} sx={{ mb: 2 }}>
           Back to Dashboard
         </Button>
         <Alert severity="error">Charge point not found</Alert>
@@ -235,7 +294,7 @@ export function ChargePointDetailPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/ops')} sx={{ mr: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(opsBase)} sx={{ mr: 2 }}>
           Back
         </Button>
         <Typography variant="h4" component="h1">
@@ -273,7 +332,7 @@ export function ChargePointDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     Vendor
                   </Typography>
-                  <Typography variant="body1">{chargePoint.vendor || '-'}</Typography>
+                  <Typography variant="body1">{chargePoint.vendorName || chargePoint.vendor || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -324,6 +383,26 @@ export function ChargePointDetailPage() {
                       : 'Never'}
                   </Typography>
                 </Grid>
+                {chargePoint.totalCapacityKw && (
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Capacity
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {chargePoint.totalCapacityKw} kW
+                    </Typography>
+                  </Grid>
+                )}
+                {chargePoint.pricePerKwh != null && (
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Price per kWh
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {chargePoint.currency || 'GHS'} {typeof chargePoint.pricePerKwh === 'number' ? chargePoint.pricePerKwh.toFixed(2) : parseFloat(String(chargePoint.pricePerKwh ?? 0)).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                )}
               </Grid>
             </CardContent>
           </Card>
@@ -337,6 +416,14 @@ export function ChargePointDetailPage() {
                 Actions
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<EditIcon />}
+                  onClick={() => setSettingsDialogOpen(true)}
+                >
+                  Settings
+                </Button>
                 <Button
                   variant="outlined"
                   startIcon={<PlayArrowIcon />}
@@ -394,7 +481,7 @@ export function ChargePointDetailPage() {
                 </Typography>
               </Box>
             ) : (
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -468,7 +555,7 @@ export function ChargePointDetailPage() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="h6">Active Transactions</Typography>
               </Box>
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -487,7 +574,13 @@ export function ChargePointDetailPage() {
                         <TableCell>{tx.connectorId}</TableCell>
                         <TableCell>{tx.idTag || '-'}</TableCell>
                         <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
-                        <TableCell>{tx.totalEnergyKwh?.toFixed(3) || '-'}</TableCell>
+                        <TableCell>
+                          {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
+                            ? (typeof tx.totalEnergyKwh === 'number' 
+                                ? tx.totalEnergyKwh.toFixed(3)
+                                : parseFloat(String(tx.totalEnergyKwh)).toFixed(3))
+                            : '-'}
+                        </TableCell>
                         <TableCell>
                           <Button
                             size="small"
@@ -513,6 +606,122 @@ export function ChargePointDetailPage() {
             </Paper>
           </Grid>
         )}
+
+        {/* Firmware & Diagnostics */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CloudUploadIcon /> Firmware Update
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                <TextField
+                  size="small"
+                  label="Firmware URL"
+                  placeholder="https://..."
+                  value={firmwareLocation}
+                  onChange={(e) => setFirmwareLocation(e.target.value)}
+                />
+                <TextField
+                  size="small"
+                  label="Retrieve Date"
+                  type="datetime-local"
+                  value={firmwareRetrieveDate}
+                  onChange={(e) => setFirmwareRetrieveDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  onClick={handleFirmwareUpdate}
+                  disabled={chargePoint.status === 'Offline' || firmwareLoading || !firmwareLocation}
+                >
+                  {firmwareLoading ? 'Starting...' : 'Start Update'}
+                </Button>
+              </Box>
+              {firmwareJobs.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Recent Jobs
+                  </Typography>
+                  <TableContainer sx={{ overflowX: 'auto' }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Retrieve Date</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {firmwareJobs.slice(0, 5).map((j) => (
+                          <TableRow key={j.id}>
+                            <TableCell><Chip label={j.status} size="small" /></TableCell>
+                            <TableCell>
+                              {j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BugReportIcon /> Diagnostics
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                <TextField
+                  size="small"
+                  label="Upload URL"
+                  placeholder="https://..."
+                  value={diagnosticsLocation}
+                  onChange={(e) => setDiagnosticsLocation(e.target.value)}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<BugReportIcon />}
+                  onClick={handleDiagnosticsGet}
+                  disabled={chargePoint.status === 'Offline' || diagnosticsLoading || !diagnosticsLocation}
+                >
+                  {diagnosticsLoading ? 'Requesting...' : 'Get Diagnostics'}
+                </Button>
+              </Box>
+              {diagnosticsJobs.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Recent Jobs
+                  </Typography>
+                  <TableContainer sx={{ overflowX: 'auto' }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Created</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {diagnosticsJobs.slice(0, 5).map((j) => (
+                          <TableRow key={j.id}>
+                            <TableCell><Chip label={j.status} size="small" /></TableCell>
+                            <TableCell>
+                              {j.createdAt ? new Date(j.createdAt).toLocaleString() : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
       {/* Remote Start Dialog */}
@@ -542,6 +751,14 @@ export function ChargePointDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Settings Dialog */}
+      <ChargePointSettingsDialog
+        open={settingsDialogOpen}
+        onClose={() => setSettingsDialogOpen(false)}
+        chargePoint={chargePoint}
+        onSave={loadData}
+      />
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -6,9 +6,12 @@ import axios from 'axios';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
+import { User } from '../entities/user.entity';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class ChargePointsService {
+  private readonly logger = new Logger(ChargePointsService.name);
   private ocppGatewayUrl: string;
 
   constructor(
@@ -18,23 +21,62 @@ export class ChargePointsService {
     private connectorRepository: Repository<Connector>,
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @Inject(forwardRef(() => WalletService))
+    private walletService: WalletService,
     private configService: ConfigService,
   ) {
     // OCPP Gateway URL - use internal Docker network URL
     this.ocppGatewayUrl = process.env.OCPP_GATEWAY_URL || 'http://ocpp-gateway:9000';
   }
 
-  async findAll(search?: string): Promise<ChargePoint[]> {
+  async findAll(search?: string, vendorId?: number): Promise<ChargePoint[]> {
+    // Get all charge points with their active transaction status
     const queryBuilder = this.chargePointRepository.createQueryBuilder('cp');
 
-    if (search) {
-      queryBuilder.where(
-        '(cp.chargePointId ILIKE :search OR cp.vendor ILIKE :search OR cp.model ILIKE :search OR cp.serialNumber ILIKE :search)',
-        { search: `%${search}%` },
-      );
+    if (vendorId) {
+      queryBuilder.where('cp.vendor_id = :vendorId', { vendorId });
     }
 
-    return queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
+    if (search) {
+      const searchCondition = vendorId
+        ? '(cp.chargePointId ILIKE :search OR cp.vendorName ILIKE :search OR cp.model ILIKE :search OR cp.serialNumber ILIKE :search)'
+        : '(cp.chargePointId ILIKE :search OR cp.vendorName ILIKE :search OR cp.model ILIKE :search OR cp.serialNumber ILIKE :search)';
+      
+      queryBuilder.andWhere(searchCondition, { search: `%${search}%` });
+    }
+
+    const chargePoints = await queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
+    
+    // Update status based on active transactions and connector status
+    for (const cp of chargePoints) {
+      // Check for active transactions
+      const activeTransactions = await this.transactionRepository.count({
+        where: {
+          chargePointId: cp.chargePointId,
+          status: 'Active',
+        },
+      });
+      
+      if (activeTransactions > 0) {
+        // If there's an active transaction, status should be "Charging"
+        cp.status = 'Charging';
+      } else {
+        // Check connector status - if any connector is charging, set status to Charging
+        const connectors = await this.connectorRepository.find({
+          where: { chargePointId: cp.chargePointId },
+        });
+        
+        const hasChargingConnector = connectors.some(c => c.status === 'Charging');
+        if (hasChargingConnector) {
+          cp.status = 'Charging';
+        }
+        // Otherwise keep the original status (Available, Offline, etc.)
+      }
+    }
+    
+    return chargePoints;
   }
 
   async findOne(chargePointId: string): Promise<ChargePoint> {
@@ -162,6 +204,110 @@ export class ChargePointsService {
     return { success };
   }
 
+  /**
+   * Start wallet-based charging transaction
+   * Reserves amount from wallet and starts charging session
+   */
+  async startWalletBasedCharging(
+    chargePointId: string,
+    connectorId: number,
+    userId: number,
+    amount: number,
+  ): Promise<{ success: boolean; transactionId?: number; message: string }> {
+    // Verify charge point exists
+    const chargePoint = await this.findOne(chargePointId);
+    
+    if (connectorId === 0) {
+      throw new BadRequestException('Connector ID 0 is not valid for transactions');
+    }
+
+    // Verify user exists
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User ${userId} not found`);
+    }
+
+    // Check wallet balance
+    const hasBalance = await this.walletService.hasSufficientBalance(userId, amount);
+    if (!hasBalance) {
+      throw new BadRequestException('Insufficient wallet balance');
+    }
+
+    // Reserve amount from wallet (create a pending transaction)
+    // We'll deduct it when the transaction actually starts
+    const idTag = `USER_${userId}`;
+    
+    // Reserve the amount from wallet FIRST (before starting transaction)
+    // This ensures the reservation exists when the transaction is created
+    const walletReservation = await this.walletService.reserve(
+      userId,
+      amount,
+      `Charging session at ${chargePointId} - Reserved amount`,
+      undefined, // transactionId will be set later
+    );
+
+    // Start the remote transaction
+    const startResult = await this.remoteStartTransaction(chargePointId, connectorId, idTag);
+    
+    if (!startResult.success) {
+      // If remote start failed, cancel the reservation
+      try {
+        await this.walletService.cancelReservation(walletReservation.id);
+      } catch (error) {
+        this.logger.error(`Failed to cancel reservation after remote start failure:`, error);
+      }
+      throw new BadRequestException('Failed to start charging session');
+    }
+
+    // Find the active transaction that was just created (with retry logic)
+    // The transaction is created asynchronously when the device sends StartTransaction
+    let activeTransaction = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      activeTransaction = await this.transactionRepository.findOne({
+        where: {
+          chargePointId,
+          connectorId,
+          idTag,
+          status: 'Active',
+        },
+        order: { startTime: 'DESC' },
+      });
+
+      if (activeTransaction) {
+        break;
+      }
+
+      // Wait a bit before retrying (transaction creation is async)
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (activeTransaction) {
+      // Store the reserved amount in the transaction
+      activeTransaction.walletReservedAmount = amount;
+      await this.transactionRepository.save(activeTransaction);
+
+      // Link the reservation to this transaction
+      // Note: walletReservation is already saved, we need to update it via walletService
+      // The reservation will be linked automatically when the transaction is created
+      // via the check in createTransaction method
+      
+      return {
+        success: true,
+        transactionId: activeTransaction.transactionId,
+        message: `Charging started. Amount ${amount} GHS reserved. Session will stop automatically when amount is exhausted.`,
+      };
+    }
+
+    // If transaction not found after retries, the reservation will be linked later
+    // when createTransaction checks for pending reservations
+    this.logger.warn(`Transaction not found after wallet-start for ${chargePointId}, reservation ${walletReservation.id} will be linked when transaction is created`);
+
+    return {
+      success: true,
+      message: 'Charging session started. Amount will be reserved when transaction begins.',
+    };
+  }
+
   async remoteStopTransaction(
     chargePointId: string,
     transactionId: number,
@@ -179,6 +325,61 @@ export class ChargePointsService {
     ];
 
     const success = await this.sendOCPPCommand(chargePointId, message);
+    
+    // Update transaction status if stop was successful
+    if (success) {
+      const transaction = await this.transactionRepository.findOne({
+        where: { transactionId },
+      });
+      if (transaction && transaction.status === 'Active') {
+        this.logger.log(`Stopping transaction ${transactionId} at ${chargePointId}. Waiting for device StopTransaction response.`);
+        
+        // If device doesn't respond within 15 seconds, complete transaction manually using latest meter values
+        setTimeout(async () => {
+          const stillActive = await this.transactionRepository.findOne({
+            where: { transactionId },
+          });
+          
+          if (stillActive && stillActive.status === 'Active') {
+            this.logger.warn(`Transaction ${transactionId} still active after remote stop timeout. Completing manually.`);
+            
+            // Get latest meter value
+            const latestMeterResult = await this.transactionRepository.manager
+              .createQueryBuilder()
+              .select('MAX(ms.value)', 'maxValue')
+              .from('meter_samples', 'ms')
+              .where('ms.transaction_id = :txId', { txId: transactionId })
+              .andWhere('ms.measurand = :measurand', { measurand: 'Energy.Active.Import.Register' })
+              .getRawOne();
+            
+            const meterStop = latestMeterResult?.maxValue || transaction.meterStart;
+            
+            // Call internal service to complete transaction
+            try {
+              const internalServiceUrl = process.env.CSMS_API_URL || 'http://csms-api:3000';
+              await axios.post(
+                `${internalServiceUrl}/api/internal/transactions/${transactionId}/stop`,
+                {
+                  meterStop: meterStop,
+                  stopTime: new Date().toISOString(),
+                  reason: 'Remote',
+                },
+                {
+                  headers: {
+                    'Authorization': `Bearer ${process.env.SERVICE_TOKEN || 'internal-service-token'}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              this.logger.log(`Manually completed transaction ${transactionId} after timeout`);
+            } catch (error: any) {
+              this.logger.error(`Failed to manually complete transaction ${transactionId}:`, error?.message || error);
+            }
+          }
+        }, 15000); // 15 second timeout
+      }
+    }
+    
     return { success };
   }
 

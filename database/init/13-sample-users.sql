@@ -5,7 +5,7 @@
 -- Default password for all users: password123 (except where noted)
 
 -- Super Admin Users
-INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
+INSERT INTO users (email, password_hash, first_name, last_name, account_type, vendor_id, status, email_verified, balance, currency)
 VALUES (
     'admin@evcharging.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- admin123
@@ -23,7 +23,7 @@ ON CONFLICT (email) DO UPDATE SET
     status = 'Active';
 
 -- Admin Users (Vendor 1)
-INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
+INSERT INTO users (email, password_hash, first_name, last_name, account_type, vendor_id, status, email_verified, balance, currency)
 VALUES 
 (
     'admin1@vendor1.com',
@@ -56,7 +56,7 @@ ON CONFLICT (email) DO UPDATE SET
 -- Customer Users (Vendor 1)
 -- Note: Password hashes are generated with bcrypt. Default password for all: customer123
 -- To generate new hashes, use: bcrypt.hash('customer123', 10)
-INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
+INSERT INTO users (email, password_hash, first_name, last_name, account_type, vendor_id, status, email_verified, balance, currency)
 VALUES 
 (
     'customer1@vendor1.com',
@@ -99,7 +99,7 @@ ON CONFLICT (email) DO UPDATE SET
     status = 'Active';
 
 -- Walk-In Customer
-INSERT INTO users (email, password_hash, first_name, last_name, account_type, tenant_id, status, email_verified, balance, currency)
+INSERT INTO users (email, password_hash, first_name, last_name, account_type, vendor_id, status, email_verified, balance, currency)
 VALUES (
     'walkin@vendor1.evcharging.com',
     '$2b$10$32W/fXDTkOVKdTREVCI4i.8wiMXc10RJszYVOV.GvvYAi1y9.Me4m', -- walkin123

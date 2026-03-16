@@ -81,8 +81,18 @@ export class StartTransactionHandler {
       });
 
       return response.data.transactionId;
-    } catch (error) {
-      logger.error(`Failed to create transaction for ${chargePointId}:`, error);
+    } catch (error: any) {
+      // Extract useful error information without circular references
+      const errorMessage = error?.message || 'Unknown error';
+      const errorStatus = error?.response?.status;
+      const errorData = error?.response?.data;
+      
+      logger.error(`Failed to create transaction for ${chargePointId}:`, {
+        message: errorMessage,
+        status: errorStatus,
+        data: errorData,
+        stack: error?.stack
+      });
       throw error;
     }
   }

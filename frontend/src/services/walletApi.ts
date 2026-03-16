@@ -47,6 +47,23 @@ export const walletApi = {
   },
 
   /**
+   * Get available wallet balance (excluding pending reservations)
+   */
+  getAvailableBalance: async (userId?: number): Promise<{ available: number; reserved: number; total: number; currency: string }> => {
+    // If userId not provided, get from current user
+    if (!userId) {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        throw new Error('User not logged in');
+      }
+      const user = JSON.parse(userStr);
+      userId = user.id;
+    }
+    const response = await api.get(`/wallet/available-balance/${userId}`);
+    return response.data;
+  },
+
+  /**
    * Top up wallet (Admin)
    */
   topUp: async (userId: number, amount: number, adminNote?: string): Promise<WalletTransaction> => {

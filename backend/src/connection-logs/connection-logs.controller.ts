@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Delete,
   Query,
   Param,
   ParseIntPipe,
@@ -85,6 +86,32 @@ export class ConnectionLogsController {
   @ApiResponse({ status: 200, description: 'Health summary' })
   async getHealthSummary() {
     return this.connectionLogsService.getHealthSummary();
+  }
+
+  @Delete('errors/resolved')
+  @ApiOperation({ summary: 'Delete resolved connection errors' })
+  @ApiQuery({ name: 'olderThanHours', required: false, type: Number, description: 'Delete errors older than X hours (default: 24)' })
+  @ApiQuery({ name: 'errorCode', required: false, type: String, description: 'Delete errors with specific error code' })
+  @ApiQuery({ name: 'requireResolution', required: false, type: Boolean, description: 'Require successful connection after error (default: true). Set to false to delete by age only.' })
+  @ApiResponse({ status: 200, description: 'Number of errors deleted' })
+  async deleteResolvedErrors(
+    @Query('olderThanHours') olderThanHours?: number,
+    @Query('errorCode') errorCode?: string,
+    @Query('requireResolution') requireResolution?: string,
+  ) {
+    const requireResolutionBool = requireResolution !== 'false'; // Default to true
+    return this.connectionLogsService.deleteResolvedErrors(
+      olderThanHours ? parseInt(olderThanHours.toString()) : 24,
+      errorCode,
+      requireResolutionBool,
+    );
+  }
+
+  @Delete('errors/:id')
+  @ApiOperation({ summary: 'Delete a specific error log' })
+  @ApiResponse({ status: 200, description: 'Error deleted successfully' })
+  async deleteError(@Param('id', ParseIntPipe) id: number) {
+    return this.connectionLogsService.deleteError(id);
   }
 }
 

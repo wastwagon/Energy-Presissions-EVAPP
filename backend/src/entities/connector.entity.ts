@@ -49,7 +49,7 @@ export class Connector {
   })
   status: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ name: 'error_code', length: 50, nullable: true })
   errorCode: string;
 
   @Column({ name: 'vendor_error_code', length: 255, nullable: true })

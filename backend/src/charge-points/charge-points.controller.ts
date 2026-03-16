@@ -7,10 +7,12 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePoint } from '../entities/charge-point.entity';
@@ -23,9 +25,18 @@ export class ChargePointsController {
   @Get()
   @ApiOperation({ summary: 'Get all charge points' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by chargePointId, vendor, model, or serialNumber' })
+  @ApiQuery({ name: 'vendorId', required: false, type: Number, description: 'Filter by vendor ID' })
+  @ApiHeader({ name: 'X-Vendor-Id', required: false, description: 'Vendor ID for filtering (alternative to query param)' })
   @ApiResponse({ status: 200, description: 'List of charge points' })
-  async findAll(@Query('search') search?: string): Promise<ChargePoint[]> {
-    return this.chargePointsService.findAll(search);
+  async findAll(
+    @Query('search') search?: string,
+    @Query('vendorId') vendorId?: number,
+    @Headers('x-vendor-id') vendorIdHeader?: string,
+  ): Promise<ChargePoint[]> {
+    // Use query param vendorId or header X-Vendor-Id
+    const finalVendorId = vendorId || (vendorIdHeader ? parseInt(vendorIdHeader) : undefined);
+    
+    return this.chargePointsService.findAll(search, finalVendorId);
   }
 
   @Get(':id')
@@ -101,6 +112,23 @@ export class ChargePointsController {
       id,
       body.connectorId,
       body.idTag,
+    );
+  }
+
+  @Post(':id/wallet-start')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Start wallet-based charging transaction' })
+  @ApiResponse({ status: 200, description: 'Charging started successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request or insufficient balance' })
+  async startWalletBasedCharging(
+    @Param('id') id: string,
+    @Body() body: { connectorId: number; userId: number; amount: number },
+  ) {
+    return this.chargePointsService.startWalletBasedCharging(
+      id,
+      body.connectorId,
+      body.userId,
+      body.amount,
     );
   }
 

@@ -59,6 +59,8 @@ services:
           type: web
           name: ev-billing-api
           property: host
+      - key: GOOGLE_CLIENT_ID
+        sync: false
     healthCheckPath: /health
 
   # Frontend (React + Vite)
@@ -76,3 +78,5 @@ services:
         value: https://ev-billing-api.onrender.com/api
       - key: VITE_WS_URL
         value: wss://ev-billing-api.onrender.com/ws
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false

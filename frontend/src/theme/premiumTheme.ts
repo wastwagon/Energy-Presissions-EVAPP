@@ -2,16 +2,16 @@
 export const premiumTheme = {
   colors: {
     primary: {
-      main: '#667eea',
-      light: '#818cf8',
-      dark: '#4f46e5',
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      main: '#0A3D62',
+      light: '#0d5a8a',
+      dark: '#062540',
+      gradient: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
     },
     secondary: {
-      main: '#f093fb',
-      light: '#f5a9ff',
-      dark: '#e879f9',
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      main: '#1A5F7A',
+      light: '#2584a8',
+      dark: '#124560',
+      gradient: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
     },
     success: {
       main: '#10b981',

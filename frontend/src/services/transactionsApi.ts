@@ -18,6 +18,7 @@ export interface Transaction {
   status: string;
   reason?: string;
   reservationId?: number;
+  walletReservedAmount?: number;
   createdAt: string;
   updatedAt: string;
 }

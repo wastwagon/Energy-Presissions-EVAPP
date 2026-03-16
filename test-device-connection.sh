@@ -1,78 +1,177 @@
 #!/bin/bash
 
-# Quick test script to verify device connectivity
-# Run this to check if your OCPP Gateway is accessible from the network
+# Device Connection Test Script
+# Tests connectivity and OCPP Gateway accessibility
+
+DEVICE_IP="192.168.9.106"
+SYSTEM_IP="192.168.9.101"
+CHARGE_POINT_ID="0900330710111935"
+OCPP_PORT="9000"
 
 echo "=========================================="
-echo "Device Connection Test Script"
+echo "Device Connection Diagnostic Test"
 echo "=========================================="
 echo ""
-
-# Get Mac's IP address
-echo "1. Finding your Mac's IP address..."
-MAC_IP=$(ifconfig | grep -E "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
-echo "   Your Mac's IP: $MAC_IP"
+echo "Device IP: $DEVICE_IP"
+echo "System IP: $SYSTEM_IP"
+echo "Charge Point ID: $CHARGE_POINT_ID"
 echo ""
 
-# Test local health endpoint
-echo "2. Testing OCPP Gateway locally..."
-LOCAL_TEST=$(curl -s http://localhost:9000/health)
-if [ "$LOCAL_TEST" = "OK" ]; then
-    echo "   ✅ Local connection: WORKING"
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Test 1: Device Reachability
+echo -e "${BLUE}1. Testing Device Reachability${NC}"
+echo "--------------------------------"
+if ping -c 3 -W 2 $DEVICE_IP > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Device is reachable${NC}"
+    ping -c 3 $DEVICE_IP 2>&1 | tail -1
 else
-    echo "   ❌ Local connection: FAILED"
-    echo "   Response: $LOCAL_TEST"
+    echo -e "${RED}❌ Device is NOT reachable${NC}"
+    echo "   Possible reasons:"
+    echo "   - Device is rebooting (wait 2-3 minutes)"
+    echo "   - Device changed IP address after reboot"
+    echo "   - Network connectivity issue"
+    echo ""
+    echo "   Checking ARP table..."
+    arp -n $DEVICE_IP 2>&1 || echo "   Device not in ARP table"
 fi
 echo ""
 
-# Check if port is listening
-echo "3. Checking if port 9000 is listening..."
-if netstat -an | grep -q "\.9000.*LISTEN"; then
-    echo "   ✅ Port 9000 is listening"
+# Test 2: OCPP Gateway Health
+echo -e "${BLUE}2. Testing OCPP Gateway Health${NC}"
+echo "--------------------------------"
+if curl -s http://localhost:$OCPP_PORT/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ OCPP Gateway is running${NC}"
+    echo "   Health check: $(curl -s http://localhost:$OCPP_PORT/health)"
 else
-    echo "   ❌ Port 9000 is NOT listening"
+    echo -e "${RED}❌ OCPP Gateway is not responding${NC}"
 fi
 echo ""
 
-# Check Docker status
-echo "4. Checking Docker containers..."
-if docker-compose ps | grep -q "ev-billing-ocpp-gateway.*Up"; then
-    echo "   ✅ OCPP Gateway container is running"
+# Test 3: OCPP Gateway Network Binding
+echo -e "${BLUE}3. Testing OCPP Gateway Network Binding${NC}"
+echo "--------------------------------"
+if nc -zv -w 2 $SYSTEM_IP $OCPP_PORT > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ OCPP Gateway port is accessible from network${NC}"
+    echo "   Port $OCPP_PORT is open on $SYSTEM_IP"
 else
-    echo "   ❌ OCPP Gateway container is NOT running"
-    echo "   Run: docker-compose up -d"
+    echo -e "${RED}❌ OCPP Gateway port is NOT accessible from network${NC}"
+    echo "   Port $OCPP_PORT is not accessible on $SYSTEM_IP"
+    echo "   This is a CRITICAL issue - device cannot connect!"
+    echo ""
+    echo "   Checking Docker port mapping..."
+    docker port ev-billing-ocpp-gateway 2>&1 | grep $OCPP_PORT || echo "   Port mapping issue"
 fi
 echo ""
 
-# Display device configuration
-echo "=========================================="
-echo "Device Configuration"
-echo "=========================================="
+# Test 4: Check Recent Connection Attempts
+echo -e "${BLUE}4. Checking Connection Logs${NC}"
+echo "--------------------------------"
+echo "Recent OCPP Gateway logs (last 30 lines):"
 echo ""
-echo "Configure your charge point device with:"
+RECENT_LOGS=$(docker logs ev-billing-ocpp-gateway --tail 30 2>&1 | grep -iE "connection|$CHARGE_POINT_ID|$DEVICE_IP|websocket|boot" | tail -10)
+if [ -n "$RECENT_LOGS" ]; then
+    echo -e "${GREEN}Found connection-related logs:${NC}"
+    echo "$RECENT_LOGS"
+else
+    echo -e "${YELLOW}⚠️  No connection attempts found${NC}"
+    echo "   Device may not have attempted connection yet"
+fi
 echo ""
-echo "  OCPP Central System URL:"
-echo "  ws://$MAC_IP:9000/ocpp/YOUR_CHARGE_POINT_ID"
-echo ""
-echo "  Example (if Charge Point ID is CP001):"
-echo "  ws://$MAC_IP:9000/ocpp/CP001"
-echo ""
-echo "=========================================="
-echo "Testing from Network"
-echo "=========================================="
-echo ""
-echo "To test from another device on the same network:"
-echo "  curl http://$MAC_IP:9000/health"
-echo ""
-echo "Or use a WebSocket client:"
-echo "  wscat -c ws://$MAC_IP:9000/ocpp/CP001"
-echo ""
-echo "=========================================="
-echo "Monitoring Logs"
-echo "=========================================="
-echo ""
-echo "Watch for incoming connections:"
-echo "  docker-compose logs -f ocpp-gateway"
-echo ""
-echo "=========================================="
 
+# Test 5: Database Check
+echo -e "${BLUE}5. Checking Database Registration${NC}"
+echo "--------------------------------"
+DB_RESULT=$(docker exec ev-billing-postgres psql -U evbilling -d ev_billing_db -t -c "SELECT COUNT(*) FROM charge_points WHERE charge_point_id = '$CHARGE_POINT_ID';" 2>&1 | tr -d ' ')
+if [ "$DB_RESULT" = "1" ]; then
+    echo -e "${GREEN}✅ Charge point is registered in database${NC}"
+    docker exec ev-billing-postgres psql -U evbilling -d ev_billing_db -c "SELECT charge_point_id, status, last_seen, last_heartbeat FROM charge_points WHERE charge_point_id = '$CHARGE_POINT_ID';" 2>&1 | tail -3
+else
+    echo -e "${YELLOW}⚠️  Charge point NOT registered in database${NC}"
+    echo "   Device needs to connect and send BootNotification"
+fi
+echo ""
+
+# Test 6: Configuration Verification
+echo -e "${BLUE}6. Configuration Verification${NC}"
+echo "--------------------------------"
+echo "Expected OCPP Server URL:"
+echo -e "${GREEN}ws://$SYSTEM_IP:$OCPP_PORT/ocpp/$CHARGE_POINT_ID${NC}"
+echo ""
+echo "⚠️  IMPORTANT: The device configuration must include:"
+echo "   - Full URL: ws://$SYSTEM_IP:$OCPP_PORT/ocpp/$CHARGE_POINT_ID"
+echo "   - NOT just: ws://$SYSTEM_IP:$OCPP_PORT/ocpp/"
+echo "   - Charge Point ID must be at the end of the URL"
+echo ""
+
+# Test 7: Network Route Check
+echo -e "${BLUE}7. Network Route Check${NC}"
+echo "--------------------------------"
+LOCAL_IP=$(ifconfig | grep -E "inet " | grep -v 127.0.0.1 | grep "192.168.9" | head -1 | awk '{print $2}')
+if [ -n "$LOCAL_IP" ]; then
+    LOCAL_SUBNET=$(echo $LOCAL_IP | cut -d. -f1-3)
+    DEVICE_SUBNET=$(echo $DEVICE_IP | cut -d. -f1-3)
+    
+    if [ "$LOCAL_SUBNET" = "$DEVICE_SUBNET" ]; then
+        echo -e "${GREEN}✅ Both devices on same subnet${NC}"
+        echo "   System IP: $LOCAL_IP"
+        echo "   Device IP: $DEVICE_IP"
+        echo "   Subnet: $LOCAL_SUBNET.0/24"
+    else
+        echo -e "${YELLOW}⚠️  Devices may be on different subnets${NC}"
+        echo "   System IP: $LOCAL_IP (subnet: $LOCAL_SUBNET.0/24)"
+        echo "   Device IP: $DEVICE_IP (subnet: $DEVICE_SUBNET.0/24)"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Could not determine system IP${NC}"
+fi
+echo ""
+
+# Summary
+echo "=========================================="
+echo "Summary & Recommendations"
+echo "=========================================="
+echo ""
+
+# Check if device is reachable
+if ping -c 1 -W 1 $DEVICE_IP > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Device is online${NC}"
+else
+    echo -e "${RED}❌ Device is offline${NC}"
+    echo "   Action: Wait 2-3 minutes for device to finish rebooting"
+    echo "   Then run this script again"
+    echo ""
+fi
+
+# Check OCPP Gateway accessibility
+if nc -zv -w 1 $SYSTEM_IP $OCPP_PORT > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ OCPP Gateway is accessible${NC}"
+else
+    echo -e "${RED}❌ OCPP Gateway is NOT accessible from network${NC}"
+    echo "   Action: Restart OCPP Gateway:"
+    echo "   docker restart ev-billing-ocpp-gateway"
+    echo ""
+fi
+
+# Check configuration
+echo "Configuration Checklist:"
+echo "1. Device OCPP URL must be: ${GREEN}ws://$SYSTEM_IP:$OCPP_PORT/ocpp/$CHARGE_POINT_ID${NC}"
+echo "2. Device must have rebooted after configuration"
+echo "3. OCPP Gateway must be running and accessible"
+echo "4. Both devices must be on same network"
+echo ""
+
+echo "Next Steps:"
+echo "1. Verify device configuration includes full URL with Charge Point ID"
+echo "2. Ensure device has rebooted (wait 2-3 minutes)"
+echo "3. Monitor connection logs:"
+echo "   ${BLUE}docker logs -f ev-billing-ocpp-gateway${NC}"
+echo "4. Check dashboard: http://localhost:8080"
+echo ""
+
+echo "=========================================="

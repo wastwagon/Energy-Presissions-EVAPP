@@ -8,16 +8,8 @@ import {
   Button,
   Typography,
   Alert,
-  Card,
-  CardContent,
-  Chip,
 } from '@mui/material';
-import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import { authApi } from '../../services/authApi';
-
-const SAMPLE_USERS = [
-  { email: 'admin@evcharging.com', password: 'admin123', name: 'Super Admin' },
-];
 
 export function SuperAdminLoginPage() {
   const navigate = useNavigate();
@@ -64,18 +56,6 @@ export function SuperAdminLoginPage() {
     }
   };
 
-  const handleQuickLogin = (userEmail: string, userPassword: string) => {
-    setEmail(userEmail);
-    setPassword(userPassword);
-    // Auto-submit after a brief delay
-    setTimeout(() => {
-      const form = document.querySelector('form');
-      if (form) {
-        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-      }
-    }, 100);
-  };
-
   return (
     <Box
       sx={{
@@ -84,7 +64,7 @@ export function SuperAdminLoginPage() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
-        backgroundImage: 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+        backgroundImage: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
         py: 4,
       }}
     >
@@ -98,12 +78,18 @@ export function SuperAdminLoginPage() {
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <SupervisedUserCircleIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <img 
+                src="/newlog.png" 
+                alt="Clean Motion Ghana" 
+                style={{ height: '60px', objectFit: 'contain' }}
+              />
+            </Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'error.main' }}>
               Super Admin Login
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              EV Charging Billing System
+              Clean Motion Ghana
             </Typography>
           </Box>
 
@@ -140,45 +126,13 @@ export function SuperAdminLoginPage() {
               fullWidth
               variant="contained"
               size="large"
-              color="error"
-              sx={{ mt: 3, mb: 2 }}
+              color="primary"
+              sx={{ mt: 3 }}
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In as Super Admin'}
             </Button>
           </form>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Quick Login
-            </Typography>
-            {SAMPLE_USERS.map((user) => (
-              <Card
-                key={user.email}
-                variant="outlined"
-                sx={{
-                  cursor: 'pointer',
-                  mt: 1,
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-                onClick={() => handleQuickLogin(user.email, user.password)}
-              >
-                <CardContent sx={{ py: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">
-                        {user.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {user.email}
-                      </Typography>
-                    </Box>
-                    <Chip label="Super Admin" color="error" size="small" />
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">

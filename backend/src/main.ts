@@ -11,10 +11,29 @@ async function bootstrap() {
     },
   });
 
-  // Enable CORS
+  // Enable CORS for both web and mobile apps
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3001',
+    process.env.MOBILE_API_URL || 'http://localhost:3000',
+    // Add production URLs when deploying
+    // 'https://your-web-domain.com',
+    // 'https://your-api-domain.com',
+  ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Vendor-Id'],
   });
 
   // Global validation pipe
@@ -29,7 +48,7 @@ async function bootstrap() {
   // Root endpoint (before API prefix)
   app.getHttpAdapter().get('/', (req, res) => {
     res.status(200).json({
-      message: 'CSMS API - Central System Management System for EV Charging Billing',
+      message: 'Clean Motion Ghana - CSMS API - Central System Management System',
       version: '1.0',
       endpoints: {
         health: '/health',
@@ -51,7 +70,7 @@ async function bootstrap() {
   // Swagger documentation (enable in production for API exploration)
   const config = new DocumentBuilder()
     .setTitle('CSMS API')
-    .setDescription('Central System Management System API for EV Charging Billing')
+    .setDescription('Clean Motion Ghana - Central System Management System API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

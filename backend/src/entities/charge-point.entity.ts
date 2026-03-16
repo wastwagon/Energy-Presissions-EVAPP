@@ -27,8 +27,8 @@ export class ChargePoint {
   @Column({ name: 'vendor_id' })
   vendorId: number;
 
-  @Column({ length: 100, nullable: true })
-  vendor: string;
+  @Column({ name: 'vendor', length: 100, nullable: true })
+  vendorName: string;
 
   @Column({ length: 100, nullable: true })
   model: string;
@@ -68,6 +68,15 @@ export class ChargePoint {
 
   @Column({ name: 'location_address', type: 'text', nullable: true })
   locationAddress: string;
+
+  @Column({ name: 'total_capacity_kw', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  totalCapacityKw: number;
+
+  @Column({ name: 'price_per_kwh', type: 'decimal', precision: 10, scale: 4, nullable: true })
+  pricePerKwh: number;
+
+  @Column({ name: 'currency', length: 3, default: 'GHS', nullable: true })
+  currency: string;
 
   @Column({ length: 50, nullable: true })
   iccid: string;

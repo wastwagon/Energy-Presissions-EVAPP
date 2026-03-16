@@ -7,6 +7,8 @@ export const store = configureStore({
   reducer: {
     // chargePoints: chargePointsReducer,
     // transactions: transactionsReducer,
+    // Empty reducer object to avoid Redux error
+    _: (state = {}) => state,
   },
 });
 

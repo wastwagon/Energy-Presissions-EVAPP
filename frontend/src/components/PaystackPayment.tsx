@@ -12,6 +12,11 @@ import {
   Typography,
   Tabs,
   Tab,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from '@mui/material';
 import { paymentsApi, PaymentInitResponse } from '../services/paymentsApi';
 import { walletApi, WalletBalance } from '../services/walletApi';
@@ -44,6 +49,9 @@ export function PaystackPayment({
   const [error, setError] = useState<string | null>(null);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'wallet'>('paystack');
+  const [paymentChannel, setPaymentChannel] = useState<'card' | 'mobile_money' | 'bank' | 'ussd' | 'qr'>('card');
+  const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
+  const [mobileMoneyProvider, setMobileMoneyProvider] = useState<'MTN' | 'Vodafone' | 'AirtelTigo'>('MTN');
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
 
@@ -129,18 +137,49 @@ export function PaystackPayment({
       return;
     }
 
+    // Validate mobile money phone if mobile money selected
+    if (paymentChannel === 'mobile_money') {
+      if (!mobileMoneyPhone || mobileMoneyPhone.trim() === '') {
+        setError('Please enter your mobile money phone number');
+        return;
+      }
+      // Validate Ghana phone number format (+233XXXXXXXXX or 0XXXXXXXXX)
+      const phoneRegex = /^(\+233|0)[0-9]{9}$/;
+      const cleanPhone = mobileMoneyPhone.replace(/\s+/g, '');
+      if (!phoneRegex.test(cleanPhone)) {
+        setError('Please enter a valid Ghana phone number (e.g., +233XXXXXXXXX or 0XXXXXXXXX)');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       let paymentData: PaymentInitResponse;
 
+      // Format phone number for mobile money
+      let formattedPhone = mobileMoneyPhone;
+      if (paymentChannel === 'mobile_money' && mobileMoneyPhone) {
+        // Convert 0XXXXXXXXX to +233XXXXXXXXX
+        formattedPhone = mobileMoneyPhone.replace(/^0/, '+233').replace(/\s+/g, '');
+      }
+
       if (invoiceId) {
-        paymentData = await paymentsApi.initializePayment(invoiceId, email);
+        paymentData = await paymentsApi.initializePayment(
+          invoiceId,
+          email,
+          paymentChannel === 'card' ? undefined : paymentChannel,
+          paymentChannel === 'mobile_money' ? formattedPhone : undefined,
+        );
       } else if (transactionId) {
-        // For transactions, we need to get the invoice first or use a different endpoint
-        // For now, use initializePayment with a placeholder - this may need backend support
-        throw new Error('Transaction payment initialization not yet supported. Please use invoice payment.');
+        // Use processTransactionPayment which handles invoice creation automatically
+        paymentData = await paymentsApi.processTransactionPayment(
+          transactionId,
+          email,
+          paymentChannel === 'card' ? undefined : paymentChannel,
+          paymentChannel === 'mobile_money' ? formattedPhone : undefined,
+        );
       } else {
         throw new Error('Either invoiceId or transactionId is required');
       }
@@ -234,9 +273,77 @@ export function PaystackPayment({
               disabled={loading}
             />
 
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              You will be redirected to Paystack to complete your payment securely.
-            </Typography>
+            {/* Payment Channel Selection */}
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Payment Method</InputLabel>
+              <Select
+                value={paymentChannel}
+                label="Payment Method"
+                onChange={(e) => setPaymentChannel(e.target.value as any)}
+                disabled={loading}
+              >
+                <MenuItem value="card">Card (Visa, Mastercard)</MenuItem>
+                <MenuItem value="mobile_money">Mobile Money (MTN, Vodafone, AirtelTigo)</MenuItem>
+                <MenuItem value="bank">Bank Transfer</MenuItem>
+                <MenuItem value="ussd">USSD</MenuItem>
+                <MenuItem value="qr">QR Code</MenuItem>
+              </Select>
+              <FormHelperText>
+                {paymentChannel === 'mobile_money' && 'Select your mobile money provider below'}
+                {paymentChannel === 'card' && 'Pay with your debit or credit card'}
+                {paymentChannel === 'bank' && 'Transfer directly from your bank account'}
+                {paymentChannel === 'ussd' && 'Pay using USSD code'}
+                {paymentChannel === 'qr' && 'Scan QR code to pay'}
+              </FormHelperText>
+            </FormControl>
+
+            {/* Mobile Money Phone Input */}
+            {paymentChannel === 'mobile_money' && (
+              <>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Mobile Money Provider</InputLabel>
+                  <Select
+                    value={mobileMoneyProvider}
+                    label="Mobile Money Provider"
+                    onChange={(e) => setMobileMoneyProvider(e.target.value as any)}
+                    disabled={loading}
+                  >
+                    <MenuItem value="MTN">MTN Mobile Money</MenuItem>
+                    <MenuItem value="Vodafone">Vodafone Cash</MenuItem>
+                    <MenuItem value="AirtelTigo">AirtelTigo Money</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  label="Mobile Money Phone Number"
+                  type="tel"
+                  fullWidth
+                  margin="normal"
+                  value={mobileMoneyPhone}
+                  onChange={(e) => setMobileMoneyPhone(e.target.value)}
+                  placeholder="+233XXXXXXXXX or 0XXXXXXXXX"
+                  required
+                  disabled={loading}
+                  helperText="Enter your mobile money registered phone number"
+                  InputProps={{
+                    startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>+233</Typography>,
+                  }}
+                />
+
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Mobile Money Payment:</strong> You will be redirected to Paystack where you can select{' '}
+                    {mobileMoneyProvider} and complete your payment using your mobile money account.
+                  </Typography>
+                </Alert>
+              </>
+            )}
+
+            {paymentChannel !== 'mobile_money' && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                You will be redirected to Paystack to complete your payment securely.
+              </Typography>
+            )}
           </>
         )}
 
@@ -255,7 +362,7 @@ export function PaystackPayment({
           variant="contained"
           disabled={
             loading ||
-            (paymentMethod === 'paystack' && !email) ||
+            (paymentMethod === 'paystack' && (!email || (paymentChannel === 'mobile_money' && !mobileMoneyPhone))) ||
             (paymentMethod === 'wallet' && !hasSufficientBalance)
           }
           startIcon={loading ? <CircularProgress size={20} /> : null}
@@ -264,6 +371,8 @@ export function PaystackPayment({
             ? 'Processing...'
             : paymentMethod === 'wallet'
             ? 'Pay with Wallet'
+            : paymentChannel === 'mobile_money'
+            ? `Pay with ${mobileMoneyProvider}`
             : 'Proceed to Payment'}
         </Button>
       </DialogActions>

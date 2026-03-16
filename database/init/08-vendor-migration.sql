@@ -61,11 +61,13 @@ CREATE INDEX IF NOT EXISTS idx_invoices_vendor_id ON invoices(vendor_id);
 ALTER TABLE payments
 ADD COLUMN IF NOT EXISTS vendor_id INTEGER REFERENCES vendors(id) ON DELETE CASCADE;
 
+-- Payments link to transactions (not invoices); get vendor via transaction -> charge_point
 UPDATE payments p
 SET vendor_id = (
-    SELECT i.vendor_id
-    FROM invoices i
-    WHERE i.id = p.invoice_id
+    SELECT cp.vendor_id
+    FROM transactions t
+    JOIN charge_points cp ON t.charge_point_id = cp.charge_point_id
+    WHERE t.transaction_id = p.transaction_id
 )
 WHERE p.vendor_id IS NULL;
 

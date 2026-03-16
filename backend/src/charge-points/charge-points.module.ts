@@ -6,11 +6,14 @@ import { ChargePointsController } from './charge-points.controller';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
+import { WalletModule } from '../wallet/wallet.module';
+import { User } from '../entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction]),
+    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User]),
     ConfigModule,
+    WalletModule,
   ],
   controllers: [ChargePointsController],
   providers: [ChargePointsService],

@@ -44,14 +44,20 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor for adding auth token and tenant context
+// Request interceptor for adding auth token and vendor context
 api.interceptors.request.use(
   (config) => {
     // Re-evaluate API URL on each request to handle dynamic port changes
     config.baseURL = getApiUrl();
     
+    // Only add auth token if not a public endpoint
+    // Public endpoints: /stations/nearby, /stations/map, /stations/search
+    const isPublicEndpoint = config.url?.includes('/stations/nearby') || 
+                           config.url?.includes('/stations/map') || 
+                           config.url?.includes('/stations/search');
+    
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     

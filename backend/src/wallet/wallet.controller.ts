@@ -9,19 +9,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { IsNumber, IsString, IsOptional, Min } from 'class-validator';
 import { WalletService } from './wallet.service';
 import { WalletTransactionType } from '../entities/wallet-transaction.entity';
 
 class TopUpDto {
+  @IsNumber()
   userId: number;
+
+  @IsNumber()
+  @Min(0.01)
   amount: number;
+
+  @IsOptional()
+  @IsString()
   adminNote?: string;
 }
 
 class AdjustDto {
+  @IsNumber()
   userId: number;
+
+  @IsNumber()
   amount: number;
-  adminNote: string;
+
+  @IsOptional()
+  @IsString()
+  adminNote?: string;
 }
 
 @ApiTags('Wallet')
@@ -35,6 +49,14 @@ export class WalletController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async getBalance(@Param('userId', ParseIntPipe) userId: number) {
     return this.walletService.getBalance(userId);
+  }
+
+  @Get('available-balance/:userId')
+  @ApiOperation({ summary: 'Get available wallet balance (excluding pending reservations)' })
+  @ApiResponse({ status: 200, description: 'Available balance details' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getAvailableBalance(@Param('userId', ParseIntPipe) userId: number) {
+    return this.walletService.getAvailableBalance(userId);
   }
 
   @Post('top-up')
@@ -59,7 +81,7 @@ export class WalletController {
   async adjust(@Body() dto: AdjustDto) {
     // TODO: Add admin guard and get adminId from request
     const adminId = 1; // Placeholder
-    return this.walletService.adjust(dto.userId, dto.amount, adminId, dto.adminNote);
+    return this.walletService.adjust(dto.userId, dto.amount, adminId, dto.adminNote || 'Balance adjustment');
   }
 
   @Get('transactions/:userId')

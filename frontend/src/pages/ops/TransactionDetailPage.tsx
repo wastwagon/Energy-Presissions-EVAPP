@@ -22,6 +22,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction, MeterSample } from '../../services/transactionsApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { paymentsApi } from '../../services/paymentsApi';
@@ -30,6 +31,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@m
 export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [meterValues, setMeterValues] = useState<MeterSample[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,11 +73,12 @@ export function TransactionDetailPage() {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  const formatCurrency = (amount?: number, currency: string = 'GHS') => {
+  const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
+    // Always use GHS for Ghana operations
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
-      currency,
+      currency: 'GHS',
     }).format(amount);
   };
 
@@ -105,7 +108,7 @@ export function TransactionDetailPage() {
   if (!transaction) {
     return (
       <Box>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/ops/sessions')} sx={{ mb: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mb: 2 }}>
           Back to Sessions
         </Button>
         <Alert severity="error">Transaction not found</Alert>
@@ -116,7 +119,7 @@ export function TransactionDetailPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/ops/sessions')} sx={{ mr: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mr: 2 }}>
           Back
         </Button>
         <Typography variant="h4" component="h1">
@@ -238,8 +241,10 @@ export function TransactionDetailPage() {
                     Energy Consumed
                   </Typography>
                   <Typography variant="h6">
-                    {transaction.totalEnergyKwh
-                      ? `${transaction.totalEnergyKwh.toFixed(3)} kWh`
+                    {transaction.totalEnergyKwh !== undefined && transaction.totalEnergyKwh !== null
+                      ? `${typeof transaction.totalEnergyKwh === 'number' 
+                          ? transaction.totalEnergyKwh.toFixed(3)
+                          : parseFloat(String(transaction.totalEnergyKwh)).toFixed(3)} kWh`
                       : '-'}
                   </Typography>
                 </Grid>
@@ -248,17 +253,19 @@ export function TransactionDetailPage() {
                     Total Cost
                   </Typography>
                   <Typography variant="h6" color="primary">
-                    {formatCurrency(transaction.totalCost, transaction.currency)}
+                    {formatCurrency(transaction.totalCost)}
                   </Typography>
                   {transaction.status === 'Completed' && transaction.totalCost && (
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Button
                         variant="contained"
+                        color="primary"
                         startIcon={<PaymentIcon />}
                         onClick={() => setPaymentDialogOpen(true)}
-                        size="small"
+                        size="medium"
+                        sx={{ minWidth: 180 }}
                       >
-                        Pay with Card
+                        Pay Now
                       </Button>
                       <Button
                         variant="outlined"
@@ -267,8 +274,9 @@ export function TransactionDetailPage() {
                           setCashAmount(transaction.totalCost || 0);
                           setCashPaymentDialogOpen(true);
                         }}
-                        size="small"
+                        size="medium"
                         color="success"
+                        sx={{ minWidth: 150 }}
                       >
                         Cash Payment
                       </Button>
@@ -295,7 +303,7 @@ export function TransactionDetailPage() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="h6">Meter Values</Typography>
               </Box>
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table>
                   <TableHead>
                     <TableRow>

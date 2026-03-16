@@ -22,11 +22,15 @@ import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { useNavigate } from 'react-router-dom';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 
 export function OperationsDashboard() {
+  const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [activeSessions, setActiveSessions] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -192,11 +196,11 @@ export function OperationsDashboard() {
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',
-              background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+              background: 'linear-gradient(135deg, rgba(10, 61, 98, 0.08) 0%, rgba(26, 95, 122, 0.08) 100%)',
               transition: 'all 0.3s ease',
               '&:hover': {
                 transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(102, 126, 234, 0.15)',
+                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
                 borderColor: 'primary.main',
               },
             }}
@@ -207,7 +211,7 @@ export function OperationsDashboard() {
                   sx={{
                     p: 1.5,
                     borderRadius: 2,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -345,12 +349,12 @@ export function OperationsDashboard() {
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',
-              background: 'linear-gradient(135deg, #f59e0b15 0%, #d9770615 100%)',
+              background: 'linear-gradient(135deg, rgba(26, 95, 122, 0.08) 0%, rgba(37, 132, 168, 0.08) 100%)',
               transition: 'all 0.3s ease',
               '&:hover': {
                 transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(245, 158, 11, 0.15)',
-                borderColor: 'warning.main',
+                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
+                borderColor: 'secondary.main',
               },
             }}
           >
@@ -360,7 +364,7 @@ export function OperationsDashboard() {
                   sx={{
                     p: 1.5,
                     borderRadius: 2,
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -413,7 +417,7 @@ export function OperationsDashboard() {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f8fafc' }}>
@@ -435,11 +439,11 @@ export function OperationsDashboard() {
                         bgcolor: '#f8fafc',
                       },
                     }}
-                    onClick={() => window.location.href = `/ops/devices/${cp.chargePointId}`}
+                    onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
                   >
                     <TableCell sx={{ fontWeight: 500 }}>{cp.chargePointId}</TableCell>
                     <TableCell>
-                      {cp.vendor && cp.model ? `${cp.vendor} ${cp.model}` : 'Unknown'}
+                      {(cp.vendorName || cp.vendor) && cp.model ? `${cp.vendorName || cp.vendor} ${cp.model}` : 'Unknown'}
                     </TableCell>
                     <TableCell>
                       <Chip

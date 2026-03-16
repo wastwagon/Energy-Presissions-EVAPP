@@ -61,7 +61,7 @@ export class ConnectionLogger {
     ipAddress?: string,
     userAgent?: string,
     requestUrl?: string,
-    tenantId?: number,
+    vendorId?: number,
   ): Promise<void> {
     await this.logEvent({
       chargePointId,
@@ -70,7 +70,7 @@ export class ConnectionLogger {
       ipAddress,
       userAgent,
       requestUrl,
-      tenantId,
+      vendorId,
     });
   }
 
@@ -79,14 +79,14 @@ export class ConnectionLogger {
    */
   static async logConnectionSuccess(
     chargePointId: string,
-    tenantId?: number,
+    vendorId?: number,
     metadata?: Record<string, any>,
   ): Promise<void> {
     await this.logEvent({
       chargePointId,
       eventType: 'connection_success',
       status: 'success',
-      tenantId,
+      vendorId,
       metadata,
     });
   }
@@ -100,7 +100,7 @@ export class ConnectionLogger {
     errorMessage: string,
     closeCode?: number,
     closeReason?: string,
-    tenantId?: number,
+    vendorId?: number,
     metadata?: Record<string, any>,
   ): Promise<void> {
     await this.logEvent({
@@ -111,7 +111,7 @@ export class ConnectionLogger {
       errorMessage,
       closeCode,
       closeReason,
-      tenantId,
+      vendorId,
       metadata,
     });
   }
@@ -123,7 +123,7 @@ export class ConnectionLogger {
     chargePointId: string,
     closeCode?: number,
     closeReason?: string,
-    tenantId?: number,
+    vendorId?: number,
   ): Promise<void> {
     await this.logEvent({
       chargePointId,
@@ -131,7 +131,7 @@ export class ConnectionLogger {
       status: 'success',
       closeCode,
       closeReason,
-      tenantId,
+      vendorId,
     });
   }
 
@@ -142,7 +142,7 @@ export class ConnectionLogger {
     chargePointId: string,
     errorCode: string,
     errorMessage: string,
-    tenantId?: number,
+    vendorId?: number,
     metadata?: Record<string, any>,
   ): Promise<void> {
     await this.logEvent({
@@ -151,7 +151,7 @@ export class ConnectionLogger {
       status: 'error',
       errorCode,
       errorMessage,
-      tenantId,
+      vendorId,
       metadata,
     });
   }
@@ -164,7 +164,7 @@ export class ConnectionLogger {
     errorCode: string,
     errorMessage: string,
     rawMessage?: string,
-    tenantId?: number,
+    vendorId?: number,
   ): Promise<void> {
     await this.logEvent({
       chargePointId,
@@ -172,7 +172,7 @@ export class ConnectionLogger {
       status: 'error',
       errorCode,
       errorMessage,
-      tenantId,
+      vendorId,
       metadata: { rawMessage },
     });
   }

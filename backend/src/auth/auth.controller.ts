@@ -21,6 +21,19 @@ class LoginDto {
   password: string;
 }
 
+class AppleSignInDto {
+  @IsString()
+  id_token: string;
+
+  @IsOptional()
+  user?: { name?: { firstName?: string; lastName?: string }; email?: string };
+}
+
+class GoogleSignInDto {
+  @IsString()
+  credential: string;
+}
+
 class RegisterDto {
   @IsEmail()
   email: string;
@@ -46,6 +59,24 @@ class RegisterDto {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('apple')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Sign in with Apple' })
+  @ApiResponse({ status: 200, description: 'Apple sign in successful' })
+  @ApiResponse({ status: 401, description: 'Invalid Apple token' })
+  async appleSignIn(@Body() dto: AppleSignInDto) {
+    return this.authService.appleSignIn(dto.id_token, dto.user);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Sign in with Google' })
+  @ApiResponse({ status: 200, description: 'Google sign in successful' })
+  @ApiResponse({ status: 401, description: 'Invalid Google token' })
+  async googleSignIn(@Body() dto: GoogleSignInDto) {
+    return this.authService.googleSignIn(dto.credential);
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

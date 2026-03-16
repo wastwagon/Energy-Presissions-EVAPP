@@ -101,7 +101,7 @@ export class SettingsController {
     @Param('key') key: string,
     @Query('vendorId') vendorId?: number,
   ): Promise<CmsContent> {
-    return this.settingsService.getContent(key, tenantId ? parseInt(tenantId.toString()) : undefined);
+    return this.settingsService.getContent(key, vendorId ? parseInt(vendorId.toString()) : undefined);
   }
 
   @Post('cms')
@@ -115,7 +115,7 @@ export class SettingsController {
       content: string;
       contentType: ContentType;
       section?: string;
-      tenantId?: number;
+      vendorId?: number;
       metadata?: Record<string, any>;
     },
   ): Promise<CmsContent> {
@@ -137,7 +137,7 @@ export class SettingsController {
     @Param('key') key: string,
     @Query('vendorId') vendorId?: number,
   ): Promise<void> {
-    return this.settingsService.deleteContent(key, tenantId ? parseInt(tenantId.toString()) : undefined);
+    return this.settingsService.deleteContent(key, vendorId ? parseInt(vendorId.toString()) : undefined);
   }
 
   // Branding Assets Endpoints
@@ -199,7 +199,7 @@ export class SettingsController {
       file.mimetype,
       undefined, // width
       undefined, // height
-      body.tenantId ? parseInt(body.tenantId.toString()) : undefined,
+      body.vendorId ? parseInt(body.vendorId.toString()) : undefined,
     );
   }
 

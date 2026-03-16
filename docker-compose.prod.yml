@@ -1,48 +1,169 @@
-# Production override file
-# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+# Production Docker Compose - All services run in Docker, no dev servers
+# Migrations and seeding run automatically on backend startup
+# Usage: docker-compose -f docker-compose.prod.yml up -d
 
 services:
-  api:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ev-billing-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-evbilling}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evbilling_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ev_billing_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evbilling}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ev-billing-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: ev-billing-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9003:9000"
+      - "9004:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
+
+  csms-api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ev-billing-csms-api
     environment:
       NODE_ENV: production
-      LOG_LEVEL: info
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
+      PORT: 3000
+      POSTGRES_USER: ${POSTGRES_USER:-evbilling}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evbilling_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ev_billing_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-evbilling}:${POSTGRES_PASSWORD:-evbilling_password}@postgres:5432/${POSTGRES_DB:-ev_billing_db}
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_EXTERNAL_PORT: 9002
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ev-billing
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_change_in_production}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
+      OCPP_GATEWAY_URL: http://ocpp-gateway:9000
+      FRONTEND_URL: http://localhost:8080
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
+      PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-http://localhost:8080/api/payments/verify}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
+
+  ocpp-gateway:
+    build:
+      context: ./ocpp-gateway
+      dockerfile: Dockerfile
+    container_name: ev-billing-ocpp-gateway
+    environment:
+      NODE_ENV: production
+      PORT: 9000
+      REDIS_URL: redis://redis:6379
+      CSMS_API_URL: http://csms-api:3000
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
+      LOG_RAW_FRAMES: ${LOG_RAW_FRAMES:-false}
+    ports:
+      - "9000:9000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      csms-api:
+        condition: service_started
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
+      args:
+        VITE_API_URL: http://localhost:8080/api
+        VITE_WS_URL: ws://localhost:8080/ws
+    container_name: ev-billing-frontend
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - csms-api
+      - ocpp-gateway
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
 
-  postgres:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
+  nginx:
+    image: nginx:alpine
+    container_name: ev-billing-nginx
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/default-prod.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - csms-api
+      - ocpp-gateway
+      - frontend
+    networks:
+      - ev-billing-network
+    restart: unless-stopped
 
-  redis:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
 
+networks:
+  ev-billing-network:
+    driver: bridge

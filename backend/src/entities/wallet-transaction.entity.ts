@@ -16,6 +16,8 @@ export enum WalletTransactionType {
   REFUND = 'Refund',
   ADJUSTMENT = 'Adjustment',
   CHARGE = 'Charge',
+  RESERVATION = 'Reservation', // Hold/reserve amount for pending transaction
+  RELEASE = 'Release', // Release reserved amount
 }
 
 export enum WalletTransactionStatus {
@@ -56,10 +58,10 @@ export class WalletTransaction {
   })
   status: WalletTransactionStatus;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'balance_before', type: 'decimal', precision: 10, scale: 2 })
   balanceBefore: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'balance_after', type: 'decimal', precision: 10, scale: 2 })
   balanceAfter: number;
 
   @Column({ type: 'text', nullable: true })

@@ -6,7 +6,9 @@ export type WebSocketEventType =
   | 'transactionStarted'
   | 'transactionStopped'
   | 'meterValue'
-  | 'connectionStatus';
+  | 'connectionStatus'
+  | 'walletBalanceUpdate'
+  | 'dashboardStatsUpdate';
 
 export interface WebSocketEvent {
   type: WebSocketEventType;
@@ -27,11 +29,28 @@ class WebSocketService {
     if (import.meta.env.VITE_WS_URL) {
       this.wsUrl = import.meta.env.VITE_WS_URL;
     } else {
-      // Fallback: construct from current location (for local development)
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
-      this.wsUrl = `${protocol}//${host}:${port}`;
+      // Construct WebSocket URL based on current location
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        
+        // If accessing via NGINX proxy (port 8080), use relative path
+        if (port === '8080' || window.location.host.includes(':8080')) {
+          // Use relative URL - socket.io will handle the protocol upgrade
+          this.wsUrl = window.location.origin;
+        } else if (port === '3001' || window.location.host.includes(':3001')) {
+          // Direct connection to backend
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          this.wsUrl = `${protocol}//${hostname}:3000`;
+        } else {
+          // Default: use current origin
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          this.wsUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+        }
+      } else {
+        // Server-side fallback
+        this.wsUrl = 'ws://localhost:3000';
+      }
     }
   }
 
@@ -81,6 +100,8 @@ class WebSocketService {
         'transactionStarted',
         'transactionStopped',
         'meterValue',
+        'walletBalanceUpdate',
+        'dashboardStatsUpdate',
       ];
 
       eventTypes.forEach((eventType) => {

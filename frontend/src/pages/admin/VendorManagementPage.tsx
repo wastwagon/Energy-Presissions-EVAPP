@@ -194,9 +194,10 @@ export function VendorManagementPage() {
       // Show success message
       setSuccess(result.message || `Successfully logged in as ${vendor.name}`);
       
-      // Redirect to operations dashboard (vendor-specific view) after a short delay
+      // Redirect to operations dashboard (vendor-specific view) - use current path context
+      const basePath = window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
       setTimeout(() => {
-        window.location.href = '/ops';
+        window.location.href = `${basePath}/ops`;
       }, 1000);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to login as vendor');
@@ -226,7 +227,7 @@ export function VendorManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4" component="h1">
           Vendor Management
         </Typography>
@@ -252,7 +253,7 @@ export function VendorManagementPage() {
       )}
 
       <Paper>
-        <TableContainer>
+        <TableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -425,7 +426,7 @@ export function VendorManagementPage() {
               No status history available
             </Typography>
           ) : (
-            <TableContainer>
+            <TableContainer sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>

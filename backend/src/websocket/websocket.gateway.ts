@@ -69,8 +69,10 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   broadcastTransactionStarted(data: {
     transactionId: number;
     chargePointId: string;
-    connectorId: number;
+    connectorId?: number;
     idTag?: string;
+    userId?: number;
+    vendorId?: number;
     startTime: Date;
   }) {
     this.server.emit('transactionStarted', {
@@ -87,9 +89,39 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     totalEnergyKwh?: number;
     totalCost?: number;
     stopTime: Date;
+    userId?: number;
+    vendorId?: number;
   }) {
+    this.logger.log(`Broadcasting transaction stopped: ${data.transactionId}`);
     this.server.emit('transactionStopped', {
       type: 'transactionStopped',
+      data,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Broadcast wallet balance update
+  broadcastWalletBalanceUpdate(data: {
+    userId: number;
+    balance: number;
+    currency: string;
+    transactionId?: number;
+  }) {
+    this.server.emit('walletBalanceUpdate', {
+      type: 'walletBalanceUpdate',
+      data,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Broadcast dashboard stats update
+  broadcastDashboardStatsUpdate(data: {
+    vendorId?: number;
+    stats: any;
+  }) {
+    this.logger.log(`Broadcasting dashboard stats update for vendor ${data.vendorId || 'all'}`);
+    this.server.emit('dashboardStatsUpdate', {
+      type: 'dashboardStatsUpdate',
       data,
       timestamp: new Date().toISOString(),
     });

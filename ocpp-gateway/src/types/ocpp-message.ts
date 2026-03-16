@@ -18,8 +18,8 @@ export enum OCPPMessageType {
 export type OCPPMessage = [
   number, // MessageType
   string | null, // MessageId
-  string?, // Action (for CALL) or ErrorCode (for CALLERROR)
-  any?, // Payload or ErrorDescription
+  string | any, // Action (for CALL), Payload (for CALLRESULT), or ErrorCode (for CALLERROR)
+  any?, // Payload (for CALL) or ErrorDescription (for CALLERROR)
   any? // ErrorDetails (for CALLERROR)
 ];
 

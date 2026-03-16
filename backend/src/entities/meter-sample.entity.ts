@@ -53,7 +53,7 @@ export class MeterSample {
   @Column({ length: 50, nullable: true })
   format: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }
 

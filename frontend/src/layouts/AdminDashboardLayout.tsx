@@ -1,45 +1,40 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
   AppBar,
   Toolbar,
-  List,
   Typography,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Container,
   Avatar,
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
-  Divider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import EvStationIcon from '@mui/icons-material/EvStation';
-import HistoryIcon from '@mui/icons-material/History';
-import BusinessIcon from '@mui/icons-material/Business';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { AdminMenu } from '../components/menus/AdminMenu';
+import { BottomNav } from '../components/BottomNav';
+import { adminBottomNavItems } from '../config/menu.config';
 
-const drawerWidth = 260;
-
-interface MenuItem {
-  text: string;
-  icon: React.ReactNode;
-  path: string;
-}
+const drawerWidth = 280;
 
 export function AdminDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -98,77 +93,58 @@ export function AdminDashboardLayout() {
     setAnchorEl(null);
   };
 
-  // Admin menu items (no Super Admin features) - Admin-specific routes
-  const menuItems: MenuItem[] = [
-    { text: 'My Dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
-    { text: 'Operations', icon: <DashboardIcon />, path: '/admin/ops' },
-    { text: 'Sessions', icon: <HistoryIcon />, path: '/admin/ops/sessions' },
-    { text: 'Devices', icon: <EvStationIcon />, path: '/admin/ops/devices' },
-    { text: 'Vendor Settings', icon: <BusinessIcon />, path: '/vendor' },
-    { text: 'Wallets', icon: <AccountBalanceWalletIcon />, path: '/admin/wallets' },
-  ];
-
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
+      }}
+    >
       <Box
         sx={{
-          p: 3,
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          p: 3.5,
+          background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
           color: 'white',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          EV Charging
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.9 }}>
-          Admin Portal
-        </Typography>
-      </Box>
-      <List sx={{ flex: 1, pt: 2, px: 1.5 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <img 
+            src="/newlog.png" 
+            alt="Clean Motion Ghana" 
+            style={{ height: '32px', objectFit: 'contain' }}
+          />
+          <Box>
+            <Typography
+              variant="h5"
               sx={{
-                borderRadius: 2,
-                py: 1.25,
-                px: 2,
-                '&.Mui-selected': {
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  color: 'white',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    opacity: 0.9,
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
-                  },
-                },
-                '&:hover': {
-                  backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                },
+                fontWeight: 700,
+                mb: 0.5,
+                fontSize: '1.375rem',
+                letterSpacing: '-0.02em',
               }}
             >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color: location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 'white' : 'inherit',
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontWeight: location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 600 : 500,
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+              Clean Motion Ghana
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                opacity: 0.95,
+                fontSize: '0.75rem',
+                letterSpacing: '0.02em',
+                fontWeight: 500,
+              }}
+            >
+              Admin Portal
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+        <AdminMenu />
+      </Box>
     </Box>
   );
 
@@ -186,7 +162,20 @@ export function AdminDashboardLayout() {
           borderColor: 'divider',
         }}
       >
-        <Toolbar sx={{ px: 3, minHeight: '64px !important' }}>
+        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setMobileOpen(true)}
+            sx={{
+              mr: 2,
+              display: { sm: 'none' },
+              color: '#1e293b',
+            }}
+            aria-label="open menu"
+          >
+            <MenuIcon />
+          </IconButton>
           <Typography
             variant="h6"
             noWrap
@@ -211,11 +200,12 @@ export function AdminDashboardLayout() {
             </Box>
             <IconButton
               onClick={handleMenuOpen}
+              aria-label="User menu"
               sx={{
                 p: 0,
                 border: '2px solid',
                 borderColor: 'divider',
-                '&:hover': { borderColor: 'warning.main' },
+                '&:hover': { borderColor: 'secondary.main' },
               }}
             >
               <Avatar
@@ -223,7 +213,7 @@ export function AdminDashboardLayout() {
                 sx={{
                   width: 40,
                   height: 40,
-                  bgcolor: 'warning.main',
+                  bgcolor: 'secondary.main',
                   fontSize: '0.875rem',
                   fontWeight: 600,
                 }}
@@ -281,6 +271,25 @@ export function AdminDashboardLayout() {
         aria-label="navigation"
       >
         <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
@@ -288,8 +297,9 @@ export function AdminDashboardLayout() {
               boxSizing: 'border-box',
               width: drawerWidth,
               borderRight: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'white',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
             },
           }}
           open
@@ -304,11 +314,15 @@ export function AdminDashboardLayout() {
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           bgcolor: '#f8fafc',
+          pb: showBottomNav ? 10 : 3,
         }}
       >
         <Toolbar />
         <Outlet />
       </Box>
+      {showBottomNav && (
+        <BottomNav items={adminBottomNavItems} accentColor="#1A5F7A" />
+      )}
     </Box>
   );
 }

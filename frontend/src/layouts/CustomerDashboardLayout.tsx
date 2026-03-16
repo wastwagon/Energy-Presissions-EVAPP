@@ -1,35 +1,40 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
   AppBar,
   Toolbar,
-  List,
   Typography,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Container,
   Avatar,
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
+import { CustomerMenu } from '../components/menus/CustomerMenu';
+import { BottomNav } from '../components/BottomNav';
+import { customerBottomNavItems } from '../config/menu.config';
 
-const drawerWidth = 260;
+const drawerWidth = 280;
 
 export function CustomerDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -71,72 +76,58 @@ export function CustomerDashboardLayout() {
     setAnchorEl(null);
   };
 
-  // Customer menu items - only personal dashboard
-  const menuItems = [
-    { text: 'My Dashboard', icon: <DashboardIcon />, path: '/user/dashboard' },
-  ];
-
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
+      }}
+    >
       <Box
         sx={{
-          p: 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          p: 3.5,
+          background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
           color: 'white',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          EV Charging
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.9 }}>
-          Customer Portal
-        </Typography>
-      </Box>
-      <List sx={{ flex: 1, pt: 2, px: 1.5 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <img 
+            src="/newlog.png" 
+            alt="Clean Motion Ghana" 
+            style={{ height: '32px', objectFit: 'contain' }}
+          />
+          <Box>
+            <Typography
+              variant="h5"
               sx={{
-                borderRadius: 2,
-                py: 1.25,
-                px: 2,
-                '&.Mui-selected': {
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    opacity: 0.9,
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
-                  },
-                },
-                '&:hover': {
-                  backgroundColor: 'rgba(102, 126, 234, 0.08)',
-                },
+                fontWeight: 700,
+                mb: 0.5,
+                fontSize: '1.375rem',
+                letterSpacing: '-0.02em',
               }}
             >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color: location.pathname === item.path ? 'white' : 'inherit',
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontWeight: location.pathname === item.path ? 600 : 500,
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+              Clean Motion Ghana
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                opacity: 0.95,
+                fontSize: '0.75rem',
+                letterSpacing: '0.02em',
+                fontWeight: 500,
+              }}
+            >
+              Customer Portal
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+        <CustomerMenu />
+      </Box>
     </Box>
   );
 
@@ -154,7 +145,20 @@ export function CustomerDashboardLayout() {
           borderColor: 'divider',
         }}
       >
-        <Toolbar sx={{ px: 3, minHeight: '64px !important' }}>
+        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setMobileOpen(true)}
+            sx={{
+              mr: 2,
+              display: { sm: 'none' },
+              color: '#1e293b',
+            }}
+            aria-label="open menu"
+          >
+            <MenuIcon />
+          </IconButton>
           <Typography
             variant="h6"
             noWrap
@@ -179,6 +183,7 @@ export function CustomerDashboardLayout() {
             </Box>
             <IconButton
               onClick={handleMenuOpen}
+              aria-label="User menu"
               sx={{
                 p: 0,
                 border: '2px solid',
@@ -228,7 +233,7 @@ export function CustomerDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/user/dashboard');
+                  navigate('/user/profile');
                 }}
                 sx={{ py: 1.5 }}
               >
@@ -249,6 +254,25 @@ export function CustomerDashboardLayout() {
         aria-label="navigation"
       >
         <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
@@ -256,8 +280,9 @@ export function CustomerDashboardLayout() {
               boxSizing: 'border-box',
               width: drawerWidth,
               borderRight: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'white',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              bgcolor: '#fafafa',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
             },
           }}
           open
@@ -272,11 +297,15 @@ export function CustomerDashboardLayout() {
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           bgcolor: '#f8fafc',
+          pb: showBottomNav ? 10 : 3,
         }}
       >
         <Toolbar />
         <Outlet />
       </Box>
+      {showBottomNav && (
+        <BottomNav items={customerBottomNavItems} accentColor="#0A3D62" />
+      )}
     </Box>
   );
 }

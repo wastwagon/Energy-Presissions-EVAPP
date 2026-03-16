@@ -32,6 +32,10 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
 
@@ -58,12 +62,14 @@ function TabPanel(props: TabPanelProps) {
 
 export function DevicesPage() {
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [filteredChargePoints, setFilteredChargePoints] = useState<ChargePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [showOnlyRealDevices, setShowOnlyRealDevices] = useState(false);
   
   // Connection logs state
   const [selectedChargePoint, setSelectedChargePoint] = useState<ChargePoint | null>(null);
@@ -78,21 +84,53 @@ export function DevicesPage() {
     loadRecentErrors();
   }, []);
 
+  // Helper function to determine if a device is real (not dummy data)
+  const isRealDevice = (cp: ChargePoint): boolean => {
+    // Dummy devices typically have:
+    // 1. Generic IDs like CP-ACC-001, CP-ASH-001, CP-WES-001
+    const dummyIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
+    if (dummyIdPattern.test(cp.chargePointId)) {
+      return false;
+    }
+
+    // 2. No vendor name
+    if (!cp.vendorName && !cp.vendor) {
+      return false;
+    }
+
+    // 3. No serial number
+    if (!cp.serialNumber) {
+      return false;
+    }
+
+    // 4. Never had a heartbeat (and no connection logs would indicate dummy)
+    // But we'll be lenient - if it has vendor and serial, consider it real
+    
+    return true;
+  };
+
   useEffect(() => {
-    // Filter charge points based on search term
-    if (!searchTerm.trim()) {
-      setFilteredChargePoints(chargePoints);
-    } else {
-      const filtered = chargePoints.filter(
+    // Filter charge points based on search term and real device filter
+    let filtered = chargePoints;
+
+    // Apply real device filter first
+    if (showOnlyRealDevices) {
+      filtered = filtered.filter(isRealDevice);
+    }
+
+    // Then apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(
         (cp) =>
           cp.chargePointId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (cp.vendor && cp.vendor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          ((cp.vendorName || cp.vendor) && (cp.vendorName || cp.vendor)?.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (cp.model && cp.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (cp.serialNumber && cp.serialNumber.toLowerCase().includes(searchTerm.toLowerCase())),
       );
-      setFilteredChargePoints(filtered);
     }
-  }, [searchTerm, chargePoints]);
+
+    setFilteredChargePoints(filtered);
+  }, [searchTerm, chargePoints, showOnlyRealDevices]);
 
   const loadChargePoints = async () => {
     try {
@@ -115,6 +153,23 @@ export function DevicesPage() {
     } catch (err) {
       // Silently fail - errors are not critical
       console.error('Error loading recent errors:', err);
+    }
+  };
+
+  const handleClearResolvedErrors = async () => {
+    try {
+      const result = await connectionLogsApi.deleteResolvedErrors(1); // Clear errors older than 1 hour that are resolved
+      if (result.deleted > 0) {
+        setError(null);
+        // Reload errors to refresh the list
+        await loadRecentErrors();
+        // Show success message
+        alert(`Cleared ${result.deleted} resolved error(s).`);
+      } else {
+        alert('No resolved errors found to clear.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to clear resolved errors');
     }
   };
 
@@ -185,39 +240,49 @@ export function DevicesPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" component="h1">
           Device Inventory
         </Typography>
-        <TextField
-          placeholder="Search devices..."
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              handleSearch();
-            }
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => {
-                  setSearchTerm('');
-                  loadChargePoints();
-                }}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          sx={{ minWidth: 300 }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant={showOnlyRealDevices ? 'contained' : 'outlined'}
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowOnlyRealDevices(!showOnlyRealDevices)}
+            color={showOnlyRealDevices ? 'primary' : 'inherit'}
+          >
+            {showOnlyRealDevices ? 'Show All Devices' : 'Real Devices Only'}
+          </Button>
+          <TextField
+            placeholder="Search devices..."
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => {
+                    setSearchTerm('');
+                    loadChargePoints();
+                  }}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 300 }}
+          />
+        </Box>
       </Box>
 
       {error && (
@@ -227,7 +292,7 @@ export function DevicesPage() {
       )}
 
       <Paper>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
           <Tab label="All Devices" />
           <Tab 
             label={
@@ -246,19 +311,39 @@ export function DevicesPage() {
           ) : filteredChargePoints.length === 0 ? (
             <Paper sx={{ p: 3, mt: 2 }}>
               <Typography variant="body1" gutterBottom>
-                {searchTerm ? 'No devices found matching your search.' : 'No charge points registered yet.'}
+                {showOnlyRealDevices 
+                  ? 'No real devices found.' 
+                  : searchTerm 
+                    ? 'No devices found matching your search.' 
+                    : 'No charge points registered yet.'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {searchTerm
-                  ? 'Try a different search term or clear the search to see all devices.'
-                  : 'Charge points will appear here after they connect and send BootNotification.'}
+                {showOnlyRealDevices
+                  ? 'Real devices are those with vendor name, serial number, and not matching dummy ID patterns (CP-ACC-*, CP-ASH-*, CP-WES-*).'
+                  : searchTerm
+                    ? 'Try a different search term or clear the search to see all devices.'
+                    : 'Charge points will appear here after they connect and send BootNotification.'}
               </Typography>
             </Paper>
           ) : (
-            <TableContainer sx={{ mt: 2 }}>
+            <>
+              {showOnlyRealDevices && (
+                <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+                  Showing only real devices. Real devices have vendor name, serial number, and don't match dummy ID patterns.
+                  <Button 
+                    size="small" 
+                    onClick={() => setShowOnlyRealDevices(false)}
+                    sx={{ ml: 2 }}
+                  >
+                    Show All Devices
+                  </Button>
+                </Alert>
+              )}
+            <TableContainer sx={{ mt: 2, overflowX: 'auto' }}>
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Type</TableCell>
                     <TableCell>Charge Point ID</TableCell>
                     <TableCell>Vendor</TableCell>
                     <TableCell>Model</TableCell>
@@ -273,16 +358,59 @@ export function DevicesPage() {
                 <TableBody>
                   {filteredChargePoints.map((cp) => {
                     const errorCount = getErrorCount(cp.chargePointId);
+                    const isReal = isRealDevice(cp);
+                    const hasRecentActivity = cp.lastHeartbeat && 
+                      (new Date().getTime() - new Date(cp.lastHeartbeat).getTime()) < 24 * 60 * 60 * 1000; // Within 24 hours
+                    
                     return (
-                      <TableRow key={cp.chargePointId}>
+                      <TableRow 
+                        key={cp.chargePointId}
+                        sx={{
+                          backgroundColor: isReal ? 'rgba(76, 175, 80, 0.05)' : 'rgba(158, 158, 158, 0.05)',
+                          '&:hover': {
+                            backgroundColor: isReal ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                          }
+                        }}
+                      >
                         <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {cp.chargePointId}
-                          </Typography>
+                          <Tooltip title={isReal ? 'Real Device' : 'Dummy/Test Data'}>
+                            {isReal ? (
+                              <CheckCircleIcon color="success" fontSize="small" />
+                            ) : (
+                              <WarningIcon color="disabled" fontSize="small" />
+                            )}
+                          </Tooltip>
                         </TableCell>
-                        <TableCell>{cp.vendor || '-'}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" fontWeight="medium">
+                              {cp.chargePointId}
+                            </Typography>
+                            {hasRecentActivity && (
+                              <Chip 
+                                label="Active" 
+                                color="success" 
+                                size="small" 
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          {cp.vendorName || cp.vendor || (
+                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                              No vendor
+                            </Typography>
+                          )}
+                        </TableCell>
                         <TableCell>{cp.model || '-'}</TableCell>
-                        <TableCell>{cp.serialNumber || '-'}</TableCell>
+                        <TableCell>
+                          {cp.serialNumber || (
+                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                              No serial
+                            </Typography>
+                          )}
+                        </TableCell>
                         <TableCell>{cp.firmwareVersion || '-'}</TableCell>
                         <TableCell>
                           <Chip
@@ -292,9 +420,17 @@ export function DevicesPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          {cp.lastHeartbeat
-                            ? new Date(cp.lastHeartbeat).toLocaleString()
-                            : 'Never'}
+                          {cp.lastHeartbeat ? (
+                            <Tooltip title={new Date(cp.lastHeartbeat).toLocaleString()}>
+                              <Typography variant="body2">
+                                {new Date(cp.lastHeartbeat).toLocaleString()}
+                              </Typography>
+                            </Tooltip>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                              Never
+                            </Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           {cp.locationAddress || (
@@ -308,7 +444,7 @@ export function DevicesPage() {
                             <Tooltip title="View Details">
                               <IconButton
                                 size="small"
-                                onClick={() => navigate(`/ops/devices/${cp.chargePointId}`)}
+                                onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
                                 color="primary"
                               >
                                 <SearchIcon fontSize="small" />
@@ -333,10 +469,26 @@ export function DevicesPage() {
                 </TableBody>
               </Table>
             </TableContainer>
+            </>
           )}
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
+            <Typography variant="h6">
+              Recent Connection Errors
+            </Typography>
+            {recentErrors.length > 0 && (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleClearResolvedErrors}
+                size="small"
+              >
+                Clear Resolved Errors
+              </Button>
+            )}
+          </Box>
           {recentErrors.length === 0 ? (
             <Paper sx={{ p: 3, mt: 2 }}>
               <Typography variant="body1" gutterBottom>
@@ -347,7 +499,7 @@ export function DevicesPage() {
               </Typography>
             </Paper>
           ) : (
-            <TableContainer sx={{ mt: 2 }}>
+            <TableContainer sx={{ mt: 2, overflowX: 'auto' }}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -501,7 +653,7 @@ export function DevicesPage() {
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Recent Connection Events
               </Typography>
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>

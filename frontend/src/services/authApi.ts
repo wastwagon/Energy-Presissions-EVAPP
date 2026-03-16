@@ -46,6 +46,22 @@ export const authApi = {
   },
 
   /**
+   * Sign in with Apple (id_token from Apple JS SDK)
+   */
+  appleSignIn: async (idToken: string, user?: { name?: { firstName?: string; lastName?: string }; email?: string }): Promise<LoginResponse> => {
+    const response = await api.post('/auth/apple', { id_token: idToken, user });
+    return response.data;
+  },
+
+  /**
+   * Sign in with Google (credential/id_token from Google Identity Services)
+   */
+  googleSignIn: async (credential: string): Promise<LoginResponse> => {
+    const response = await api.post('/auth/google', { credential });
+    return response.data;
+  },
+
+  /**
    * Logout (clear local storage)
    */
   logout: () => {

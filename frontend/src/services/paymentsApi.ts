@@ -22,6 +22,14 @@ export interface PaymentInitResponse {
 
 export const paymentsApi = {
   /**
+   * Get all payments (Admin/SuperAdmin)
+   */
+  getAllPayments: async (limit = 100, offset = 0): Promise<{ payments: Payment[]; total: number }> => {
+    const response = await api.get(`/payments/all?limit=${limit}&offset=${offset}`);
+    return response.data;
+  },
+
+  /**
    * Get payments for current user
    */
   getUserPayments: async (): Promise<Payment[] | { payments: Payment[]; total: number }> => {
@@ -53,11 +61,19 @@ export const paymentsApi = {
 
   /**
    * Initialize Paystack payment
+   * Supports mobile money with channel and phone parameters
    */
-  initializePayment: async (invoiceId: number, email: string): Promise<PaymentInitResponse> => {
+  initializePayment: async (
+    invoiceId: number,
+    email: string,
+    channel?: string,
+    phone?: string,
+  ): Promise<PaymentInitResponse> => {
     const response = await api.post('/payments/initialize', {
       invoiceId,
       email,
+      channel,
+      phone,
     });
     return response.data;
   },
@@ -74,10 +90,18 @@ export const paymentsApi = {
 
   /**
    * Process transaction payment via Paystack
+   * This will create an invoice if needed and initialize payment
    */
-  processTransactionPayment: async (transactionId: number, email: string): Promise<Payment> => {
-    const response = await api.post(`/payments/paystack/transaction/${transactionId}`, {
+  processTransactionPayment: async (
+    transactionId: number,
+    email: string,
+    channel?: string,
+    phone?: string,
+  ): Promise<PaymentInitResponse> => {
+    const response = await api.post(`/payments/transaction/${transactionId}`, {
       email,
+      channel,
+      phone,
     });
     return response.data;
   },

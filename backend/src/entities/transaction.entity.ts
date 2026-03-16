@@ -77,6 +77,9 @@ export class Transaction {
   @Column({ name: 'reservation_id', nullable: true })
   reservationId: number;
 
+  @Column({ name: 'wallet_reserved_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  walletReservedAmount: number;
+
   @OneToMany(() => MeterSample, (meterSample) => meterSample.transaction)
   meterSamples: MeterSample[];
 

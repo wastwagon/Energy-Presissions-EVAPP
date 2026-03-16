@@ -15,6 +15,9 @@ import { ReservationsModule } from '../reservations/reservations.module';
 import { LocalAuthListModule } from '../local-auth-list/local-auth-list.module';
 import { VendorsModule } from '../vendors/vendors.module';
 import { ConnectionLogsModule } from '../connection-logs/connection-logs.module';
+import { WalletModule } from '../wallet/wallet.module';
+import { WalletTransaction } from '../entities/wallet-transaction.entity';
+import { User } from '../entities/user.entity';
 
 @Module({
   imports: [
@@ -25,6 +28,8 @@ import { ConnectionLogsModule } from '../connection-logs/connection-logs.module'
       MeterSample,
       IdTag,
       PendingCommand,
+      WalletTransaction,
+      User,
     ]),
     BillingModule,
     forwardRef(() => ChargePointsModule),
@@ -32,6 +37,7 @@ import { ConnectionLogsModule } from '../connection-logs/connection-logs.module'
     LocalAuthListModule,
     VendorsModule,
     ConnectionLogsModule,
+    WalletModule,
   ],
   controllers: [InternalController],
   providers: [InternalService, CommandQueueService],

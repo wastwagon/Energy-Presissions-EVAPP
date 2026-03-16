@@ -17,7 +17,7 @@ const PORT = parseInt(process.env.PORT || '9000', 10);
 const LOG_RAW_FRAMES = process.env.LOG_RAW_FRAMES === 'true';
 
 // Create HTTP server for health checks and command API
-const server = createServer(async (req, res) => {
+const server = createServer((req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -119,9 +119,10 @@ const server = createServer(async (req, res) => {
 });
 
 // Create WebSocket server
+// Note: We don't specify path here to allow both /ocpp and /ocpp/
+// Path validation is done in the connection handler
 const wss = new WebSocketServer({ 
-  server,
-  path: '/ocpp'
+  server
 });
 
 // Initialize services
@@ -190,150 +191,186 @@ wss.on('connection', async (ws, req) => {
     : new URL(urlString, `http://${req.headers.host || 'localhost'}`);
   const chargePointId = extractChargePointId(url.pathname);
   
-  if (!chargePointId) {
-    logger.warn('Connection rejected: No charge point ID in URL');
-    const ipAddress = req.socket.remoteAddress;
-    const userAgent = req.headers['user-agent'];
+  const ipAddress = req.socket.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+
+  // Validate path - accept:
+  // - /ocpp (no ID, will extract from BootNotification)
+  // - /ocpp/ (no ID, with trailing slash)
+  // - /ocpp/{chargePointId} (with ID in URL - legacy format, also supported)
+  const pathParts = url.pathname.split('/').filter(p => p);
+  const isValidPath = 
+    (pathParts.length === 1 && pathParts[0] === 'ocpp') ||           // /ocpp
+    (pathParts.length === 0 && url.pathname === '/ocpp/') ||          // /ocpp/
+    (pathParts.length === 2 && pathParts[0] === 'ocpp' && pathParts[1]); // /ocpp/{chargePointId}
+  
+  if (!isValidPath) {
+    logger.warn(`Connection rejected: Invalid path - ${url.pathname}`);
     await ConnectionLogger.logConnectionFailure(
       'UNKNOWN',
-      'MISSING_CHARGE_POINT_ID',
-      'No charge point ID in URL',
+      'INVALID_PATH',
+      `Invalid WebSocket path: ${url.pathname}`,
       1008,
-      'Charge point ID required',
+      'Invalid path',
       undefined,
       { ipAddress, userAgent, requestUrl: req.url },
     );
-    ws.close(1008, 'Charge point ID required');
+    ws.close(1008, 'Invalid path');
     return;
   }
 
-  logger.info(`New WebSocket connection from charge point: ${chargePointId}`);
+  // If charge point ID is not in URL, create temporary connection
+  // Charge point ID will be extracted from BootNotification message
+  if (!chargePointId) {
+    // Create temporary connection - will be mapped when BootNotification arrives
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    connectionManager.addTemporaryConnection(ws, tempId);
+    logger.info(`Temporary connection established (waiting for BootNotification): ${tempId} from ${ipAddress}`);
+    await ConnectionLogger.logConnectionAttempt(tempId, ipAddress, userAgent, req.url);
+  } else {
+    logger.info(`New WebSocket connection from charge point: ${chargePointId}`);
+    await ConnectionLogger.logConnectionAttempt(chargePointId, ipAddress, userAgent, req.url);
+  }
   
-  // Log connection attempt
-  const ipAddress = req.socket.remoteAddress;
-  const userAgent = req.headers['user-agent'];
-  await ConnectionLogger.logConnectionAttempt(chargePointId, ipAddress, userAgent, req.url);
-  
-  // Resolve vendor and check status before accepting connection
-  try {
-    const vendorId = await vendorResolver.resolveVendorId(chargePointId);
-    
-    if (vendorId) {
-      // Check vendor status via CSMS API
-      try {
-        const statusResponse = await axios.get(
-          `${process.env.CSMS_API_URL || 'http://csms-api:3000'}/api/internal/vendors/${vendorId}/status`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
+  // Only resolve vendor if charge point ID is already known (from URL)
+  // For temporary connections, vendor will be resolved after BootNotification
+  if (chargePointId) {
+    // Resolve vendor and check status before accepting connection
+    try {
+      const vendorId = await vendorResolver.resolveVendorId(chargePointId);
+      
+      if (vendorId) {
+        // Check vendor status via CSMS API
+        try {
+          const statusResponse = await axios.get(
+            `${process.env.CSMS_API_URL || 'http://csms-api:3000'}/api/internal/vendors/${vendorId}/status`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
+              },
+              timeout: 5000,
             },
-            timeout: 5000,
-          },
-        );
+          );
 
-        const vendorStatus = statusResponse.data.status;
+          const vendorStatus = statusResponse.data.status;
 
-        if (vendorStatus === 'disabled') {
-          logger.warn(`Connection rejected: Vendor ${vendorId} is disabled for charge point ${chargePointId}`);
-          await ConnectionLogger.logConnectionFailure(
+          if (vendorStatus === 'disabled') {
+            logger.warn(`Connection rejected: Vendor ${vendorId} is disabled for charge point ${chargePointId}`);
+            await ConnectionLogger.logConnectionFailure(
+              chargePointId,
+              'VENDOR_DISABLED',
+              `Vendor ${vendorId} is disabled`,
+              4003,
+              'vendor_disabled',
+              vendorId,
+              { ipAddress, userAgent },
+            );
+            ws.close(4003, 'vendor_disabled');
+            return;
+          }
+
+          if (vendorStatus === 'suspended') {
+            logger.warn(`Connection accepted but vendor ${vendorId} is suspended for charge point ${chargePointId}`);
+            // Allow connection but commands will be blocked
+          }
+
+          // Register connection with vendorId
+          connectionManager.addConnection(chargePointId, ws, vendorId);
+          
+          // Log successful connection
+          await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
+            ipAddress,
+            userAgent,
+          });
+        } catch (error: any) {
+          logger.error(`Error checking vendor status for ${chargePointId}:`, error.message);
+          await ConnectionLogger.logError(
             chargePointId,
-            'VENDOR_DISABLED',
-            `Vendor ${vendorId} is disabled`,
-            4003,
-            'vendor_disabled',
+            'VENDOR_STATUS_CHECK_FAILED',
+            `Error checking vendor status: ${error.message}`,
             vendorId,
             { ipAddress, userAgent },
           );
-          ws.close(4003, 'vendor_disabled');
-          return;
+          // If status check fails, allow connection but log warning
+          connectionManager.addConnection(chargePointId, ws);
+          // Try to resolve vendorId asynchronously
+          vendorResolver.resolveVendorId(chargePointId).then((resolvedVendorId) => {
+            if (resolvedVendorId) {
+              connectionManager.setVendorId(chargePointId, resolvedVendorId);
+            }
+          });
+          // Log connection success despite vendor check failure
+          await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
+            ipAddress,
+            userAgent,
+            warning: 'Vendor status check failed',
+          });
         }
-
-        if (vendorStatus === 'suspended') {
-          logger.warn(`Connection accepted but vendor ${vendorId} is suspended for charge point ${chargePointId}`);
-          // Allow connection but commands will be blocked
-        }
-
-        // Register connection with vendorId
-        connectionManager.addConnection(chargePointId, ws, vendorId);
-        
-        // Log successful connection
-        await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
-          ipAddress,
-          userAgent,
-        });
-      } catch (error: any) {
-        logger.error(`Error checking vendor status for ${chargePointId}:`, error.message);
-        await ConnectionLogger.logError(
-          chargePointId,
-          'VENDOR_STATUS_CHECK_FAILED',
-          `Error checking vendor status: ${error.message}`,
-          vendorId,
-          { ipAddress, userAgent },
-        );
-        // If status check fails, allow connection but log warning
+      } else {
+        // No vendor resolved, register without vendorId (backward compatibility)
         connectionManager.addConnection(chargePointId, ws);
-        // Try to resolve vendorId asynchronously
-        vendorResolver.resolveVendorId(chargePointId).then((resolvedVendorId) => {
-          if (resolvedVendorId) {
-            connectionManager.setVendorId(chargePointId, resolvedVendorId);
-          }
-        });
-        // Log connection success despite vendor check failure
-        await ConnectionLogger.logConnectionSuccess(chargePointId, vendorId, {
+        await ConnectionLogger.logConnectionSuccess(chargePointId, undefined, {
           ipAddress,
           userAgent,
-          warning: 'Vendor status check failed',
+          note: 'No vendor resolved',
         });
       }
-    } else {
-      // No vendor resolved, register without vendorId (backward compatibility)
+    } catch (error: any) {
+      logger.error(`Error resolving vendor for ${chargePointId}:`, error.message);
+      await ConnectionLogger.logError(
+        chargePointId,
+        'VENDOR_RESOLUTION_FAILED',
+        `Error resolving vendor: ${error.message}`,
+        undefined,
+        { ipAddress, userAgent },
+      );
+      // Allow connection even if vendor resolution fails (backward compatibility)
       connectionManager.addConnection(chargePointId, ws);
       await ConnectionLogger.logConnectionSuccess(chargePointId, undefined, {
         ipAddress,
         userAgent,
-        note: 'No vendor resolved',
+        warning: 'Vendor resolution failed',
       });
     }
-  } catch (error: any) {
-    logger.error(`Error resolving vendor for ${chargePointId}:`, error.message);
-    await ConnectionLogger.logError(
-      chargePointId,
-      'VENDOR_RESOLUTION_FAILED',
-      `Error resolving vendor: ${error.message}`,
-      undefined,
-      { ipAddress, userAgent },
-    );
-    // Allow connection even if vendor resolution fails (backward compatibility)
-    connectionManager.addConnection(chargePointId, ws);
-    await ConnectionLogger.logConnectionSuccess(chargePointId, undefined, {
-      ipAddress,
-      userAgent,
-      warning: 'Vendor resolution failed',
-    });
   }
+  // For temporary connections (no chargePointId), we'll wait for BootNotification
   
   // Handle messages
   ws.on('message', async (data: Buffer) => {
     const rawMessage = data.toString();
     
     try {
+      // Get charge point ID (may be temporary if not yet mapped)
+      const currentChargePointId = chargePointId || connectionManager.getChargePointId(ws);
+      
+      if (!currentChargePointId) {
+        logger.warn('Received message but charge point ID is unknown');
+        sendError(ws, 'PROTOCOL_ERROR', 'Charge point ID not yet identified');
+        return;
+      }
+      
       if (LOG_RAW_FRAMES) {
-        logger.debug(`Raw OCPP message from ${chargePointId}: ${rawMessage}`);
+        logger.debug(`Raw OCPP message from ${currentChargePointId}: ${rawMessage}`);
       }
       
       const message = JSON.parse(rawMessage);
-      messageRouter.route(chargePointId, message);
+      messageRouter.route(currentChargePointId, message, ws);
     } catch (error: any) {
-      logger.error(`Error processing message from ${chargePointId}:`, error);
-      // Log message error
-      const connection = connectionManager.getConnection(chargePointId);
-      await ConnectionLogger.logMessageError(
-        chargePointId,
-        'FORMAT_VIOLATION',
-        `Invalid JSON format: ${error.message}`,
-        rawMessage,
-        connection?.vendorId,
-      );
+      const currentChargePointId = chargePointId || connectionManager.getChargePointId(ws);
+      if (currentChargePointId) {
+        logger.error(`Error processing message from ${currentChargePointId}:`, error);
+        // Log message error
+        const connection = connectionManager.getConnection(currentChargePointId);
+        await ConnectionLogger.logMessageError(
+          currentChargePointId,
+          'FORMAT_VIOLATION',
+          `Invalid JSON format: ${error.message}`,
+          rawMessage,
+          connection?.vendorId,
+        );
+      } else {
+        logger.error(`Error processing message from unknown charge point:`, error);
+      }
       // Send OCPP error response
       sendError(ws, 'FORMAT_VIOLATION', 'Invalid JSON format');
     }
@@ -341,38 +378,53 @@ wss.on('connection', async (ws, req) => {
   
   // Handle close
   ws.on('close', async (code: number, reason: Buffer) => {
-    logger.info(`WebSocket connection closed for charge point: ${chargePointId} (code: ${code}, reason: ${reason.toString()})`);
-    const connection = connectionManager.getConnection(chargePointId);
-    await ConnectionLogger.logConnectionClosed(
-      chargePointId,
-      code,
-      reason.toString(),
-      connection?.tenantId,
-    );
-    commandManager.clearPending(chargePointId);
-    connectionManager.removeConnection(chargePointId);
+    const currentChargePointId = chargePointId || connectionManager.getChargePointId(ws);
+    if (currentChargePointId) {
+      logger.info(`WebSocket connection closed for charge point: ${currentChargePointId} (code: ${code}, reason: ${reason.toString()})`);
+      const connection = connectionManager.getConnection(currentChargePointId);
+      await ConnectionLogger.logConnectionClosed(
+        currentChargePointId,
+        code,
+        reason.toString(),
+        connection?.vendorId,
+      );
+      commandManager.clearPending(currentChargePointId);
+    }
+    connectionManager.removeConnectionByWebSocket(ws);
   });
   
   // Handle errors
   ws.on('error', async (error: Error) => {
-    logger.error(`WebSocket error for charge point ${chargePointId}:`, error);
-    const connection = connectionManager.getConnection(chargePointId);
-    await ConnectionLogger.logError(
-      chargePointId,
-      'WEBSOCKET_ERROR',
-      error.message,
-      connection?.tenantId,
-      { stack: error.stack },
-    );
+    const currentChargePointId = chargePointId || connectionManager.getChargePointId(ws);
+    if (currentChargePointId) {
+      logger.error(`WebSocket error for charge point ${currentChargePointId}:`, error);
+      const connection = connectionManager.getConnection(currentChargePointId);
+      await ConnectionLogger.logError(
+        currentChargePointId,
+        'WEBSOCKET_ERROR',
+        error.message,
+        connection?.vendorId,
+        { stack: error.stack },
+      );
+    } else {
+      logger.error(`WebSocket error for unknown charge point:`, error);
+    }
   });
 });
 
 // Extract charge point ID from URL path
 function extractChargePointId(pathname: string): string | null {
-  // Expected format: /ocpp/{chargePointId}
-  const parts = pathname.split('/').filter(p => p);
+  // Expected format: /ocpp/{chargePointId} or /ocpp/ or /ocpp (without ID - will be extracted from BootNotification)
+  // Handle both /ocpp and /ocpp/ (with or without trailing slash)
+  const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const parts = normalizedPath.split('/').filter(p => p);
+  
   if (parts.length >= 2 && parts[0] === 'ocpp') {
-    return parts[1];
+    return parts[1]; // Return charge point ID if present
+  }
+  // Return null if path is just /ocpp or /ocpp/ (without ID) - this is allowed
+  if (parts.length === 1 && parts[0] === 'ocpp') {
+    return null;
   }
   return null;
 }
@@ -394,10 +446,12 @@ function sendError(ws: any, errorCode: string, errorDescription: string) {
   }
 }
 
-// Start server
-server.listen(PORT, () => {
+// Start server - bind to 0.0.0.0 to accept connections from network
+server.listen(PORT, '0.0.0.0', () => {
   logger.info(`OCPP Gateway WebSocket server listening on port ${PORT}`);
-  logger.info(`WebSocket endpoint: ws://localhost:${PORT}/ocpp/{chargePointId}`);
+  logger.info(`WebSocket endpoint: ws://0.0.0.0:${PORT}/ocpp/ (charge point ID extracted from BootNotification)`);
+  logger.info(`Also supports: ws://0.0.0.0:${PORT}/ocpp/{chargePointId} (legacy format)`);
+  logger.info(`Accepting connections from network on port ${PORT}`);
 });
 
 // Graceful shutdown

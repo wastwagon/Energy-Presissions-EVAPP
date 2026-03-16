@@ -1,7 +1,7 @@
 {
-  "name": "ev-billing-frontend",
+  "name": "clean-motion-ghana-frontend",
   "version": "1.0.0",
-  "description": "EV Charging Billing Software - Frontend Dashboard",
+  "description": "Clean Motion Ghana - EV Charging Management System Frontend",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.11.1",

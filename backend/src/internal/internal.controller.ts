@@ -85,4 +85,9 @@ export class InternalController implements OnModuleInit {
   async logConnectionEvent(@Body() data: any) {
     return this.internalService.logConnectionEvent(data);
   }
+
+  @Post('charge-points/:id/heartbeat')
+  async updateHeartbeat(@Param('id') id: string, @Body() data: { timestamp?: string }) {
+    return this.internalService.updateHeartbeat(id, data.timestamp);
+  }
 }

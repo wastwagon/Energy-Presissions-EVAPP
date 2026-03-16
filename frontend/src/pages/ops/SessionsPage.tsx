@@ -17,11 +17,14 @@ import {
   Tab,
   Button,
 } from '@mui/material';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { chargePointsApi } from '../../services/chargePointsApi';
+import { websocketService } from '../../services/websocket';
 
 export function SessionsPage() {
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [activeTab, setActiveTab] = useState(0);
   const [activeTransactions, setActiveTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
@@ -30,13 +33,28 @@ export function SessionsPage() {
 
   useEffect(() => {
     loadTransactions();
+    
+    // Set up WebSocket listeners for real-time updates
+    const unsubscribeTransactionStarted = websocketService.on('transactionStarted', () => {
+      loadTransactions(); // Reload when new transaction starts
+    });
+
+    const unsubscribeTransactionStopped = websocketService.on('transactionStopped', () => {
+      loadTransactions(); // Reload when transaction stops
+    });
+
     // Refresh active transactions every 10 seconds
     const interval = setInterval(() => {
       if (activeTab === 0) {
         loadActiveTransactions();
       }
     }, 10000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      unsubscribeTransactionStarted();
+      unsubscribeTransactionStopped();
+      clearInterval(interval);
+    };
   }, [activeTab]);
 
   const loadTransactions = async () => {
@@ -72,12 +90,20 @@ export function SessionsPage() {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  const formatCurrency = (amount?: number, currency: string = 'GHS') => {
+  const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
+    // Always use GHS for Ghana operations
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
-      currency,
+      currency: 'GHS',
     }).format(amount);
+  };
+
+  const formatEnergy = (energy?: number | string | null, decimals: number = 3) => {
+    if (energy === undefined || energy === null) return '-';
+    const numValue = typeof energy === 'string' ? parseFloat(energy) : energy;
+    if (isNaN(numValue)) return '-';
+    return numValue.toFixed(decimals);
   };
 
   const getStatusColor = (status: string) => {
@@ -118,7 +144,7 @@ export function SessionsPage() {
       )}
 
       <Paper sx={{ mt: 2 }}>
-        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
           <Tab label={`Active (${activeTransactions.length})`} />
           <Tab label={`All Sessions (${allTransactions.length})`} />
         </Tabs>
@@ -132,7 +158,7 @@ export function SessionsPage() {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -152,7 +178,7 @@ export function SessionsPage() {
                   <TableRow 
                     key={tx.transactionId}
                     sx={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/ops/sessions/${tx.transactionId}`)}
+                    onClick={() => navigate(`${opsBase}/sessions/${tx.transactionId}`)}
                   >
                     <TableCell>{tx.transactionId}</TableCell>
                     <TableCell>{tx.chargePointId}</TableCell>
@@ -169,12 +195,10 @@ export function SessionsPage() {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      {tx.totalEnergyKwh !== undefined
-                        ? tx.totalEnergyKwh.toFixed(3)
-                        : '-'}
+                      {formatEnergy(tx.totalEnergyKwh, 3)}
                     </TableCell>
                     <TableCell>
-                      {formatCurrency(tx.totalCost, tx.currency)}
+                      {formatCurrency(tx.totalCost)}
                     </TableCell>
                     <TableCell>
                       <Chip
