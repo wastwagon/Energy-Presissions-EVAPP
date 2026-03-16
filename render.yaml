@@ -10,6 +10,8 @@ services:
   - type: web
     name: ev-billing-api
     runtime: docker
+    domains:
+      - api.cleanmotion.energyprecisions.com
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
     plan: starter
@@ -23,7 +25,7 @@ services:
           name: ev-billing-postgres
           property: connectionString
       - key: FRONTEND_URL
-        value: https://ev-billing-frontend.onrender.com
+        value: https://cleanmotion.energyprecisions.com
       # Redis is optional - app will use in-memory cache if not provided
       # - key: REDIS_URL
       #   value: redis://your-redis-url:6379
@@ -46,19 +48,13 @@ services:
       - key: SERVICE_TOKEN
         sync: false
       - key: OCPP_GATEWAY_URL
-        fromService:
-          type: web
-          name: ev-billing-api
-          property: host
+        value: https://api.cleanmotion.energyprecisions.com
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
         sync: false
       - key: PAYSTACK_CALLBACK_URL
-        fromService:
-          type: web
-          name: ev-billing-api
-          property: host
+        value: https://api.cleanmotion.energyprecisions.com
       - key: GOOGLE_CLIENT_ID
         sync: false
     healthCheckPath: /health
@@ -67,6 +63,8 @@ services:
   - type: web
     name: ev-billing-frontend
     runtime: docker
+    domains:
+      - cleanmotion.energyprecisions.com
     dockerfilePath: ./frontend/Dockerfile.prod
     dockerContext: ./frontend
     plan: starter
@@ -75,8 +73,8 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_URL
-        value: https://ev-billing-api.onrender.com/api
+        value: https://api.cleanmotion.energyprecisions.com/api
       - key: VITE_WS_URL
-        value: wss://ev-billing-api.onrender.com/ws
+        value: wss://api.cleanmotion.energyprecisions.com/ws
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
