@@ -3,10 +3,19 @@ set -e
 
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL..."
-until PGPASSWORD="${POSTGRES_PASSWORD:-evbilling_password}" psql -h "postgres" -p "5432" -U "${POSTGRES_USER:-evbilling}" -d "${POSTGRES_DB:-ev_billing_db}" -c '\q' 2>/dev/null; do
-  echo "PostgreSQL is unavailable - sleeping"
-  sleep 2
-done
+if [ -n "$DATABASE_URL" ]; then
+  # Render/production: use DATABASE_URL directly
+  until psql "$DATABASE_URL" -c '\q' 2>/dev/null; do
+    echo "PostgreSQL is unavailable - sleeping"
+    sleep 2
+  done
+else
+  # Docker Compose: use postgres host
+  until PGPASSWORD="${POSTGRES_PASSWORD:-evbilling_password}" psql -h "postgres" -p "5432" -U "${POSTGRES_USER:-evbilling}" -d "${POSTGRES_DB:-ev_billing_db}" -c '\q' 2>/dev/null; do
+    echo "PostgreSQL is unavailable - sleeping"
+    sleep 2
+  done
+fi
 echo "PostgreSQL is ready!"
 
 # Run database migrations (use DATABASE_URL if set, else build from components)
