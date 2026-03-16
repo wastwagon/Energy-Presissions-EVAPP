@@ -112,7 +112,7 @@ export function AdminDashboardLayout() {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
           <img 
-            src="/newlog.png" 
+            src="/logo.jpeg" 
             alt="Clean Motion Ghana" 
             style={{ height: '32px', objectFit: 'contain' }}
           />

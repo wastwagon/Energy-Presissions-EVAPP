@@ -58,7 +58,7 @@ export function LoginPage() {
         <Paper sx={{ p: 4, width: '100%' }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
             <img 
-              src="/newlog.png" 
+              src="/logo.jpeg" 
               alt="Clean Motion Ghana" 
               style={{ height: '60px', objectFit: 'contain' }}
             />

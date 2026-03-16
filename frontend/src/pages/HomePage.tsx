@@ -73,7 +73,7 @@ export function HomePage() {
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'flex-start' }, gap: { xs: 2, md: 3 }, mb: 3 }}>
         <img 
-          src="/newlog.png" 
+          src="/logo.jpeg" 
           alt="Clean Motion Ghana" 
           style={{ height: 'clamp(48px, 12vw, 80px)', objectFit: 'contain' }}
         />

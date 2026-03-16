@@ -24,10 +24,13 @@ export function useVendorStatus() {
   }, []);
 
   const checkVendorStatus = async () => {
+    // Skip if not logged in - avoids CORS preflight and 401 on login page
+    if (!localStorage.getItem('token')) {
+      setState({ status: 'active', loading: false, error: null });
+      return;
+    }
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      // For now, skip vendor status check if endpoint doesn't exist
-      // This allows the app to work without vendor management initially
       const statusInfo = await vendorApi.getCurrentVendorStatus();
       setState({
         status: statusInfo.status,

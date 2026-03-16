@@ -45,7 +45,7 @@ export function MainLayout() {
         <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
             <img 
-              src="/newlog.png" 
+              src="/logo.jpeg" 
               alt="Clean Motion Ghana" 
               style={{ height: 'clamp(32px, 8vw, 40px)', objectFit: 'contain' }}
             />

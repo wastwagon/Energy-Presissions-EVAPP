@@ -97,7 +97,7 @@ export function LoginPage() {
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <img 
-                src="/newlog.png" 
+                src="/logo.jpeg" 
                 alt="Clean Motion Ghana" 
                 style={{ height: '60px', objectFit: 'contain' }}
               />

@@ -15,10 +15,11 @@ async function bootstrap() {
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3001',
     process.env.MOBILE_API_URL || 'http://localhost:3000',
-    // Add production URLs when deploying
-    // 'https://your-web-domain.com',
-    // 'https://your-api-domain.com',
-  ];
+    'https://cleanmotion.energyprecisions.com',
+    'https://www.cleanmotion.energyprecisions.com',
+    'https://ev-billing-frontend.onrender.com',
+    'https://ev-billing-frontend-ah8t.onrender.com',
+  ].filter(Boolean);
 
   app.enableCors({
     origin: (origin, callback) => {

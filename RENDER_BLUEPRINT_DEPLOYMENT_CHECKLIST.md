@@ -55,10 +55,12 @@ For the API (if using a subdomain like `api.cleanmotion.energyprecisions.com`):
 ## 4. Post-Deploy Verification
 
 - [ ] Frontend loads at your URL
+- [ ] Logo displays (uses /logo.jpeg)
 - [ ] Login (email/password) works
 - [ ] Sign in with Google works
 - [ ] Sign in with Apple works (if configured)
 - [ ] Paystack payments work (test mode first)
+- [ ] WebSocket: Real-time updates may fail on Render free tier; app works without it
 
 ---
 

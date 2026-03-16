@@ -134,9 +134,9 @@ export function UserLoginPage() {
     window.google!.accounts.id.renderButton(el, {
       type: 'standard',
       theme: 'outlined',
-      size: 'large',
+      size: 'medium',
       text: 'continue_with',
-      width: 320,
+      width: 240,
     });
   }, [googleReady, googleClientId, handleGoogleCredential]);
 
@@ -198,7 +198,7 @@ export function UserLoginPage() {
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <img 
-                src="/newlog.png" 
+                src="/logo.jpeg" 
                 alt="Clean Motion Ghana" 
                 style={{ height: 'clamp(48px, 15vw, 60px)', objectFit: 'contain' }}
               />
@@ -252,29 +252,30 @@ export function UserLoginPage() {
 
             <Divider sx={{ my: 3 }}>or</Divider>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
               {googleClientId && (
                 <Box
                   ref={googleButtonRef}
                   sx={{
-                    width: '100%',
-                    minHeight: 44,
+                    width: 240,
+                    minHeight: 40,
                     display: 'flex',
                     justifyContent: 'center',
-                    '& iframe': { minHeight: 44 },
+                    '& iframe': { minHeight: 40 },
                   }}
                 />
               )}
               <Button
-                fullWidth
                 variant="outlined"
-                size="large"
+                size="medium"
                 onClick={handleAppleSignIn}
                 disabled={loading}
                 sx={{
-                  py: 1.5,
+                  width: 240,
+                  py: 1,
                   textTransform: 'none',
                   fontWeight: 600,
+                  fontSize: '0.875rem',
                   borderColor: 'text.primary',
                   color: 'text.primary',
                   '&:hover': {
@@ -283,8 +284,10 @@ export function UserLoginPage() {
                   },
                 }}
               >
-                <Box component="span" sx={{ mr: 1.5, fontSize: '1.25rem' }}>🍎</Box>
-                Sign in with Apple ID
+                <Box component="span" sx={{ mr: 1.25, display: 'inline-flex', alignItems: 'center' }}>
+                  <img src="/apple-logo.svg" alt="" width={18} height={18} style={{ display: 'block' }} />
+                </Box>
+                Sign in with Apple
               </Button>
             </Box>
           </form>
