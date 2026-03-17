@@ -21,14 +21,6 @@ if [ -z "$DATABASE_URL" ]; then
     exit 1
 fi
 
-# Extract connection details from DATABASE_URL
-# Format: postgresql://user:password@host:port/database
-DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
-DB_PORT=$(echo $DATABASE_URL | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
-DB_NAME=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
-DB_USER=$(echo $DATABASE_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
-DB_PASS=$(echo $DATABASE_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-
 # Migration files in order (POSIX sh - no arrays)
 MIGRATION_DIR="$(dirname "$0")/init"
 MIGRATION_FILES="00-migration-tracker.sql 01-init.sql 02-enhanced-schema.sql 03-pending-commands.sql 04-paystack-support.sql 05-wallet-system.sql 06-advanced-features.sql 07-vendors.sql 08-vendor-migration.sql 09-cms-settings.sql 10-connection-logs.sql 11-default-user.sql 12-vendor-branding.sql 13-sample-users.sql 14-ghana-location-enhancements.sql 15-sample-ghana-stations.sql 16-charge-point-pricing-capacity.sql 17-ghana-vendors.sql 18-transaction-wallet-amount.sql 19-user-favorites.sql 20-payment-methods.sql 21-audit-logs.sql"
@@ -37,24 +29,19 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Database Migration Runner${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "Database: $DB_NAME"
-echo "Host: $DB_HOST"
-echo "Port: $DB_PORT"
-echo "User: $DB_USER"
-echo ""
 echo -e "${YELLOW}Running migrations...${NC}"
 echo ""
 
-# Wait for database to be ready
+# Wait for database to be ready (use DATABASE_URL directly - works with Render @host/db format)
 echo -e "${YELLOW}Waiting for database to be ready...${NC}"
-until PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; do
+until psql "$DATABASE_URL" -c '\q' 2>/dev/null; do
     echo "Database is unavailable - sleeping"
     sleep 1
 done
 echo -e "${GREEN}Database is ready!${NC}"
 echo ""
 
-# Run each migration
+# Run each migration (use DATABASE_URL directly - no parsing needed)
 for migration in $MIGRATION_FILES; do
     migration_file="$MIGRATION_DIR/$migration"
     
@@ -65,12 +52,12 @@ for migration in $MIGRATION_FILES; do
     
     echo -e "${YELLOW}Running: $migration${NC}"
     
-    if PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+    if psql "$DATABASE_URL" -f "$migration_file" > /dev/null 2>&1; then
         echo -e "${GREEN}✅ $migration completed${NC}"
     else
         echo -e "${RED}❌ $migration failed${NC}"
         echo "Running with verbose output:"
-        PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file"
+        psql "$DATABASE_URL" -f "$migration_file"
         exit 1
     fi
 done
