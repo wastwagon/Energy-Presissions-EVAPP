@@ -23,6 +23,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
 import { AdminLoginPage } from './pages/auth/AdminLoginPage';
 import { UserLoginPage } from './pages/auth/UserLoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
 import { CustomerDashboardPage } from './pages/user/CustomerDashboardPage';
 import { CustomerActiveSessionsPage } from './pages/user/CustomerActiveSessionsPage';
 import { CustomerSessionHistoryPage } from './pages/user/CustomerSessionHistoryPage';
@@ -98,7 +99,7 @@ function App() {
         <Route path="/login/admin" element={<AdminLoginPage />} />
         <Route path="/login/user" element={<UserLoginPage />} />
         <Route path="/login/vendor" element={<AdminLoginPage />} />
-        <Route path="/register" element={<UserLoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected routes - require login */}
         <Route path="/" element={<MainLayout />}>

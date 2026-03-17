@@ -60,16 +60,29 @@ class WebSocketService {
     }
 
     this.isConnecting = true;
-    console.log(`Connecting to WebSocket: ${this.wsUrl}`);
 
     try {
       // Ensure we're using wss:// for production HTTPS
-      const wsUrl = this.wsUrl.startsWith('http') 
+      let wsUrl = this.wsUrl.startsWith('http')
         ? this.wsUrl.replace('http://', 'ws://').replace('https://', 'wss://')
         : this.wsUrl;
-      
+
+      // Parse URL to separate host from path - avoids "Invalid namespace" when path is in URL
+      let path = '/ws';
+      try {
+        const url = new URL(wsUrl);
+        if (url.pathname && url.pathname !== '/' && url.pathname !== '') {
+          path = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
+          wsUrl = `${url.protocol}//${url.host}`;
+        }
+      } catch {
+        // Keep original wsUrl if parsing fails
+      }
+
+      console.log(`Connecting to WebSocket: ${wsUrl}${path}`);
+
       this.socket = io(wsUrl, {
-        path: '/ws',
+        path,
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 10,
@@ -178,7 +191,10 @@ class WebSocketService {
 // Export singleton instance
 export const websocketService = new WebSocketService();
 
-// Auto-connect on import (can be disabled if needed)
+// Connect only when user is authenticated - avoids "Invalid namespace" on login/register
 if (typeof window !== 'undefined') {
-  websocketService.connect();
+  const token = localStorage.getItem('token');
+  if (token) {
+    websocketService.connect();
+  }
 }

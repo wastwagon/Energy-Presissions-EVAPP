@@ -41,6 +41,16 @@ export const theme = createTheme({
     h4: { fontSize: '1.5rem' },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          minHeight: '100dvh',
+        },
+        html: {
+          minHeight: '100dvh',
+        },
+      },
+    },
     MuiTypography: {
       styleOverrides: {
         h3: {

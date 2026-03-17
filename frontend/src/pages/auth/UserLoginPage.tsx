@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -35,6 +35,8 @@ declare global {
 export function UserLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const successMessage = (location.state as { message?: string })?.message;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -177,33 +179,35 @@ export function UserLoginPage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
         backgroundImage: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-        py: 4,
+        py: 2,
+        paddingTop: 'max(env(safe-area-inset-top), 8px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
       }}
     >
       <Container maxWidth="sm">
         <Paper
           elevation={24}
           sx={{
-            p: { xs: 2, sm: 4 },
+            p: { xs: 2, sm: 3 },
             borderRadius: 3,
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
               <img 
                 src="/logo.jpeg" 
                 alt="Clean Motion Ghana" 
                 style={{ height: 'clamp(48px, 15vw, 60px)', objectFit: 'contain' }}
               />
             </Box>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.35rem', sm: '1.5rem' } }}>
               User Login
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -211,6 +215,11 @@ export function UserLoginPage() {
             </Typography>
           </Box>
 
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => navigate('/login/user', { replace: true, state: {} })}>
+              {successMessage}
+            </Alert>
+          )}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
               {error}
@@ -224,7 +233,7 @@ export function UserLoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              margin="normal"
+              margin="dense"
               required
               autoComplete="email"
               autoFocus
@@ -235,7 +244,7 @@ export function UserLoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              margin="normal"
+              margin="dense"
               required
               autoComplete="current-password"
             />
@@ -244,13 +253,13 @@ export function UserLoginPage() {
               fullWidth
               variant="contained"
               size="large"
-              sx={{ mt: 3 }}
+              sx={{ mt: 2 }}
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
 
-            <Divider sx={{ my: 3 }}>or</Divider>
+            <Divider sx={{ my: 2 }}>or</Divider>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
               {googleClientId && (
@@ -292,28 +301,15 @@ export function UserLoginPage() {
             </Box>
           </form>
 
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link href="/register" variant="body2" sx={{ textDecoration: 'none', mr: 2 }}>
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Link
+              component="button"
+              variant="body2"
+              sx={{ textDecoration: 'none', cursor: 'pointer' }}
+              onClick={() => navigate('/register')}
+            >
               Don't have an account? Sign up
             </Link>
-            <Typography variant="caption" color="text.secondary" component="span">
-              Admin?{' '}
-              <Button
-                size="small"
-                onClick={() => navigate('/login/admin')}
-                sx={{ textTransform: 'none' }}
-              >
-                Admin Login
-              </Button>
-              {' or '}
-              <Button
-                size="small"
-                onClick={() => navigate('/login/super-admin')}
-                sx={{ textTransform: 'none' }}
-              >
-                Super Admin
-              </Button>
-            </Typography>
           </Box>
         </Paper>
       </Container>
