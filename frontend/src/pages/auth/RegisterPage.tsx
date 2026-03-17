@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -8,6 +8,7 @@ import {
   Button,
   Typography,
   Alert,
+  Link,
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
 
@@ -171,10 +172,10 @@ export function RegisterPage() {
 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Link
-              component="button"
+              component={RouterLink}
+              to="/login/user"
               variant="body2"
               sx={{ textDecoration: 'none', cursor: 'pointer' }}
-              onClick={() => navigate('/login/user')}
             >
               Already have an account? Sign in
             </Link>

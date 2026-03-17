@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -303,10 +303,10 @@ export function UserLoginPage() {
 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Link
-              component="button"
+              component={RouterLink}
+              to="/register"
               variant="body2"
               sx={{ textDecoration: 'none', cursor: 'pointer' }}
-              onClick={() => navigate('/register')}
             >
               Don't have an account? Sign up
             </Link>
