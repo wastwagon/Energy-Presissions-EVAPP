@@ -26,11 +26,9 @@ else
   MIGRATE_URL="postgresql://${POSTGRES_USER:-evbilling}:${POSTGRES_PASSWORD:-evbilling_password}@postgres:5432/${POSTGRES_DB:-ev_billing_db}"
 fi
 if [ -f /app/database/run-migrations.sh ]; then
-  cd /app/database && sh run-migrations.sh "$MIGRATE_URL" || true
-else
-  echo "Migration script not found, skipping..."
+  (cd /app/database && sh run-migrations.sh "$MIGRATE_URL") || true
 fi
 
-# Start the application
+# Start the application (use absolute path - cwd may have changed)
 echo "Starting application..."
-exec node dist/main.js
+exec node /app/dist/main.js

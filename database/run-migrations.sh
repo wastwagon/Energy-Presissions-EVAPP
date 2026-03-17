@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Database Migration Runner
 # This script runs all database migrations in order
 # Usage: ./run-migrations.sh [database_url]
@@ -29,29 +29,9 @@ DB_NAME=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
 DB_USER=$(echo $DATABASE_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
 DB_PASS=$(echo $DATABASE_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
 
-# Migration files in order
-MIGRATIONS=(
-    "01-init.sql"
-    "02-enhanced-schema.sql"
-    "03-pending-commands.sql"
-    "04-paystack-support.sql"
-    "05-wallet-system.sql"
-    "06-advanced-features.sql"
-    "07-vendors.sql"
-    "08-vendor-migration.sql"
-    "09-cms-settings.sql"
-    "10-connection-logs.sql"
-    "11-default-user.sql"
-    "12-vendor-branding.sql"
-    "13-sample-users.sql"
-    "14-ghana-location-enhancements.sql"
-    "15-sample-ghana-stations.sql"
-    "16-charge-point-pricing-capacity.sql"
-    "17-ghana-vendors.sql"
-    "18-transaction-wallet-amount.sql"
-)
-
+# Migration files in order (POSIX sh - no arrays)
 MIGRATION_DIR="$(dirname "$0")/init"
+MIGRATION_FILES="00-migration-tracker.sql 01-init.sql 02-enhanced-schema.sql 03-pending-commands.sql 04-paystack-support.sql 05-wallet-system.sql 06-advanced-features.sql 07-vendors.sql 08-vendor-migration.sql 09-cms-settings.sql 10-connection-logs.sql 11-default-user.sql 12-vendor-branding.sql 13-sample-users.sql 14-ghana-location-enhancements.sql 15-sample-ghana-stations.sql 16-charge-point-pricing-capacity.sql 17-ghana-vendors.sql 18-transaction-wallet-amount.sql 19-user-favorites.sql 20-payment-methods.sql 21-audit-logs.sql"
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Database Migration Runner${NC}"
@@ -75,7 +55,7 @@ echo -e "${GREEN}Database is ready!${NC}"
 echo ""
 
 # Run each migration
-for migration in "${MIGRATIONS[@]}"; do
+for migration in $MIGRATION_FILES; do
     migration_file="$MIGRATION_DIR/$migration"
     
     if [ ! -f "$migration_file" ]; then
