@@ -282,7 +282,7 @@ export class AuthService {
     const normalized = email.trim().toLowerCase();
     const generic: { message: string } = {
       message:
-        'If an account exists for this email, you can complete reset with the token sent to you. Contact support if you need help.',
+        'If that email is registered, use the next step to choose a new password. Contact us if you get stuck.',
     };
 
     const user = await this.usersService.findByEmail(normalized);
@@ -307,18 +307,18 @@ export class AuthService {
     const normalized = email.trim().toLowerCase();
     const user = await this.usersService.findByEmail(normalized);
     if (!user?.passwordResetToken || !user.passwordResetExpiresAt) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new BadRequestException("That code doesn't match. Try again or request a new reset.");
     }
     if (new Date() > new Date(user.passwordResetExpiresAt)) {
-      throw new BadRequestException('Reset token has expired. Request a new one.');
+      throw new BadRequestException('That code has expired. Start over with a new reset.');
     }
     if (!this.safeEqualToken(token.trim(), user.passwordResetToken)) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new BadRequestException("That code doesn't match. Check it and try again.");
     }
 
     await this.usersService.setPasswordAndClearResetToken(user.id, password);
 
-    return { message: 'Password has been reset. You can sign in now.' };
+    return { message: 'Your password is updated. You can sign in now.' };
   }
 }
 

@@ -36,7 +36,7 @@ export function ForgotPasswordPage() {
       setInfo(res.message);
       setRequestDone(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Could not process request.');
+      setError(err.response?.data?.message || err.message || 'Something went wrong. Try again in a moment.');
     } finally {
       setLoadingRequest(false);
     }
@@ -56,7 +56,7 @@ export function ForgotPasswordPage() {
       setInfo(res.message);
       setTimeout(() => navigate('/login/user', { replace: true }), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Reset failed.');
+      setError(err.response?.data?.message || err.message || "We couldn't update your password. Check the code and try again.");
     } finally {
       setLoadingReset(false);
     }
@@ -68,11 +68,10 @@ export function ForgotPasswordPage() {
         <Paper elevation={0} sx={authPagePaperSx}>
           <AuthBrandHeader />
           <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
-            Reset password
+            Reset your password
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-            Reset tokens are issued for your email. In development, the server logs the token. Production should email
-            this token to the user.
+            Enter the email you used to register. After you continue, you can enter your code and pick a new password below.
           </Typography>
 
           {error && (
@@ -101,26 +100,26 @@ export function ForgotPasswordPage() {
               autoFocus
             />
             <Button type="submit" fullWidth variant="contained" size="medium" disabled={loadingRequest}>
-              {loadingRequest ? 'Sending…' : 'Request reset token'}
+              {loadingRequest ? 'Working…' : 'Continue'}
             </Button>
           </Box>
 
           <Collapse in={requestDone}>
             <Typography variant="subtitle2" sx={{ mt: 2, mb: 0.75 }}>
-              Complete reset
+              Enter your code and new password
             </Typography>
             <Box component="form" onSubmit={handleReset}>
               <TextField
                 fullWidth
                 size="small"
-                label="Reset token"
+                label="Reset code"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 margin="none"
                 sx={{ mb: 1.25 }}
                 required
                 autoComplete="off"
-                helperText="From server log (dev) or email (production)."
+                helperText="Use the code from your email, or the one support gave you."
               />
               <TextField
                 fullWidth
@@ -133,10 +132,10 @@ export function ForgotPasswordPage() {
                 required
                 autoComplete="new-password"
                 inputProps={{ minLength: 8 }}
-                helperText="At least 8 characters."
+                helperText="Use at least 8 characters."
               />
               <Button type="submit" fullWidth variant="outlined" size="medium" sx={{ mt: 1.5 }} disabled={loadingReset}>
-                {loadingReset ? 'Updating…' : 'Set new password'}
+                {loadingReset ? 'Saving…' : 'Save new password'}
               </Button>
             </Box>
           </Collapse>

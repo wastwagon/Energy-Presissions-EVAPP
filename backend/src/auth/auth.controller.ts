@@ -130,8 +130,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Request password reset',
-    description:
-      'Creates a reset token for the account (non-production: token is logged server-side). Configure email delivery for production.',
+    description: 'Issues a short-lived reset code for the account. Email delivery is configured separately.',
   })
   @ApiResponse({ status: 200, description: 'Acknowledged (same message whether or not the email exists)' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
