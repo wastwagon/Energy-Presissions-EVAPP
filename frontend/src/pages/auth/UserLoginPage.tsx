@@ -133,12 +133,13 @@ export function UserLoginPage() {
       client_id: googleClientId,
       callback: (res) => handleGoogleCredential(res.credential),
     });
+    const btnWidth = Math.min(320, Math.max(240, el.offsetWidth || 280));
     window.google!.accounts.id.renderButton(el, {
       type: 'standard',
       theme: 'outlined',
       size: 'medium',
       text: 'continue_with',
-      width: 240,
+      width: btnWidth,
     });
   }, [googleReady, googleClientId, handleGoogleCredential]);
 
@@ -181,47 +182,45 @@ export function UserLoginPage() {
       sx={{
         minHeight: '100dvh',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: { xs: 'flex-start', sm: 'center' },
         justifyContent: 'center',
         bgcolor: 'background.default',
-        backgroundImage: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-        py: 2,
-        paddingTop: 'max(env(safe-area-inset-top), 8px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+        px: { xs: 2, sm: 3 },
+        pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
+        pb: 'max(env(safe-area-inset-bottom), 16px)',
       }}
     >
-      <Container maxWidth="sm">
+      <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper
-          elevation={24}
+          variant="outlined"
+          elevation={0}
           sx={{
-            p: { xs: 2, sm: 3 },
-            borderRadius: 3,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            p: { xs: 2, sm: 2.5 },
+            borderRadius: 2,
+            borderColor: 'divider',
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-              <img 
-                src="/logo.jpeg" 
-                alt="Clean Motion Ghana" 
-                style={{ height: 'clamp(48px, 15vw, 60px)', objectFit: 'contain' }}
-              />
-            </Box>
-            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.35rem', sm: '1.5rem' } }}>
-              User Login
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Clean Motion Ghana
-            </Typography>
-          </Box>
+          <Typography
+            component="h1"
+            variant="subtitle1"
+            sx={{
+              fontWeight: 700,
+              color: 'text.primary',
+              mb: 1.5,
+              textAlign: 'center',
+              letterSpacing: '0.01em',
+            }}
+          >
+            Sign in
+          </Typography>
 
           {successMessage && (
-            <Alert severity="success" sx={{ mb: 2 }} onClose={() => navigate('/login/user', { replace: true, state: {} })}>
+            <Alert severity="success" sx={{ mb: 1.5, py: 0 }} onClose={() => navigate('/login/user', { replace: true, state: {} })}>
               {successMessage}
             </Alert>
           )}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 1.5, py: 0 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
@@ -229,22 +228,25 @@ export function UserLoginPage() {
           <form onSubmit={handleLogin}>
             <TextField
               fullWidth
+              size="small"
               label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              margin="dense"
+              margin="none"
+              sx={{ mb: 1.25 }}
               required
               autoComplete="email"
               autoFocus
             />
             <TextField
               fullWidth
+              size="small"
               label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              margin="dense"
+              margin="none"
               required
               autoComplete="current-password"
             />
@@ -252,21 +254,21 @@ export function UserLoginPage() {
               type="submit"
               fullWidth
               variant="contained"
-              size="large"
-              sx={{ mt: 2 }}
+              size="medium"
+              sx={{ mt: 1.5 }}
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
-            <Divider sx={{ my: 2 }}>or</Divider>
+            <Divider sx={{ my: 1.5 }}>or</Divider>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch' }}>
               {googleClientId && (
                 <Box
                   ref={googleButtonRef}
                   sx={{
-                    width: 240,
+                    width: '100%',
                     minHeight: 40,
                     display: 'flex',
                     justifyContent: 'center',
@@ -276,16 +278,16 @@ export function UserLoginPage() {
               )}
               <Button
                 variant="outlined"
-                size="medium"
+                size="small"
                 onClick={handleAppleSignIn}
                 disabled={loading}
+                fullWidth
                 sx={{
-                  width: 240,
-                  py: 1,
+                  py: 0.75,
                   textTransform: 'none',
                   fontWeight: 600,
-                  fontSize: '0.875rem',
-                  borderColor: 'text.primary',
+                  fontSize: '0.8125rem',
+                  borderColor: 'divider',
                   color: 'text.primary',
                   '&:hover': {
                     borderColor: 'primary.main',
@@ -293,22 +295,22 @@ export function UserLoginPage() {
                   },
                 }}
               >
-                <Box component="span" sx={{ mr: 1.25, display: 'inline-flex', alignItems: 'center' }}>
-                  <img src="/apple-logo.svg" alt="" width={18} height={18} style={{ display: 'block' }} />
+                <Box component="span" sx={{ mr: 1, display: 'inline-flex', alignItems: 'center' }}>
+                  <img src="/apple-logo.svg" alt="" width={16} height={16} style={{ display: 'block' }} />
                 </Box>
                 Sign in with Apple
               </Button>
             </Box>
           </form>
 
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Box sx={{ mt: 1.5, textAlign: 'center' }}>
             <Link
               component={RouterLink}
               to="/register"
-              variant="body2"
+              variant="caption"
               sx={{ textDecoration: 'none', cursor: 'pointer' }}
             >
-              Don't have an account? Sign up
+              Create account
             </Link>
           </Box>
         </Paper>

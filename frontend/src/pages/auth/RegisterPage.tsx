@@ -58,103 +58,111 @@ export function RegisterPage() {
       sx={{
         minHeight: '100dvh',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: { xs: 'flex-start', sm: 'center' },
         justifyContent: 'center',
         bgcolor: 'background.default',
-        backgroundImage: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-        py: 2,
-        paddingTop: 'max(env(safe-area-inset-top), 8px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+        px: { xs: 2, sm: 3 },
+        pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
+        pb: 'max(env(safe-area-inset-bottom), 16px)',
       }}
     >
-      <Container maxWidth="sm">
+      <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper
-          elevation={24}
+          variant="outlined"
+          elevation={0}
           sx={{
-            p: { xs: 2, sm: 3 },
-            borderRadius: 3,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            p: { xs: 2, sm: 2.5 },
+            borderRadius: 2,
+            borderColor: 'divider',
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-              <img
-                src="/logo.jpeg"
-                alt="Clean Motion Ghana"
-                style={{ height: 'clamp(40px, 12vw, 52px)', objectFit: 'contain' }}
-              />
-            </Box>
-            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-              Create Account
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Join Clean Motion Ghana
-            </Typography>
-          </Box>
+          <Typography
+            component="h1"
+            variant="subtitle1"
+            sx={{
+              fontWeight: 700,
+              color: 'text.primary',
+              mb: 1.5,
+              textAlign: 'center',
+              letterSpacing: '0.01em',
+            }}
+          >
+            Create account
+          </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 1.5, py: 0 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
 
           <form onSubmit={handleRegister}>
-            <Box sx={{ display: 'flex', gap: 1.5, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
               <TextField
                 fullWidth
-                label="First Name"
+                size="small"
+                label="First name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                margin="dense"
+                margin="none"
                 required
                 autoComplete="given-name"
               />
               <TextField
                 fullWidth
-                label="Last Name"
+                size="small"
+                label="Last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                margin="dense"
+                margin="none"
                 required
                 autoComplete="family-name"
               />
             </Box>
             <TextField
               fullWidth
+              size="small"
               label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              margin="dense"
+              margin="none"
+              sx={{ mt: 1.25 }}
               required
               autoComplete="email"
             />
             <TextField
               fullWidth
-              label="Phone (Optional)"
+              size="small"
+              label="Phone (optional)"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              margin="dense"
+              margin="none"
+              sx={{ mt: 1.25 }}
               autoComplete="tel"
             />
             <TextField
               fullWidth
+              size="small"
               label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              margin="dense"
+              margin="none"
+              sx={{ mt: 1.25 }}
               required
               autoComplete="new-password"
-              helperText="Minimum 6 characters"
+              helperText="Min. 6 characters"
             />
             <TextField
               fullWidth
-              label="Confirm Password"
+              size="small"
+              label="Confirm password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              margin="dense"
+              margin="none"
+              sx={{ mt: 1.25 }}
               required
               autoComplete="new-password"
             />
@@ -162,22 +170,22 @@ export function RegisterPage() {
               type="submit"
               fullWidth
               variant="contained"
-              size="large"
-              sx={{ mt: 2 }}
+              size="medium"
+              sx={{ mt: 1.5 }}
               disabled={loading}
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? 'Creating account...' : 'Sign up'}
             </Button>
           </form>
 
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Box sx={{ mt: 1.5, textAlign: 'center' }}>
             <Link
               component={RouterLink}
               to="/login/user"
-              variant="body2"
+              variant="caption"
               sx={{ textDecoration: 'none', cursor: 'pointer' }}
             >
-              Already have an account? Sign in
+              Sign in instead
             </Link>
           </Box>
         </Paper>
