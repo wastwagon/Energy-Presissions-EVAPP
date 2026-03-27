@@ -1,12 +1,12 @@
 import { createTheme, alpha } from '@mui/material/styles';
 
-/** Brand accent — refined teal */
+/** Brand accent — refined teal, nudged toward Jampack #007d88 for harmony with template shell */
 export const brandColors = {
-  primary: '#0c4a6e',
-  secondary: '#155e75',
-  background: '#f4f6f9',
+  primary: '#0a6570',
+  secondary: '#127a87',
+  background: '#f4f7f9',
   paper: '#ffffff',
-  primaryDark: '#082f47',
+  primaryDark: '#074854',
 } as const;
 
 const fontStack = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -16,14 +16,14 @@ export const theme = createTheme({
     mode: 'light',
     primary: {
       main: brandColors.primary,
-      light: '#0e7490',
+      light: '#14919e',
       dark: brandColors.primaryDark,
       contrastText: '#ffffff',
     },
     secondary: {
       main: brandColors.secondary,
-      light: '#0e7490',
-      dark: '#164e63',
+      light: '#18a7b5',
+      dark: '#0d5c66',
       contrastText: '#ffffff',
     },
     background: {

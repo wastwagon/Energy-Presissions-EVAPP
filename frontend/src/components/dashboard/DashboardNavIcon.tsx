@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import { alpha, Theme } from '@mui/material/styles';
+import { jampackKpiCardBaseSx } from '../../theme/jampackShell';
 
 export type DashboardNavAccent = 'primary' | 'info' | 'success' | 'error' | 'secondary';
 
@@ -34,9 +35,10 @@ export function DashboardNavIcon({
   );
 }
 
-/** Hover lift + shadow for clickable dashboard module cards */
+/** Hover lift + shadow for clickable dashboard module cards (Jampack surface). */
 export function premiumNavCardSx(accent: DashboardNavAccent) {
   return {
+    ...jampackKpiCardBaseSx,
     cursor: 'pointer',
     transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
     '@media (hover: hover) and (pointer: fine)': {
@@ -52,6 +54,7 @@ export function premiumNavCardSx(accent: DashboardNavAccent) {
 /** Subtle hover for non-clickable KPI / stat cards */
 export function premiumStatCardSx(accent: DashboardNavAccent) {
   return {
+    ...jampackKpiCardBaseSx,
     transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
     '@media (hover: hover) and (pointer: fine)': {
       '&:hover': {

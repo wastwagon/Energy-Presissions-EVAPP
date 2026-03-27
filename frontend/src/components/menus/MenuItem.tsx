@@ -15,20 +15,34 @@ import { brandColors } from '../../theme';
 
 interface MenuItemProps {
   item: MenuItemType;
-  location: string;
   onClick?: () => void;
   themeColor?: string; // For role-specific colors
 }
 
-export function MenuItem({ item, location, onClick, themeColor }: MenuItemProps) {
-  // More precise active state: only exact matches
-  // This prevents parent paths from being highlighted when viewing child routes
-  // e.g., /superadmin/ops should NOT be active when on /superadmin/ops/devices
-  // Only the exact matching route should be highlighted
-  // Use exact match, but also handle trailing slashes
-  const normalizedLocation = location.replace(/\/$/, '');
-  const normalizedPath = item.path.replace(/\/$/, '');
-  const isActive = normalizedLocation === normalizedPath;
+function normalizePathname(pathname: string) {
+  return pathname.replace(/\/$/, '') || '/';
+}
+
+function getMenuItemActive(
+  itemPath: string,
+  pathname: string,
+  search: string,
+  activeOnlyWithoutSearch?: boolean,
+) {
+  const q = itemPath.indexOf('?');
+  const pathPart = q >= 0 ? itemPath.slice(0, q) : itemPath;
+  const expectedSearch = q >= 0 ? itemPath.slice(q) : null;
+  const normLoc = normalizePathname(pathname);
+  const normItem = normalizePathname(pathPart);
+  if (normLoc !== normItem) return false;
+  if (expectedSearch !== null) return search === expectedSearch;
+  if (activeOnlyWithoutSearch) return search === '';
+  return true;
+}
+
+export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
+  const { pathname, search } = useLocation();
+  const isActive = getMenuItemActive(item.path, pathname, search, item.activeOnlyWithoutSearch);
 
   // Get theme color from localStorage or use default
   const getThemeColor = () => {

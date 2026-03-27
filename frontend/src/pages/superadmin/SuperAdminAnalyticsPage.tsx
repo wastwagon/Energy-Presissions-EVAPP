@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -16,6 +17,8 @@ import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
 
 export function SuperAdminAnalyticsPage() {
+  const [searchParams] = useSearchParams();
+  const vendorScope = searchParams.get('scope') === 'vendor';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -83,10 +86,12 @@ export function SuperAdminAnalyticsPage() {
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
-            System Analytics
+            {vendorScope ? 'Vendor analytics' : 'System Analytics'}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Comprehensive analytics and insights across all vendors
+            {vendorScope
+              ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon).'
+              : 'Comprehensive analytics and insights across all vendors'}
           </Typography>
         </Box>
         <Button

@@ -27,6 +27,7 @@ import {
   jampackAppBarSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
+import { DashboardAppBarLead } from '../components/layout/DashboardAppBarLead';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -126,7 +127,7 @@ export function CustomerDashboardLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1 }} />
+          <DashboardAppBarLead />
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>

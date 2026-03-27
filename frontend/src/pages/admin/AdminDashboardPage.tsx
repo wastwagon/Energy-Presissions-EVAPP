@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { jampackKpiCardBaseSx, jampackKpiCardHoverSx } from '../../theme/jampackShell';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -154,22 +155,9 @@ export function AdminDashboardPage() {
       {stats && (
         <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card 
-              elevation={0} 
-              sx={{ 
-                borderRadius: 3, 
-                border: '1px solid', 
-                borderColor: 'divider',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                '@media (hover: hover) and (pointer: fine)': {
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: (theme) => theme.shadows[4],
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
+            <Card
+              elevation={0}
+              sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx, { cursor: 'pointer' }]}
               onClick={() => navigate('/admin/ops/devices')}
             >
               <CardContent>
@@ -189,22 +177,18 @@ export function AdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card 
-              elevation={0} 
-              sx={{ 
-                borderRadius: 3, 
-                border: '1px solid', 
-                borderColor: 'divider',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                '@media (hover: hover) and (pointer: fine)': {
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: (theme) => theme.shadows[4],
-                    borderColor: 'info.main',
+            <Card
+              elevation={0}
+              sx={[
+                jampackKpiCardBaseSx,
+                jampackKpiCardHoverSx,
+                {
+                  cursor: 'pointer',
+                  '@media (hover: hover) and (pointer: fine)': {
+                    '&:hover': { borderColor: 'info.main' },
                   },
                 },
-              }}
+              ]}
               onClick={() => navigate('/admin/ops/sessions')}
             >
               <CardContent>
@@ -224,7 +208,7 @@ export function AdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -242,7 +226,7 @@ export function AdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>

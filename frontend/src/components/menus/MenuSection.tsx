@@ -16,14 +16,12 @@ import { brandColors } from '../../theme';
 
 interface MenuSectionProps {
   section: MenuSectionType;
-  location: string;
   onItemClick?: () => void;
   themeColor?: string;
 }
 
 export function MenuSectionComponent({
   section,
-  location,
   onItemClick,
   themeColor,
 }: MenuSectionProps) {
@@ -148,12 +146,7 @@ export function MenuSectionComponent({
 
             return (
               <React.Fragment key={item.id}>
-                <MenuItem
-                  item={item}
-                  location={location}
-                  onClick={onItemClick}
-                  themeColor={themeColor}
-                />
+                <MenuItem item={item} onClick={onItemClick} themeColor={themeColor} />
                 {item.divider && index < section.items.length - 1 && (
                   <Divider
                     sx={{

@@ -51,6 +51,8 @@ export interface MenuItem {
   external?: boolean;
   shortcut?: string;
   roles?: string[]; // Which roles can see this item
+  /** If true, active only when pathname matches and there is no query string (avoids clashing with another item on the same path). */
+  activeOnlyWithoutSearch?: boolean;
 }
 
 export interface MenuSection {
@@ -85,6 +87,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'System Analytics',
         icon: <TrendingUpIcon />,
         path: '/superadmin/analytics',
+        activeOnlyWithoutSearch: true,
         roles: ['SuperAdmin'],
       },
     ],
@@ -151,8 +154,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         id: 'vendor-analytics',
         text: 'Vendor Analytics',
         icon: <BarChartIcon />,
-        path: '/superadmin/vendors',
-        disabled: true, // Can be added to vendor detail page
+        path: '/superadmin/analytics?scope=vendor',
         roles: ['SuperAdmin'],
       },
     ],

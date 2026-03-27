@@ -1,5 +1,4 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { superAdminMenuConfig } from '../../config/menu.config';
@@ -10,8 +9,6 @@ interface SuperAdminMenuProps {
 }
 
 export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
-  const location = useLocation();
-
   return (
     <Box
       sx={{
@@ -36,12 +33,7 @@ export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
     >
       <List sx={jampackMenuListSx}>
         {superAdminMenuConfig.map((section) => (
-          <MenuSectionComponent
-            key={section.id}
-            section={section}
-            location={location.pathname}
-            onItemClick={onItemClick}
-          />
+          <MenuSectionComponent key={section.id} section={section} onItemClick={onItemClick} />
         ))}
       </List>
     </Box>

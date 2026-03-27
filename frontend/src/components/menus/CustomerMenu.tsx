@@ -1,5 +1,4 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { customerMenuConfig } from '../../config/menu.config';
@@ -11,7 +10,6 @@ interface CustomerMenuProps {
 }
 
 export function CustomerMenu({ onItemClick }: CustomerMenuProps) {
-  const location = useLocation();
   const themeColor = brandColors.primary;
 
   return (
@@ -38,13 +36,7 @@ export function CustomerMenu({ onItemClick }: CustomerMenuProps) {
     >
       <List sx={jampackMenuListSx}>
         {customerMenuConfig.map((section) => (
-          <MenuSectionComponent
-            key={section.id}
-            section={section}
-            location={location.pathname}
-            onItemClick={onItemClick}
-            themeColor={themeColor}
-          />
+          <MenuSectionComponent key={section.id} section={section} onItemClick={onItemClick} themeColor={themeColor} />
         ))}
       </List>
     </Box>

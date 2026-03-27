@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { jampackKpiCardBaseSx, jampackKpiCardHoverSx } from '../../theme/jampackShell';
 
 export function SuperAdminDashboardPage() {
   const navigate = useNavigate();
@@ -147,7 +148,7 @@ export function SuperAdminDashboardPage() {
       {stats && (
         <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -165,7 +166,7 @@ export function SuperAdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -183,7 +184,7 @@ export function SuperAdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -201,7 +202,7 @@ export function SuperAdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -228,7 +229,7 @@ export function SuperAdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -246,7 +247,7 @@ export function SuperAdminDashboardPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -266,7 +267,7 @@ export function SuperAdminDashboardPage() {
           {stats.connectionHealth && (
             <>
               <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
@@ -284,7 +285,7 @@ export function SuperAdminDashboardPage() {
               </Grid>
 
               <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
