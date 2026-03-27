@@ -21,8 +21,14 @@ import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { customerBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import {
+  JAMPACK_DRAWER_WIDTH,
+  JAMPACK_PAGE_BG,
+  jampackAppBarSx,
+  jampackDrawerPaper,
+} from '../theme/jampackShell';
 
-const drawerWidth = 280;
+const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
 export function CustomerDashboardLayout() {
   const location = useLocation();
@@ -95,17 +101,15 @@ export function CustomerDashboardLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: JAMPACK_PAGE_BG }}>
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          background: 'white',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          zIndex: (t) => t.zIndex.drawer + 1,
+          ...jampackAppBarSx,
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
@@ -122,19 +126,7 @@ export function CustomerDashboardLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontWeight: 600,
-              color: 'text.primary',
-              fontSize: '1.125rem',
-            }}
-          >
-            Customer Dashboard
-          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
@@ -223,14 +215,7 @@ export function CustomerDashboardLayout() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: '1px solid',
-              borderColor: 'rgba(0, 0, 0, 0.08)',
-              bgcolor: 'grey.50',
-              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
-            },
+            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
           }}
         >
           {drawer}
@@ -239,14 +224,7 @@ export function CustomerDashboardLayout() {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: '1px solid',
-              borderColor: 'rgba(0, 0, 0, 0.08)',
-              bgcolor: 'grey.50',
-              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
-            },
+            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
           }}
           open
         >
@@ -259,7 +237,7 @@ export function CustomerDashboardLayout() {
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: 'background.default',
+          bgcolor: JAMPACK_PAGE_BG,
           pb: showBottomNav ? 10 : 3,
         }}
       >

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { superAdminMenuConfig } from '../../config/menu.config';
+import { jampackMenuListSx } from '../../theme/jampackShell';
 
 interface SuperAdminMenuProps {
   onItemClick?: () => void;
@@ -33,7 +34,7 @@ export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
         },
       }}
     >
-      <List sx={{ flex: 1, pt: 2, pb: 2, px: 0.5 }}>
+      <List sx={jampackMenuListSx}>
         {superAdminMenuConfig.map((section) => (
           <MenuSectionComponent
             key={section.id}

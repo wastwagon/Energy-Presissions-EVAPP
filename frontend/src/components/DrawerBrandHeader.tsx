@@ -5,18 +5,23 @@ interface DrawerBrandHeaderProps {
   subtitle: string;
 }
 
+/** Matches Jampack classic `.menu-header` (~65px, tight horizontal padding). */
 export function DrawerBrandHeader({ subtitle }: DrawerBrandHeaderProps) {
   return (
     <Box
       sx={{
-        p: 2,
-        bgcolor: 'background.paper',
-        borderBottom: 1,
-        borderColor: 'divider',
+        flexShrink: 0,
+        minHeight: 65,
+        px: '1.1875rem',
+        py: 1.25,
+        display: 'flex',
+        alignItems: 'center',
+        bgcolor: '#ffffff',
+        borderBottom: '1px solid rgba(47, 52, 58, 0.09)',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <img src="/logo.jpeg" alt="" style={{ height: 32, objectFit: 'contain' }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+        <img src="/logo.jpeg" alt="" style={{ height: 34, objectFit: 'contain' }} />
         <Box sx={{ minWidth: 0 }}>
           <Typography
             variant="subtitle1"

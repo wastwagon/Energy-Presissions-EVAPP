@@ -105,18 +105,19 @@ export function MenuItem({ item, location, onClick, themeColor }: MenuItemProps)
       selected={isActive}
       onClick={onClick}
       sx={{
-        borderRadius: '12px',
-        py: 1.5,
-        px: 2.5,
+        position: 'relative',
+        borderRadius: '8px',
+        py: 1,
+        px: 2,
         minHeight: 44,
         mb: 0.25,
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-selected': {
-          backgroundColor: alpha(primaryColor, 0.1),
+          backgroundColor: alpha(primaryColor, 0.12),
           color: primaryColor,
           fontWeight: 600,
           '&:hover': {
-            backgroundColor: alpha(primaryColor, 0.14),
+            backgroundColor: alpha(primaryColor, 0.16),
             transform: 'none',
           },
           '&::before': {
@@ -135,8 +136,8 @@ export function MenuItem({ item, location, onClick, themeColor }: MenuItemProps)
           },
         },
         '&:hover': {
-          backgroundColor: alpha(primaryColor, 0.06),
-          transform: 'translateX(2px)',
+          backgroundColor: alpha(primaryColor, 0.08),
+          transform: 'translateX(5px)',
           '& .MuiListItemIcon-root': {
             color: primaryColor,
           },

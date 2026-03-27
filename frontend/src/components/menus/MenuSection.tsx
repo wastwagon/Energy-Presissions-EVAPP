@@ -92,13 +92,13 @@ export function MenuSectionComponent({
             </Box>
           )}
           <Typography
-            variant="overline"
+            component="div"
+            variant="body2"
             sx={{
-              fontWeight: 700,
-              fontSize: '0.6875rem',
-              letterSpacing: '0.08em',
+              fontWeight: 500,
+              fontSize: '0.875rem',
+              letterSpacing: '0.01em',
               color: 'text.secondary',
-              textTransform: 'uppercase',
               flex: 1,
               lineHeight: 1.2,
             }}

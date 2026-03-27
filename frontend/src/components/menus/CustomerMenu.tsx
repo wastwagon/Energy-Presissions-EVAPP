@@ -4,6 +4,7 @@ import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { customerMenuConfig } from '../../config/menu.config';
 import { brandColors } from '../../theme';
+import { jampackMenuListSx } from '../../theme/jampackShell';
 
 interface CustomerMenuProps {
   onItemClick?: () => void;
@@ -35,7 +36,7 @@ export function CustomerMenu({ onItemClick }: CustomerMenuProps) {
         },
       }}
     >
-      <List sx={{ flex: 1, pt: 2, pb: 2, px: 0.5 }}>
+      <List sx={jampackMenuListSx}>
         {customerMenuConfig.map((section) => (
           <MenuSectionComponent
             key={section.id}
