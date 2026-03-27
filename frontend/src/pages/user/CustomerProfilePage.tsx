@@ -26,6 +26,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import BadgeIcon from '@mui/icons-material/Badge';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { usersApi } from '../../services/usersApi';
+import { authApi } from '../../services/authApi';
 
 export function CustomerProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -34,6 +35,7 @@ export function CustomerProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -93,17 +95,26 @@ export function CustomerProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user?.id) return;
+    if (!deletePassword.trim()) {
+      setError('Enter your password to confirm account deletion.');
+      return;
+    }
     try {
       setDeleting(true);
       setError(null);
-      await usersApi.delete(user.id);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      await usersApi.deleteOwnAccount(deletePassword);
+      authApi.logout();
       window.location.href = '/login/user';
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to delete account');
       setDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (!deleting) {
+      setDeleteDialogOpen(false);
+      setDeletePassword('');
     }
   };
 
@@ -297,7 +308,7 @@ export function CustomerProfilePage() {
               Danger Zone
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Permanently delete your account and all associated data. This action cannot be undone.
+              Permanently delete your account. You will need to enter your current password to confirm.
             </Typography>
             <Button
               variant="outlined"
@@ -311,19 +322,31 @@ export function CustomerProfilePage() {
         </Grid>
       </Grid>
 
-      <Dialog open={deleteDialogOpen} onClose={() => !deleting && setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Account</DialogTitle>
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog} fullWidth maxWidth="xs">
+        <DialogTitle>Delete account</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to permanently delete your account? All your data, wallet balance, and transaction history will be lost. This cannot be undone.
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            This permanently removes your account. Billing and session records may be kept as required by law, but will
+            no longer be linked to you in the app. This cannot be undone.
           </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            type="password"
+            label="Current password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            autoComplete="current-password"
+            disabled={deleting}
+            margin="dense"
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+          <Button onClick={handleCloseDeleteDialog} disabled={deleting}>
             Cancel
           </Button>
           <Button variant="contained" color="error" onClick={handleDeleteAccount} disabled={deleting}>
-            {deleting ? 'Deleting...' : 'Delete Account'}
+            {deleting ? 'Deleting…' : 'Delete my account'}
           </Button>
         </DialogActions>
       </Dialog>

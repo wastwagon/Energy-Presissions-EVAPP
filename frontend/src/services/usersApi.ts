@@ -60,10 +60,17 @@ export const usersApi = {
   },
 
   /**
-   * Delete user
+   * Delete user (admin / self via ID — prefer deleteOwnAccount for profile)
    */
   delete: async (id: number): Promise<void> => {
     await api.delete(`/users/${id}`);
+  },
+
+  /**
+   * Delete your own customer account (requires current password)
+   */
+  deleteOwnAccount: async (password: string): Promise<void> => {
+    await api.post('/users/me/delete-account', { password });
   },
 
   /**

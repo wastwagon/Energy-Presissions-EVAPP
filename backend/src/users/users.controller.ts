@@ -10,8 +10,10 @@ import {
   HttpStatus,
   ParseIntPipe,
   UseGuards,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { IsString, MinLength } from 'class-validator';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -19,11 +21,28 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { SelfOrAdminGuard } from '../common/guards/self-or-admin.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 
+class DeleteOwnAccountDto {
+  @IsString()
+  @MinLength(1)
+  password: string;
+}
+
 @ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post('me/delete-account')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete your own account (Customer only; requires current password)' })
+  @ApiResponse({ status: 204, description: 'Account deleted' })
+  @ApiResponse({ status: 400, description: 'Wrong password' })
+  @ApiResponse({ status: 403, description: 'Not a customer account' })
+  async deleteOwnAccount(@Request() req: { user: { id: number; accountType: string } }, @Body() dto: DeleteOwnAccountDto) {
+    await this.usersService.deleteOwnAccount(req.user.id, dto.password, req.user.accountType);
+  }
 
   @Get()
   @UseGuards(RolesGuard)

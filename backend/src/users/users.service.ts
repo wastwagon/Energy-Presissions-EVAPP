@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../entities/user.entity';
 import { IdTag } from '../entities/id-tag.entity';
@@ -18,6 +18,7 @@ export class UsersService {
     private userFavoriteRepository: Repository<UserFavorite>,
     @InjectRepository(ChargePoint)
     private chargePointRepository: Repository<ChargePoint>,
+    private dataSource: DataSource,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -86,9 +87,38 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
+  /**
+   * Removes a user row after clearing FKs that would block DELETE (invoices, payments; nulls transactions.user_id).
+   * Wallet rows, favorites, and payment methods cascade at DB level where configured.
+   */
+  async deleteUserCascade(id: number): Promise<void> {
+    await this.findOne(id);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(`DELETE FROM invoices WHERE user_id = $1`, [id]);
+      await manager.query(`DELETE FROM payments WHERE user_id = $1`, [id]);
+      await manager.query(`UPDATE transactions SET user_id = NULL WHERE user_id = $1`, [id]);
+      const result = await manager.delete(User, { id });
+      if (!result.affected) {
+        throw new NotFoundException(`User ${id} not found`);
+      }
+    });
+  }
+
   async delete(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.userRepository.remove(user);
+    await this.deleteUserCascade(id);
+  }
+
+  /** Customer self-service: verify password, then delete. */
+  async deleteOwnAccount(userId: number, password: string, accountType: string): Promise<void> {
+    if (accountType !== 'Customer') {
+      throw new ForbiddenException('This account type cannot be deleted here. Contact support.');
+    }
+    const user = await this.findOne(userId);
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      throw new BadRequestException('Incorrect password');
+    }
+    await this.deleteUserCascade(userId);
   }
 
   async getIdTags(userId: number): Promise<IdTag[]> {
