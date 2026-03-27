@@ -60,7 +60,7 @@ export function RegisterPage() {
         display: 'flex',
         alignItems: { xs: 'flex-start', sm: 'center' },
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        bgcolor: 'grey.100',
         px: { xs: 2, sm: 3 },
         pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
         pb: 'max(env(safe-area-inset-bottom), 16px)',
@@ -68,12 +68,14 @@ export function RegisterPage() {
     >
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper
-          variant="outlined"
           elevation={0}
           sx={{
             p: { xs: 2, sm: 2.5 },
             borderRadius: 2,
-            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'grey.300',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)',
           }}
         >
           <Typography
