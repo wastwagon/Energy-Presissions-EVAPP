@@ -28,6 +28,7 @@ import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -156,14 +157,13 @@ export function OperationsDashboard() {
           }}
         >
           <Typography
-            variant="h4"
             component="h1"
+            variant="h6"
             sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              fontSize: { xs: '1.75rem', sm: '2rem' },
+              ...dashboardPageTitleSx,
               minWidth: 0,
               flex: '1 1 200px',
+              mb: 0,
             }}
           >
             Operations Dashboard
@@ -194,7 +194,7 @@ export function OperationsDashboard() {
             sx={{ mt: 1 }}
           />
         )}
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mt: 1 }}>
           Real-time monitoring of charging operations and device status.
         </Typography>
       </Box>

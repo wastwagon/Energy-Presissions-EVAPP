@@ -37,6 +37,7 @@ import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -213,19 +214,10 @@ export function CustomerDashboardPage() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 0.5,
-              fontSize: { xs: '1.75rem', sm: '2rem' },
-            }}
-          >
+          <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
             My Dashboard
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Welcome back! Here's an overview of your account.
           </Typography>
         </Box>

@@ -14,6 +14,7 @@ import {
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 import { websocketService } from '../../services/websocket';
 
 export function SuperAdminAnalyticsPage() {
@@ -85,10 +86,10 @@ export function SuperAdminAnalyticsPage() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+          <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
             {vendorScope ? 'Vendor analytics' : 'System Analytics'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             {vendorScope
               ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon).'
               : 'Comprehensive analytics and insights across all vendors'}

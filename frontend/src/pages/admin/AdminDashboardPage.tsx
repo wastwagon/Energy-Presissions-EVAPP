@@ -13,7 +13,12 @@ import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
-import { jampackKpiCardBaseSx, jampackKpiCardHoverSx } from '../../theme/jampackShell';
+import {
+  jampackKpiCardBaseSx,
+  jampackKpiCardHoverSx,
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+} from '../../theme/jampackShell';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -118,19 +123,10 @@ export function AdminDashboardPage() {
         }}
       >
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 0.5,
-              fontSize: { xs: '1.75rem', sm: '2rem' },
-            }}
-          >
+          <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
             Admin Dashboard
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your vendor's charging operations and settings.
           </Typography>
         </Box>

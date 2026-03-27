@@ -30,7 +30,6 @@ import {
   jampackAppBarSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
-import { DashboardAppBarLead } from '../components/layout/DashboardAppBarLead';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -149,15 +148,24 @@ export function SuperAdminDashboardLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <DashboardAppBarLead />
-          {isImpersonating && vendorName && (
-            <Chip
-              label={`Viewing: ${vendorName}`}
-              color="error"
-              size="small"
-              sx={{ fontWeight: 600, flexShrink: 0, maxWidth: { xs: '40vw', sm: 'none' } }}
-            />
-          )}
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              minWidth: 0,
+            }}
+          >
+            {isImpersonating && vendorName && (
+              <Chip
+                label={`Viewing: ${vendorName}`}
+                color="error"
+                size="small"
+                sx={{ fontWeight: 600, flexShrink: 0, maxWidth: { xs: '40vw', sm: 'none' } }}
+              />
+            )}
+          </Box>
           {isImpersonating && (
             <Button
               variant="outlined"

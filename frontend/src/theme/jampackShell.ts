@@ -54,3 +54,20 @@ export const jampackMenuListSx = {
   pb: 2,
   px: 1.5,
 };
+
+/** Compact dashboard page title (main h1 in content — avoids oversized h4 blocks). */
+export const dashboardPageTitleSx: SystemStyleObject<Theme> = {
+  fontWeight: 600,
+  color: 'text.primary',
+  mb: 0.375,
+  fontSize: { xs: '1.125rem', sm: '1.3125rem' },
+  letterSpacing: '-0.022em',
+  lineHeight: 1.35,
+};
+
+export const dashboardPageSubtitleSx: SystemStyleObject<Theme> = {
+  color: 'text.secondary',
+  fontSize: '0.8125rem',
+  lineHeight: 1.5,
+  maxWidth: '44rem',
+};
