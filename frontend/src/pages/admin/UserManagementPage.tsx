@@ -287,8 +287,8 @@ export function UserManagementPage() {
       </Box>
 
       <Paper>
-        <TableContainer sx={{ overflowX: 'auto' }}>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>

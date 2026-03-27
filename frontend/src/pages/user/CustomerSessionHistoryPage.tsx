@@ -100,10 +100,10 @@ export function CustomerSessionHistoryPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
           Session History
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           View all your past charging sessions
         </Typography>
       </Box>
@@ -126,8 +126,8 @@ export function CustomerSessionHistoryPage() {
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-            <Table>
+          <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Transaction ID</TableCell>

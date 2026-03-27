@@ -12,6 +12,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { MenuItem } from './MenuItem';
 import { MenuSection as MenuSectionType } from '../../config/menu.config';
+import { brandColors } from '../../theme';
 
 interface MenuSectionProps {
   section: MenuSectionType;
@@ -43,14 +44,14 @@ export function MenuSectionComponent({
     if (userStr) {
       try {
         const userData = JSON.parse(userStr);
-        if (userData.accountType === 'SuperAdmin') return '#062540';
-        if (userData.accountType === 'Admin') return '#1A5F7A';
-        return '#0A3D62';
+        if (userData.accountType === 'SuperAdmin') return brandColors.primaryDark;
+        if (userData.accountType === 'Admin') return brandColors.secondary;
+        return brandColors.primary;
       } catch (e) {
-        return '#0A3D62';
+        return brandColors.primary;
       }
     }
-    return '#0A3D62';
+    return brandColors.primary;
   };
 
   const primaryColor = getThemeColor();

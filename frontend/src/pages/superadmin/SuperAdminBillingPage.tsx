@@ -1,0 +1,176 @@
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  Alert,
+  Tabs,
+  Tab,
+} from '@mui/material';
+import { billingApi, Invoice } from '../../services/billingApi';
+
+function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
+  return (
+    <div role="tabpanel" hidden={value !== index}>
+      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+    </div>
+  );
+}
+
+export function SuperAdminBillingPage() {
+  const [tab, setTab] = useState(0);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const [inv, tx] = await Promise.all([
+        billingApi.getInvoices(100, 0).catch(() => ({ invoices: [], total: 0 })),
+        billingApi.getTransactions(100, 0).catch(() => ({ transactions: [], total: 0 })),
+      ]);
+      setInvoices(inv.invoices || []);
+      setTransactions(tx.transactions || []);
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || 'Failed to load billing data');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <Box>
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
+        >
+          Billing & Invoices
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Read-only view of billing transactions and invoices from the API.
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ overflow: 'hidden' }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
+          <Tab label="Invoices" />
+          <Tab label="Billing transactions" />
+        </Tabs>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <TabPanel value={tab} index={0}>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Invoice #</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>Total</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Created</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {invoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                            No invoices
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      invoices.map((inv) => (
+                        <TableRow key={inv.id} hover>
+                          <TableCell>{inv.invoiceNumber}</TableCell>
+                          <TableCell>{inv.userId}</TableCell>
+                          <TableCell>
+                            {inv.total != null ? `${inv.currency} ${Number(inv.total).toFixed(2)}` : '—'}
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={inv.status} size="small" />
+                          </TableCell>
+                          <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </TabPanel>
+            <TabPanel value={tab} index={1}>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Transaction ID</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>Cost</TableCell>
+                      <TableCell>Energy</TableCell>
+                      <TableCell>Start</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {transactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                            No transactions
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      transactions.map((tx) => (
+                        <TableRow key={tx.transactionId ?? tx.id} hover>
+                          <TableCell>{tx.transactionId ?? tx.id}</TableCell>
+                          <TableCell>{tx.userId ?? '—'}</TableCell>
+                          <TableCell>
+                            {tx.totalCost != null ? `GHS ${Number(tx.totalCost).toFixed(2)}` : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {tx.totalEnergyKwh != null ? `${Number(tx.totalEnergyKwh).toFixed(3)} kWh` : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {tx.startTime ? new Date(tx.startTime).toLocaleString() : '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </TabPanel>
+          </>
+        )}
+      </Paper>
+    </Box>
+  );
+}

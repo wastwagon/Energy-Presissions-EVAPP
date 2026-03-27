@@ -24,6 +24,7 @@ import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
 import { AdminLoginPage } from './pages/auth/AdminLoginPage';
 import { UserLoginPage } from './pages/auth/UserLoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { CustomerDashboardPage } from './pages/user/CustomerDashboardPage';
 import { CustomerActiveSessionsPage } from './pages/user/CustomerActiveSessionsPage';
 import { CustomerSessionHistoryPage } from './pages/user/CustomerSessionHistoryPage';
@@ -55,6 +56,9 @@ import { SuperAdminHealthPage } from './pages/superadmin/SuperAdminHealthPage';
 import { SuperAdminReservationsPage } from './pages/superadmin/SuperAdminReservationsPage';
 import { SuperAdminFirmwarePage } from './pages/superadmin/SuperAdminFirmwarePage';
 import { SuperAdminDiagnosticsPage } from './pages/superadmin/SuperAdminDiagnosticsPage';
+import { SuperAdminBillingPage } from './pages/superadmin/SuperAdminBillingPage';
+import { SuperAdminSmartChargingPage } from './pages/superadmin/SuperAdminSmartChargingPage';
+import { SuperAdminLocalAuthPage } from './pages/superadmin/SuperAdminLocalAuthPage';
 import { AdminTariffsPage } from './pages/admin/AdminTariffsPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
@@ -100,6 +104,7 @@ function App() {
         <Route path="/login/user" element={<UserLoginPage />} />
         <Route path="/login/vendor" element={<AdminLoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Protected routes - require login */}
         <Route path="/" element={<MainLayout />}>
@@ -179,6 +184,9 @@ function App() {
               <Route path="reservations" element={<SuperAdminReservationsPage />} />
               <Route path="firmware" element={<SuperAdminFirmwarePage />} />
               <Route path="diagnostics" element={<SuperAdminDiagnosticsPage />} />
+              <Route path="billing" element={<SuperAdminBillingPage />} />
+              <Route path="smart-charging" element={<SuperAdminSmartChargingPage />} />
+              <Route path="local-auth" element={<SuperAdminLocalAuthPage />} />
             </Route>
 
         {/* Catch all - redirect to home */}

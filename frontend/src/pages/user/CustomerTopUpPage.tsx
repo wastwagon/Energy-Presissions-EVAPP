@@ -92,10 +92,14 @@ export function CustomerTopUpPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
+        >
           Top Up Wallet
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" color="text.secondary">
           Add funds to your wallet for seamless charging
         </Typography>
       </Box>
@@ -106,15 +110,18 @@ export function CustomerTopUpPage() {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
             {balance && (
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+              <Box sx={{ mb: 3, p: { xs: 1.5, sm: 2 }, bgcolor: 'background.default', borderRadius: 2 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Current Balance
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: 'primary.main', wordBreak: 'break-word', fontSize: { xs: '1.5rem', sm: '2rem' } }}
+                >
                   {formatCurrency(balance.balance, balance.currency)}
                 </Typography>
               </Box>
@@ -159,20 +166,7 @@ export function CustomerTopUpPage() {
               helperText="Minimum amount: GHS 1.00"
             />
 
-            <Button
-              fullWidth
-              variant="contained"
-              size="large"
-              onClick={handleTopUp}
-              disabled={!amount || parseFloat(amount) <= 0}
-              sx={{
-                py: 1.5,
-                background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                },
-              }}
-            >
+            <Button fullWidth variant="contained" size="large" onClick={handleTopUp} disabled={!amount || parseFloat(amount) <= 0} sx={{ py: 1.5 }}>
               Proceed to Payment
             </Button>
           </Paper>

@@ -15,11 +15,9 @@ import {
   Alert,
   Tabs,
   Tab,
-  Button,
 } from '@mui/material';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
-import { chargePointsApi } from '../../services/chargePointsApi';
 import { websocketService } from '../../services/websocket';
 
 export function SessionsPage() {
@@ -133,7 +131,12 @@ export function SessionsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' } }}
+      >
         Charging Sessions
       </Typography>
 
@@ -143,14 +146,14 @@ export function SessionsPage() {
         </Alert>
       )}
 
-      <Paper sx={{ mt: 2 }}>
+      <Paper sx={{ mt: 2, overflow: 'hidden' }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
           <Tab label={`Active (${activeTransactions.length})`} />
           <Tab label={`All Sessions (${allTransactions.length})`} />
         </Tabs>
 
         {transactions.length === 0 ? (
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography variant="body2" color="text.secondary">
               {activeTab === 0
                 ? 'No active charging sessions.'
@@ -158,8 +161,8 @@ export function SessionsPage() {
             </Typography>
           </Box>
         ) : (
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Transaction ID</TableCell>

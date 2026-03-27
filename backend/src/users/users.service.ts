@@ -47,6 +47,14 @@ export class UsersService {
     });
   }
 
+  async findByPhone(phone: string): Promise<User | null> {
+    if (!phone) return null;
+    return this.userRepository.findOne({
+      where: { phone },
+      relations: ['idTags'],
+    });
+  }
+
   async create(data: Partial<User>): Promise<User> {
     const user = this.userRepository.create(data);
     
@@ -67,6 +75,14 @@ export class UsersService {
     }
 
     Object.assign(user, data);
+    return this.userRepository.save(user);
+  }
+
+  async setPasswordAndClearResetToken(id: number, plainPassword: string): Promise<User> {
+    const user = await this.findOne(id);
+    user.passwordHash = await bcrypt.hash(plainPassword, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpiresAt = null;
     return this.userRepository.save(user);
   }
 

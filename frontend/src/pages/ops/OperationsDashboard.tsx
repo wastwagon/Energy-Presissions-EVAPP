@@ -27,6 +27,7 @@ import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -144,14 +145,25 @@ export function OperationsDashboard() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 2,
+            mb: 0.5,
+          }}
+        >
           <Typography
             variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
-              color: '#1e293b',
+              color: 'text.primary',
               fontSize: { xs: '1.75rem', sm: '2rem' },
+              minWidth: 0,
+              flex: '1 1 200px',
             }}
           >
             Operations Dashboard
@@ -162,7 +174,13 @@ export function OperationsDashboard() {
               color="warning"
               startIcon={<ExitToAppIcon />}
               onClick={handleExitImpersonation}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                width: { xs: '100%', sm: 'auto' },
+                alignSelf: { xs: 'stretch', sm: 'auto' },
+              }}
             >
               Exit Vendor View
             </Button>
@@ -176,7 +194,7 @@ export function OperationsDashboard() {
             sx={{ mt: 1 }}
           />
         )}
-        <Typography variant="body2" sx={{ color: '#64748b', mt: 1 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Real-time monitoring of charging operations and device status.
         </Typography>
       </Box>
@@ -188,206 +206,82 @@ export function OperationsDashboard() {
       )}
 
       {/* Stats Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, rgba(10, 61, 98, 0.08) 0%, rgba(26, 95, 122, 0.08) 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
-                borderColor: 'primary.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <EvStationIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="primary" compact noRightMargin>
+                  <EvStationIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Stations
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {chargePoints.length}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Total charge points
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, #10b98115 0%, #05966915 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15)',
-                borderColor: 'success.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <BatteryChargingFullIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="success" compact noRightMargin>
+                  <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Active
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {activeSessions}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Currently charging
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, #3b82f615 0%, #2563eb15 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15)',
-                borderColor: 'info.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <CheckCircleIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="info" compact noRightMargin>
+                  <CheckCircleIcon sx={{ color: 'info.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Available
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {availableCount}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Connectors available
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, rgba(26, 95, 122, 0.08) 0%, rgba(37, 132, 168, 0.08) 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
-                borderColor: 'secondary.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ErrorIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="secondary" compact noRightMargin>
+                  <ErrorIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Offline
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {offlineCount}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Stations offline
               </Typography>
             </CardContent>
@@ -405,27 +299,27 @@ export function OperationsDashboard() {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b' }}>
+        <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Charge Points
           </Typography>
         </Box>
         {chargePoints.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Box sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               No charge points registered yet. Charge points will appear here after they connect and send BootNotification.
             </Typography>
           </Box>
         ) : (
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small">
               <TableHead>
-                <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>ID</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>Vendor/Model</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>Last Seen</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>Location</TableCell>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Vendor/Model</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Last Seen</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Location</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -436,7 +330,7 @@ export function OperationsDashboard() {
                       cursor: 'pointer',
                       transition: 'background-color 0.2s',
                       '&:hover': {
-                        bgcolor: '#f8fafc',
+                        bgcolor: 'action.hover',
                       },
                     }}
                     onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}

@@ -99,10 +99,10 @@ export function CustomerTransactionDetailPage() {
           Back
         </Button>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b' }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary' }}>
             Transaction Details
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Transaction ID: {transaction.transactionId}
           </Typography>
         </Box>

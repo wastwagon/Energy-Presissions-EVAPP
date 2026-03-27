@@ -12,6 +12,8 @@ import {
   Divider,
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
+import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
+import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
 
 declare global {
   interface Window {
@@ -37,14 +39,16 @@ export function UserLoginPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const successMessage = (location.state as { message?: string })?.message;
-  const [email, setEmail] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
-    if (emailParam) setEmail(emailParam);
+    const phoneParam = searchParams.get('phone');
+    if (emailParam) setEmailOrPhone(emailParam);
+    else if (phoneParam) setEmailOrPhone(phoneParam);
   }, [searchParams]);
 
   // Load Sign in with Apple JS SDK
@@ -67,7 +71,7 @@ export function UserLoginPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login(email, password);
+      const response = await authApi.login(emailOrPhone, password);
       
       // Verify it's a Customer (not Admin or SuperAdmin)
       if (response.user.accountType === 'Admin' || response.user.accountType === 'SuperAdmin') {
@@ -178,41 +182,11 @@ export function UserLoginPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: { xs: 'flex-start', sm: 'center' },
-        justifyContent: 'center',
-        bgcolor: 'grey.100',
-        px: { xs: 2, sm: 3 },
-        pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
-        pb: 'max(env(safe-area-inset-bottom), 16px)',
-      }}
-    >
+    <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, sm: 2.5 },
-            borderRadius: 2,
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'grey.300',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Typography
-            component="h1"
-            variant="subtitle1"
-            sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 1.5,
-              textAlign: 'center',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <Paper elevation={0} sx={authPagePaperSx}>
+          <AuthBrandHeader />
+          <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Sign in
           </Typography>
 
@@ -231,15 +205,17 @@ export function UserLoginPage() {
             <TextField
               fullWidth
               size="small"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Email or phone number"
+              type="text"
+              value={emailOrPhone}
+              onChange={(e) => setEmailOrPhone(e.target.value)}
               margin="none"
               sx={{ mb: 1.25 }}
               required
-              autoComplete="email"
+              autoComplete="username"
+              inputMode="text"
               autoFocus
+              helperText="Use the email or phone number you registered with."
             />
             <TextField
               fullWidth
@@ -305,7 +281,10 @@ export function UserLoginPage() {
             </Box>
           </form>
 
-          <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+          <Box sx={{ mt: 1.5, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
             <Link
               component={RouterLink}
               to="/register"

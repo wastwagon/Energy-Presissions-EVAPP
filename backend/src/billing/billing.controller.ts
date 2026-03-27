@@ -5,12 +5,19 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Billing')
+@ApiBearerAuth()
 @Controller('billing')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 

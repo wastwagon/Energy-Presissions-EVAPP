@@ -150,24 +150,14 @@ export function AdminTariffsPage() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
             Tariffs & Pricing
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Manage pricing and tariff plans for charging sessions
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #124560 0%, #1A5F7A 100%)',
-            },
-          }}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
           New Tariff
         </Button>
       </Box>

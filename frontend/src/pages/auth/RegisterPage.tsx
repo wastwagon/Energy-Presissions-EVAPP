@@ -11,6 +11,13 @@ import {
   Link,
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
+import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
+import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+
+function phoneHasMinDigits(value: string, min: number): boolean {
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= min;
+}
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -35,15 +42,19 @@ export function RegisterPage() {
       setError('Password must be at least 6 characters.');
       return;
     }
+    if (!phoneHasMinDigits(phone, 8)) {
+      setError('Please enter a valid phone number (at least 8 digits).');
+      return;
+    }
 
     setLoading(true);
     try {
       await authApi.register({
-        email,
+        email: email.trim(),
         password,
         firstName: firstName || undefined,
         lastName: lastName || undefined,
-        phone: phone || undefined,
+        phone: phone.trim(),
       });
       navigate('/login/user', { state: { message: 'Account created. Please sign in.' } });
     } catch (err: any) {
@@ -54,41 +65,11 @@ export function RegisterPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: { xs: 'flex-start', sm: 'center' },
-        justifyContent: 'center',
-        bgcolor: 'grey.100',
-        px: { xs: 2, sm: 3 },
-        pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
-        pb: 'max(env(safe-area-inset-bottom), 16px)',
-      }}
-    >
+    <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, sm: 2.5 },
-            borderRadius: 2,
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'grey.300',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Typography
-            component="h1"
-            variant="subtitle1"
-            sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 1.5,
-              textAlign: 'center',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <Paper elevation={0} sx={authPagePaperSx}>
+          <AuthBrandHeader />
+          <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Create account
           </Typography>
 
@@ -124,6 +105,19 @@ export function RegisterPage() {
             <TextField
               fullWidth
               size="small"
+              label="Phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              margin="none"
+              sx={{ mt: 1.25 }}
+              required
+              autoComplete="tel"
+              inputMode="tel"
+              helperText="Required. Ghana: e.g. 024 000 0000 or +233 24 000 0000"
+            />
+            <TextField
+              fullWidth
+              size="small"
               label="Email"
               type="email"
               value={email}
@@ -132,16 +126,6 @@ export function RegisterPage() {
               sx={{ mt: 1.25 }}
               required
               autoComplete="email"
-            />
-            <TextField
-              fullWidth
-              size="small"
-              label="Phone (optional)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              margin="none"
-              sx={{ mt: 1.25 }}
-              autoComplete="tel"
             />
             <TextField
               fullWidth

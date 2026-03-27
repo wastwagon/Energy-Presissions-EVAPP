@@ -1,0 +1,3 @@
+-- Unique phone when present (PostgreSQL allows multiple NULLs under a unique index)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique ON users (phone)
+WHERE phone IS NOT NULL AND btrim(phone) <> '';

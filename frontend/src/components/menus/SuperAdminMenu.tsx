@@ -10,7 +10,6 @@ interface SuperAdminMenuProps {
 
 export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
   const location = useLocation();
-  const themeColor = '#062540'; // Brand primary dark (hierarchy)
 
   return (
     <Box
@@ -41,7 +40,6 @@ export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
             section={section}
             location={location.pathname}
             onItemClick={onItemClick}
-            themeColor={themeColor}
           />
         ))}
       </List>

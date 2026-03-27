@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import HistoryIcon from '@mui/icons-material/History';
@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
+import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -105,21 +106,30 @@ export function AdminDashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
           <Typography
             variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
-              color: '#1e293b',
+              color: 'text.primary',
               mb: 0.5,
               fontSize: { xs: '1.75rem', sm: '2rem' },
             }}
           >
             Admin Dashboard
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Manage your vendor's charging operations and settings.
           </Typography>
         </Box>
@@ -128,7 +138,7 @@ export function AdminDashboardPage() {
           onClick={loadStats}
           disabled={loading}
           startIcon={loading ? <CircularProgress sx={{ width: 16, height: 16 }} /> : <RefreshIcon />}
-          sx={{ mt: 1 }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
         >
           Refresh
         </Button>
@@ -142,7 +152,7 @@ export function AdminDashboardPage() {
 
       {/* Statistics Cards */}
       {stats && (
-        <Grid container spacing={2.5} sx={{ mb: 4 }}>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card 
               elevation={0} 
@@ -151,11 +161,13 @@ export function AdminDashboardPage() {
                 border: '1px solid', 
                 borderColor: 'divider',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                  borderColor: 'primary.main',
+                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                '@media (hover: hover) and (pointer: fine)': {
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: (theme) => theme.shadows[4],
+                    borderColor: 'primary.main',
+                  },
                 },
               }}
               onClick={() => navigate('/admin/ops/devices')}
@@ -184,11 +196,13 @@ export function AdminDashboardPage() {
                 border: '1px solid', 
                 borderColor: 'divider',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                  borderColor: 'info.main',
+                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                '@media (hover: hover) and (pointer: fine)': {
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: (theme) => theme.shadows[4],
+                    borderColor: 'info.main',
+                  },
                 },
               }}
               onClick={() => navigate('/admin/ops/sessions')}
@@ -232,7 +246,16 @@ export function AdminDashboardPage() {
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 0.5,
+                        lineHeight: 1.25,
+                        wordBreak: 'break-word',
+                        fontSize: { xs: '1.2rem', sm: '1.625rem', md: '2.125rem' },
+                      }}
+                    >
                       {stats.overview.totalRevenue ? `GHS ${stats.overview.totalRevenue.toLocaleString()}` : 'GHS 0'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -247,44 +270,19 @@ export function AdminDashboardPage() {
         </Grid>
       )}
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
-                borderColor: 'primary.main',
-              },
-            }}
-            onClick={() => navigate('/admin/ops')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <DashboardIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('primary')} onClick={() => navigate('/admin/ops')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="primary">
+                  <DashboardIcon sx={{ color: 'primary.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Operations
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Monitor charging operations
                   </Typography>
                 </Box>
@@ -294,42 +292,17 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15)',
-                borderColor: 'info.main',
-              },
-            }}
-            onClick={() => navigate('/admin/ops/sessions')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <HistoryIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/admin/ops/sessions')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="info">
+                  <HistoryIcon sx={{ color: 'info.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Sessions
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     View charging sessions
                   </Typography>
                 </Box>
@@ -339,42 +312,17 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15)',
-                borderColor: 'success.main',
-              },
-            }}
-            onClick={() => navigate('/admin/ops/devices')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <EvStationIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('success')} onClick={() => navigate('/admin/ops/devices')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="success">
+                  <EvStationIcon sx={{ color: 'success.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Devices
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Manage charge points
                   </Typography>
                 </Box>
@@ -384,42 +332,17 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
-                borderColor: 'secondary.main',
-              },
-            }}
-            onClick={() => navigate('/vendor')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <BusinessIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/vendor')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="secondary">
+                  <BusinessIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Vendor Settings
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Configure vendor details
                   </Typography>
                 </Box>
@@ -429,42 +352,17 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(139, 92, 246, 0.15)',
-                borderColor: 'secondary.main',
-              },
-            }}
-            onClick={() => navigate('/admin/wallets')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <AccountBalanceWalletIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/admin/wallets')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="info">
+                  <AccountBalanceWalletIcon sx={{ color: 'info.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Wallets
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Manage user wallets
                   </Typography>
                 </Box>

@@ -8,6 +8,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import type { ReactNode } from 'react';
+import { brandColors } from '../theme';
 
 export interface BottomNavItem {
   id: string;
@@ -23,7 +24,7 @@ interface BottomNavProps {
   accentColor?: string;
 }
 
-export function BottomNav({ items, accentColor = '#0A3D62' }: BottomNavProps) {
+export function BottomNav({ items, accentColor = brandColors.primary }: BottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();

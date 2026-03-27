@@ -7,14 +7,21 @@ import {
   Get,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, IsNotEmpty } from 'class-validator';
 import { AuthService } from './auth.service';
 
 class LoginDto {
-  @IsEmail()
-  email: string;
+  /** Preferred: email or phone. Legacy: `email` only (shell scripts / older clients). */
+  @IsOptional()
+  @IsString()
+  emailOrPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
 
   @IsString()
   @MinLength(6)
@@ -50,9 +57,28 @@ class RegisterDto {
   @IsString()
   lastName?: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  phone?: string;
+  @MinLength(8)
+  phone: string;
+}
+
+class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+class ResetPasswordDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(1)
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
 }
 
 @ApiTags('Authentication')
@@ -84,7 +110,11 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.email, loginDto.password);
+    const id = (loginDto.emailOrPhone ?? loginDto.email)?.trim();
+    if (!id || id.length < 3) {
+      throw new BadRequestException('Email or phone number is required');
+    }
+    return this.authService.login(id, loginDto.password);
   }
 
   @Post('register')
@@ -94,6 +124,27 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Request password reset',
+    description:
+      'Creates a reset token for the account (non-production: token is logged server-side). Configure email delivery for production.',
+  })
+  @ApiResponse({ status: 200, description: 'Acknowledged (same message whether or not the email exists)' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Complete password reset with email and token' })
+  @ApiResponse({ status: 200, description: 'Password updated' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.email, dto.token, dto.password);
   }
 
   @Get('me')

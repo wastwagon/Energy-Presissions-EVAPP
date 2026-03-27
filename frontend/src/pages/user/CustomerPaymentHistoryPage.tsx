@@ -75,10 +75,10 @@ export function CustomerPaymentHistoryPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
           Payment History
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           View all your payment transactions
         </Typography>
       </Box>
@@ -101,8 +101,8 @@ export function CustomerPaymentHistoryPage() {
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-            <Table>
+          <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Payment ID</TableCell>

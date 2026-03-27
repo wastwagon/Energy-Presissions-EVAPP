@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import HistoryIcon from '@mui/icons-material/History';
@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { websocketService } from '../../services/websocket';
+import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
 
 export function SuperAdminDashboardPage() {
   const navigate = useNavigate();
@@ -107,21 +108,21 @@ export function SuperAdminDashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 700,
-              color: '#1e293b',
-              mb: 0.5,
-              fontSize: { xs: '1.75rem', sm: '2rem' },
-            }}
-          >
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}>
             Super Admin Dashboard
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Complete system control and management across all vendors and users.
           </Typography>
         </Box>
@@ -130,7 +131,7 @@ export function SuperAdminDashboardPage() {
           onClick={loadStats}
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-          sx={{ mt: 1 }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
         >
           Refresh
         </Button>
@@ -144,7 +145,7 @@ export function SuperAdminDashboardPage() {
 
       {/* Statistics Cards */}
       {stats && (
-        <Grid container spacing={2.5} sx={{ mb: 4 }}>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
               <CardContent>
@@ -204,7 +205,16 @@ export function SuperAdminDashboardPage() {
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 0.5,
+                        lineHeight: 1.25,
+                        wordBreak: 'break-word',
+                        fontSize: { xs: '1.2rem', sm: '1.625rem', md: '2.125rem' },
+                      }}
+                    >
                       {stats.overview.totalRevenue ? `GHS ${stats.overview.totalRevenue.toLocaleString()}` : 'GHS 0'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -295,44 +305,19 @@ export function SuperAdminDashboardPage() {
         </Grid>
       )}
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
-                borderColor: 'primary.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/ops')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <DashboardIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('primary')} onClick={() => navigate('/superadmin/ops')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="primary">
+                  <DashboardIcon sx={{ color: 'primary.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Operations
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Monitor charging operations
                   </Typography>
                 </Box>
@@ -342,42 +327,17 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15)',
-                borderColor: 'info.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/ops/sessions')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <HistoryIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/superadmin/ops/sessions')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="info">
+                  <HistoryIcon sx={{ color: 'info.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Sessions
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     View charging sessions
                   </Typography>
                 </Box>
@@ -387,42 +347,17 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15)',
-                borderColor: 'success.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/ops/devices')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <EvStationIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('success')} onClick={() => navigate('/superadmin/ops/devices')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="success">
+                  <EvStationIcon sx={{ color: 'success.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Devices
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Manage charge points
                   </Typography>
                 </Box>
@@ -432,42 +367,17 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(239, 68, 68, 0.15)',
-                borderColor: 'error.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/settings')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <SettingsIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/superadmin/settings')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="secondary">
+                  <SettingsIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     System Settings
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Configure system settings
                   </Typography>
                 </Box>
@@ -477,42 +387,17 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
-                borderColor: 'secondary.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/vendors')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <BusinessIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/superadmin/vendors')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="secondary">
+                  <BusinessIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Vendors
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Manage vendors
                   </Typography>
                 </Box>
@@ -522,42 +407,17 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15)',
-                borderColor: 'info.main',
-              },
-            }}
-            onClick={() => navigate('/superadmin/wallets')}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                  }}
-                >
-                  <AccountBalanceWalletIcon sx={{ color: 'white', fontSize: 28 }} />
-                </Box>
-                <Box>
+          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/superadmin/wallets')}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
+                <DashboardNavIcon accent="info">
+                  <AccountBalanceWalletIcon sx={{ color: 'info.main', fontSize: 26 }} />
+                </DashboardNavIcon>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Wallets
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" color="text.secondary">
                     Manage user wallets
                   </Typography>
                 </Box>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -13,9 +13,8 @@ import {
   Tab,
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonIcon from '@mui/icons-material/Person';
-import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
+import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
+import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -26,22 +25,15 @@ interface TabPanelProps {
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`login-tabpanel-${index}`}
-      aria-labelledby={`login-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    <div role="tabpanel" hidden={value !== index} id={`login-tabpanel-${index}`} aria-labelledby={`login-tab-${index}`} {...other}>
+      {value === index && <Box sx={{ pt: 1.25 }}>{children}</Box>}
     </div>
   );
 }
 
 export function LoginPage() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
-  const [email, setEmail] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,13 +44,10 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login(email, password);
-      
-      // Store token and user info
+      const response = await authApi.login(emailOrPhone, password);
       localStorage.setItem('token', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response.user));
-      
-      // Redirect based on account type
+
       if (response.user.accountType === 'SuperAdmin') {
         window.location.href = '/superadmin/dashboard';
       } else if (response.user.accountType === 'Admin') {
@@ -74,161 +63,144 @@ export function LoginPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        backgroundImage: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-        py: 4,
-      }}
-    >
-      <Container maxWidth="md">
-        <Paper
-          elevation={24}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          }}
-        >
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <img 
-                src="/logo.jpeg" 
-                alt="Clean Motion Ghana" 
-                style={{ height: '60px', objectFit: 'contain' }}
-              />
-            </Box>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
-              Clean Motion Ghana
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Sign in to your account
-            </Typography>
-          </Box>
+    <Box sx={authPageRootSx}>
+      <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
+        <Paper elevation={0} sx={authPagePaperSx}>
+          <AuthBrandHeader />
+          <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
+            Sign in
+          </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 1.5, py: 0 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
 
-          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} centered>
-            <Tab icon={<SupervisedUserCircleIcon />} iconPosition="start" label="Super Admin" />
-            <Tab icon={<AdminPanelSettingsIcon />} iconPosition="start" label="Admin" />
-            <Tab icon={<PersonIcon />} iconPosition="start" label="Customer" />
+          <Tabs
+            value={activeTab}
+            onChange={(_e, newValue) => setActiveTab(newValue)}
+            variant="fullWidth"
+            sx={{
+              minHeight: 40,
+              borderBottom: 1,
+              borderColor: 'divider',
+              mb: 0.5,
+              '& .MuiTab-root': {
+                minHeight: 40,
+                py: 0.5,
+                px: 0.25,
+                fontSize: '0.7rem',
+                textTransform: 'none',
+              },
+            }}
+          >
+            <Tab label="Super admin" id="login-tab-0" aria-controls="login-tabpanel-0" />
+            <Tab label="Admin" id="login-tab-1" aria-controls="login-tabpanel-1" />
+            <Tab label="User" id="login-tab-2" aria-controls="login-tabpanel-2" />
           </Tabs>
 
           <form onSubmit={handleLogin}>
             <TabPanel value={activeTab} index={0}>
               <TextField
                 fullWidth
+                size="small"
                 label="Email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                margin="none"
+                sx={{ mb: 1.25 }}
                 required
                 autoComplete="email"
                 autoFocus
               />
               <TextField
                 fullWidth
+                size="small"
                 label="Password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
+                margin="none"
                 required
                 autoComplete="current-password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{ mt: 3 }}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In as Super Admin'}
+              <Button type="submit" fullWidth variant="contained" size="medium" sx={{ mt: 1.5 }} disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </TabPanel>
 
             <TabPanel value={activeTab} index={1}>
               <TextField
                 fullWidth
+                size="small"
                 label="Email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                margin="none"
+                sx={{ mb: 1.25 }}
                 required
                 autoComplete="email"
                 autoFocus
               />
               <TextField
                 fullWidth
+                size="small"
                 label="Password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
+                margin="none"
                 required
                 autoComplete="current-password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{ mt: 3 }}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In as Admin'}
+              <Button type="submit" fullWidth variant="contained" size="medium" sx={{ mt: 1.5 }} disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </TabPanel>
 
             <TabPanel value={activeTab} index={2}>
               <TextField
                 fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
+                size="small"
+                label="Email or phone number"
+                type="text"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                margin="none"
+                sx={{ mb: 1.25 }}
                 required
-                autoComplete="email"
+                autoComplete="username"
                 autoFocus
+                helperText="Use your registered email or phone number."
               />
               <TextField
                 fullWidth
+                size="small"
                 label="Password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
+                margin="none"
                 required
                 autoComplete="current-password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{ mt: 3 }}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In as Customer'}
+              <Button type="submit" fullWidth variant="contained" size="medium" sx={{ mt: 1.5 }} disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
+              <Box sx={{ mt: 1, textAlign: 'center' }}>
+                <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
+                  Forgot password?
+                </Link>
+              </Box>
             </TabPanel>
           </form>
 
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link href="/register" variant="body2" sx={{ textDecoration: 'none' }}>
-              Don't have an account? Sign up
+          <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+            <Link component={RouterLink} to="/register" variant="caption" sx={{ textDecoration: 'none' }}>
+              Create account
             </Link>
           </Box>
         </Paper>
@@ -236,4 +208,3 @@ export function LoginPage() {
     </Box>
   );
 }
-

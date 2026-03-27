@@ -129,10 +129,10 @@ export function SuperAdminConnectionLogsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
           Connection Logs
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Monitor and debug charge point connections
         </Typography>
       </Box>
@@ -205,8 +205,8 @@ export function SuperAdminConnectionLogsPage() {
         </Box>
       </Paper>
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell>Timestamp</TableCell>

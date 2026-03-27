@@ -88,11 +88,11 @@ export function CustomerWalletPage() {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
             My Wallet
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Manage your wallet balance and view transaction history
           </Typography>
         </Box>
@@ -100,12 +100,7 @@ export function CustomerWalletPage() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/user/wallet/top-up')}
-          sx={{
-            background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-            },
-          }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Top Up Wallet
         </Button>
@@ -118,22 +113,26 @@ export function CustomerWalletPage() {
       )}
 
       {balance && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
           <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                color: 'white',
-              }}
-            >
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <AccountBalanceWalletIcon sx={{ fontSize: 40, mr: 2 }} />
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+              <CardContent sx={{ py: { xs: 2, sm: 3 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <AccountBalanceWalletIcon sx={{ fontSize: 40, color: 'primary.main', flexShrink: 0 }} />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" color="text.secondary">
                       Current Balance
                     </Typography>
-                    <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontWeight: 700,
+                        color: 'text.primary',
+                        fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
+                        wordBreak: 'break-word',
+                        lineHeight: 1.2,
+                      }}
+                    >
                       {formatCurrency(balance.balance, balance.currency)}
                     </Typography>
                   </Box>
@@ -144,14 +143,14 @@ export function CustomerWalletPage() {
         </Grid>
       )}
 
-      <Paper>
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Paper sx={{ overflow: 'hidden' }}>
+        <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Transaction History
           </Typography>
         </Box>
-        <TableContainer sx={{ overflowX: 'auto' }}>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>Date</TableCell>

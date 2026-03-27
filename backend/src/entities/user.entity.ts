@@ -36,6 +36,7 @@ export class User {
   @Column({ name: 'last_name', length: 100, nullable: true })
   lastName: string;
 
+  /** Normalized digits (e.g. 233…). Uniqueness when set: `idx_users_phone_unique` in DB init. */
   @Column({ length: 20, nullable: true })
   phone: string;
 
@@ -53,6 +54,12 @@ export class User {
 
   @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
+
+  @Column({ name: 'password_reset_token', length: 64, nullable: true })
+  passwordResetToken: string | null;
+
+  @Column({ name: 'password_reset_expires_at', type: 'timestamp', nullable: true })
+  passwordResetExpiresAt: Date | null;
 
   @OneToMany(() => IdTag, (idTag) => idTag.user)
   idTags: IdTag[];

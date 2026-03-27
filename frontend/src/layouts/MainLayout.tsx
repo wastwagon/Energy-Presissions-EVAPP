@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
+import { brandColors } from '../theme';
 
 export function MainLayout() {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ export function MainLayout() {
                 ]
               : mainLayoutBottomNavItems
           }
-          accentColor="#0A3D62"
+          accentColor={brandColors.primary}
         />
       )}
     </Box>

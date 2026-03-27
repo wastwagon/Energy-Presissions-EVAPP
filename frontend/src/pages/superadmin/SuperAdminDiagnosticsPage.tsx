@@ -8,10 +8,10 @@ export function SuperAdminDiagnosticsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
         Diagnostics
       </Typography>
-      <Typography variant="body2" sx={{ color: '#64748b', mb: 3 }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
         Request diagnostics from charge points
       </Typography>
       <Card>

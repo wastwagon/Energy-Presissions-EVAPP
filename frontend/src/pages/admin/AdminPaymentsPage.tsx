@@ -97,10 +97,14 @@ export function AdminPaymentsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
+        >
           Payment Management
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           View and manage all payment transactions
         </Typography>
       </Box>
@@ -111,7 +115,7 @@ export function AdminPaymentsPage() {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 2 }, mb: 3 }}>
         <TextField
           fullWidth
           placeholder="Search payments by ID, method, or status..."
@@ -127,8 +131,8 @@ export function AdminPaymentsPage() {
         />
       </Paper>
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell>Payment ID</TableCell>

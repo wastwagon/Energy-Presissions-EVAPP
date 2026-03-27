@@ -11,6 +11,7 @@ import {
   alpha,
 } from '@mui/material';
 import { MenuItem as MenuItemType } from '../../config/menu.config';
+import { brandColors } from '../../theme';
 
 interface MenuItemProps {
   item: MenuItemType;
@@ -36,14 +37,14 @@ export function MenuItem({ item, location, onClick, themeColor }: MenuItemProps)
     if (userStr) {
       try {
         const userData = JSON.parse(userStr);
-        if (userData.accountType === 'SuperAdmin') return '#062540';
-        if (userData.accountType === 'Admin') return '#1A5F7A';
-        return '#0A3D62';
+        if (userData.accountType === 'SuperAdmin') return brandColors.primaryDark;
+        if (userData.accountType === 'Admin') return brandColors.secondary;
+        return brandColors.primary;
       } catch (e) {
-        return '#0A3D62';
+        return brandColors.primary;
       }
     }
-    return '#0A3D62';
+    return brandColors.primary;
   };
 
   const primaryColor = getThemeColor();
@@ -111,11 +112,11 @@ export function MenuItem({ item, location, onClick, themeColor }: MenuItemProps)
         mb: 0.25,
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-selected': {
-          background: `linear-gradient(135deg, ${alpha(primaryColor, 0.12)} 0%, ${alpha(primaryColor, 0.08)} 100%)`,
+          backgroundColor: alpha(primaryColor, 0.1),
           color: primaryColor,
           fontWeight: 600,
           '&:hover': {
-            background: `linear-gradient(135deg, ${alpha(primaryColor, 0.16)} 0%, ${alpha(primaryColor, 0.12)} 100%)`,
+            backgroundColor: alpha(primaryColor, 0.14),
             transform: 'none',
           },
           '&::before': {

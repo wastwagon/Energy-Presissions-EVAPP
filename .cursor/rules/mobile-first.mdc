@@ -1,0 +1,19 @@
+---
+description: Mobile-first UI for the web app (WebViewGold on phones)
+globs:
+alwaysApply: true
+---
+
+# Mobile-first design
+
+The customer-facing experience runs **primarily on phones** (web wrapped in WebViewGold). Layouts and new UI must be **mobile-first**: default styles target `xs`, then enhance with `sm` / `md` / `lg` using MUI breakpoints.
+
+**Conventions**
+
+- Prefer **`xs` first** in `sx`: spacing `p: { xs: 2, sm: 3 }`, typography that grows upward, stacking with `Stack` / full-width blocks before multi-column `Grid` at `sm+`.
+- **Touch targets**: keep primary actions and icon targets at least ~44px; avoid cramped tap zones in list rows and tables.
+- **Width**: primary CTAs often **`width: { xs: '100%', sm: 'auto' }`** on forms and drawers; avoid horizontal overflow—use `TableContainer` / scroll where tables are wide.
+- **Navigation**: respect **`env(safe-area-inset-*)`** for fixed bottom nav and notched devices; `viewport-fit=cover` is already set in `frontend/index.html`.
+- **Read order**: critical actions and summaries appear **above the fold** on narrow viewports; defer dense tables and secondary chrome to scroll or secondary screens.
+
+When editing `frontend/`, assume the narrow breakpoint is the **canonical** layout unless the task is explicitly desktop-only.

@@ -6,12 +6,19 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SmartChargingService } from './smart-charging.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Smart Charging')
+@ApiBearerAuth()
 @Controller('smart-charging')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin')
 export class SmartChargingController {
   constructor(private readonly smartChargingService: SmartChargingService) {}
 

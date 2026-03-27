@@ -55,7 +55,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`devices-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ pt: { xs: 2, sm: 3 }, px: { xs: 0, sm: 0 } }}>{children}</Box>}
     </div>
   );
 }
@@ -240,22 +240,32 @@ export function DevicesPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" component="h1">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' }, minWidth: 0, flex: '1 1 200px' }}>
           Device Inventory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            alignItems: 'stretch',
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <Button
             variant={showOnlyRealDevices ? 'contained' : 'outlined'}
             startIcon={<FilterListIcon />}
             onClick={() => setShowOnlyRealDevices(!showOnlyRealDevices)}
             color={showOnlyRealDevices ? 'primary' : 'inherit'}
+            sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
           >
             {showOnlyRealDevices ? 'Show All Devices' : 'Real Devices Only'}
           </Button>
           <TextField
             placeholder="Search devices..."
             size="small"
+            fullWidth
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={(e) => {
@@ -280,7 +290,7 @@ export function DevicesPage() {
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: { xs: 0, sm: 260 }, flex: { sm: 1 }, maxWidth: { sm: 400 } }}
           />
         </Box>
       </Box>
@@ -291,7 +301,7 @@ export function DevicesPage() {
         </Alert>
       )}
 
-      <Paper>
+      <Paper sx={{ overflow: 'hidden' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
           <Tab label="All Devices" />
           <Tab 
@@ -309,7 +319,7 @@ export function DevicesPage() {
               <CircularProgress />
             </Box>
           ) : filteredChargePoints.length === 0 ? (
-            <Paper sx={{ p: 3, mt: 2 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
               <Typography variant="body1" gutterBottom>
                 {showOnlyRealDevices 
                   ? 'No real devices found.' 
@@ -328,19 +338,22 @@ export function DevicesPage() {
           ) : (
             <>
               {showOnlyRealDevices && (
-                <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+                <Alert
+                  severity="info"
+                  sx={{ mt: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center', gap: 1, '& .MuiAlert-message': { width: { xs: '100%', sm: 'auto' } } }}
+                >
                   Showing only real devices. Real devices have vendor name, serial number, and don't match dummy ID patterns.
                   <Button 
                     size="small" 
                     onClick={() => setShowOnlyRealDevices(false)}
-                    sx={{ ml: 2 }}
+                    sx={{ ml: { xs: 0, sm: 2 }, width: { xs: '100%', sm: 'auto' } }}
                   >
                     Show All Devices
                   </Button>
                 </Alert>
               )}
-            <TableContainer sx={{ mt: 2, overflowX: 'auto' }}>
-              <Table>
+            <TableContainer sx={{ mt: 2, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
                     <TableCell>Type</TableCell>
@@ -474,8 +487,18 @@ export function DevicesPage() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
-            <Typography variant="h6">
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 2,
+              mb: 2,
+              mt: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ minWidth: 0 }}>
               Recent Connection Errors
             </Typography>
             {recentErrors.length > 0 && (
@@ -484,13 +507,14 @@ export function DevicesPage() {
                 color="primary"
                 onClick={handleClearResolvedErrors}
                 size="small"
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
                 Clear Resolved Errors
               </Button>
             )}
           </Box>
           {recentErrors.length === 0 ? (
-            <Paper sx={{ p: 3, mt: 2 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
               <Typography variant="body1" gutterBottom>
                 No recent connection errors.
               </Typography>
@@ -499,8 +523,8 @@ export function DevicesPage() {
               </Typography>
             </Paper>
           ) : (
-            <TableContainer sx={{ mt: 2, overflowX: 'auto' }}>
-              <Table>
+            <TableContainer sx={{ mt: 2, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
                     <TableCell>Charge Point ID</TableCell>
@@ -653,8 +677,8 @@ export function DevicesPage() {
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Recent Connection Events
               </Typography>
-              <TableContainer sx={{ overflowX: 'auto' }}>
-                <Table size="small">
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
                       <TableCell>Timestamp</TableCell>

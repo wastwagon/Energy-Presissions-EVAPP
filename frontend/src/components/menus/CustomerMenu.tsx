@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { customerMenuConfig } from '../../config/menu.config';
+import { brandColors } from '../../theme';
 
 interface CustomerMenuProps {
   onItemClick?: () => void;
@@ -10,7 +11,7 @@ interface CustomerMenuProps {
 
 export function CustomerMenu({ onItemClick }: CustomerMenuProps) {
   const location = useLocation();
-  const themeColor = '#0A3D62'; // Brand primary (deep teal)
+  const themeColor = brandColors.primary;
 
   return (
     <Box

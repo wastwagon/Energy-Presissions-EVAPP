@@ -227,14 +227,15 @@ export function VendorManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h4" component="h1">
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' }, minWidth: 0, flex: '1 1 200px' }}>
           Vendor Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleCreateVendor}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Create Vendor
         </Button>
@@ -252,9 +253,9 @@ export function VendorManagementPage() {
         </Alert>
       )}
 
-      <Paper>
-        <TableContainer sx={{ overflowX: 'auto' }}>
-          <Table>
+      <Paper sx={{ overflow: 'hidden' }}>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -426,8 +427,8 @@ export function VendorManagementPage() {
               No status history available
             </Typography>
           ) : (
-            <TableContainer sx={{ overflowX: 'auto' }}>
-              <Table size="small">
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
                     <TableCell>Status</TableCell>

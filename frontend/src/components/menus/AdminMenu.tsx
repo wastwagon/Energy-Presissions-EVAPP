@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { adminMenuConfig } from '../../config/menu.config';
+import { brandColors } from '../../theme';
 
 interface AdminMenuProps {
   onItemClick?: () => void;
@@ -10,7 +11,7 @@ interface AdminMenuProps {
 
 export function AdminMenu({ onItemClick }: AdminMenuProps) {
   const location = useLocation();
-  const themeColor = '#1A5F7A'; // Brand secondary (lighter teal)
+  const themeColor = brandColors.secondary;
 
   return (
     <Box

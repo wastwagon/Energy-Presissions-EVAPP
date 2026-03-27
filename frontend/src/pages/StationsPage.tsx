@@ -321,9 +321,9 @@ export function StationsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ flex: 1, minWidth: 200 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 1 }}>
             {isAuthenticated && (
               <Button
                 variant="outlined"
@@ -331,7 +331,7 @@ export function StationsPage() {
                 onClick={() => navigate(getDashboardRoute())}
                 sx={{
                   textTransform: 'none',
-                  mr: 2,
+                  width: { xs: '100%', sm: 'auto' },
                 }}
               >
                 Back to Dashboard
@@ -343,18 +343,18 @@ export function StationsPage() {
             component="h1"
             sx={{
               fontWeight: 700,
-              color: '#1e293b',
+              color: 'text.primary',
               mb: 0.5,
               fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
             }}
           >
             Find Charging Stations
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Discover nearby EV charging stations in Ghana
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
           <Tooltip title="List View">
             <IconButton
               onClick={() => setViewMode('list')}
@@ -386,8 +386,8 @@ export function StationsPage() {
       )}
 
       {/* Search and Filter Bar */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
+      <Paper sx={{ p: { xs: 2, sm: 2 }, mb: 3 }}>
+        <Grid container spacing={{ xs: 2, sm: 2 }} alignItems="center">
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -419,7 +419,7 @@ export function StationsPage() {
             />
           </Grid>
           <Grid item xs={12} md={3}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
               <Button
                 variant="contained"
                 onClick={handleSearch}
@@ -433,6 +433,7 @@ export function StationsPage() {
                   variant="outlined"
                   onClick={handleRefreshLocation}
                   startIcon={<MyLocationIcon />}
+                  fullWidth
                 >
                   Refresh
                 </Button>
@@ -459,7 +460,7 @@ export function StationsPage() {
 
       {/* Stations List */}
       {!loading && stations.length === 0 && !error && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center' }}>
           <LocationOnIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
             No stations found
@@ -474,7 +475,7 @@ export function StationsPage() {
 
       {/* Stations Grid */}
       {!loading && stations.length > 0 && (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {stations.map((station) => (
             <Grid item xs={12} sm={6} md={4} key={station.chargePointId}>
               <Card
@@ -483,14 +484,16 @@ export function StationsPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease',
+                  transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
                   border: '1px solid',
                   borderColor: 'divider',
-                  background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)',
-                  '&:hover': {
-                    transform: 'translateY(-6px)',
-                    boxShadow: 6,
-                    borderColor: 'primary.main',
+                  bgcolor: 'background.paper',
+                  '@media (hover: hover) and (pointer: fine)': {
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: (theme) => theme.shadows[4],
+                      borderColor: 'primary.main',
+                    },
                   },
                 }}
                 onClick={() => handleStationClick(station)}
@@ -512,7 +515,7 @@ export function StationsPage() {
                       >
                         <LocalGasStationIcon fontSize="small" />
                       </Box>
-                      <Box sx={{ flex: 1 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
                           {station.locationName || station.chargePointId}
                         </Typography>
@@ -598,7 +601,7 @@ export function StationsPage() {
                         <Typography variant="body2" fontWeight="bold">
                           Price:
                         </Typography>
-                        <Typography variant="body1" fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
+                        <Typography variant="body1" fontWeight="bold" sx={{ fontSize: '1.1rem', textAlign: 'right', wordBreak: 'break-word' }}>
                           {station.currency || 'GHS'} {station.pricePerKwh != null ? Number(station.pricePerKwh).toFixed(2) : '0.00'}/kWh
                         </Typography>
                       </Box>
@@ -615,11 +618,17 @@ export function StationsPage() {
                 </CardContent>
 
                 {/* Action Buttons */}
-                <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+                <CardActions
+                  sx={{
+                    p: 2,
+                    pt: 0,
+                    gap: 1,
+                    flexDirection: { xs: 'column', sm: 'row' },
+                  }}
+                >
                   <Button
                     variant="outlined"
                     startIcon={<DirectionsIcon />}
-                    fullWidth
                     onClick={(e) => handleGetDirections(e, station)}
                     disabled={!station.locationLatitude || !station.locationLongitude}
                     sx={{
@@ -627,6 +636,9 @@ export function StationsPage() {
                       fontWeight: 600,
                       borderColor: 'primary.main',
                       color: 'primary.main',
+                      width: { xs: '100%', sm: 'auto' },
+                      flex: { sm: 1 },
+                      minWidth: { sm: 0 },
                       '&:hover': {
                         borderColor: 'primary.dark',
                         bgcolor: 'primary.light',
@@ -639,13 +651,15 @@ export function StationsPage() {
                   <Button
                     variant="contained"
                     startIcon={<PlayArrowIcon />}
-                    fullWidth
                     onClick={(e) => handleStartCharging(e, station)}
                     disabled={station.status !== 'Available' || station.availableConnectors === 0}
                     sx={{
                       textTransform: 'none',
                       fontWeight: 600,
                       bgcolor: 'success.main',
+                      width: { xs: '100%', sm: 'auto' },
+                      flex: { sm: 1 },
+                      minWidth: { sm: 0 },
                       '&:hover': {
                         bgcolor: 'success.dark',
                       },
@@ -675,12 +689,22 @@ export function StationsPage() {
       />
 
       {/* Station Details Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth scroll="paper">
         {selectedStation && (
           <>
             <DialogTitle>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">{selectedStation.locationName || selectedStation.chargePointId}</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="h6" sx={{ minWidth: 0, pr: 1 }}>
+                  {selectedStation.locationName || selectedStation.chargePointId}
+                </Typography>
                 <Chip
                   label={selectedStation.status}
                   color={getStatusColor(selectedStation.status) as any}

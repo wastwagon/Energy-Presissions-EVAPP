@@ -9,6 +9,7 @@ export interface LoginResponse {
     lastName: string;
     accountType: string;
     vendorId: number;
+    phone?: string;
   };
 }
 
@@ -17,15 +18,16 @@ export interface RegisterRequest {
   password: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
+  phone: string;
 }
 
 export const authApi = {
   /**
-   * Login user
+   * Login user (email or phone number + password).
    */
-  login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await api.post('/auth/login', { email, password });
+  login: async (emailOrPhone: string, password: string): Promise<LoginResponse> => {
+    const trimmed = emailOrPhone.trim();
+    const response = await api.post('/auth/login', { emailOrPhone: trimmed, password });
     return response.data;
   },
 
@@ -33,7 +35,10 @@ export const authApi = {
    * Register new user
    */
   register: async (data: RegisterRequest): Promise<any> => {
-    const response = await api.post('/auth/register', data);
+    const response = await api.post('/auth/register', {
+      ...data,
+      phone: data.phone.trim(),
+    });
     return response.data;
   },
 
@@ -58,6 +63,20 @@ export const authApi = {
    */
   googleSignIn: async (credential: string): Promise<LoginResponse> => {
     const response = await api.post('/auth/google', { credential });
+    return response.data;
+  },
+
+  requestPasswordReset: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
+    return response.data;
+  },
+
+  resetPassword: async (data: { email: string; token: string; password: string }): Promise<{ message: string }> => {
+    const response = await api.post('/auth/reset-password', {
+      email: data.email.trim().toLowerCase(),
+      token: data.token.trim(),
+      password: data.password,
+    });
     return response.data;
   },
 

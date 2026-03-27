@@ -4,12 +4,19 @@ import {
   Post,
   Body,
   Param,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LocalAuthListService } from './local-auth-list.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Local Auth List')
+@ApiBearerAuth()
 @Controller('local-auth-list')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin')
 export class LocalAuthListController {
   constructor(private readonly localAuthListService: LocalAuthListService) {}
 

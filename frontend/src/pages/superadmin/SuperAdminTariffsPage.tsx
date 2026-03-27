@@ -150,24 +150,14 @@ export function SuperAdminTariffsPage() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
             Tariffs & Pricing
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Manage system-wide pricing and tariff plans
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            background: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #041a2a 0%, #062540 100%)',
-            },
-          }}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
           New Tariff
         </Button>
       </Box>

@@ -186,6 +186,13 @@ export const superAdminMenuConfig: MenuSection[] = [
         roles: ['SuperAdmin'],
       },
       {
+        id: 'billing-invoices',
+        text: 'Billing & Invoices',
+        icon: <ReceiptIcon />,
+        path: '/superadmin/billing',
+        roles: ['SuperAdmin'],
+      },
+      {
         id: 'billing-settings',
         text: 'Billing Settings',
         icon: <CreditCardIcon />,
@@ -271,7 +278,6 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Smart Charging',
         icon: <SpeedIcon />,
         path: '/superadmin/smart-charging',
-        disabled: true, // TODO: Create smart charging page
         roles: ['SuperAdmin'],
       },
       {
@@ -279,7 +285,6 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Local Auth List',
         icon: <VpnKeyIcon />,
         path: '/superadmin/local-auth',
-        disabled: true, // TODO: Create local auth list page
         roles: ['SuperAdmin'],
       },
     ],

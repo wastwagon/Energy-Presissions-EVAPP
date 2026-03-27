@@ -8,3 +8,4 @@ alwaysApply: true
 
 - **Do NOT** work on the React Native mobile app in `mobile/`. The user uses the web app wrapped with WebViewGold for iOS and Android.
 - **Focus on:** web app (`frontend/`), backend (`backend/`), and WebViewGold setup (`-Energy-Presissions-EVAPP/`).
+- **Frontend:** design and implement **mobile-first** (see `.cursor/rules/mobile-first.mdc`); phones are the primary surface.

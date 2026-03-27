@@ -21,7 +21,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
 import { BottomNav } from '../components/BottomNav';
+import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { superAdminBottomNavItems } from '../config/menu.config';
+import { brandColors } from '../theme';
 
 const drawerWidth = 280;
 
@@ -104,49 +106,10 @@ export function SuperAdminDashboardLayout() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
+        bgcolor: 'background.paper',
       }}
     >
-      <Box
-        sx={{
-          p: 3.5,
-          background: 'linear-gradient(135deg, #062540 0%, #0A3D62 100%)',
-          color: 'white',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-          <img 
-            src="/logo.jpeg" 
-            alt="Clean Motion Ghana" 
-            style={{ height: '32px', objectFit: 'contain' }}
-          />
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                mb: 0.5,
-                fontSize: '1.375rem',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Clean Motion Ghana
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                opacity: 0.95,
-                fontSize: '0.75rem',
-                letterSpacing: '0.02em',
-                fontWeight: 500,
-              }}
-            >
-              Super Admin Portal
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+      <DrawerBrandHeader subtitle="Super Admin Portal" />
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <SuperAdminMenu />
       </Box>
@@ -154,7 +117,7 @@ export function SuperAdminDashboardLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         elevation={0}
@@ -175,7 +138,7 @@ export function SuperAdminDashboardLayout() {
             sx={{
               mr: 2,
               display: { sm: 'none' },
-              color: '#1e293b',
+              color: 'text.primary',
             }}
             aria-label="open menu"
           >
@@ -188,7 +151,7 @@ export function SuperAdminDashboardLayout() {
             sx={{
               flexGrow: 1,
               fontWeight: 600,
-              color: '#1e293b',
+              color: 'text.primary',
               fontSize: '1.125rem',
               display: 'flex',
               alignItems: 'center',
@@ -218,10 +181,10 @@ export function SuperAdminDashboardLayout() {
           )}
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                 {user?.firstName} {user?.lastName}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {user?.email}
               </Typography>
             </Box>
@@ -309,7 +272,7 @@ export function SuperAdminDashboardLayout() {
               width: drawerWidth,
               borderRight: '1px solid',
               borderColor: 'rgba(0, 0, 0, 0.08)',
-              bgcolor: '#fafafa',
+              bgcolor: 'grey.50',
               boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
             },
           }}
@@ -325,7 +288,7 @@ export function SuperAdminDashboardLayout() {
               width: drawerWidth,
               borderRight: '1px solid',
               borderColor: 'rgba(0, 0, 0, 0.08)',
-              bgcolor: '#fafafa',
+              bgcolor: 'grey.50',
               boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
             },
           }}
@@ -340,7 +303,7 @@ export function SuperAdminDashboardLayout() {
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: '#f8fafc',
+          bgcolor: 'background.default',
           pb: showBottomNav ? 10 : 3,
         }}
       >
@@ -348,7 +311,7 @@ export function SuperAdminDashboardLayout() {
         <Outlet />
       </Box>
       {showBottomNav && (
-        <BottomNav items={superAdminBottomNavItems} accentColor="#062540" />
+        <BottomNav items={superAdminBottomNavItems} accentColor={brandColors.primary} />
       )}
     </Box>
   );

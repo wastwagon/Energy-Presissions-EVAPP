@@ -36,6 +36,7 @@ import { transactionsApi } from '../../services/transactionsApi';
 import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
+import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -53,7 +54,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`customer-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ pt: { xs: 2, sm: 3 }, px: { xs: 0.5, sm: 0 } }}>{children}</Box>}
     </div>
   );
 }
@@ -217,14 +218,14 @@ export function CustomerDashboardPage() {
             component="h1"
             sx={{
               fontWeight: 700,
-              color: '#1e293b',
+              color: 'text.primary',
               mb: 0.5,
               fontSize: { xs: '1.75rem', sm: '2rem' },
             }}
           >
             My Dashboard
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" color="text.secondary">
             Welcome back! Here's an overview of your account.
           </Typography>
         </Box>
@@ -232,16 +233,7 @@ export function CustomerDashboardPage() {
           variant="contained"
           startIcon={<LocationOnIcon />}
           onClick={() => navigate('/stations')}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 3,
-            background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-            },
-          }}
+          sx={{ px: 3, width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
         >
           Find Stations
         </Button>
@@ -258,221 +250,82 @@ export function CustomerDashboardPage() {
       )}
 
       {/* Summary Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, rgba(10, 61, 98, 0.08) 0%, rgba(26, 95, 122, 0.08) 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(10, 61, 98, 0.15)',
-                borderColor: 'primary.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <AccountBalanceWalletIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="primary" compact noRightMargin>
+                  <AccountBalanceWalletIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Wallet
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 1.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 1.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 GHS {typeof walletBalance === 'number' && !isNaN(walletBalance) ? walletBalance.toFixed(2) : '0.00'}
               </Typography>
-              <Button
-                size="small"
-                variant="contained"
-                fullWidth
-                sx={{
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  py: 0.75,
-                  background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
-                  },
-                }}
-                onClick={() => navigate('/user/wallet')}
-              >
+              <Button size="small" variant="contained" fullWidth onClick={() => navigate('/user/wallet')}>
                 Top Up Wallet
               </Button>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, #10b98115 0%, #05966915 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15)',
-                borderColor: 'success.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <BatteryChargingFullIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="success" compact noRightMargin>
+                  <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Sessions
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {transactions.length}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Total charging sessions
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, #3b82f615 0%, #2563eb15 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15)',
-                borderColor: 'info.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <PaymentIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="info" compact noRightMargin>
+                  <PaymentIcon sx={{ color: 'info.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Payments
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {payments.length}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Total payments made
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, rgba(26, 95, 122, 0.08) 0%, rgba(37, 132, 168, 0.08) 100%)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 10px 25px rgba(26, 95, 122, 0.15)',
-                borderColor: 'secondary.main',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
+          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #1A5F7A 0%, #2584a8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <HistoryIcon sx={{ color: 'white', fontSize: 24 }} />
-                </Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <DashboardNavIcon accent="secondary" compact noRightMargin>
+                  <HistoryIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
+                </DashboardNavIcon>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Active
                 </Typography>
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {transactions.filter((t) => t.status === 'Active').length}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" color="text.secondary">
                 Active charging sessions
               </Typography>
             </CardContent>
@@ -520,8 +373,8 @@ export function CustomerDashboardPage() {
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Transaction ID</TableCell>
@@ -593,8 +446,8 @@ export function CustomerDashboardPage() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <TableContainer sx={{ maxHeight: 600, overflowX: 'auto' }}>
-            <Table stickyHeader>
+          <TableContainer sx={{ maxHeight: 600, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Payment ID</TableCell>
@@ -650,40 +503,40 @@ export function CustomerDashboardPage() {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 4,
+                      p: { xs: 2, sm: 3 },
                       mb: 3,
-                      background: 'linear-gradient(135deg, #0A3D62 0%, #1A5F7A 100%)',
                       borderRadius: 2,
-                      color: 'white',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'center', sm: 'center' },
+                        gap: { xs: 2, sm: 3 },
+                        textAlign: { xs: 'center', sm: 'left' },
+                      }}
+                    >
                       <Avatar
                         sx={{
-                          width: 100,
-                          height: 100,
-                          bgcolor: 'rgba(255, 255, 255, 0.2)',
-                          border: '4px solid rgba(255, 255, 255, 0.3)',
-                          fontSize: '2.5rem',
-                          fontWeight: 'bold',
+                          width: { xs: 72, sm: 88 },
+                          height: { xs: 72, sm: 88 },
+                          bgcolor: 'primary.main',
+                          fontSize: { xs: '1.75rem', sm: '2rem' },
+                          fontWeight: 700,
                         }}
                       >
                         {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
                         {user.lastName?.[0]?.toUpperCase() || ''}
                       </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
                           {user.firstName} {user.lastName}
                         </Typography>
-                        <Chip
-                          label={user.accountType}
-                          sx={{
-                            bgcolor: 'rgba(255, 255, 255, 0.2)',
-                            color: 'white',
-                            fontWeight: 600,
-                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                          }}
-                        />
+                        <Chip label={user.accountType} color="primary" variant="outlined" size="small" sx={{ fontWeight: 600 }} />
                       </Box>
                     </Box>
                   </Paper>
@@ -694,14 +547,16 @@ export function CustomerDashboardPage() {
                       <Card
                         elevation={2}
                         sx={{
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
                           borderLeftColor: 'primary.main',
                           transition: 'transform 0.2s, box-shadow 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 4,
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: 4,
+                            },
                           },
                         }}
                       >
@@ -712,6 +567,7 @@ export function CustomerDashboardPage() {
                               width: 48,
                               height: 48,
                               mr: 2,
+                              flexShrink: 0,
                             }}
                           >
                             <PersonIcon />
@@ -732,14 +588,16 @@ export function CustomerDashboardPage() {
                       <Card
                         elevation={2}
                         sx={{
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
                           borderLeftColor: 'info.main',
                           transition: 'transform 0.2s, box-shadow 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 4,
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: 4,
+                            },
                           },
                         }}
                       >
@@ -750,6 +608,7 @@ export function CustomerDashboardPage() {
                               width: 48,
                               height: 48,
                               mr: 2,
+                              flexShrink: 0,
                             }}
                           >
                             <EmailIcon />
@@ -770,14 +629,16 @@ export function CustomerDashboardPage() {
                       <Card
                         elevation={2}
                         sx={{
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
                           borderLeftColor: 'success.main',
                           transition: 'transform 0.2s, box-shadow 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 4,
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: 4,
+                            },
                           },
                         }}
                       >
@@ -788,6 +649,7 @@ export function CustomerDashboardPage() {
                               width: 48,
                               height: 48,
                               mr: 2,
+                              flexShrink: 0,
                             }}
                           >
                             <BadgeIcon />
@@ -808,15 +670,17 @@ export function CustomerDashboardPage() {
                       <Card
                         elevation={2}
                         sx={{
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
                           borderLeftColor: 'secondary.main',
-                          background: 'linear-gradient(135deg, #e8f4f8 0%, #ffffff 100%)',
+                          bgcolor: 'action.hover',
                           transition: 'transform 0.2s, box-shadow 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 4,
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: 4,
+                            },
                           },
                         }}
                       >
@@ -827,6 +691,7 @@ export function CustomerDashboardPage() {
                               width: 48,
                               height: 48,
                               mr: 2,
+                              flexShrink: 0,
                             }}
                           >
                             <AccountBalanceWalletIcon />
@@ -850,7 +715,7 @@ export function CustomerDashboardPage() {
                               variant="contained"
                               color="secondary"
                               startIcon={<EditIcon />}
-                              sx={{ mt: 2 }}
+                              sx={{ mt: 2, width: { xs: '100%', sm: 'auto' } }}
                               onClick={() => navigate('/user/wallet')}
                             >
                               Top Up Wallet
@@ -865,7 +730,7 @@ export function CustomerDashboardPage() {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 3,
+                      p: { xs: 2, sm: 3 },
                       mt: 3,
                       bgcolor: 'background.default',
                       border: '1px solid',

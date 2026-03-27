@@ -48,10 +48,10 @@ export function SuperAdminSecurityLogsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
           Security & Logs
         </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Audit trail of system activity
         </Typography>
       </Box>
@@ -63,8 +63,8 @@ export function SuperAdminSecurityLogsPage() {
       )}
 
       <Paper>
-        <TableContainer sx={{ overflowX: 'auto' }}>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>Time</TableCell>

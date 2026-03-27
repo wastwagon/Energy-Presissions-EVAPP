@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -8,8 +8,19 @@ import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { User } from '../entities/user.entity';
+import { normalizePhone } from '../common/phone.util';
 
 const APPLE_CLIENT_ID = 'com.energyprecisions.cleanmotion.signin';
+
+export type AuthUserPayload = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  accountType: string;
+  vendorId: number;
+  phone?: string;
+};
 
 @Injectable()
 export class AuthService {
@@ -21,21 +32,59 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.usersService.findByEmail(email);
+  private toAuthUserPayload(user: User): AuthUserPayload {
+    const payload: AuthUserPayload = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      accountType: user.accountType,
+      vendorId: user.vendorId,
+    };
+    if (user.phone) {
+      payload.phone = user.phone;
+    }
+    return payload;
+  }
+
+  private safeEqualToken(a: string, b: string | null | undefined): boolean {
+    if (!b || a.length !== b.length) {
+      return false;
+    }
+    try {
+      return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+    } catch {
+      return false;
+    }
+  }
+
+  async validateUserByIdentifier(identifier: string, password: string): Promise<User | null> {
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    let user: User | null = null;
+    if (trimmed.includes('@')) {
+      user = await this.usersService.findByEmail(trimmed.toLowerCase());
+    } else {
+      const normalized = normalizePhone(trimmed);
+      if (normalized.length < 8) {
+        return null;
+      }
+      user = await this.usersService.findByPhone(normalized);
+    }
 
     if (!user) {
       return null;
     }
 
-    // Check if password matches
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
       return null;
     }
 
-    // Check if user is active
     if (user.status !== 'Active') {
       throw new UnauthorizedException('User account is not active');
     }
@@ -43,21 +92,14 @@ export class AuthService {
     return user;
   }
 
-  async login(email: string, password: string): Promise<{
+  async login(emailOrPhone: string, password: string): Promise<{
     accessToken: string;
-    user: {
-      id: number;
-      email: string;
-      firstName: string;
-      lastName: string;
-      accountType: string;
-      vendorId: number;
-    };
+    user: AuthUserPayload;
   }> {
-    const user = await this.validateUser(email, password);
+    const user = await this.validateUserByIdentifier(emailOrPhone, password);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid email, phone number, or password');
     }
 
     const payload = {
@@ -69,14 +111,7 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        accountType: user.accountType,
-        vendorId: user.vendorId,
-      },
+      user: this.toAuthUserPayload(user),
     };
   }
 
@@ -85,7 +120,7 @@ export class AuthService {
     userInfo?: { name?: { firstName?: string; lastName?: string }; email?: string },
   ): Promise<{
     accessToken: string;
-    user: { id: number; email: string; firstName: string; lastName: string; accountType: string; vendorId: number };
+    user: AuthUserPayload;
   }> {
     let payload: { sub: string; email?: string };
     try {
@@ -146,20 +181,13 @@ export class AuthService {
     const tokenPayload = { sub: user.id, email: user.email, accountType: user.accountType, vendorId: user.vendorId };
     return {
       accessToken: this.jwtService.sign(tokenPayload),
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        accountType: user.accountType,
-        vendorId: user.vendorId,
-      },
+      user: this.toAuthUserPayload(user),
     };
   }
 
   async googleSignIn(idToken: string): Promise<{
     accessToken: string;
-    user: { id: number; email: string; firstName: string; lastName: string; accountType: string; vendorId: number };
+    user: AuthUserPayload;
   }> {
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
     if (!googleClientId) {
@@ -209,14 +237,7 @@ export class AuthService {
     const tokenPayload = { sub: user.id, email: user.email, accountType: user.accountType, vendorId: user.vendorId };
     return {
       accessToken: this.jwtService.sign(tokenPayload),
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        accountType: user.accountType,
-        vendorId: user.vendorId,
-      },
+      user: this.toAuthUserPayload(user),
     };
   }
 
@@ -225,13 +246,21 @@ export class AuthService {
     password: string;
     firstName?: string;
     lastName?: string;
-    phone?: string;
+    phone: string;
     vendorId?: number;
   }): Promise<User> {
-    // Check if user already exists
     const existingUser = await this.usersService.findByEmail(data.email);
     if (existingUser) {
       throw new UnauthorizedException('User with this email already exists');
+    }
+
+    const normalizedPhone = normalizePhone(data.phone);
+    if (normalizedPhone.length < 8) {
+      throw new BadRequestException('Please enter a valid phone number');
+    }
+    const existingPhone = await this.usersService.findByPhone(normalizedPhone);
+    if (existingPhone) {
+      throw new UnauthorizedException('User with this phone number already exists');
     }
 
     return this.usersService.create({
@@ -239,7 +268,7 @@ export class AuthService {
       passwordHash: data.password, // Will be hashed in service
       firstName: data.firstName,
       lastName: data.lastName,
-      phone: data.phone,
+      phone: normalizedPhone,
       accountType: 'Customer',
       vendorId: data.vendorId || 1,
       balance: 0,
@@ -247,6 +276,49 @@ export class AuthService {
       status: 'Active',
       emailVerified: false,
     });
+  }
+
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    const normalized = email.trim().toLowerCase();
+    const generic: { message: string } = {
+      message:
+        'If an account exists for this email, you can complete reset with the token sent to you. Contact support if you need help.',
+    };
+
+    const user = await this.usersService.findByEmail(normalized);
+    if (!user || user.status !== 'Active') {
+      return generic;
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.usersService.update(user.id, {
+      passwordResetToken: token,
+      passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[dev] Password reset token for ${normalized}: ${token}`);
+    }
+
+    return generic;
+  }
+
+  async resetPassword(email: string, token: string, password: string): Promise<{ message: string }> {
+    const normalized = email.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(normalized);
+    if (!user?.passwordResetToken || !user.passwordResetExpiresAt) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+    if (new Date() > new Date(user.passwordResetExpiresAt)) {
+      throw new BadRequestException('Reset token has expired. Request a new one.');
+    }
+    if (!this.safeEqualToken(token.trim(), user.passwordResetToken)) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    await this.usersService.setPasswordAndClearResetToken(user.id, password);
+
+    return { message: 'Password has been reset. You can sign in now.' };
   }
 }
 
