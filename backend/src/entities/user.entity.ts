@@ -55,10 +55,11 @@ export class User {
   @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
 
-  @Column({ name: 'password_reset_token', length: 64, nullable: true })
+  /** Excluded from default SELECT so APIs work if DB migration not applied yet; add columns via `23-password-reset.sql`. */
+  @Column({ name: 'password_reset_token', length: 64, nullable: true, select: false })
   passwordResetToken: string | null;
 
-  @Column({ name: 'password_reset_expires_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'password_reset_expires_at', type: 'timestamp', nullable: true, select: false })
   passwordResetExpiresAt: Date | null;
 
   @OneToMany(() => IdTag, (idTag) => idTag.user)

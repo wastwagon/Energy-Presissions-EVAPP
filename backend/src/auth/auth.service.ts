@@ -299,7 +299,7 @@ export class AuthService {
 
   async resetPassword(email: string, token: string, password: string): Promise<{ message: string }> {
     const normalized = email.trim().toLowerCase();
-    const user = await this.usersService.findByEmail(normalized);
+    const user = await this.usersService.findByEmailWithPasswordReset(normalized);
     if (!user?.passwordResetToken || !user.passwordResetExpiresAt) {
       throw new BadRequestException("That code doesn't match. Try again or request a new reset.");
     }

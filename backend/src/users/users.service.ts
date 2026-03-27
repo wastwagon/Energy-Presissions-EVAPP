@@ -48,6 +48,16 @@ export class UsersService {
     });
   }
 
+  /** Loads password reset fields (excluded from default SELECT). Use for reset-password validation. */
+  async findByEmailWithPasswordReset(email: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordResetToken')
+      .addSelect('user.passwordResetExpiresAt')
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
   async findByPhone(phone: string): Promise<User | null> {
     if (!phone) return null;
     return this.userRepository.findOne({
