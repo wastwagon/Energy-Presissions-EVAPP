@@ -57,14 +57,14 @@ export function SuperAdminDashboardLayout() {
           } else if (userData.accountType === 'Customer') {
             window.location.href = '/user/dashboard';
           } else {
-            window.location.href = '/login/super-admin';
+            window.location.href = '/login';
           }
         }
       } catch (e) {
-        window.location.href = '/login/super-admin';
+        window.location.href = '/login';
       }
     } else {
-      window.location.href = '/login/super-admin';
+      window.location.href = '/login';
     }
 
     // Check if impersonating
@@ -89,7 +89,7 @@ export function SuperAdminDashboardLayout() {
     localStorage.removeItem('currentVendorId');
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
-    navigate('/login/super-admin');
+    navigate('/login');
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -144,21 +144,15 @@ export function SuperAdminDashboardLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
+          <Box
             sx={{
               flexGrow: 1,
-              fontWeight: 600,
-              color: 'text.primary',
-              fontSize: '1.125rem',
               display: 'flex',
               alignItems: 'center',
               gap: 2,
+              minWidth: 0,
             }}
           >
-            Super Admin Dashboard
             {isImpersonating && vendorName && (
               <Chip
                 label={`Viewing: ${vendorName}`}
@@ -167,7 +161,7 @@ export function SuperAdminDashboardLayout() {
                 sx={{ fontWeight: 600 }}
               />
             )}
-          </Typography>
+          </Box>
           {isImpersonating && (
             <Button
               variant="outlined"

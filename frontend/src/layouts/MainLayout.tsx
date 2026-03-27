@@ -37,7 +37,7 @@ export function MainLayout() {
     localStorage.removeItem('currentVendorId');
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
-    navigate('/login/user');
+    navigate('/login');
   };
 
   return (
@@ -65,7 +65,7 @@ export function MainLayout() {
             </Box>
           )}
           {!isAuthenticated && (
-            <Button color="inherit" onClick={() => navigate('/login/user')}>
+            <Button color="inherit" onClick={() => navigate('/login')}>
               Login
             </Button>
           )}

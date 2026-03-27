@@ -50,14 +50,14 @@ export function AdminDashboardLayout() {
           if (userData.accountType === 'Customer') {
             window.location.href = '/user/dashboard';
           } else {
-            window.location.href = '/login/admin';
+            window.location.href = '/login';
           }
         }
       } catch (e) {
-        window.location.href = '/login/admin';
+        window.location.href = '/login';
       }
     } else {
-      window.location.href = '/login/admin';
+      window.location.href = '/login';
     }
   }, []);
 
@@ -80,11 +80,7 @@ export function AdminDashboardLayout() {
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
     
-    if (accountType === 'SuperAdmin') {
-      navigate('/login/super-admin');
-    } else {
-      navigate('/login/admin');
-    }
+    navigate('/login');
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

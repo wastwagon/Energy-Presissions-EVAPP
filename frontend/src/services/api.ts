@@ -79,22 +79,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to appropriate login page
-      const userStr = localStorage.getItem('user');
-      let loginPath = '/login/user';
-      
-      if (userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          if (userData.accountType === 'SuperAdmin') {
-            loginPath = '/login/super-admin';
-          } else if (userData.accountType === 'Admin') {
-            loginPath = '/login/admin';
-          }
-        } catch (e) {
-          // If parsing fails, use default
-        }
-      }
+      const loginPath = '/login';
       
       // Clear auth data
       localStorage.removeItem('token');

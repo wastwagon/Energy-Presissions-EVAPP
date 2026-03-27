@@ -41,18 +41,9 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return null; // Or a loading spinner
   }
 
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to unified login
   if (!isAuthenticated) {
-    // Determine login page based on the route being accessed
-    let loginPath = '/login/user';
-    
-    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin')) {
-      loginPath = '/login/admin';
-    } else if (location.pathname.startsWith('/ops')) {
-      loginPath = '/login/admin';
-    }
-
-    return <Navigate to={loginPath} state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If user doesn't have required role, redirect to their dashboard

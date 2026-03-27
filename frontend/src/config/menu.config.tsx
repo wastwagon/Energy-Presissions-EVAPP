@@ -600,7 +600,7 @@ export const superAdminBottomNavItems = [
 export const mainLayoutBottomNavItems = [
   { id: 'home', label: 'Home', icon: <HomeIcon />, path: '/' },
   { id: 'stations', label: 'Find Stations', icon: <LocationOnIcon />, path: '/stations', matchPaths: ['/stations'] },
-  { id: 'login', label: 'Login', icon: <LoginIcon />, path: '/login/user' },
+  { id: 'login', label: 'Login', icon: <LoginIcon />, path: '/login' },
 ];
 
 /**

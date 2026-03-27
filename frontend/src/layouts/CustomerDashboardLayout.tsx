@@ -54,10 +54,10 @@ export function CustomerDashboardLayout() {
               }
             }
       } catch (e) {
-        window.location.href = '/login/user';
+        window.location.href = '/login';
       }
     } else {
-      window.location.href = '/login/user';
+      window.location.href = '/login';
     }
   }, []);
 
@@ -67,7 +67,7 @@ export function CustomerDashboardLayout() {
     localStorage.removeItem('currentVendorId');
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
-    navigate('/login/user');
+    navigate('/login');
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

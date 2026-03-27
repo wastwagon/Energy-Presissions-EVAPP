@@ -29,7 +29,7 @@ export function HomePage() {
 
   const handleFindStations = () => {
     if (!isAuthenticated) {
-      navigate('/login/user');
+      navigate('/login');
       return;
     }
     navigate('/stations');
@@ -37,7 +37,7 @@ export function HomePage() {
 
   const handleOperations = () => {
     if (!isAuthenticated) {
-      navigate('/login/admin');
+      navigate('/login');
       return;
     }
     
@@ -54,7 +54,7 @@ export function HomePage() {
 
   const handleAdmin = () => {
     if (!isAuthenticated) {
-      navigate('/login/admin');
+      navigate('/login');
       return;
     }
     

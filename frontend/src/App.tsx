@@ -20,9 +20,6 @@ import { DevicesPage } from './pages/ops/DevicesPage';
 import { ChargePointDetailPage } from './pages/ops/ChargePointDetailPage';
 import { TransactionDetailPage } from './pages/ops/TransactionDetailPage';
 import { LoginPage } from './pages/auth/LoginPage';
-import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
-import { AdminLoginPage } from './pages/auth/AdminLoginPage';
-import { UserLoginPage } from './pages/auth/UserLoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { CustomerDashboardPage } from './pages/user/CustomerDashboardPage';
@@ -99,10 +96,10 @@ function App() {
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/login/super-admin" element={<SuperAdminLoginPage />} />
-        <Route path="/login/admin" element={<AdminLoginPage />} />
-        <Route path="/login/user" element={<UserLoginPage />} />
-        <Route path="/login/vendor" element={<AdminLoginPage />} />
+        <Route path="/login/super-admin" element={<Navigate to="/login" replace />} />
+        <Route path="/login/admin" element={<Navigate to="/login" replace />} />
+        <Route path="/login/user" element={<Navigate to="/login" replace />} />
+        <Route path="/login/vendor" element={<Navigate to="/login" replace />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 

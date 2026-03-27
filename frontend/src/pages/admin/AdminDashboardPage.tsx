@@ -33,14 +33,14 @@ export function AdminDashboardPage() {
             if (userData.accountType === 'Customer') {
               window.location.href = '/user/dashboard';
             } else {
-            window.location.href = '/login/admin';
+            window.location.href = '/login';
           }
         }
       } catch (e) {
-        window.location.href = '/login/admin';
+        window.location.href = '/login';
       }
     } else {
-      window.location.href = '/login/admin';
+      window.location.href = '/login';
     }
   }, []);
 

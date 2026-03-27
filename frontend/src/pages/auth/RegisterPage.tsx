@@ -56,7 +56,7 @@ export function RegisterPage() {
         lastName: lastName || undefined,
         phone: phone.trim(),
       });
-      navigate('/login/user', { state: { message: 'Account created. Please sign in.' } });
+      navigate('/login', { state: { message: 'Account created. Please sign in.' } });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
     } finally {
@@ -167,7 +167,7 @@ export function RegisterPage() {
           <Box sx={{ mt: 1.5, textAlign: 'center' }}>
             <Link
               component={RouterLink}
-              to="/login/user"
+              to="/login"
               variant="caption"
               sx={{ textDecoration: 'none', cursor: 'pointer' }}
             >

@@ -278,7 +278,7 @@ export function StationsPage() {
       if (window.confirm('You need to login to start charging. Would you like to login now?')) {
         // Store the station ID to return after login
         sessionStorage.setItem('returnToStation', station.chargePointId);
-        navigate('/login/user');
+        navigate('/login');
       }
     } else {
       // For all authenticated users, show the wallet-based charging dialog
@@ -798,7 +798,7 @@ export function StationsPage() {
                     } else {
                       if (window.confirm('You need to login to start charging. Would you like to login now?')) {
                         sessionStorage.setItem('returnToStation', selectedStation?.chargePointId || '');
-                        navigate('/login/user');
+                        navigate('/login');
                       }
                     }
                   }}

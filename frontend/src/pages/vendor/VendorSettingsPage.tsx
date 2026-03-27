@@ -44,12 +44,12 @@ export function VendorSettingsPage() {
         }
       } catch (e) {
         // If parsing fails, redirect to login
-        window.location.href = '/login/admin';
+        window.location.href = '/login';
         return;
       }
     } else {
       // No user logged in, redirect to login
-      window.location.href = '/login/admin';
+      window.location.href = '/login';
       return;
     }
   }, []);

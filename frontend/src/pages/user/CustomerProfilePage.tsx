@@ -104,7 +104,7 @@ export function CustomerProfilePage() {
       setError(null);
       await usersApi.deleteOwnAccount(deletePassword);
       authApi.logout();
-      window.location.href = '/login/user';
+      window.location.href = '/login';
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to delete account');
       setDeleting(false);

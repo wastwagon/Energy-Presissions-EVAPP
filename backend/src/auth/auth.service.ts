@@ -175,9 +175,6 @@ export class AuthService {
     if (user.status !== 'Active') {
       throw new UnauthorizedException('User account is not active');
     }
-    if (user.accountType !== 'Customer') {
-      throw new UnauthorizedException('Sign in with Apple is for customers only. Please use the admin login.');
-    }
     const tokenPayload = { sub: user.id, email: user.email, accountType: user.accountType, vendorId: user.vendorId };
     return {
       accessToken: this.jwtService.sign(tokenPayload),
@@ -230,9 +227,6 @@ export class AuthService {
     }
     if (user.status !== 'Active') {
       throw new UnauthorizedException('User account is not active');
-    }
-    if (user.accountType !== 'Customer') {
-      throw new UnauthorizedException('Sign in with Google is for customers only. Please use the admin login.');
     }
     const tokenPayload = { sub: user.id, email: user.email, accountType: user.accountType, vendorId: user.vendorId };
     return {

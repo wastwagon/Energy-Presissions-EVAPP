@@ -54,7 +54,7 @@ export function ForgotPasswordPage() {
         password,
       });
       setInfo(res.message);
-      setTimeout(() => navigate('/login/user', { replace: true }), 1500);
+      setTimeout(() => navigate('/login', { replace: true }), 1500);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "We couldn't update your password. Check the code and try again.");
     } finally {
@@ -141,7 +141,7 @@ export function ForgotPasswordPage() {
           </Collapse>
 
           <Box sx={{ mt: 1.5, textAlign: 'center' }}>
-            <Link component={RouterLink} to="/login/user" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
               Back to sign in
             </Link>
           </Box>
