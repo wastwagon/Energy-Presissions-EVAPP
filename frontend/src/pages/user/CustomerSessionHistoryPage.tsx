@@ -19,6 +19,10 @@ import {
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
+import { getTransactionStatusColor } from '../../utils/statusColors';
 
 export function CustomerSessionHistoryPage() {
   const navigate = useNavigate();
@@ -37,55 +41,20 @@ export function CustomerSessionHistoryPage() {
     try {
       setLoading(true);
       setError(null);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
+      const user = getStoredUser();
+      if (typeof user?.id !== 'number') {
         setError('User not logged in');
         return;
       }
-      const user = JSON.parse(userStr);
       const offset = (page - 1) * limit;
-      const response = await transactionsApi.getAll(limit, offset);
-      // Filter for current user
-      const userTransactions = response.transactions.filter((t) => t.userId === user.id);
-      setTransactions(userTransactions);
+      const response = await transactionsApi.getAll(limit, offset, undefined, undefined, user.id);
+      setTransactions(response.transactions);
       setTotal(response.total);
     } catch (err: any) {
       setError(err.message || 'Failed to load session history');
       console.error('Error loading session history:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const formatCurrency = (amount?: number, currency?: string) => {
-    if (amount === undefined || amount === null) return '-';
-    // Always use GHS for Ghana operations, ignore any other currency values
-    const safeCurrency = 'GHS';
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: safeCurrency,
-    }).format(amount);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'info';
-      case 'Completed':
-        return 'success';
-      case 'Cancelled':
-        return 'warning';
-      case 'Failed':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -100,10 +69,10 @@ export function CustomerSessionHistoryPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Session History
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           View all your past charging sessions
         </Typography>
       </Box>
@@ -145,17 +114,11 @@ export function CustomerSessionHistoryPage() {
                   <TableRow key={tx.id} hover>
                     <TableCell>{tx.transactionId}</TableCell>
                     <TableCell>{tx.chargePointId}</TableCell>
+                    <TableCell>{formatEnergyKwh(tx.totalEnergyKwh)}</TableCell>
+                    <TableCell>{formatDurationMinutes(tx.durationMinutes)}</TableCell>
+                    <TableCell>{formatCurrency(tx.totalCost, 'GHS')}</TableCell>
                     <TableCell>
-                      {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
-                        ? (typeof tx.totalEnergyKwh === 'number' 
-                            ? tx.totalEnergyKwh.toFixed(2)
-                            : parseFloat(String(tx.totalEnergyKwh)).toFixed(2))
-                        : '-'}
-                    </TableCell>
-                    <TableCell>{formatDuration(tx.durationMinutes)}</TableCell>
-                    <TableCell>{formatCurrency(tx.totalCost)}</TableCell>
-                    <TableCell>
-                      <Chip label={tx.status} color={getStatusColor(tx.status) as any} size="small" />
+                      <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" />
                     </TableCell>
                     <TableCell>{new Date(tx.startTime).toLocaleDateString()}</TableCell>
                     <TableCell>

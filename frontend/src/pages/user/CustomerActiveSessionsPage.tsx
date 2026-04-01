@@ -17,6 +17,11 @@ import {
   Card,
   CardContent,
   Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { chargePointsApi } from '../../services/chargePointsApi';
@@ -25,6 +30,10 @@ import { TransactionSummaryDialog } from '../../components/TransactionSummaryDia
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
+import { getTransactionStatusColor } from '../../utils/statusColors';
 
 export function CustomerActiveSessionsPage() {
   const navigate = useNavigate();
@@ -34,6 +43,13 @@ export function CustomerActiveSessionsPage() {
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [completedTransactionId, setCompletedTransactionId] = useState<number | null>(null);
   const [stoppingTransactionId, setStoppingTransactionId] = useState<number | null>(null);
+  const [stopDialogOpen, setStopDialogOpen] = useState(false);
+  const [pendingStopTransaction, setPendingStopTransaction] = useState<Transaction | null>(null);
+
+  const getCurrentUserId = () => {
+    const user = getStoredUser();
+    return typeof user?.id === 'number' ? user.id : null;
+  };
 
   useEffect(() => {
     loadActiveSessions();
@@ -42,17 +58,20 @@ export function CustomerActiveSessionsPage() {
     
     // Listen for transaction stopped events
     const unsubscribeTransactionStopped = websocketService.on('transactionStopped', (event) => {
-      // Check if this transaction belongs to current user
-      const userStr = localStorage.getItem('user');
-      if (userStr && event.data.transactionId) {
-        const user = JSON.parse(userStr);
-        // Reload to check if transaction was for this user
-        loadActiveSessions().then(() => {
-          // Show summary dialog for completed transaction
-          setCompletedTransactionId(event.data.transactionId);
-          setSummaryDialogOpen(true);
-        });
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId || !event.data.transactionId) {
+        return;
       }
+
+      if (event.data.userId && event.data.userId !== currentUserId) {
+        return;
+      }
+
+      loadActiveSessions().then(() => {
+        // Show summary dialog for completed transaction belonging to current user.
+        setCompletedTransactionId(event.data.transactionId);
+        setSummaryDialogOpen(true);
+      });
     });
 
     return () => {
@@ -64,16 +83,14 @@ export function CustomerActiveSessionsPage() {
   const loadActiveSessions = async () => {
     try {
       setError(null);
-      const active = await transactionsApi.getActive();
-      // Filter for current user
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        const userTransactions = active.filter((t) => t.userId === user.id);
-        setTransactions(userTransactions);
-      } else {
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId) {
         setTransactions([]);
+        return;
       }
+
+      const active = await transactionsApi.getActive(undefined, currentUserId);
+      setTransactions(active);
     } catch (err: any) {
       setError(err.message || 'Failed to load active sessions');
       console.error('Error loading active sessions:', err);
@@ -82,34 +99,22 @@ export function CustomerActiveSessionsPage() {
     }
   };
 
-  const formatDuration = (startTime: string) => {
-    const start = new Date(startTime);
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  const handleStopTransaction = (transaction: Transaction) => {
+    setPendingStopTransaction(transaction);
+    setStopDialogOpen(true);
   };
 
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    // Always use GHS for Ghana operations
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount);
-  };
-
-  const handleStopTransaction = async (transaction: Transaction) => {
-    if (!window.confirm(`Are you sure you want to stop charging at ${transaction.chargePointId}?`)) {
-      return;
-    }
-
+  const confirmStopTransaction = async () => {
+    if (!pendingStopTransaction) return;
     try {
-      setStoppingTransactionId(transaction.transactionId);
+      setStoppingTransactionId(pendingStopTransaction.transactionId);
       setError(null);
-      await chargePointsApi.remoteStop(transaction.chargePointId, transaction.transactionId);
+      await chargePointsApi.remoteStop(
+        pendingStopTransaction.chargePointId,
+        pendingStopTransaction.transactionId,
+      );
+      setStopDialogOpen(false);
+      setPendingStopTransaction(null);
       // Reload active sessions after a short delay to allow backend to process
       setTimeout(() => {
         loadActiveSessions();
@@ -133,10 +138,10 @@ export function CustomerActiveSessionsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Active Charging Sessions
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Monitor your current charging sessions in real-time
         </Typography>
       </Box>
@@ -175,7 +180,7 @@ export function CustomerActiveSessionsPage() {
                         Connector {tx.connectorId}
                       </Typography>
                     </Box>
-                    <Chip label={tx.status} color="info" />
+                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} />
                   </Box>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
                     <Grid item xs={6} sm={3}>
@@ -183,7 +188,7 @@ export function CustomerActiveSessionsPage() {
                         Duration
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {formatDuration(tx.startTime)}
+                        {formatElapsedDurationFromStart(tx.startTime)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
@@ -191,11 +196,7 @@ export function CustomerActiveSessionsPage() {
                         Energy
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
-                          ? (typeof tx.totalEnergyKwh === 'number' 
-                              ? tx.totalEnergyKwh.toFixed(2)
-                              : parseFloat(String(tx.totalEnergyKwh)).toFixed(2))
-                          : '-'} kWh
+                        {formatEnergyKwh(tx.totalEnergyKwh)} kWh
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
@@ -203,7 +204,7 @@ export function CustomerActiveSessionsPage() {
                         Cost
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {formatCurrency(tx.totalCost)}
+                        {formatCurrency(tx.totalCost, 'GHS')}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
@@ -252,6 +253,23 @@ export function CustomerActiveSessionsPage() {
           onRefresh={loadActiveSessions}
         />
       )}
+
+      <Dialog open={stopDialogOpen} onClose={() => setStopDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Stop charging session?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingStopTransaction
+              ? `Are you sure you want to stop charging at ${pendingStopTransaction.chargePointId}?`
+              : 'Are you sure you want to stop this charging session?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStopDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmStopTransaction} color="error" variant="contained">
+            Stop Charging
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

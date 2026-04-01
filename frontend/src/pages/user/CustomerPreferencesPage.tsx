@@ -13,6 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 const PREF_KEYS = {
   currency: 'user_pref_currency',
@@ -49,10 +50,10 @@ export function CustomerPreferencesPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Preferences
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Customize your experience
         </Typography>
       </Box>

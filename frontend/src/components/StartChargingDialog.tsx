@@ -17,6 +17,8 @@ import {
 import { StationWithDistance } from '../services/stationsApi';
 import { walletApi } from '../services/walletApi';
 import { chargePointsApi } from '../services/chargePointsApi';
+import { requireStoredUserId } from '../utils/authSession';
+import { formatCurrency } from '../utils/formatters';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -99,8 +101,8 @@ export function StartChargingDialog({
     const balanceToCheck = availableBalance !== null ? availableBalance : walletBalance;
     if (balanceToCheck !== null && amountNum > balanceToCheck) {
       const balanceText = reservedBalance > 0 
-        ? `Available: ${availableBalance?.toFixed(2)} GHS (${reservedBalance.toFixed(2)} GHS reserved)`
-        : `${walletBalance?.toFixed(2)} GHS`;
+        ? `Available: ${formatCurrency(availableBalance, 'GHS')} (${formatCurrency(reservedBalance, 'GHS')} reserved)`
+        : `${formatCurrency(walletBalance, 'GHS')}`;
       setError(`Insufficient available balance. Your ${balanceText}`);
       return;
     }
@@ -114,13 +116,7 @@ export function StartChargingDialog({
       setStarting(true);
       setError(null);
 
-      // Get user ID from localStorage
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        throw new Error('User not logged in');
-      }
-      const user = JSON.parse(userStr);
-      const userId = user.id;
+      const userId = requireStoredUserId();
 
       // Use the first available connector (connectorId 1)
       const connectorId = 1;
@@ -134,14 +130,8 @@ export function StartChargingDialog({
       );
 
       if (result.success) {
-        // Close dialog first
         onClose();
-        // Then refresh stations and show success
         onSuccess();
-        // Show success message after a brief delay to ensure dialog closes
-        setTimeout(() => {
-          alert(result.message || 'Charging session started successfully!');
-        }, 200);
       } else {
         throw new Error(result.message || 'Failed to start charging session');
       }
@@ -206,17 +196,17 @@ export function StartChargingDialog({
                   {loadingBalance ? (
                     <CircularProgress size={16} color="inherit" />
                   ) : (
-                    `GHS ${walletBalance?.toFixed(2) || '0.00'}`
+                    formatCurrency(walletBalance, 'GHS')
                   )}
                 </Typography>
               </Box>
               {reservedBalance > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.75, pt: 0.75, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                   <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Available: GHS {availableBalance?.toFixed(2) || '0.00'}
+                    Available: {formatCurrency(availableBalance, 'GHS')}
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Reserved: GHS {reservedBalance.toFixed(2)}
+                    Reserved: {formatCurrency(reservedBalance, 'GHS')}
                   </Typography>
                 </Box>
               )}

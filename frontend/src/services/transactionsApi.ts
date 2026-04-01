@@ -48,18 +48,26 @@ export const transactionsApi = {
     limit?: number,
     offset?: number,
     chargePointId?: string,
+    vendorId?: number,
+    userId?: number,
   ): Promise<TransactionsResponse> => {
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit.toString());
     if (offset) params.append('offset', offset.toString());
     if (chargePointId) params.append('chargePointId', chargePointId);
+    if (vendorId) params.append('vendorId', vendorId.toString());
+    if (userId) params.append('userId', userId.toString());
 
     const response = await api.get(`/transactions?${params.toString()}`);
     return response.data;
   },
 
-  getActive: async (): Promise<Transaction[]> => {
-    const response = await api.get('/transactions/active');
+  getActive: async (vendorId?: number, userId?: number): Promise<Transaction[]> => {
+    const params = new URLSearchParams();
+    if (vendorId) params.append('vendorId', vendorId.toString());
+    if (userId) params.append('userId', userId.toString());
+    const query = params.toString();
+    const response = await api.get(`/transactions/active${query ? `?${query}` : ''}`);
     return response.data;
   },
 

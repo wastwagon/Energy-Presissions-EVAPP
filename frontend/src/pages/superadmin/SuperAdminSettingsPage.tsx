@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
   TextField,
   MenuItem,
   Switch,
@@ -40,6 +41,8 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import { settingsApi } from '../../services/settingsApi';
 import { tariffsApi } from '../../services/tariffsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredAccountType } from '../../utils/authSession';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,20 +70,6 @@ function SuperAdminSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  // Get user role from localStorage
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUserRole(userData.accountType || 'Customer');
-      } catch (e) {
-        setUserRole('Customer');
-      }
-    }
-  }, []);
 
   // System Settings State
   const [systemSettings, setSystemSettings] = useState<any[]>([]);
@@ -91,6 +80,8 @@ function SuperAdminSettingsPage() {
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [tariffDialogOpen, setTariffDialogOpen] = useState(false);
   const [editingTariff, setEditingTariff] = useState<any | null>(null);
+  const [deleteTariffDialogOpen, setDeleteTariffDialogOpen] = useState(false);
+  const [pendingDeleteTariffId, setPendingDeleteTariffId] = useState<number | null>(null);
   const [tariffForm, setTariffForm] = useState({
     name: '',
     description: '',
@@ -226,15 +217,19 @@ function SuperAdminSettingsPage() {
     setTariffDialogOpen(true);
   };
 
-  const handleDeleteTariff = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this tariff?')) {
-      return;
-    }
+  const handleDeleteTariff = (id: number) => {
+    setPendingDeleteTariffId(id);
+    setDeleteTariffDialogOpen(true);
+  };
 
+  const confirmDeleteTariff = async () => {
+    if (pendingDeleteTariffId == null) return;
     try {
       setError(null);
-      await tariffsApi.delete(id);
+      await tariffsApi.delete(pendingDeleteTariffId);
       setSuccess('Tariff deleted successfully');
+      setDeleteTariffDialogOpen(false);
+      setPendingDeleteTariffId(null);
       loadData();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -282,8 +277,7 @@ function SuperAdminSettingsPage() {
     return systemSettings.filter((s: any) => s.category === category);
   };
 
-  // Check if user is SuperAdmin
-  const isSuperAdmin = userRole === 'SuperAdmin';
+  const isSuperAdmin = getStoredAccountType() === 'SuperAdmin';
   
   // This page is only accessible to SuperAdmin (layout handles redirect)
   if (!isSuperAdmin) {
@@ -299,9 +293,14 @@ function SuperAdminSettingsPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h4" component="h1">
-          {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
-        </Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Platform Settings
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Configure system behavior, tariffs, branding, and payment settings.
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -368,7 +367,7 @@ function SuperAdminSettingsPage() {
                               type={setting.dataType === 'number' ? 'number' : 'text'}
                               value={settingValue}
                               onChange={(e) => setSettingValue(e.target.value)}
-                              onKeyPress={(e) => {
+                              onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   handleSaveSetting(setting.key);
                                 }
@@ -390,6 +389,7 @@ function SuperAdminSettingsPage() {
                               size="small"
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
+                              aria-label={`Save setting ${setting.key}`}
                             >
                               <SaveIcon fontSize="small" />
                             </IconButton>
@@ -400,6 +400,7 @@ function SuperAdminSettingsPage() {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');
                               }}
+                              aria-label={`Edit setting ${setting.key}`}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -448,7 +449,7 @@ function SuperAdminSettingsPage() {
                                 type={setting.dataType === 'number' ? 'number' : setting.key.includes('password') ? 'password' : 'text'}
                                 value={settingValue}
                                 onChange={(e) => setSettingValue(e.target.value)}
-                                onKeyPress={(e) => {
+                                onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     handleSaveSetting(setting.key);
                                   }
@@ -479,6 +480,7 @@ function SuperAdminSettingsPage() {
                               size="small"
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
+                              aria-label={`Save setting ${setting.key}`}
                             >
                               <SaveIcon fontSize="small" />
                             </IconButton>
@@ -489,6 +491,7 @@ function SuperAdminSettingsPage() {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');
                               }}
+                              aria-label={`Edit setting ${setting.key}`}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -597,6 +600,7 @@ function SuperAdminSettingsPage() {
                             size="small"
                             onClick={() => handleEditTariff(tariff)}
                             color="primary"
+                            aria-label={`Edit tariff ${tariff.name}`}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -604,6 +608,7 @@ function SuperAdminSettingsPage() {
                             size="small"
                             onClick={() => handleDeleteTariff(tariff.id)}
                             color="error"
+                            aria-label={`Delete tariff ${tariff.name}`}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -723,6 +728,26 @@ function SuperAdminSettingsPage() {
               </Button>
             </DialogActions>
           </Dialog>
+
+          <Dialog
+            open={deleteTariffDialogOpen}
+            onClose={() => setDeleteTariffDialogOpen(false)}
+            fullWidth
+            maxWidth="xs"
+          >
+            <DialogTitle>Delete tariff?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteTariffDialogOpen(false)}>Cancel</Button>
+              <Button onClick={confirmDeleteTariff} color="error" variant="contained">
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
         </TabPanel>
 
         {/* CMS & Branding Tab - Only for SuperAdmin */}
@@ -794,6 +819,7 @@ function SuperAdminSettingsPage() {
                 startIcon={<SaveIcon />}
                 onClick={handleSaveBranding}
                 size="large"
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
                 Save Branding Settings
               </Button>
@@ -840,7 +866,7 @@ function SuperAdminSettingsPage() {
                               fullWidth
                               value={settingValue}
                               onChange={(e) => setSettingValue(e.target.value)}
-                              onKeyPress={(e) => {
+                              onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   handleSaveSetting(setting.key);
                                 }
@@ -872,6 +898,7 @@ function SuperAdminSettingsPage() {
                               size="small"
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
+                              aria-label={`Save setting ${setting.key}`}
                             >
                               <SaveIcon fontSize="small" />
                             </IconButton>
@@ -882,6 +909,7 @@ function SuperAdminSettingsPage() {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');
                               }}
+                              aria-label={`Edit setting ${setting.key}`}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>

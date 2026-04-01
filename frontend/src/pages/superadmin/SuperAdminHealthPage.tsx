@@ -15,6 +15,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { healthApi } from '../../services/healthApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 export function SuperAdminHealthPage() {
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
@@ -48,16 +49,16 @@ export function SuperAdminHealthPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             System Health
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Monitor API and service status
           </Typography>
         </Box>
-        <Button startIcon={<RefreshIcon />} onClick={loadHealth}>
+        <Button startIcon={<RefreshIcon />} onClick={loadHealth} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Refresh
         </Button>
       </Box>

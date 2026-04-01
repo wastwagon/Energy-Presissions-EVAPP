@@ -27,6 +27,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import IconButton from '@mui/material/IconButton';
 import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatistics } from '../../services/connectionLogsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
 
 export function SuperAdminConnectionLogsPage() {
   const [logs, setLogs] = useState<ConnectionLog[]>([]);
@@ -92,32 +94,6 @@ export function SuperAdminConnectionLogsPage() {
     }
   };
 
-  const getEventTypeColor = (eventType: string) => {
-    switch (eventType) {
-      case 'connection_success':
-        return 'success';
-      case 'connection_failed':
-      case 'error':
-        return 'error';
-      case 'connection_attempt':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'success':
-        return 'success';
-      case 'failed':
-      case 'error':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
   if (loading && logs.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -129,10 +105,10 @@ export function SuperAdminConnectionLogsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Connection Logs
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Monitor and debug charge point connections
         </Typography>
       </Box>
@@ -172,7 +148,7 @@ export function SuperAdminConnectionLogsPage() {
             placeholder="Search by charge point ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setPage(1); // Reset to first page when searching
                 loadData();
@@ -184,6 +160,21 @@ export function SuperAdminConnectionLogsPage() {
                   <SearchIcon />
                 </InputAdornment>
               ),
+              endAdornment: searchTerm ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPage(1);
+                      loadData();
+                    }}
+                    aria-label="Clear connection log search"
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
           />
           <FormControl sx={{ minWidth: 200 }}>
@@ -236,7 +227,7 @@ export function SuperAdminConnectionLogsPage() {
                   <TableCell>
                     <Chip
                       label={log.eventType.replace('_', ' ')}
-                      color={getEventTypeColor(log.eventType) as any}
+                      color={getConnectionEventColor(log.eventType)}
                       size="small"
                     />
                   </TableCell>
@@ -244,7 +235,7 @@ export function SuperAdminConnectionLogsPage() {
                     {log.status && (
                       <Chip
                         label={log.status}
-                        color={getStatusColor(log.status) as any}
+                        color={getConnectionStatusColor(log.status)}
                         size="small"
                       />
                     )}

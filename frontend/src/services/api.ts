@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearSession } from '../utils/authSession';
 
 // Use environment variable or default to NGINX proxy URL
 // When running in browser, use relative URL to go through NGINX proxy
@@ -81,12 +82,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const loginPath = '/login';
       
-      // Clear auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('currentVendorId');
-      localStorage.removeItem('currentVendorName');
-      localStorage.removeItem('isImpersonating');
+      clearSession();
       
       // Only redirect if not already on a login page
       const currentPath = window.location.pathname;

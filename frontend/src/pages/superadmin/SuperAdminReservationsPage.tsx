@@ -22,6 +22,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { reservationsApi, Reservation } from '../../services/reservationsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 export function SuperAdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -74,16 +75,16 @@ export function SuperAdminReservationsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             Active Reservations
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             View and manage connector reservations
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             size="small"
             placeholder="Filter by charge point"
@@ -96,8 +97,9 @@ export function SuperAdminReservationsPage() {
                 </InputAdornment>
               ),
             }}
+            sx={{ width: { xs: '100%', sm: 260 } }}
           />
-          <Button startIcon={<RefreshIcon />} onClick={loadReservations}>
+          <Button startIcon={<RefreshIcon />} onClick={loadReservations} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Refresh
           </Button>
         </Box>
@@ -149,6 +151,7 @@ export function SuperAdminReservationsPage() {
                             color="error"
                             onClick={() => handleCancel(r)}
                             disabled={cancellingId === rid}
+                            aria-label={`Cancel reservation ${rid} for ${r.chargePointId}`}
                           >
                             <CancelIcon />
                           </IconButton>

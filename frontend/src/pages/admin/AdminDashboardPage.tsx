@@ -8,10 +8,10 @@ import PeopleIcon from '@mui/icons-material/People';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
-import { websocketService } from '../../services/websocket';
+import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
 import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
 import {
   jampackKpiCardBaseSx,
@@ -19,76 +19,15 @@ import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
 } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUserRole(userData.accountType || 'Customer');
-        
-        // Redirect if not Admin or SuperAdmin
-        if (userData.accountType !== 'Admin' && userData.accountType !== 'SuperAdmin') {
-            if (userData.accountType === 'Customer') {
-              window.location.href = '/user/dashboard';
-            } else {
-            window.location.href = '/login';
-          }
-        }
-      } catch (e) {
-        window.location.href = '/login';
-      }
-    } else {
-      window.location.href = '/login';
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-    
-    // Set up WebSocket listeners for real-time updates
-    const unsubscribeTransactionStarted = websocketService.on('transactionStarted', () => {
-      // Reload stats when transaction starts
-      loadStats();
-    });
-
-    const unsubscribeTransactionStopped = websocketService.on('transactionStopped', (event) => {
-      // Reload stats when transaction stops (updates revenue, active sessions)
-      console.log('Transaction stopped event received:', event);
-      loadStats();
-    });
-
-    const unsubscribeChargePointStatus = websocketService.on('chargePointStatus', () => {
-      // Reload stats when charge point status changes
-      loadStats();
-    });
-
-    const unsubscribeDashboardStats = websocketService.on('dashboardStatsUpdate', (event) => {
-      // Update stats in real-time if for this vendor
-      console.log('Dashboard stats update received:', event);
-      const vendorId = localStorage.getItem('currentVendorId');
-      if (!vendorId || event.data.vendorId?.toString() === vendorId) {
-        loadStats();
-      }
-    });
-
-    // Cleanup
-    return () => {
-      unsubscribeTransactionStarted();
-      unsubscribeTransactionStopped();
-      unsubscribeChargePointStatus();
-      unsubscribeDashboardStats();
-    };
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -100,7 +39,21 @@ export function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useDashboardRealtime(loadStats, 'admin');
+
+  const createKeyboardNavHandler =
+    (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate(path);
+      }
+    };
 
   if (loading) {
     return (
@@ -155,6 +108,10 @@ export function AdminDashboardPage() {
               elevation={0}
               sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx, { cursor: 'pointer' }]}
               onClick={() => navigate('/admin/ops/devices')}
+              role="button"
+              tabIndex={0}
+              aria-label="Open devices"
+              onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
             >
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -186,6 +143,10 @@ export function AdminDashboardPage() {
                 },
               ]}
               onClick={() => navigate('/admin/ops/sessions')}
+              role="button"
+              tabIndex={0}
+              aria-label="Open sessions"
+              onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
             >
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -236,7 +197,7 @@ export function AdminDashboardPage() {
                         fontSize: { xs: '1.2rem', sm: '1.625rem', md: '2.125rem' },
                       }}
                     >
-                      {stats.overview.totalRevenue ? `GHS ${stats.overview.totalRevenue.toLocaleString()}` : 'GHS 0'}
+                      {formatCurrency(stats.overview.totalRevenue ?? 0, 'GHS')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Total Revenue
@@ -252,7 +213,15 @@ export function AdminDashboardPage() {
 
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('primary')} onClick={() => navigate('/admin/ops')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('primary')}
+            onClick={() => navigate('/admin/ops')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open operations"
+            onKeyDown={createKeyboardNavHandler('/admin/ops')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="primary">
@@ -272,7 +241,15 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/admin/ops/sessions')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('info')}
+            onClick={() => navigate('/admin/ops/sessions')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open sessions"
+            onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
@@ -292,7 +269,15 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('success')} onClick={() => navigate('/admin/ops/devices')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('success')}
+            onClick={() => navigate('/admin/ops/devices')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open devices"
+            onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="success">
@@ -312,7 +297,15 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/vendor')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('secondary')}
+            onClick={() => navigate('/vendor')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open vendor settings"
+            onKeyDown={createKeyboardNavHandler('/vendor')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
@@ -332,7 +325,15 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/admin/wallets')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('info')}
+            onClick={() => navigate('/admin/wallets')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open wallets"
+            onKeyDown={createKeyboardNavHandler('/admin/wallets')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">

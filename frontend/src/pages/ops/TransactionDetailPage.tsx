@@ -27,6 +27,10 @@ import { transactionsApi, Transaction, MeterSample } from '../../services/transa
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { paymentsApi } from '../../services/paymentsApi';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { requireStoredUserId } from '../../utils/authSession';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
+import { getTransactionStatusColor } from '../../utils/statusColors';
 
 export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,37 +70,6 @@ export function TransactionDetailPage() {
     }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    // Always use GHS for Ghana operations
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'info';
-      case 'Completed':
-        return 'success';
-      case 'Cancelled':
-        return 'warning';
-      case 'Failed':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -118,17 +91,26 @@ export function TransactionDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mr: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(`${opsBase}/sessions`)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Back
         </Button>
-        <Typography variant="h4" component="h1">
-          Transaction #{transaction.transactionId}
-        </Typography>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Transaction #{transaction.transactionId}
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Session timeline, meter samples, and payment handling.
+          </Typography>
+        </Box>
         <Chip
           label={transaction.status}
-          color={getStatusColor(transaction.status) as any}
-          sx={{ ml: 2 }}
+          color={getTransactionStatusColor(transaction.status)}
+          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Box>
 
@@ -196,7 +178,7 @@ export function TransactionDetailPage() {
                     Duration
                   </Typography>
                   <Typography variant="body1">
-                    {formatDuration(transaction.durationMinutes)}
+                    {formatDurationMinutes(transaction.durationMinutes)}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
@@ -205,7 +187,7 @@ export function TransactionDetailPage() {
                   </Typography>
                   <Chip
                     label={transaction.status}
-                    color={getStatusColor(transaction.status) as any}
+                    color={getTransactionStatusColor(transaction.status)}
                     size="small"
                   />
                 </Grid>
@@ -241,11 +223,7 @@ export function TransactionDetailPage() {
                     Energy Consumed
                   </Typography>
                   <Typography variant="h6">
-                    {transaction.totalEnergyKwh !== undefined && transaction.totalEnergyKwh !== null
-                      ? `${typeof transaction.totalEnergyKwh === 'number' 
-                          ? transaction.totalEnergyKwh.toFixed(3)
-                          : parseFloat(String(transaction.totalEnergyKwh)).toFixed(3)} kWh`
-                      : '-'}
+                    {`${formatEnergyKwh(transaction.totalEnergyKwh, 3)} kWh`}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
@@ -253,7 +231,7 @@ export function TransactionDetailPage() {
                     Total Cost
                   </Typography>
                   <Typography variant="h6" color="primary">
-                    {formatCurrency(transaction.totalCost)}
+                    {formatCurrency(transaction.totalCost, 'GHS')}
                   </Typography>
                   {transaction.status === 'Completed' && transaction.totalCost && (
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -368,7 +346,7 @@ export function TransactionDetailPage() {
               InputProps={{
                 startAdornment: <Typography sx={{ mr: 1 }}>GHS</Typography>,
               }}
-              helperText={`Transaction total: GHS ${transaction.totalCost?.toFixed(2) || '0.00'}`}
+              helperText={`Transaction total: ${formatCurrency(transaction.totalCost ?? 0, 'GHS')}`}
             />
             <TextField
               fullWidth
@@ -392,17 +370,12 @@ export function TransactionDetailPage() {
                 setProcessingCash(true);
                 setError(null);
                 
-                // Get current user ID (admin processing the payment)
-                const userStr = localStorage.getItem('user');
-                if (!userStr) {
-                  throw new Error('User not logged in');
-                }
-                const user = JSON.parse(userStr);
+                const userId = requireStoredUserId();
                 
                 await paymentsApi.processCashPayment(
                   transaction.transactionId,
                   cashAmount,
-                  user.id,
+                  userId,
                   cashNotes,
                 );
                 

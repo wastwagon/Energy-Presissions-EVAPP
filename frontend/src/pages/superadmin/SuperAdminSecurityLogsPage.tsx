@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 export function SuperAdminSecurityLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -48,10 +49,10 @@ export function SuperAdminSecurityLogsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Security & Logs
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Audit trail of system activity
         </Typography>
       </Box>

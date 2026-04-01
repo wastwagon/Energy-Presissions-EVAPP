@@ -52,6 +52,19 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const resolvePostLoginPath = useCallback(
+    (accountType: string) => {
+      const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+      const returnToStationId = sessionStorage.getItem('returnToStation');
+      const targetPath = redirectAfterLogin(accountType, { fromPath, returnToStationId });
+      if (returnToStationId) {
+        sessionStorage.removeItem('returnToStation');
+      }
+      return targetPath;
+    },
+    [location.state],
+  );
+
   useEffect(() => {
     const emailParam = searchParams.get('email');
     const phoneParam = searchParams.get('phone');
@@ -79,7 +92,7 @@ export function LoginPage() {
       const response = await authApi.login(emailOrPhone, password);
       localStorage.setItem('token', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response.user));
-      redirectAfterLogin(response.user.accountType);
+      navigate(resolvePostLoginPath(response.user.accountType), { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -94,13 +107,13 @@ export function LoginPage() {
       const data = await authApi.googleSignIn(credential);
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      redirectAfterLogin(data.user.accountType);
+      navigate(resolvePostLoginPath(data.user.accountType), { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Sign in with Google failed. Please try email/password.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate, resolvePostLoginPath]);
 
   useEffect(() => {
     if (!googleClientId) return;
@@ -166,7 +179,7 @@ export function LoginPage() {
       const data = await authApi.appleSignIn(idToken, response.user);
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      redirectAfterLogin(data.user.accountType);
+      navigate(resolvePostLoginPath(data.user.accountType), { replace: true });
     } catch (err: any) {
       setError(err.message || 'Sign in with Apple failed. Please try email/password.');
     } finally {

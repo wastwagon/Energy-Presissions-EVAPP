@@ -18,6 +18,9 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import BoltIcon from '@mui/icons-material/Bolt';
 import { stationsApi, StationDetails } from '../services/stationsApi';
 import { StartChargingDialog } from '../components/StartChargingDialog';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
+import { formatCurrency } from '../utils/formatters';
+import { getChargePointStatusColor } from '../utils/statusColors';
 
 export function StationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,21 +44,6 @@ export function StationDetailPage() {
       setError(err.message || 'Failed to load station');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return 'success';
-      case 'Charging':
-      case 'Preparing':
-      case 'Finishing':
-        return 'info';
-      case 'Offline':
-        return 'default';
-      default:
-        return 'warning';
     }
   };
 
@@ -87,14 +75,23 @@ export function StationDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/stations')}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/stations')}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Back
         </Button>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-          {station.locationName || station.chargePointId}
-        </Typography>
-        <Chip label={station.status} color={getStatusColor(station.status) as any} />
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            {station.locationName || station.chargePointId}
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Station location, connector availability, and charging price details.
+          </Typography>
+        </Box>
+        <Chip label={station.status} color={getChargePointStatusColor(station.status)} />
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -148,7 +145,7 @@ export function StationDetailPage() {
                     </Typography>
                   )}
                 </Box>
-                <Chip label={conn.status} size="small" color={getStatusColor(conn.status) as any} />
+                <Chip label={conn.status} size="small" color={getChargePointStatusColor(conn.status)} />
               </Box>
             ))}
           </CardContent>
@@ -161,11 +158,7 @@ export function StationDetailPage() {
                 Pricing
               </Typography>
               <Typography variant="h5" color="primary">
-                {station.currency || 'GHS'}{' '}
-                {typeof station.pricePerKwh === 'number'
-                  ? station.pricePerKwh.toFixed(2)
-                  : parseFloat(String(station.pricePerKwh)).toFixed(2)}{' '}
-                / kWh
+                {formatCurrency(Number(station.pricePerKwh), station.currency || 'GHS')} / kWh
               </Typography>
             </CardContent>
           </Card>

@@ -11,10 +11,10 @@ import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
-import { websocketService } from '../../services/websocket';
+import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
 import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
 import {
   jampackKpiCardBaseSx,
@@ -22,75 +22,15 @@ import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
 } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
 
 export function SuperAdminDashboardPage() {
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUserRole(userData.accountType || 'Customer');
-        
-        // Redirect if not SuperAdmin
-        if (userData.accountType !== 'SuperAdmin') {
-          if (userData.accountType === 'Admin') {
-            window.location.href = '/admin/dashboard';
-          } else if (userData.accountType === 'Customer') {
-            window.location.href = '/user/dashboard';
-          } else {
-            window.location.href = '/login';
-          }
-        }
-      } catch (e) {
-        window.location.href = '/login';
-      }
-    } else {
-      window.location.href = '/login';
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-    
-    // Set up WebSocket listeners for real-time updates
-    const unsubscribeTransactionStarted = websocketService.on('transactionStarted', () => {
-      // Reload stats when transaction starts
-      loadStats();
-    });
-
-    const unsubscribeTransactionStopped = websocketService.on('transactionStopped', (event) => {
-      // Reload stats when transaction stops (updates revenue, active sessions)
-      console.log('Transaction stopped event received:', event);
-      loadStats();
-    });
-
-    const unsubscribeChargePointStatus = websocketService.on('chargePointStatus', () => {
-      // Reload stats when charge point status changes
-      loadStats();
-    });
-
-    const unsubscribeDashboardStats = websocketService.on('dashboardStatsUpdate', (event) => {
-      // Update stats in real-time (SuperAdmin sees all vendors)
-      console.log('Dashboard stats update received:', event);
-      loadStats();
-    });
-
-    // Cleanup
-    return () => {
-      unsubscribeTransactionStarted();
-      unsubscribeTransactionStopped();
-      unsubscribeChargePointStatus();
-      unsubscribeDashboardStats();
-    };
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -102,7 +42,21 @@ export function SuperAdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useDashboardRealtime(loadStats, 'superadmin');
+
+  const createKeyboardNavHandler =
+    (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate(path);
+      }
+    };
 
   if (loading) {
     return (
@@ -221,7 +175,7 @@ export function SuperAdminDashboardPage() {
                         fontSize: { xs: '1.2rem', sm: '1.625rem', md: '2.125rem' },
                       }}
                     >
-                      {stats.overview.totalRevenue ? `GHS ${stats.overview.totalRevenue.toLocaleString()}` : 'GHS 0'}
+                      {formatCurrency(stats.overview.totalRevenue ?? 0, 'GHS')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Total Revenue
@@ -313,7 +267,15 @@ export function SuperAdminDashboardPage() {
 
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('primary')} onClick={() => navigate('/superadmin/ops')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('primary')}
+            onClick={() => navigate('/superadmin/ops')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open operations"
+            onKeyDown={createKeyboardNavHandler('/superadmin/ops')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="primary">
@@ -333,7 +295,15 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/superadmin/ops/sessions')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('info')}
+            onClick={() => navigate('/superadmin/ops/sessions')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open sessions"
+            onKeyDown={createKeyboardNavHandler('/superadmin/ops/sessions')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
@@ -353,7 +323,15 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('success')} onClick={() => navigate('/superadmin/ops/devices')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('success')}
+            onClick={() => navigate('/superadmin/ops/devices')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open devices"
+            onKeyDown={createKeyboardNavHandler('/superadmin/ops/devices')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="success">
@@ -373,7 +351,15 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/superadmin/settings')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('secondary')}
+            onClick={() => navigate('/superadmin/settings')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open system settings"
+            onKeyDown={createKeyboardNavHandler('/superadmin/settings')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
@@ -393,7 +379,15 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('secondary')} onClick={() => navigate('/superadmin/vendors')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('secondary')}
+            onClick={() => navigate('/superadmin/vendors')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open vendors"
+            onKeyDown={createKeyboardNavHandler('/superadmin/vendors')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
@@ -413,7 +407,15 @@ export function SuperAdminDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card elevation={0} sx={premiumNavCardSx('info')} onClick={() => navigate('/superadmin/wallets')}>
+          <Card
+            elevation={0}
+            sx={premiumNavCardSx('info')}
+            onClick={() => navigate('/superadmin/wallets')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open wallets"
+            onKeyDown={createKeyboardNavHandler('/superadmin/wallets')}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">

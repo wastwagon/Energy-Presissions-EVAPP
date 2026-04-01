@@ -18,6 +18,7 @@ export class TransactionsService {
     offset: number = 0,
     chargePointId?: string,
     vendorId?: number,
+    userId?: number,
   ): Promise<{ transactions: Transaction[]; total: number }> {
     const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
 
@@ -30,6 +31,10 @@ export class TransactionsService {
       queryBuilder
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
         .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    if (userId) {
+      queryBuilder.andWhere('tx.user_id = :userId', { userId });
     }
 
     queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
@@ -51,7 +56,7 @@ export class TransactionsService {
     return transaction;
   }
 
-  async findActive(vendorId?: number): Promise<Transaction[]> {
+  async findActive(vendorId?: number, userId?: number): Promise<Transaction[]> {
     const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
 
     queryBuilder.where('tx.status = :status', { status: 'Active' });
@@ -61,6 +66,10 @@ export class TransactionsService {
       queryBuilder
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
         .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    if (userId) {
+      queryBuilder.andWhere('tx.user_id = :userId', { userId });
     }
 
     queryBuilder.orderBy('tx.start_time', 'DESC');

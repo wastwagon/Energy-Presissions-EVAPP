@@ -16,7 +16,7 @@ export function DisabledPage() {
       <Paper sx={{ p: 4, maxWidth: 600, width: '100%' }}>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <BlockIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }} gutterBottom>
             Account Disabled
           </Typography>
         </Box>

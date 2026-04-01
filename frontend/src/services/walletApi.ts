@@ -1,4 +1,5 @@
 import { api } from './api';
+import { requireStoredUserId } from '../utils/authSession';
 
 export interface WalletBalance {
   balance: number;
@@ -35,12 +36,7 @@ export const walletApi = {
   getBalance: async (userId?: number): Promise<WalletBalance> => {
     // If userId not provided, get from current user
     if (!userId) {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        throw new Error('User not logged in');
-      }
-      const user = JSON.parse(userStr);
-      userId = user.id;
+      userId = requireStoredUserId();
     }
     const response = await api.get(`/wallet/balance/${userId}`);
     return response.data;
@@ -52,12 +48,7 @@ export const walletApi = {
   getAvailableBalance: async (userId?: number): Promise<{ available: number; reserved: number; total: number; currency: string }> => {
     // If userId not provided, get from current user
     if (!userId) {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        throw new Error('User not logged in');
-      }
-      const user = JSON.parse(userStr);
-      userId = user.id;
+      userId = requireStoredUserId();
     }
     const response = await api.get(`/wallet/available-balance/${userId}`);
     return response.data;

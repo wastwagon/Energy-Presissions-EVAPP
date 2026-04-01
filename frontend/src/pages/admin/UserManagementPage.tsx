@@ -31,6 +31,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { usersApi, User } from '../../services/usersApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
+import { getUserAccountStatusColor } from '../../utils/statusColors';
 
 export function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -199,19 +202,6 @@ export function UserManagementPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'success';
-      case 'Inactive':
-        return 'default';
-      case 'Suspended':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
   const getAccountTypeColor = (type: string) => {
     switch (type) {
       case 'SuperAdmin':
@@ -237,14 +227,20 @@ export function UserManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h4" component="h1">
-          User Management
-        </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            User Management
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Manage user accounts, roles, and account status.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleCreate}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
         >
           Create User
         </Button>
@@ -276,13 +272,13 @@ export function UserManagementPage() {
             ),
             endAdornment: searchTerm && (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchTerm('')}>
+                <IconButton size="small" onClick={() => setSearchTerm('')} aria-label="Clear user search">
                   <ClearIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{ minWidth: 300 }}
+          sx={{ width: { xs: '100%', sm: 320 }, maxWidth: '100%' }}
         />
       </Box>
 
@@ -330,16 +326,15 @@ export function UserManagementPage() {
                     <TableCell>
                       <Chip
                         label={user.status}
-                        color={getStatusColor(user.status) as any}
+                        color={getUserAccountStatusColor(user.status)}
                         size="small"
                       />
                     </TableCell>
                     <TableCell>
-                      GHS {user.balance != null 
-                        ? (typeof user.balance === 'number' 
-                          ? user.balance.toFixed(2) 
-                          : parseFloat(String(user.balance)).toFixed(2))
-                        : '0.00'}
+                      {formatCurrency(
+                        user.balance != null ? Number(user.balance) : 0,
+                        'GHS',
+                      )}
                     </TableCell>
                     <TableCell>
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -351,6 +346,7 @@ export function UserManagementPage() {
                             size="small"
                             onClick={() => handleChangeRole(user)}
                             color="secondary"
+                            aria-label={`Change role for ${user.email}`}
                           >
                             <AdminPanelSettingsIcon fontSize="small" />
                           </IconButton>
@@ -360,6 +356,7 @@ export function UserManagementPage() {
                             size="small"
                             onClick={() => handleEdit(user)}
                             color="primary"
+                            aria-label={`Edit user ${user.email}`}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -370,6 +367,7 @@ export function UserManagementPage() {
                             onClick={() => handleDelete(user)}
                             color="error"
                             disabled={user.accountType === 'SuperAdmin'}
+                            aria-label={`Delete user ${user.email}`}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>

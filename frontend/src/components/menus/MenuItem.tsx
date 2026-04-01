@@ -11,7 +11,8 @@ import {
   alpha,
 } from '@mui/material';
 import { MenuItem as MenuItemType } from '../../config/menu.config';
-import { brandColors } from '../../theme';
+import { getStoredAccountType } from '../../utils/authSession';
+import { getRoleAccentColor } from '../../utils/roleTheme';
 
 interface MenuItemProps {
   item: MenuItemType;
@@ -44,24 +45,7 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
   const { pathname, search } = useLocation();
   const isActive = getMenuItemActive(item.path, pathname, search, item.activeOnlyWithoutSearch);
 
-  // Get theme color from localStorage or use default
-  const getThemeColor = () => {
-    if (themeColor) return themeColor;
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        if (userData.accountType === 'SuperAdmin') return brandColors.primaryDark;
-        if (userData.accountType === 'Admin') return brandColors.secondary;
-        return brandColors.primary;
-      } catch (e) {
-        return brandColors.primary;
-      }
-    }
-    return brandColors.primary;
-  };
-
-  const primaryColor = getThemeColor();
+  const primaryColor = themeColor ?? getRoleAccentColor(getStoredAccountType());
 
   if (item.disabled) {
     return (
@@ -204,7 +188,7 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
             ml: 1.5,
             color: 'text.disabled',
             fontSize: '0.7rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'inherit',
             backgroundColor: alpha('#000', 0.05),
             px: 1,
             py: 0.25,

@@ -38,6 +38,9 @@ import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
+import { getPaymentStatusColor, getTransactionStatusColor } from '../../utils/statusColors';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,25 +75,7 @@ export function CustomerDashboardPage() {
 
   // Load user once on mount
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        
-        // Verify this is a Customer user - redirect if not
-        if (userData.accountType !== 'Customer' && userData.accountType !== 'WalkIn') {
-          if (userData.accountType === 'SuperAdmin') {
-            window.location.href = '/superadmin/dashboard';
-          } else if (userData.accountType === 'Admin') {
-            window.location.href = '/admin/dashboard';
-          }
-          return;
-        }
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
-    }
+    setUser(getStoredUser());
   }, []); // Only run once on mount
 
   // Load dashboard data and set up WebSocket listeners
@@ -168,13 +153,17 @@ export function CustomerDashboardPage() {
 
       // Load recent transactions
       try {
-        const txsResponse = await transactionsApi.getAll(10, 0);
-        if (txsResponse && txsResponse.transactions) {
-          setTransactions(txsResponse.transactions);
-        } else if (Array.isArray(txsResponse)) {
-          setTransactions(txsResponse);
-        } else {
+        if (typeof user?.id !== 'number') {
           setTransactions([]);
+        } else {
+          const txsResponse = await transactionsApi.getAll(10, 0, undefined, undefined, user.id);
+          if (txsResponse && txsResponse.transactions) {
+            setTransactions(txsResponse.transactions);
+          } else if (Array.isArray(txsResponse)) {
+            setTransactions(txsResponse);
+          } else {
+            setTransactions([]);
+          }
         }
       } catch (err) {
         console.error('Error loading transactions:', err);
@@ -201,6 +190,14 @@ export function CustomerDashboardPage() {
       setLoading(false);
     }
   };
+
+  const handleTransactionRowKeyDown =
+    (transactionId: string | number) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate(`/user/sessions/${transactionId}`);
+      }
+    };
 
   if (loading) {
     return (
@@ -255,9 +252,9 @@ export function CustomerDashboardPage() {
                 </Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 1.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
-                GHS {typeof walletBalance === 'number' && !isNaN(walletBalance) ? walletBalance.toFixed(2) : '0.00'}
+                {formatCurrency(walletBalance, 'GHS')}
               </Typography>
-              <Button size="small" variant="contained" fullWidth onClick={() => navigate('/user/wallet')}>
+              <Button size="small" variant="contained" fullWidth onClick={() => navigate('/user/wallet/top-up')}>
                 Top Up Wallet
               </Button>
             </CardContent>
@@ -393,36 +390,26 @@ export function CustomerDashboardPage() {
                           key={tx.id}
                           sx={{ cursor: 'pointer' }}
                           onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                          onKeyDown={handleTransactionRowKeyDown(tx.transactionId)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Open transaction ${tx.transactionId}`}
                         >
                       <TableCell>{tx.transactionId}</TableCell>
                       <TableCell>{tx.chargePointId}</TableCell>
                       <TableCell>
-                        {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
-                          ? (typeof tx.totalEnergyKwh === 'number' 
-                              ? tx.totalEnergyKwh.toFixed(2)
-                              : parseFloat(String(tx.totalEnergyKwh)).toFixed(2))
-                          : '-'}
+                        {formatEnergyKwh(tx.totalEnergyKwh)}
                       </TableCell>
                       <TableCell>
-                        {tx.durationMinutes ? `${Math.floor(tx.durationMinutes / 60)}h ${tx.durationMinutes % 60}m` : '-'}
+                        {formatDurationMinutes(tx.durationMinutes)}
                       </TableCell>
                       <TableCell>
-                        {tx.totalCost !== undefined && tx.totalCost !== null
-                          ? (typeof tx.totalCost === 'number'
-                              ? `GHS ${tx.totalCost.toFixed(2)}`
-                              : `GHS ${parseFloat(String(tx.totalCost)).toFixed(2)}`)
-                          : '-'}
+                        {formatCurrency(tx.totalCost, 'GHS')}
                       </TableCell>
                       <TableCell>
                         <Chip
                           label={tx.status}
-                          color={
-                            tx.status === 'Completed'
-                              ? 'success'
-                              : tx.status === 'Active'
-                              ? 'info'
-                              : 'default'
-                          }
+                          color={getTransactionStatusColor(tx.status)}
                           size="small"
                         />
                       </TableCell>
@@ -463,17 +450,13 @@ export function CustomerDashboardPage() {
                     <TableRow key={payment.id}>
                       <TableCell>{payment.id}</TableCell>
                       <TableCell>
-                        GHS {payment.amount !== undefined && payment.amount !== null
-                          ? (typeof payment.amount === 'number'
-                              ? payment.amount.toFixed(2)
-                              : parseFloat(String(payment.amount)).toFixed(2))
-                          : '0.00'}
+                        {formatCurrency(payment.amount, payment.currency || 'GHS')}
                       </TableCell>
                       <TableCell>{payment.paymentMethod}</TableCell>
                       <TableCell>
                         <Chip
                           label={payment.status}
-                          color={payment.status === 'Succeeded' ? 'success' : 'default'}
+                          color={getPaymentStatusColor(payment.status)}
                           size="small"
                         />
                       </TableCell>
@@ -700,7 +683,7 @@ export function CustomerDashboardPage() {
                                 color: 'secondary.dark',
                               }}
                             >
-                              GHS {typeof walletBalance === 'number' && !isNaN(walletBalance) ? walletBalance.toFixed(2) : '0.00'}
+                              {formatCurrency(walletBalance, 'GHS')}
                             </Typography>
                             <Button
                               size="small"
@@ -708,7 +691,7 @@ export function CustomerDashboardPage() {
                               color="secondary"
                               startIcon={<EditIcon />}
                               sx={{ mt: 2, width: { xs: '100%', sm: 'auto' } }}
-                              onClick={() => navigate('/user/wallet')}
+                              onClick={() => navigate('/user/wallet/top-up')}
                             >
                               Top Up Wallet
                             </Button>

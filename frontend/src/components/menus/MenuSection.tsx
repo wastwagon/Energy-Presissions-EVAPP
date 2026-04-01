@@ -12,7 +12,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { MenuItem } from './MenuItem';
 import { MenuSection as MenuSectionType } from '../../config/menu.config';
-import { brandColors } from '../../theme';
+import { getStoredAccountType } from '../../utils/authSession';
+import { getRoleAccentColor } from '../../utils/roleTheme';
 
 interface MenuSectionProps {
   section: MenuSectionType;
@@ -35,30 +36,26 @@ export function MenuSectionComponent({
     }
   };
 
-  // Get theme color
-  const getThemeColor = () => {
-    if (themeColor) return themeColor;
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        if (userData.accountType === 'SuperAdmin') return brandColors.primaryDark;
-        if (userData.accountType === 'Admin') return brandColors.secondary;
-        return brandColors.primary;
-      } catch (e) {
-        return brandColors.primary;
-      }
+  const handleToggleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!section.collapsible) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleToggle();
     }
-    return brandColors.primary;
   };
 
-  const primaryColor = getThemeColor();
+  const userAccountType = getStoredAccountType();
+  const primaryColor = themeColor ?? getRoleAccentColor(userAccountType);
+  const userRole = userAccountType || 'Customer';
 
   return (
     <Box sx={{ mb: 1 }}>
       {section.title && (
         <Box
           onClick={handleToggle}
+          onKeyDown={handleToggleKeyDown}
+          role={section.collapsible ? 'button' : undefined}
+          tabIndex={section.collapsible ? 0 : undefined}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -106,6 +103,7 @@ export function MenuSectionComponent({
           {section.collapsible && (
             <IconButton
               size="small"
+              aria-label={expanded ? `Collapse ${section.title ?? 'menu section'}` : `Expand ${section.title ?? 'menu section'}`}
               sx={{
                 minWidth: 44,
                 minHeight: 44,
@@ -127,18 +125,6 @@ export function MenuSectionComponent({
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <List sx={{ pt: 0.5, pb: 0.5, px: 0 }}>
           {section.items.map((item, index) => {
-            // Check if item should be shown based on roles
-            const userStr = localStorage.getItem('user');
-            let userRole = 'Customer';
-            if (userStr) {
-              try {
-                const userData = JSON.parse(userStr);
-                userRole = userData.accountType || 'Customer';
-              } catch (e) {
-                // Use default
-              }
-            }
-
             // Filter by role if specified
             if (item.roles && !item.roles.includes(userRole)) {
               return null;

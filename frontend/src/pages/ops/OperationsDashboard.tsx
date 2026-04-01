@@ -16,6 +16,11 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
@@ -29,6 +34,7 @@ import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getChargePointStatusColor } from '../../utils/statusColors';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -39,6 +45,7 @@ export function OperationsDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [vendorName, setVendorName] = useState<string | null>(null);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is impersonating a vendor
@@ -49,13 +56,24 @@ export function OperationsDashboard() {
   }, []);
 
   const handleExitImpersonation = () => {
-    if (window.confirm('Exit vendor view and return to Super Admin dashboard?')) {
-      localStorage.removeItem('currentVendorId');
-      localStorage.removeItem('currentVendorName');
-      localStorage.removeItem('isImpersonating');
-      window.location.href = '/superadmin/vendors';
-    }
+    setExitDialogOpen(true);
   };
+
+  const confirmExitImpersonation = () => {
+    localStorage.removeItem('currentVendorId');
+    localStorage.removeItem('currentVendorName');
+    localStorage.removeItem('isImpersonating');
+    setExitDialogOpen(false);
+    navigate('/superadmin/vendors');
+  };
+
+  const handleRowKeyDown =
+    (chargePointId: string) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate(`${opsBase}/devices/${chargePointId}`);
+      }
+    };
 
   useEffect(() => {
     loadData();
@@ -114,21 +132,6 @@ export function OperationsDashboard() {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return 'success';
-      case 'Charging':
-        return 'info';
-      case 'Offline':
-        return 'default';
-      case 'Faulted':
-        return 'error';
-      default:
-        return 'warning';
     }
   };
 
@@ -334,6 +337,10 @@ export function OperationsDashboard() {
                       },
                     }}
                     onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
+                    onKeyDown={handleRowKeyDown(cp.chargePointId)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open details for ${cp.chargePointId}`}
                   >
                     <TableCell sx={{ fontWeight: 500 }}>{cp.chargePointId}</TableCell>
                     <TableCell>
@@ -342,7 +349,7 @@ export function OperationsDashboard() {
                     <TableCell>
                       <Chip
                         label={cp.status}
-                        color={getStatusColor(cp.status) as any}
+                        color={getChargePointStatusColor(cp.status)}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
@@ -362,6 +369,20 @@ export function OperationsDashboard() {
           </TableContainer>
         )}
       </Paper>
+      <Dialog open={exitDialogOpen} onClose={() => setExitDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Exit Vendor View?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You will leave this vendor context and return to the Super Admin vendors page.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExitDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmExitImpersonation} color="warning" variant="contained">
+            Exit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

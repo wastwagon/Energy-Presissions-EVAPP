@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
   TextField,
   FormControlLabel,
   Radio,
@@ -25,6 +26,8 @@ import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { paymentMethodsApi, PaymentMethod } from '../../services/paymentMethodsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
 
 export function CustomerPaymentMethodsPage() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
@@ -35,18 +38,24 @@ export function CustomerPaymentMethodsPage() {
   const [newPhone, setNewPhone] = useState('');
   const [newLastFour, setNewLastFour] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     loadMethods();
   }, []);
 
+  const getCurrentUserId = () => {
+    const user = getStoredUser();
+    return typeof user?.id === 'number' ? user.id : null;
+  };
+
   const loadMethods = async () => {
     try {
       setError(null);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      const user = JSON.parse(userStr);
-      const data = await paymentMethodsApi.getByUser(user.id);
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      const data = await paymentMethodsApi.getByUser(userId);
       setMethods(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load payment methods');
@@ -59,10 +68,9 @@ export function CustomerPaymentMethodsPage() {
     try {
       setSaving(true);
       setError(null);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      const user = JSON.parse(userStr);
-      await paymentMethodsApi.create(user.id, {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      await paymentMethodsApi.create(userId, {
         type: newType,
         provider: newType === 'mobile_money' ? 'mtn' : 'paystack',
         phone: newType === 'mobile_money' ? newPhone : undefined,
@@ -82,23 +90,28 @@ export function CustomerPaymentMethodsPage() {
 
   const handleSetDefault = async (id: number) => {
     try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      const user = JSON.parse(userStr);
-      await paymentMethodsApi.setDefault(user.id, id);
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      await paymentMethodsApi.setDefault(userId, id);
       loadMethods();
     } catch (err: any) {
       setError(err.message || 'Failed to set default');
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Remove this payment method?')) return;
+  const handleDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      const user = JSON.parse(userStr);
-      await paymentMethodsApi.delete(user.id, id);
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      await paymentMethodsApi.delete(userId, pendingDeleteId);
+      setDeleteDialogOpen(false);
+      setPendingDeleteId(null);
       loadMethods();
     } catch (err: any) {
       setError(err.message || 'Failed to remove');
@@ -122,15 +135,20 @@ export function CustomerPaymentMethodsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             Payment Methods
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your saved payment methods for quick top-ups
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Add Method
         </Button>
       </Box>
@@ -180,10 +198,11 @@ export function CustomerPaymentMethodsPage() {
                     size="small"
                     onClick={() => handleSetDefault(pm.id)}
                     title={pm.isDefault ? 'Default' : 'Set as default'}
+                    aria-label={pm.isDefault ? 'Default payment method' : 'Set as default payment method'}
                   >
                     {pm.isDefault ? <StarIcon color="primary" /> : <StarBorderIcon />}
                   </IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(pm.id)}>
+                  <IconButton size="small" color="error" onClick={() => handleDelete(pm.id)} aria-label="Remove payment method">
                     <DeleteIcon />
                   </IconButton>
                 </Box>
@@ -226,6 +245,21 @@ export function CustomerPaymentMethodsPage() {
           <Button onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
           <Button variant="contained" onClick={handleAdd} disabled={saving || (newType === 'mobile_money' ? !newPhone.trim() : newLastFour.length !== 4)}>
             {saving ? 'Adding...' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Remove payment method?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This saved payment method will be removed from your account.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Remove
           </Button>
         </DialogActions>
       </Dialog>

@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
   MenuItem,
@@ -23,14 +24,18 @@ import {
   Tooltip,
   Grid,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LoginIcon from '@mui/icons-material/Login';
 import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getVendorStatusColor } from '../../utils/statusColors';
 
 export function VendorManagementPage() {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +44,10 @@ export function VendorManagementPage() {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [loginAsDialogOpen, setLoginAsDialogOpen] = useState(false);
+  const [pendingDeleteVendor, setPendingDeleteVendor] = useState<Vendor | null>(null);
+  const [pendingLoginVendor, setPendingLoginVendor] = useState<Vendor | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [newStatus, setNewStatus] = useState<VendorStatus>('active');
   const [reason, setReason] = useState('');
@@ -133,15 +142,19 @@ export function VendorManagementPage() {
     setEditDialogOpen(true);
   };
 
-  const handleDeleteVendor = async (vendor: Vendor) => {
-    if (!window.confirm(`Are you sure you want to delete vendor "${vendor.name}"? This will disable the vendor.`)) {
-      return;
-    }
+  const handleDeleteVendor = (vendor: Vendor) => {
+    setPendingDeleteVendor(vendor);
+    setDeleteDialogOpen(true);
+  };
 
+  const confirmDeleteVendor = async () => {
+    if (!pendingDeleteVendor) return;
     try {
       setError(null);
-      await vendorApi.delete(vendor.id);
-      setSuccess(`Vendor "${vendor.name}" has been disabled`);
+      await vendorApi.delete(pendingDeleteVendor.id);
+      setSuccess(`Vendor "${pendingDeleteVendor.name}" has been disabled`);
+      setDeleteDialogOpen(false);
+      setPendingDeleteVendor(null);
       loadVendors();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -177,43 +190,34 @@ export function VendorManagementPage() {
     }
   };
 
-  const handleLoginAsVendor = async (vendor: Vendor) => {
-    if (!window.confirm(`Login as vendor "${vendor.name}"? You will be switched to this vendor's account.`)) {
-      return;
-    }
+  const handleLoginAsVendor = (vendor: Vendor) => {
+    setPendingLoginVendor(vendor);
+    setLoginAsDialogOpen(true);
+  };
 
+  const confirmLoginAsVendor = async () => {
+    if (!pendingLoginVendor) return;
     try {
       setError(null);
-      const result = await vendorApi.loginAsVendor(vendor.id);
+      const result = await vendorApi.loginAsVendor(pendingLoginVendor.id);
       
       // Store vendor context in localStorage for the session
-      localStorage.setItem('currentVendorId', vendor.id.toString());
-      localStorage.setItem('currentVendorName', vendor.name);
+      localStorage.setItem('currentVendorId', pendingLoginVendor.id.toString());
+      localStorage.setItem('currentVendorName', pendingLoginVendor.name);
       localStorage.setItem('isImpersonating', 'true');
       
       // Show success message
-      setSuccess(result.message || `Successfully logged in as ${vendor.name}`);
+      setSuccess(result.message || `Successfully logged in as ${pendingLoginVendor.name}`);
+      setLoginAsDialogOpen(false);
+      setPendingLoginVendor(null);
       
       // Redirect to operations dashboard (vendor-specific view) - use current path context
       const basePath = window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
       setTimeout(() => {
-        window.location.href = `${basePath}/ops`;
+        navigate(`${basePath}/ops`);
       }, 1000);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to login as vendor');
-    }
-  };
-
-  const getStatusColor = (status: VendorStatus) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'suspended':
-        return 'warning';
-      case 'disabled':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -228,9 +232,14 @@ export function VendorManagementPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' }, minWidth: 0, flex: '1 1 200px' }}>
-          Vendor Management
-        </Typography>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Vendor Management
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Manage vendor accounts, status, and impersonation access.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -285,7 +294,7 @@ export function VendorManagementPage() {
                     <TableCell>
                       <Chip
                         label={vendor.status}
-                        color={getStatusColor(vendor.status) as any}
+                        color={getVendorStatusColor(vendor.status)}
                         size="small"
                       />
                     </TableCell>
@@ -301,6 +310,7 @@ export function VendorManagementPage() {
                             onClick={() => handleLoginAsVendor(vendor)}
                             color="success"
                             disabled={vendor.status !== 'active'}
+                            aria-label={`Login as vendor ${vendor.name}`}
                           >
                             <LoginIcon fontSize="small" />
                           </IconButton>
@@ -310,6 +320,7 @@ export function VendorManagementPage() {
                             size="small"
                             onClick={() => handleEditVendor(vendor)}
                             color="primary"
+                            aria-label={`Edit vendor ${vendor.name}`}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -319,10 +330,11 @@ export function VendorManagementPage() {
                             size="small"
                             onClick={() => handleStatusChange(vendor)}
                             color="default"
+                            aria-label={`Change status for vendor ${vendor.name}`}
                           >
                             <Chip
                               label={vendor.status}
-                              color={getStatusColor(vendor.status) as any}
+                              color={getVendorStatusColor(vendor.status)}
                               size="small"
                               sx={{ cursor: 'pointer', minWidth: 80 }}
                             />
@@ -333,6 +345,7 @@ export function VendorManagementPage() {
                             size="small"
                             onClick={() => handleViewHistory(vendor)}
                             color="default"
+                            aria-label={`View history for vendor ${vendor.name}`}
                           >
                             <HistoryIcon fontSize="small" />
                           </IconButton>
@@ -342,6 +355,7 @@ export function VendorManagementPage() {
                             size="small"
                             onClick={() => handleDeleteVendor(vendor)}
                             color="error"
+                            aria-label={`Delete vendor ${vendor.name}`}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -443,7 +457,7 @@ export function VendorManagementPage() {
                       <TableCell>
                         <Chip
                           label={item.status}
-                          color={getStatusColor(item.status) as any}
+                          color={getVendorStatusColor(item.status)}
                           size="small"
                         />
                       </TableCell>
@@ -623,6 +637,40 @@ export function VendorManagementPage() {
             disabled={!formData.name || !formData.slug}
           >
             Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Disable vendor?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingDeleteVendor
+              ? `Are you sure you want to delete vendor "${pendingDeleteVendor.name}"? This will disable the vendor.`
+              : 'Are you sure you want to disable this vendor?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDeleteVendor} color="error" variant="contained">
+            Disable Vendor
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={loginAsDialogOpen} onClose={() => setLoginAsDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Login as vendor?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingLoginVendor
+              ? `You will be switched to vendor "${pendingLoginVendor.name}" account context. Continue?`
+              : 'You will be switched to this vendor account context. Continue?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLoginAsDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmLoginAsVendor} color="primary" variant="contained">
+            Continue
           </Button>
         </DialogActions>
       </Dialog>

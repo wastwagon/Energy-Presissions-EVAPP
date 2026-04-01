@@ -29,7 +29,6 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
 
   const getActiveIndex = () => {
     const idx = items.findIndex(

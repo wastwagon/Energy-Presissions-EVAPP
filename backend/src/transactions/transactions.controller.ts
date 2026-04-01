@@ -20,6 +20,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'chargePointId', required: false, type: String })
   @ApiQuery({ name: 'vendorId', required: false, type: Number })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiHeader({ name: 'X-Vendor-Id', required: false, description: 'Vendor ID for filtering (alternative to query param)' })
   @ApiResponse({ status: 200, description: 'List of transactions' })
   async findAll(
@@ -27,6 +28,7 @@ export class TransactionsController {
     @Query('offset') offset?: number,
     @Query('chargePointId') chargePointId?: string,
     @Query('vendorId') vendorId?: number,
+    @Query('userId') userId?: number,
     @Headers('x-vendor-id') vendorIdHeader?: string,
   ) {
     // Use query param vendorId or header X-Vendor-Id
@@ -37,22 +39,28 @@ export class TransactionsController {
       offset ? parseInt(offset.toString()) : 0,
       chargePointId,
       finalVendorId,
+      userId ? parseInt(userId.toString()) : undefined,
     );
   }
 
   @Get('active')
   @ApiOperation({ summary: 'Get active transactions' })
   @ApiQuery({ name: 'vendorId', required: false, type: Number })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiHeader({ name: 'X-Vendor-Id', required: false, description: 'Vendor ID for filtering (alternative to query param)' })
   @ApiResponse({ status: 200, description: 'List of active transactions' })
   async findActive(
     @Query('vendorId') vendorId?: number,
+    @Query('userId') userId?: number,
     @Headers('x-vendor-id') vendorIdHeader?: string,
   ) {
     // Use query param vendorId or header X-Vendor-Id
     const finalVendorId = vendorId || (vendorIdHeader ? parseInt(vendorIdHeader) : undefined);
     
-    return this.transactionsService.findActive(finalVendorId);
+    return this.transactionsService.findActive(
+      finalVendorId,
+      userId ? parseInt(userId.toString()) : undefined,
+    );
   }
 
   @Get(':id')

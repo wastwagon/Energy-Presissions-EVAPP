@@ -1,14 +1,26 @@
 /**
  * Single place for post-auth navigation by role (unified login).
  */
-export function redirectAfterLogin(accountType: string): void {
-  if (accountType === 'SuperAdmin') {
-    window.location.href = '/superadmin/dashboard';
-    return;
+import { getDashboardPathForAccountType } from './authSession';
+
+interface RedirectAfterLoginOptions {
+  fromPath?: string | null;
+  returnToStationId?: string | null;
+}
+
+export function redirectAfterLogin(
+  accountType: string,
+  options: RedirectAfterLoginOptions = {},
+): string {
+  const { fromPath, returnToStationId } = options;
+
+  if (returnToStationId) {
+    return `/stations/${returnToStationId}`;
   }
-  if (accountType === 'Admin') {
-    window.location.href = '/admin/dashboard';
-    return;
+
+  if (fromPath && fromPath.startsWith('/') && !fromPath.startsWith('/login')) {
+    return fromPath;
   }
-  window.location.href = '/user/dashboard';
+
+  return getDashboardPathForAccountType(accountType);
 }

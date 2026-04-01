@@ -21,6 +21,7 @@ import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { customerBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { clearSession, getStoredUser } from '../utils/authSession';
 import {
   JAMPACK_DRAWER_WIDTH,
   JAMPACK_PAGE_BG,
@@ -34,7 +35,7 @@ export function CustomerDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,34 +46,16 @@ export function CustomerDashboardLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        
-            // Redirect if not a Customer
-            if (userData.accountType !== 'Customer' && userData.accountType !== 'WalkIn') {
-              if (userData.accountType === 'SuperAdmin') {
-                window.location.href = '/superadmin/dashboard';
-              } else if (userData.accountType === 'Admin') {
-                window.location.href = '/admin/dashboard';
-              }
-            }
-      } catch (e) {
-        window.location.href = '/login';
-      }
-    } else {
-      window.location.href = '/login';
+    const userData = getStoredUser();
+    if (!userData) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, []);
+    setUser(userData);
+  }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentVendorId');
-    localStorage.removeItem('currentVendorName');
-    localStorage.removeItem('isImpersonating');
+    clearSession();
     navigate('/login');
   };
 

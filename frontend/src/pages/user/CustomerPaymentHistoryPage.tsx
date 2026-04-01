@@ -16,12 +16,16 @@ import {
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
+import { getPaymentStatusColor } from '../../utils/statusColors';
 
 export function CustomerPaymentHistoryPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [totalPayments, setTotalPayments] = useState(0);
   const limit = 20;
 
   useEffect(() => {
@@ -32,35 +36,16 @@ export function CustomerPaymentHistoryPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await paymentsApi.getUserPayments();
+      const response = await paymentsApi.getUserPayments(limit, (page - 1) * limit);
       const paymentsList = Array.isArray(response) ? response : response.payments || [];
+      const total = Array.isArray(response) ? paymentsList.length : response.total || paymentsList.length;
       setPayments(paymentsList);
+      setTotalPayments(total);
     } catch (err: any) {
       setError(err.message || 'Failed to load payment history');
       console.error('Error loading payments:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'succeeded':
-      case 'completed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'failed':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -75,10 +60,10 @@ export function CustomerPaymentHistoryPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Payment History
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           View all your payment transactions
         </Typography>
       </Box>
@@ -125,7 +110,7 @@ export function CustomerPaymentHistoryPage() {
                     <TableCell>
                       <Chip
                         label={payment.status}
-                        color={getStatusColor(payment.status) as any}
+                        color={getPaymentStatusColor(payment.status)}
                         size="small"
                       />
                     </TableCell>
@@ -135,10 +120,10 @@ export function CustomerPaymentHistoryPage() {
               </TableBody>
             </Table>
           </TableContainer>
-          {payments.length > limit && (
+          {totalPayments > limit && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
-                count={Math.ceil(payments.length / limit)}
+                count={Math.ceil(totalPayments / limit)}
                 page={page}
                 onChange={(_, value) => setPage(value)}
                 color="primary"

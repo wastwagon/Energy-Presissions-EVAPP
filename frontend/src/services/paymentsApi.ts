@@ -1,4 +1,5 @@
 import { api } from './api';
+import { requireStoredUserId } from '../utils/authSession';
 
 export interface Payment {
   id: number;
@@ -32,13 +33,16 @@ export const paymentsApi = {
   /**
    * Get payments for current user
    */
-  getUserPayments: async (): Promise<Payment[] | { payments: Payment[]; total: number }> => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not logged in');
-    }
-    const user = JSON.parse(userStr);
-    const response = await api.get(`/payments/user/${user.id}`);
+  getUserPayments: async (
+    limit?: number,
+    offset?: number,
+  ): Promise<Payment[] | { payments: Payment[]; total: number }> => {
+    const userId = requireStoredUserId();
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (offset) params.append('offset', offset.toString());
+    const query = params.toString();
+    const response = await api.get(`/payments/user/${userId}${query ? `?${query}` : ''}`);
     // Backend might return { payments: [], total: 0 } or just []
     return response.data;
   },
@@ -110,13 +114,9 @@ export const paymentsApi = {
    * Process wallet payment
    */
   processWalletPayment: async (invoiceId: number): Promise<Payment> => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not logged in');
-    }
-    const user = JSON.parse(userStr);
+    const userId = requireStoredUserId();
     const response = await api.post(`/payments/wallet/invoice/${invoiceId}`, {
-      userId: user.id,
+      userId,
     });
     return response.data;
   },

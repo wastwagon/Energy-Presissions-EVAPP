@@ -19,6 +19,9 @@ import {
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
+import { getTransactionStatusColor } from '../../utils/statusColors';
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -81,43 +84,13 @@ export function SessionsPage() {
     }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    // Always use GHS for Ghana operations
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount);
-  };
-
-  const formatEnergy = (energy?: number | string | null, decimals: number = 3) => {
-    if (energy === undefined || energy === null) return '-';
-    const numValue = typeof energy === 'string' ? parseFloat(energy) : energy;
-    if (isNaN(numValue)) return '-';
-    return numValue.toFixed(decimals);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'info';
-      case 'Completed':
-        return 'success';
-      case 'Cancelled':
-        return 'warning';
-      case 'Failed':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  const handleSessionRowKeyDown =
+    (transactionId: string | number) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate(`${opsBase}/sessions/${transactionId}`);
+      }
+    };
 
   const transactions = activeTab === 0 ? activeTransactions : allTransactions;
 
@@ -131,14 +104,14 @@ export function SessionsPage() {
 
   return (
     <Box>
-      <Typography
-        variant="h4"
-        component="h1"
-        gutterBottom
-        sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-      >
-        Charging Sessions
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+          Charging Sessions
+        </Typography>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+          View active sessions and transaction history across your network.
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>
@@ -182,6 +155,10 @@ export function SessionsPage() {
                     key={tx.transactionId}
                     sx={{ cursor: 'pointer' }}
                     onClick={() => navigate(`${opsBase}/sessions/${tx.transactionId}`)}
+                    onKeyDown={handleSessionRowKeyDown(tx.transactionId)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open session ${tx.transactionId}`}
                   >
                     <TableCell>{tx.transactionId}</TableCell>
                     <TableCell>{tx.chargePointId}</TableCell>
@@ -192,21 +169,21 @@ export function SessionsPage() {
                     </TableCell>
                     <TableCell>
                       {tx.durationMinutes !== undefined
-                        ? formatDuration(tx.durationMinutes)
+                        ? formatDurationMinutes(tx.durationMinutes)
                         : tx.status === 'Active'
                         ? 'In progress...'
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      {formatEnergy(tx.totalEnergyKwh, 3)}
+                      {formatEnergyKwh(tx.totalEnergyKwh, 3)}
                     </TableCell>
                     <TableCell>
-                      {formatCurrency(tx.totalCost)}
+                      {formatCurrency(tx.totalCost, 'GHS')}
                     </TableCell>
                     <TableCell>
                       <Chip
                         label={tx.status}
-                        color={getStatusColor(tx.status) as any}
+                        color={getTransactionStatusColor(tx.status)}
                         size="small"
                       />
                     </TableCell>

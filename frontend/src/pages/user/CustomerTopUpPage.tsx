@@ -16,6 +16,9 @@ import {
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency } from '../../utils/formatters';
 
 export function CustomerTopUpPage() {
   const navigate = useNavigate();
@@ -33,12 +36,11 @@ export function CustomerTopUpPage() {
   const loadBalance = async () => {
     try {
       setLoading(true);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
+      const user = getStoredUser();
+      if (typeof user?.id !== 'number') {
         setError('User not logged in');
         return;
       }
-      const user = JSON.parse(userStr);
       const balanceData = await walletApi.getBalance(user.id);
       setBalance(balanceData);
     } catch (err: any) {
@@ -74,13 +76,6 @@ export function CustomerTopUpPage() {
     navigate('/user/wallet');
   };
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -92,14 +87,10 @@ export function CustomerTopUpPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-        >
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Top Up Wallet
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Add funds to your wallet for seamless charging
         </Typography>
       </Box>

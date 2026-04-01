@@ -6,6 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
 
 export function MainLayout() {
   const navigate = useNavigate();
@@ -15,29 +16,19 @@ export function MainLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-
-    if (token && userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (e) {
-        setIsAuthenticated(false);
-      }
-    } else {
-      setIsAuthenticated(false);
-    }
+    const userData = getStoredUser();
+    const authenticated = hasValidSession();
+    setUser(userData);
+    setIsAuthenticated(authenticated);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentVendorId');
-    localStorage.removeItem('currentVendorName');
-    localStorage.removeItem('isImpersonating');
+    clearSession();
     navigate('/login');
+  };
+
+  const getDashboardPath = () => {
+    return getDashboardPathForAccountType(user?.accountType);
   };
 
   return (
@@ -80,7 +71,7 @@ export function MainLayout() {
             isAuthenticated
               ? [
                   ...mainLayoutBottomNavItems.slice(0, 2),
-                  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: '/user/dashboard' },
+                  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
                 ]
               : mainLayoutBottomNavItems
           }

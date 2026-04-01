@@ -19,6 +19,9 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
+import { getStoredAccountType } from '../../utils/authSession';
+import { formatCurrency } from '../../utils/formatters';
+import { getPaymentStatusColor } from '../../utils/statusColors';
 
 export function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -37,9 +40,8 @@ export function AdminPaymentsPage() {
     try {
       setLoading(true);
       setError(null);
-      const userStr = localStorage.getItem('user');
-      const user = userStr ? JSON.parse(userStr) : null;
-      const isAdmin = user?.accountType === 'Admin' || user?.accountType === 'SuperAdmin';
+      const accountType = getStoredAccountType();
+      const isAdmin = accountType === 'Admin' || accountType === 'SuperAdmin';
       if (isAdmin) {
         const { payments: list, total } = await paymentsApi.getAllPayments(limit, (page - 1) * limit);
         setPayments(list);
@@ -55,27 +57,6 @@ export function AdminPaymentsPage() {
       console.error('Error loading payments:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'succeeded':
-      case 'completed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'failed':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -171,7 +152,7 @@ export function AdminPaymentsPage() {
                   <TableCell>
                     <Chip
                       label={payment.status}
-                      color={getStatusColor(payment.status) as any}
+                        color={getPaymentStatusColor(payment.status)}
                       size="small"
                     />
                   </TableCell>

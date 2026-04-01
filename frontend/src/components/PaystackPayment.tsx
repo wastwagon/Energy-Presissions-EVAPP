@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { paymentsApi, PaymentInitResponse } from '../services/paymentsApi';
 import { walletApi, WalletBalance } from '../services/walletApi';
+import { formatCurrency } from '../utils/formatters';
 
 interface PaystackPaymentProps {
   open: boolean;
@@ -199,13 +200,6 @@ export function PaystackPayment({
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number, curr: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: curr,
-    }).format(amount);
   };
 
   const hasSufficientBalance = walletBalance && walletBalance.balance >= amount;

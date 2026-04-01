@@ -38,6 +38,12 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  getChargePointStatusColor,
+  getConnectionEventColor,
+  getConnectionStatusColor,
+} from '../../utils/statusColors';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,6 +73,7 @@ export function DevicesPage() {
   const [filteredChargePoints, setFilteredChargePoints] = useState<ChargePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [showOnlyRealDevices, setShowOnlyRealDevices] = useState(false);
@@ -163,10 +170,9 @@ export function DevicesPage() {
         setError(null);
         // Reload errors to refresh the list
         await loadRecentErrors();
-        // Show success message
-        alert(`Cleared ${result.deleted} resolved error(s).`);
+        setSuccess(`Cleared ${result.deleted} resolved error(s).`);
       } else {
-        alert('No resolved errors found to clear.');
+        setSuccess('No resolved errors found to clear.');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to clear resolved errors');
@@ -211,21 +217,6 @@ export function DevicesPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return 'success';
-      case 'Charging':
-        return 'info';
-      case 'Offline':
-        return 'default';
-      case 'Faulted':
-        return 'error';
-      default:
-        return 'warning';
-    }
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -241,9 +232,14 @@ export function DevicesPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2rem' }, minWidth: 0, flex: '1 1 200px' }}>
-          Device Inventory
-        </Typography>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Device Inventory
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Track real devices, monitor connection health, and inspect recent errors.
+          </Typography>
+        </Box>
         <Box
           sx={{
             display: 'flex',
@@ -268,7 +264,7 @@ export function DevicesPage() {
             fullWidth
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleSearch();
               }
@@ -284,7 +280,7 @@ export function DevicesPage() {
                   <IconButton size="small" onClick={() => {
                     setSearchTerm('');
                     loadChargePoints();
-                  }}>
+                  }} aria-label="Clear device search">
                     <ClearIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
@@ -298,6 +294,12 @@ export function DevicesPage() {
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mt: 2, mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
         </Alert>
       )}
 
@@ -428,7 +430,7 @@ export function DevicesPage() {
                         <TableCell>
                           <Chip
                             label={cp.status}
-                            color={getStatusColor(cp.status) as any}
+                            color={getChargePointStatusColor(cp.status)}
                             size="small"
                           />
                         </TableCell>
@@ -459,6 +461,7 @@ export function DevicesPage() {
                                 size="small"
                                 onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
                                 color="primary"
+                                aria-label={`View details for ${cp.chargePointId}`}
                               >
                                 <SearchIcon fontSize="small" />
                               </IconButton>
@@ -468,6 +471,7 @@ export function DevicesPage() {
                                 size="small"
                                 onClick={() => handleViewLogs(cp)}
                                 color={errorCount > 0 ? 'error' : 'default'}
+                                aria-label={`View connection logs for ${cp.chargePointId}`}
                               >
                                 <Badge badgeContent={errorCount} color="error">
                                   <BugReportIcon fontSize="small" />
@@ -547,11 +551,7 @@ export function DevicesPage() {
                       <TableCell>
                         <Chip
                           label={log.eventType}
-                          color={
-                            log.eventType === 'error' || log.eventType === 'connection_failed'
-                              ? 'error'
-                              : 'default'
-                          }
+                              color={getConnectionEventColor(log.eventType)}
                           size="small"
                         />
                       </TableCell>
@@ -707,13 +707,7 @@ export function DevicesPage() {
                           <TableCell>
                             <Chip
                               label={log.eventType}
-                              color={
-                                log.eventType === 'error' || log.eventType === 'connection_failed'
-                                  ? 'error'
-                                  : log.eventType === 'connection_success'
-                                  ? 'success'
-                                  : 'default'
-                              }
+                              color={getConnectionEventColor(log.eventType)}
                               size="small"
                             />
                           </TableCell>
@@ -721,13 +715,7 @@ export function DevicesPage() {
                             {log.status && (
                               <Chip
                                 label={log.status}
-                                color={
-                                  log.status === 'failed' || log.status === 'error'
-                                    ? 'error'
-                                    : log.status === 'success'
-                                    ? 'success'
-                                    : 'default'
-                                }
+                                color={getConnectionStatusColor(log.status)}
                                 size="small"
                               />
                             )}

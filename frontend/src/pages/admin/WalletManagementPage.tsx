@@ -32,6 +32,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
+import { getWalletTransactionTypeColor } from '../../utils/statusColors';
 
 export function WalletManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -191,27 +194,14 @@ export function WalletManagementPage() {
     );
   }, [users, searchQuery]);
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case 'TopUp':
-        return 'success';
-      case 'Payment':
-        return 'error';
-      case 'Refund':
-        return 'info';
-      case 'Adjustment':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
+  const handleUserRowKeyDown =
+    (user: User) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        setSelectedUser(user);
+        loadUserTransactions(user.id);
+      }
+    };
 
   if (loading) {
     return (
@@ -223,15 +213,20 @@ export function WalletManagementPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" component="h1">
-          Wallet Management
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Wallet Management
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Manage customer wallet balances, credits, debts, and transactions.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<PersonAddIcon />}
           onClick={() => setCreateUserDialogOpen(true)}
-          sx={{ minWidth: 140 }}
+          sx={{ minWidth: 140, width: { xs: '100%', sm: 'auto' } }}
         >
           Create User
         </Button>
@@ -310,6 +305,10 @@ export function WalletManagementPage() {
                               loadUserTransactions(user.id);
                             }}
                             sx={{ cursor: 'pointer' }}
+                            onKeyDown={handleUserRowKeyDown(user)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Select wallet for ${user.firstName} ${user.lastName}`}
                           >
                             <TableCell>
                               {user.firstName} {user.lastName}
@@ -395,7 +394,7 @@ export function WalletManagementPage() {
                           <TableCell>
                             <Chip
                               label={tx.type}
-                              color={getTransactionTypeColor(tx.type) as any}
+                              color={getWalletTransactionTypeColor(tx.type)}
                               size="small"
                             />
                           </TableCell>

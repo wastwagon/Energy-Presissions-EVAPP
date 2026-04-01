@@ -14,6 +14,11 @@ import {
   Button,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -24,6 +29,7 @@ import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { superAdminBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { clearSession, getStoredUser } from '../utils/authSession';
 import {
   JAMPACK_DRAWER_WIDTH,
   JAMPACK_PAGE_BG,
@@ -37,12 +43,13 @@ export function SuperAdminDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
   const [user, setUser] = useState<any>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
 
   useEffect(() => {
@@ -50,51 +57,34 @@ export function SuperAdminDashboardLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        
-        // Redirect if not SuperAdmin
-        if (userData.accountType !== 'SuperAdmin') {
-          if (userData.accountType === 'Admin') {
-            window.location.href = '/admin/dashboard';
-          } else if (userData.accountType === 'Customer') {
-            window.location.href = '/user/dashboard';
-          } else {
-            window.location.href = '/login';
-          }
-        }
-      } catch (e) {
-        window.location.href = '/login';
-      }
-    } else {
-      window.location.href = '/login';
+    const userData = getStoredUser();
+    if (!userData) {
+      navigate('/login', { replace: true });
+      return;
     }
+    setUser(userData);
 
     // Check if impersonating
     const impersonating = localStorage.getItem('isImpersonating') === 'true';
     const vendor = localStorage.getItem('currentVendorName');
     setIsImpersonating(impersonating);
     setVendorName(vendor);
-  }, []);
+  }, [navigate]);
 
   const handleExitImpersonation = () => {
-      if (window.confirm('Exit vendor view and return to Super Admin dashboard?')) {
-        localStorage.removeItem('currentVendorId');
-        localStorage.removeItem('currentVendorName');
-        localStorage.removeItem('isImpersonating');
-        window.location.href = '/superadmin/vendors';
-      }
+    setExitDialogOpen(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const confirmExitImpersonation = () => {
     localStorage.removeItem('currentVendorId');
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
+    setExitDialogOpen(false);
+    navigate('/superadmin/vendors');
+  };
+
+  const handleLogout = () => {
+    clearSession();
     navigate('/login');
   };
 
@@ -243,7 +233,7 @@ export function SuperAdminDashboardLayout() {
                 sx={{ py: 1.5 }}
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
-                <Typography>Profile</Typography>
+                <Typography>Dashboard</Typography>
               </MuiMenuItem>
               <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
@@ -297,6 +287,20 @@ export function SuperAdminDashboardLayout() {
       {showBottomNav && (
         <BottomNav items={superAdminBottomNavItems} accentColor={brandColors.primary} />
       )}
+      <Dialog open={exitDialogOpen} onClose={() => setExitDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Exit Vendor View?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You will leave this vendor context and return to the Super Admin vendors page.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExitDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmExitImpersonation} color="error" variant="contained">
+            Exit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

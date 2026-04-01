@@ -17,6 +17,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   List,
   ListItem,
@@ -44,6 +45,14 @@ import { websocketService } from '../services/websocket';
 import { StartChargingDialog } from '../components/StartChargingDialog';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
+import { formatCurrency } from '../utils/formatters';
+import { getChargePointStatusColor } from '../utils/statusColors';
+import {
+  getDashboardPathForAccountType,
+  getStoredUser,
+  hasValidSession,
+} from '../utils/authSession';
 
 export function StationsPage() {
   const navigate = useNavigate();
@@ -62,19 +71,19 @@ export function StationsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [pendingStationForLogin, setPendingStationForLogin] = useState<StationWithDistance | null>(null);
 
   // Check authentication status and load favorites
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    setIsAuthenticated(!!token);
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
+    setIsAuthenticated(hasValidSession());
+    const userData = getStoredUser();
+    if (userData) {
+      setUser(userData);
+      if (typeof userData.id === 'number') {
         usersApi.getFavorites(userData.id).then(setFavoriteIds).catch(() => setFavoriteIds([]));
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+      } else {
+        setFavoriteIds([]);
       }
     }
   }, []);
@@ -217,24 +226,6 @@ export function StationsPage() {
     return Math.round(R * c * 100) / 100;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return 'success';
-      case 'Charging':
-      case 'Preparing':
-      case 'Finishing':
-        return 'info';
-      case 'Offline':
-      case 'Unavailable':
-        return 'default';
-      case 'Faulted':
-        return 'error';
-      default:
-        return 'warning';
-    }
-  };
-
   const handleStationClick = (station: StationWithDistance) => {
     setSelectedStation(station);
     setDialogOpen(true);
@@ -271,21 +262,38 @@ export function StationsPage() {
     }
   };
 
+  const openLoginPrompt = (station: StationWithDistance) => {
+    setPendingStationForLogin(station);
+    setLoginPromptOpen(true);
+  };
+
+  const confirmLoginPrompt = () => {
+    if (pendingStationForLogin) {
+      sessionStorage.setItem('returnToStation', pendingStationForLogin.chargePointId);
+    }
+    setLoginPromptOpen(false);
+    setPendingStationForLogin(null);
+    navigate('/login');
+  };
+
   const handleStartCharging = (e: React.MouseEvent, station: StationWithDistance) => {
     e.stopPropagation(); // Prevent card click
     if (!isAuthenticated) {
-      // Prompt user to login
-      if (window.confirm('You need to login to start charging. Would you like to login now?')) {
-        // Store the station ID to return after login
-        sessionStorage.setItem('returnToStation', station.chargePointId);
-        navigate('/login');
-      }
+      openLoginPrompt(station);
     } else {
       // For all authenticated users, show the wallet-based charging dialog
       setSelectedStationForCharging(station);
       setStartChargingDialogOpen(true);
     }
   };
+
+  const handleStationCardKeyDown =
+    (station: StationWithDistance) => (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleStationClick(station);
+      }
+    };
 
   const handleChargingSuccess = () => {
     // Reload stations to update availability
@@ -313,10 +321,7 @@ export function StationsPage() {
 
   // Determine dashboard route based on user type
   const getDashboardRoute = () => {
-    if (!user) return '/user/dashboard';
-    if (user.accountType === 'SuperAdmin') return '/superadmin/dashboard';
-    if (user.accountType === 'Admin') return '/admin/dashboard';
-    return '/user/dashboard';
+    return getDashboardPathForAccountType(user?.accountType);
   };
 
   return (
@@ -339,18 +344,13 @@ export function StationsPage() {
             )}
           </Box>
           <Typography
-            variant="h4"
+            variant="h6"
             component="h1"
-            sx={{
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 0.5,
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-            }}
+            sx={dashboardPageTitleSx}
           >
             Find Charging Stations
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Discover nearby EV charging stations in Ghana
           </Typography>
         </Box>
@@ -359,13 +359,14 @@ export function StationsPage() {
             <IconButton
               onClick={() => setViewMode('list')}
               color={viewMode === 'list' ? 'primary' : 'default'}
+              aria-label="Switch to list view"
             >
               <ListIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Map View (Coming Soon)">
             <span>
-              <IconButton disabled color="default">
+              <IconButton disabled color="default" aria-label="Map view coming soon">
                 <MapIcon />
               </IconButton>
             </span>
@@ -394,7 +395,7 @@ export function StationsPage() {
               placeholder="Search by location, city, or region..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleSearch();
                 }
@@ -497,6 +498,10 @@ export function StationsPage() {
                   },
                 }}
                 onClick={() => handleStationClick(station)}
+                onKeyDown={handleStationCardKeyDown(station)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open station ${station.locationName || station.chargePointId}`}
               >
                 <CardContent sx={{ flexGrow: 1, pb: 1 }}>
                   {/* Header with Icon and Status */}
@@ -535,6 +540,11 @@ export function StationsPage() {
                             onClick={(e) => handleToggleFavorite(e, station.chargePointId)}
                             color={favoriteIds.includes(station.chargePointId) ? 'error' : 'default'}
                             sx={{ p: 0.5 }}
+                            aria-label={
+                              favoriteIds.includes(station.chargePointId)
+                                ? `Remove ${station.chargePointId} from favorites`
+                                : `Add ${station.chargePointId} to favorites`
+                            }
                           >
                             {favoriteIds.includes(station.chargePointId) ? (
                               <FavoriteIcon fontSize="small" />
@@ -546,7 +556,7 @@ export function StationsPage() {
                       )}
                       <Chip
                         label={station.status}
-                        color={getStatusColor(station.status) as any}
+                        color={getChargePointStatusColor(station.status)}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
@@ -602,7 +612,7 @@ export function StationsPage() {
                           Price:
                         </Typography>
                         <Typography variant="body1" fontWeight="bold" sx={{ fontSize: '1.1rem', textAlign: 'right', wordBreak: 'break-word' }}>
-                          {station.currency || 'GHS'} {station.pricePerKwh != null ? Number(station.pricePerKwh).toFixed(2) : '0.00'}/kWh
+                          {formatCurrency(Number(station.pricePerKwh), station.currency || 'GHS')}/kWh
                         </Typography>
                       </Box>
                     )}
@@ -707,7 +717,7 @@ export function StationsPage() {
                 </Typography>
                 <Chip
                   label={selectedStation.status}
-                  color={getStatusColor(selectedStation.status) as any}
+                  color={getChargePointStatusColor(selectedStation.status)}
                   size="small"
                 />
               </Box>
@@ -754,7 +764,7 @@ export function StationsPage() {
                   <ListItem>
                     <ListItemText
                       primary="Price"
-                      secondary={`${selectedStation.currency || 'GHS'} ${selectedStation.pricePerKwh != null ? Number(selectedStation.pricePerKwh).toFixed(2) : '0.00'} per kWh`}
+                      secondary={`${formatCurrency(Number(selectedStation.pricePerKwh), selectedStation.currency || 'GHS')} per kWh`}
                     />
                   </ListItem>
                 )}
@@ -796,9 +806,8 @@ export function StationsPage() {
                     if (isAuthenticated && selectedStation) {
                       handleStartCharging(e, selectedStation);
                     } else {
-                      if (window.confirm('You need to login to start charging. Would you like to login now?')) {
-                        sessionStorage.setItem('returnToStation', selectedStation?.chargePointId || '');
-                        navigate('/login');
+                      if (selectedStation) {
+                        openLoginPrompt(selectedStation);
                       }
                     }
                   }}
@@ -810,6 +819,20 @@ export function StationsPage() {
             </DialogActions>
           </>
         )}
+      </Dialog>
+      <Dialog open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Login Required</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You need to login to start charging. Continue to the login page?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLoginPromptOpen(false)}>Cancel</Button>
+          <Button onClick={confirmLoginPrompt} variant="contained">
+            Login
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

@@ -21,6 +21,7 @@ import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { adminBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { clearSession, getStoredUser } from '../utils/authSession';
 import {
   JAMPACK_DRAWER_WIDTH,
   JAMPACK_PAGE_BG,
@@ -34,7 +35,7 @@ export function AdminDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,47 +46,16 @@ export function AdminDashboardLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        
-        // Redirect if not an Admin or SuperAdmin
-        if (userData.accountType !== 'Admin' && userData.accountType !== 'SuperAdmin') {
-          if (userData.accountType === 'Customer') {
-            window.location.href = '/user/dashboard';
-          } else {
-            window.location.href = '/login';
-          }
-        }
-      } catch (e) {
-        window.location.href = '/login';
-      }
-    } else {
-      window.location.href = '/login';
+    const userData = getStoredUser();
+    if (!userData) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, []);
+    setUser(userData);
+  }, [navigate]);
 
   const handleLogout = () => {
-    const userStr = localStorage.getItem('user');
-    let accountType = 'Admin';
-    
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        accountType = userData.accountType || 'Admin';
-      } catch (e) {
-        // Use default
-      }
-    }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentVendorId');
-    localStorage.removeItem('currentVendorName');
-    localStorage.removeItem('isImpersonating');
-    
+    clearSession();
     navigate('/login');
   };
 
@@ -206,7 +176,7 @@ export function AdminDashboardLayout() {
                 sx={{ py: 1.5 }}
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
-                <Typography>Profile</Typography>
+                <Typography>Dashboard</Typography>
               </MuiMenuItem>
               <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />

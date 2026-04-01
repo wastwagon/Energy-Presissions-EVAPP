@@ -16,6 +16,9 @@ import {
   Tab,
 } from '@mui/material';
 import { billingApi, Invoice } from '../../services/billingApi';
+import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
+import { getInvoiceStatusColor } from '../../utils/statusColors';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
   return (
@@ -56,14 +59,10 @@ export function SuperAdminBillingPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-        >
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Billing & Invoices
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
           Read-only view of billing transactions and invoices from the API.
         </Typography>
       </Box>
@@ -113,10 +112,14 @@ export function SuperAdminBillingPage() {
                           <TableCell>{inv.invoiceNumber}</TableCell>
                           <TableCell>{inv.userId}</TableCell>
                           <TableCell>
-                            {inv.total != null ? `${inv.currency} ${Number(inv.total).toFixed(2)}` : '—'}
+                            {formatCurrency(inv.total, inv.currency || 'GHS')}
                           </TableCell>
                           <TableCell>
-                            <Chip label={inv.status} size="small" />
+                            <Chip
+                              label={inv.status}
+                              color={getInvoiceStatusColor(inv.status)}
+                              size="small"
+                            />
                           </TableCell>
                           <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
                         </TableRow>
@@ -153,10 +156,10 @@ export function SuperAdminBillingPage() {
                           <TableCell>{tx.transactionId ?? tx.id}</TableCell>
                           <TableCell>{tx.userId ?? '—'}</TableCell>
                           <TableCell>
-                            {tx.totalCost != null ? `GHS ${Number(tx.totalCost).toFixed(2)}` : '—'}
+                            {formatCurrency(tx.totalCost, 'GHS')}
                           </TableCell>
                           <TableCell>
-                            {tx.totalEnergyKwh != null ? `${Number(tx.totalEnergyKwh).toFixed(3)} kWh` : '—'}
+                            {tx.totalEnergyKwh != null ? `${formatEnergyKwh(tx.totalEnergyKwh, 3)} kWh` : '—'}
                           </TableCell>
                           <TableCell>
                             {tx.startTime ? new Date(tx.startTime).toLocaleString() : '—'}

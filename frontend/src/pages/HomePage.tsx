@@ -4,27 +4,22 @@ import { useEffect, useState } from 'react';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SettingsIcon from '@mui/icons-material/Settings';
+import {
+  getDashboardPathForAccountType,
+  getStoredUser,
+  hasValidSession,
+} from '../utils/authSession';
 
 export function HomePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const accountType = user?.accountType;
+  const isAdminLike = accountType === 'Admin' || accountType === 'SuperAdmin';
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-
-    if (token && userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (e) {
-        setIsAuthenticated(false);
-      }
-    } else {
-      setIsAuthenticated(false);
-    }
+    setUser(getStoredUser());
+    setIsAuthenticated(hasValidSession());
   }, []);
 
   const handleFindStations = () => {
@@ -41,15 +36,15 @@ export function HomePage() {
       return;
     }
     
-    // Redirect based on user type
-    if (user?.accountType === 'SuperAdmin') {
+    if (accountType === 'SuperAdmin') {
       navigate('/superadmin/ops');
-    } else if (user?.accountType === 'Admin') {
-      navigate('/admin/ops');
-    } else {
-      // Customer users don't have access to operations
-      navigate('/user/dashboard');
+      return;
     }
+    if (accountType === 'Admin') {
+      navigate('/admin/ops');
+      return;
+    }
+    navigate(getDashboardPathForAccountType(accountType));
   };
 
   const handleAdmin = () => {
@@ -58,15 +53,7 @@ export function HomePage() {
       return;
     }
     
-    // Redirect based on user type
-    if (user?.accountType === 'SuperAdmin') {
-      navigate('/superadmin/dashboard');
-    } else if (user?.accountType === 'Admin') {
-      navigate('/admin/dashboard');
-    } else {
-      // Customer users don't have access to admin
-      navigate('/user/dashboard');
-    }
+    navigate(getDashboardPathForAccountType(accountType));
   };
 
   return (
@@ -101,15 +88,7 @@ export function HomePage() {
             Welcome back, {user?.email || 'User'}! 
             <Button 
               variant="text" 
-              onClick={() => {
-                if (user?.accountType === 'SuperAdmin') {
-                  navigate('/superadmin/dashboard');
-                } else if (user?.accountType === 'Admin') {
-                  navigate('/admin/dashboard');
-                } else {
-                  navigate('/user/dashboard');
-                }
-              }}
+              onClick={() => navigate(getDashboardPathForAccountType(accountType))}
               sx={{ ml: 1, textTransform: 'none' }}
             >
               Go to My Dashboard →
@@ -150,11 +129,11 @@ export function HomePage() {
               onClick={handleOperations} 
               variant="contained"
               fullWidth
-              disabled={isAuthenticated && user?.accountType === 'Customer'}
+              disabled={isAuthenticated && !isAdminLike}
             >
               {!isAuthenticated 
                 ? 'Login to Access Operations' 
-                : user?.accountType === 'Customer'
+                : !isAdminLike
                 ? 'Operations (Admin Only)'
                 : 'Operations Dashboard'}
             </Button>
@@ -173,11 +152,11 @@ export function HomePage() {
               onClick={handleAdmin} 
               variant="contained"
               fullWidth
-              disabled={isAuthenticated && user?.accountType === 'Customer'}
+              disabled={isAuthenticated && !isAdminLike}
             >
               {!isAuthenticated 
                 ? 'Login to Access Admin' 
-                : user?.accountType === 'Customer'
+                : !isAdminLike
                 ? 'Admin (Admin Only)'
                 : 'Admin Dashboard'}
             </Button>

@@ -22,6 +22,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
 } from '@mui/material';
@@ -40,6 +41,9 @@ import { websocketService } from '../../services/websocket';
 import { ChargePointSettingsDialog } from '../../components/ChargePointSettingsDialog';
 import { firmwareApi } from '../../services/firmwareApi';
 import { diagnosticsApi } from '../../services/diagnosticsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
+import { getChargePointStatusColor } from '../../utils/statusColors';
 
 export function ChargePointDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +72,9 @@ export function ChargePointDetailPage() {
   const [diagnosticsLocation, setDiagnosticsLocation] = useState('');
   const [firmwareLoading, setFirmwareLoading] = useState(false);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<
+    { type: 'reset'; resetType: 'Hard' | 'Soft' } | { type: 'clearCache' } | null
+  >(null);
 
   useEffect(() => {
     if (id) {
@@ -175,21 +182,6 @@ export function ChargePointDetailPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return 'success';
-      case 'Charging':
-        return 'info';
-      case 'Offline':
-        return 'default';
-      case 'Faulted':
-        return 'error';
-      default:
-        return 'warning';
-    }
-  };
-
   const handleRemoteStart = async () => {
     if (!id || !remoteStartConnector || !remoteStartIdTag) return;
     try {
@@ -203,43 +195,38 @@ export function ChargePointDetailPage() {
     }
   };
 
-  const handleReset = async (type: 'Hard' | 'Soft') => {
-    if (!window.confirm(`Are you sure you want to ${type.toLowerCase()} reset this charge point?`)) {
-      return;
-    }
+  const handleReset = (type: 'Hard' | 'Soft') => {
+    setConfirmAction({ type: 'reset', resetType: type });
+  };
 
-      setLoading(true);
-      setError(null);
-      setSuccess(null);
-      try {
-        await chargePointsApi.reset(id!, type);
-        setSuccess(`Charge point ${type.toLowerCase()} reset initiated`);
+  const handleClearCache = () => {
+    setConfirmAction({ type: 'clearCache' });
+  };
+
+  const confirmDeviceAction = async () => {
+    if (!confirmAction || !id) return;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      if (confirmAction.type === 'reset') {
+        await chargePointsApi.reset(id, confirmAction.resetType);
+        setSuccess(`Charge point ${confirmAction.resetType.toLowerCase()} reset initiated`);
         setTimeout(() => loadData(), 2000);
-      } catch (err: any) {
-        setError(err.response?.data?.message || err.message || 'Failed to reset charge point');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const handleClearCache = async () => {
-      if (!window.confirm('Are you sure you want to clear the authorization cache?')) {
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      setSuccess(null);
-      try {
-        await chargePointsApi.clearCache(id!);
+      } else {
+        await chargePointsApi.clearCache(id);
         setSuccess('Authorization cache cleared');
         setTimeout(() => setSuccess(null), 3000);
-      } catch (err: any) {
-        setError(err.response?.data?.message || err.message || 'Failed to clear cache');
-      } finally {
-        setLoading(false);
       }
-    };
+      setConfirmAction(null);
+    } catch (err: any) {
+      const fallbackMessage =
+        confirmAction.type === 'reset' ? 'Failed to reset charge point' : 'Failed to clear cache';
+      setError(err.response?.data?.message || err.message || fallbackMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUnlockConnector = async (connectorId: number) => {
     if (!id) return;
@@ -293,17 +280,26 @@ export function ChargePointDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(opsBase)} sx={{ mr: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(opsBase)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Back
         </Button>
-        <Typography variant="h4" component="h1">
-          {chargePoint.chargePointId}
-        </Typography>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            {chargePoint.chargePointId}
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Device details, connectors, active transactions, and remote actions.
+          </Typography>
+        </Box>
         <Chip
           label={chargePoint.status}
-          color={getStatusColor(chargePoint.status) as any}
-          sx={{ ml: 2 }}
+          color={getChargePointStatusColor(chargePoint.status)}
+          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Box>
 
@@ -399,7 +395,7 @@ export function ChargePointDetailPage() {
                       Price per kWh
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                      {chargePoint.currency || 'GHS'} {typeof chargePoint.pricePerKwh === 'number' ? chargePoint.pricePerKwh.toFixed(2) : parseFloat(String(chargePoint.pricePerKwh ?? 0)).toFixed(2)}
+                      {formatCurrency(Number(chargePoint.pricePerKwh ?? 0), chargePoint.currency || 'GHS')}
                     </Typography>
                   </Grid>
                 )}
@@ -505,7 +501,7 @@ export function ChargePointDetailPage() {
                         <TableCell>
                           <Chip
                             label={connector.status}
-                            color={getStatusColor(connector.status) as any}
+                            color={getChargePointStatusColor(connector.status)}
                             size="small"
                           />
                         </TableCell>
@@ -575,11 +571,7 @@ export function ChargePointDetailPage() {
                         <TableCell>{tx.idTag || '-'}</TableCell>
                         <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
                         <TableCell>
-                          {tx.totalEnergyKwh !== undefined && tx.totalEnergyKwh !== null
-                            ? (typeof tx.totalEnergyKwh === 'number' 
-                                ? tx.totalEnergyKwh.toFixed(3)
-                                : parseFloat(String(tx.totalEnergyKwh)).toFixed(3))
-                            : '-'}
+                          {formatEnergyKwh(tx.totalEnergyKwh, 3)}
                         </TableCell>
                         <TableCell>
                           <Button
@@ -759,6 +751,27 @@ export function ChargePointDetailPage() {
         chargePoint={chargePoint}
         onSave={loadData}
       />
+
+      <Dialog open={Boolean(confirmAction)} onClose={() => setConfirmAction(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Confirm action</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {confirmAction?.type === 'reset'
+              ? `Are you sure you want to ${confirmAction.resetType.toLowerCase()} reset this charge point?`
+              : 'Are you sure you want to clear the authorization cache?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmAction(null)}>Cancel</Button>
+          <Button
+            onClick={confirmDeviceAction}
+            variant="contained"
+            color={confirmAction?.type === 'reset' && confirmAction.resetType === 'Hard' ? 'error' : 'primary'}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

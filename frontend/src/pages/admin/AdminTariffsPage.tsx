@@ -16,6 +16,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
   Switch,
@@ -27,6 +28,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
 
 export function AdminTariffsPage() {
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
@@ -34,6 +37,8 @@ export function AdminTariffsPage() {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteTariffId, setPendingDeleteTariffId] = useState<number | null>(null);
   const [formData, setFormData] = useState<CreateTariffDto>({
     name: '',
     description: '',
@@ -110,12 +115,17 @@ export function AdminTariffsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this tariff?')) {
-      return;
-    }
+  const handleDelete = (id: number) => {
+    setPendingDeleteTariffId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteTariffId == null) return;
     try {
-      await tariffsApi.delete(id);
+      await tariffsApi.delete(pendingDeleteTariffId);
+      setDeleteDialogOpen(false);
+      setPendingDeleteTariffId(null);
       loadTariffs();
     } catch (err: any) {
       setError(err.message || 'Failed to delete tariff');
@@ -131,13 +141,6 @@ export function AdminTariffsPage() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -149,15 +152,20 @@ export function AdminTariffsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             Tariffs & Pricing
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage pricing and tariff plans for charging sessions
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+        >
           New Tariff
         </Button>
       </Box>
@@ -239,16 +247,18 @@ export function AdminTariffsPage() {
                         size="small"
                         onClick={() => handleToggleActive(tariff)}
                         color={tariff.isActive ? 'default' : 'primary'}
+                        aria-label={`${tariff.isActive ? 'Deactivate' : 'Activate'} tariff ${tariff.name}`}
                       >
                         <Switch checked={tariff.isActive} size="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleOpenDialog(tariff)} color="primary">
+                      <IconButton size="small" onClick={() => handleOpenDialog(tariff)} color="primary" aria-label={`Edit tariff ${tariff.name}`}>
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(tariff.id)}
                         color="error"
+                        aria-label={`Delete tariff ${tariff.name}`}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -320,6 +330,21 @@ export function AdminTariffsPage() {
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button variant="contained" onClick={handleSave} disabled={!formData.name || !(formData.energyRate || formData.energyPrice)}>
             {editingTariff ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Delete tariff?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

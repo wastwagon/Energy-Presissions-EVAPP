@@ -20,6 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { chargePointsApi, ChargePoint } from '../services/chargePointsApi';
 import { vendorApi, Vendor } from '../services/vendorApi';
+import { api } from '../services/api';
 
 interface ChargePointSettingsDialogProps {
   open: boolean;
@@ -151,7 +152,7 @@ export function ChargePointSettingsDialog({
       const url = `https://www.google.com/maps?q=${formData.locationLatitude},${formData.locationLongitude}`;
       window.open(url, '_blank');
     } else {
-      alert('Please set latitude and longitude first');
+      setError('Please set latitude and longitude first.');
     }
   };
 
@@ -160,7 +161,7 @@ export function ChargePointSettingsDialog({
       const url = `https://www.google.com/maps/dir/?api=1&destination=${formData.locationLatitude},${formData.locationLongitude}`;
       window.open(url, '_blank');
     } else {
-      alert('Please set latitude and longitude first');
+      setError('Please set latitude and longitude first.');
     }
   };
 
@@ -187,8 +188,6 @@ export function ChargePointSettingsDialog({
         // For short URLs, we need to resolve them
         // Try to resolve via backend if available
         try {
-          // Use the api instance from services/api.ts to get correct base URL
-          const { api } = await import('../services/api');
           const response = await api.get(`/utils/resolve-google-maps-url`, {
             params: { url },
           });
@@ -293,7 +292,7 @@ export function ChargePointSettingsDialog({
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Charge Point Settings</Typography>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose} size="small" aria-label="Close charge point settings dialog">
             <CloseIcon />
           </IconButton>
         </Box>

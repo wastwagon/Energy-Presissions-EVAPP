@@ -21,6 +21,10 @@ import {
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import { walletApi, WalletBalance, WalletTransaction } from '../../services/walletApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency } from '../../utils/formatters';
+import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -37,12 +41,11 @@ export function CustomerWalletPage() {
     try {
       setLoading(true);
       setError(null);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
+      const user = getStoredUser();
+      if (typeof user?.id !== 'number') {
         setError('User not logged in');
         return;
       }
-      const user = JSON.parse(userStr);
       const [balanceData, transactionsData] = await Promise.all([
         walletApi.getBalance(user.id),
         walletApi.getTransactions(user.id, 20, 0),
@@ -54,26 +57,6 @@ export function CustomerWalletPage() {
       console.error('Error loading wallet data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'top_up':
-      case 'credit':
-        return 'success';
-      case 'debit':
-      case 'payment':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -89,10 +72,10 @@ export function CustomerWalletPage() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             My Wallet
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your wallet balance and view transaction history
           </Typography>
         </Box>
@@ -177,7 +160,7 @@ export function CustomerWalletPage() {
                     <TableCell>
                       <Chip
                         label={tx.type.replace('_', ' ').toUpperCase()}
-                        color={getTypeColor(tx.type) as any}
+                        color={getWalletTransactionTypeColor(tx.type)}
                         size="small"
                       />
                     </TableCell>
@@ -195,7 +178,7 @@ export function CustomerWalletPage() {
                     <TableCell>
                       <Chip
                         label={tx.status}
-                        color={tx.status === 'completed' ? 'success' : 'default'}
+                        color={getPaymentStatusColor(tx.status)}
                         size="small"
                       />
                     </TableCell>

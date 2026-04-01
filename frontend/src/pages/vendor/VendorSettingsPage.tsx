@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -19,51 +20,45 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BusinessIcon from '@mui/icons-material/Business';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { vendorApi } from '../../services/vendorApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  getDashboardPathForAccountType,
+  getStoredUser,
+  hasValidSession,
+} from '../../utils/authSession';
 
 export function VendorSettingsPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [vendor, setVendor] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   
-  // Check user role on mount - redirect Customer users
+  // Check session + role on mount.
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        const accountType = userData.accountType || 'Customer';
-        setUserRole(accountType);
-        
-        // Redirect Customer users away from vendor settings
-        if (accountType === 'Customer' || accountType === 'WalkIn') {
-          window.location.href = '/user/dashboard';
-          return;
-        }
-      } catch (e) {
-        // If parsing fails, redirect to login
-        window.location.href = '/login';
-        return;
-      }
-    } else {
-      // No user logged in, redirect to login
-      window.location.href = '/login';
+    if (!hasValidSession()) {
+      navigate('/login', { replace: true });
       return;
     }
-  }, []);
+    const userData = getStoredUser();
+    if (!userData) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    setUser(userData);
+    const accountType = userData.accountType;
+    if (accountType === 'Customer' || accountType === 'WalkIn') {
+      navigate(getDashboardPathForAccountType(accountType), { replace: true });
+    }
+  }, [navigate]);
   
-  // Get current vendor ID from localStorage (if impersonating) or from user
+  // Get current vendor ID from impersonation context or current user.
   const getCurrentVendorId = () => {
     const vendorId = localStorage.getItem('currentVendorId');
-    if (vendorId) return parseInt(vendorId);
-    
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.vendorId;
-    }
+    if (vendorId) return Number.parseInt(vendorId, 10);
+    if (typeof user?.vendorId === 'number') return user.vendorId;
     return 1; // Default
   };
 
@@ -84,8 +79,10 @@ export function VendorSettingsPage() {
   });
 
   useEffect(() => {
-    loadVendor();
-  }, []);
+    if (user) {
+      loadVendor();
+    }
+  }, [user]);
 
   const loadVendor = async () => {
     try {
@@ -151,15 +148,21 @@ export function VendorSettingsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h4" component="h1">
-          Vendor Settings
-        </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Vendor Settings
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Manage business identity, branding assets, and receipt details.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<SaveIcon />}
           onClick={handleSave}
           disabled={saving}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

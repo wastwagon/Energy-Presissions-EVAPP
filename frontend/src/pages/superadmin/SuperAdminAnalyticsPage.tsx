@@ -16,6 +16,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 import { websocketService } from '../../services/websocket';
+import { formatCurrency } from '../../utils/formatters';
 
 export function SuperAdminAnalyticsPage() {
   const [searchParams] = useSearchParams();
@@ -65,13 +66,6 @@ export function SuperAdminAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
   };
 
   if (loading) {

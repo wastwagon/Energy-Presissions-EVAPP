@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -27,8 +28,11 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { usersApi } from '../../services/usersApi';
 import { authApi } from '../../services/authApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
 
 export function CustomerProfilePage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -50,9 +54,8 @@ export function CustomerProfilePage() {
 
   const loadUserData = () => {
     try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
+      const userData = getStoredUser();
+      if (userData) {
         setUser(userData);
         setFormData({
           firstName: userData.firstName || '',
@@ -72,7 +75,7 @@ export function CustomerProfilePage() {
     try {
       setError(null);
       setSuccess(null);
-      if (user?.id) {
+      if (typeof user?.id === 'number') {
         const updated = await usersApi.update(user.id, {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -104,7 +107,7 @@ export function CustomerProfilePage() {
       setError(null);
       await usersApi.deleteOwnAccount(deletePassword);
       authApi.logout();
-      window.location.href = '/login';
+      navigate('/login', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to delete account');
       setDeleting(false);
@@ -137,11 +140,11 @@ export function CustomerProfilePage() {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             My Profile
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your account information and preferences
           </Typography>
         </Box>
@@ -149,6 +152,7 @@ export function CustomerProfilePage() {
           variant={editing ? 'contained' : 'outlined'}
           startIcon={editing ? <SaveIcon /> : <EditIcon />}
           onClick={editing ? handleSave : () => setEditing(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           {editing ? 'Save Changes' : 'Edit Profile'}
         </Button>

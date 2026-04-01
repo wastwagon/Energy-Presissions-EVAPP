@@ -21,6 +21,8 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { transactionsApi, Transaction } from '../services/transactionsApi';
 import { walletApi } from '../services/walletApi';
+import { getStoredUserId } from '../utils/authSession';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../utils/formatters';
 
 interface TransactionSummaryDialogProps {
   open: boolean;
@@ -67,12 +69,10 @@ export function TransactionSummaryDialog({
 
   const loadWalletBalance = async () => {
     try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        const balance = await walletApi.getAvailableBalance(user.id);
-        setWalletBalance(balance.available);
-      }
+      const userId = getStoredUserId();
+      if (!userId) return;
+      const balance = await walletApi.getAvailableBalance(userId);
+      setWalletBalance(balance.available);
     } catch (err) {
       console.error('Failed to load wallet balance:', err);
     }
@@ -82,15 +82,6 @@ export function TransactionSummaryDialog({
     return null;
   }
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} minutes`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -99,7 +90,7 @@ export function TransactionSummaryDialog({
             <CheckCircleIcon color="success" />
             <Typography variant="h6">Charging Session Complete</Typography>
           </Box>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose} size="small" aria-label="Close transaction summary dialog">
             <CloseIcon />
           </IconButton>
         </Box>
@@ -126,7 +117,7 @@ export function TransactionSummaryDialog({
             <Paper sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">Energy Delivered</Typography>
               <Typography variant="h5" fontWeight="bold" color="primary">
-                {transaction.totalEnergyKwh?.toFixed(2) || '0.00'} kWh
+                {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
               </Typography>
             </Paper>
           </Grid>
@@ -134,7 +125,7 @@ export function TransactionSummaryDialog({
             <Paper sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">Duration</Typography>
               <Typography variant="h5" fontWeight="bold">
-                {transaction.durationMinutes ? formatDuration(transaction.durationMinutes) : 'N/A'}
+                {transaction.durationMinutes ? formatDurationMinutes(transaction.durationMinutes) : 'N/A'}
               </Typography>
             </Paper>
           </Grid>
@@ -169,20 +160,22 @@ export function TransactionSummaryDialog({
               {transaction.walletReservedAmount && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2" color="text.secondary">Amount Reserved:</Typography>
-                  <Typography variant="body2">{transaction.currency || 'GHS'} {transaction.walletReservedAmount.toFixed(2)}</Typography>
+                  <Typography variant="body2">
+                    {formatCurrency(transaction.walletReservedAmount, transaction.currency || 'GHS')}
+                  </Typography>
                 </Box>
               )}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body1" fontWeight="bold">Total Cost:</Typography>
                 <Typography variant="h6" fontWeight="bold" color="primary">
-                  {transaction.currency || 'GHS'} {transaction.totalCost?.toFixed(2) || '0.00'}
+                  {formatCurrency(transaction.totalCost, transaction.currency || 'GHS')}
                 </Typography>
               </Box>
               {refundAmount > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
                   <Typography variant="body2" fontWeight="bold">Refunded to Wallet:</Typography>
                   <Typography variant="body1" fontWeight="bold" color="success.dark">
-                    {transaction.currency || 'GHS'} {refundAmount.toFixed(2)}
+                    {formatCurrency(refundAmount, transaction.currency || 'GHS')}
                   </Typography>
                 </Box>
               )}
@@ -201,7 +194,7 @@ export function TransactionSummaryDialog({
                     </Typography>
                   </Box>
                   <Typography variant="h6" fontWeight="bold">
-                    GHS {walletBalance.toFixed(2)}
+                    {formatCurrency(walletBalance, 'GHS')}
                   </Typography>
                 </Box>
               </Paper>

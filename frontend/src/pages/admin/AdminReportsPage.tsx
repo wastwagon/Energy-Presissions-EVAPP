@@ -15,11 +15,13 @@ import {
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DownloadIcon from '@mui/icons-material/Download';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
-import { transactionsApi } from '../../services/transactionsApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { formatCurrency } from '../../utils/formatters';
 
 export function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -41,16 +43,9 @@ export function AdminReportsPage() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
-
   const handleExport = (type: string) => {
     // TODO: Implement export functionality
-    alert(`Export ${type} report - Feature coming soon`);
+    setExportNotice(`Export ${type} report - feature coming soon.`);
   };
 
   if (loading) {
@@ -64,11 +59,11 @@ export function AdminReportsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             Reports & Analytics
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             View detailed reports and analytics for your operations
           </Typography>
         </Box>
@@ -76,6 +71,7 @@ export function AdminReportsPage() {
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={() => handleExport('all')}
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
         >
           Export Report
         </Button>
@@ -84,6 +80,12 @@ export function AdminReportsPage() {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {exportNotice && (
+        <Alert severity="info" sx={{ mb: 3 }} onClose={() => setExportNotice(null)}>
+          {exportNotice}
         </Alert>
       )}
 

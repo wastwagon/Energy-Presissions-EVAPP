@@ -1,69 +1,238 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { MainLayout } from './layouts/MainLayout';
-import { CustomerDashboardLayout } from './layouts/CustomerDashboardLayout';
-import { AdminDashboardLayout } from './layouts/AdminDashboardLayout';
-import { SuperAdminDashboardLayout } from './layouts/SuperAdminDashboardLayout';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { HomePage } from './pages/HomePage';
-import { StationsPage } from './pages/StationsPage';
-import { StationDetailPage } from './pages/StationDetailPage';
-import { SuperAdminSettingsPage } from './pages/superadmin/SuperAdminSettingsPage';
-import { WalletManagementPage } from './pages/admin/WalletManagementPage';
-import { VendorManagementPage } from './pages/admin/VendorManagementPage';
-import { SuspendedPage } from './pages/vendor/SuspendedPage';
-import { DisabledPage } from './pages/vendor/DisabledPage';
 import { useVendorStatus } from './hooks/useVendorStatus';
-import { OperationsDashboard } from './pages/ops/OperationsDashboard';
-import { SessionsPage } from './pages/ops/SessionsPage';
-import { DevicesPage } from './pages/ops/DevicesPage';
-import { ChargePointDetailPage } from './pages/ops/ChargePointDetailPage';
-import { TransactionDetailPage } from './pages/ops/TransactionDetailPage';
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
-import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
-import { CustomerDashboardPage } from './pages/user/CustomerDashboardPage';
-import { CustomerActiveSessionsPage } from './pages/user/CustomerActiveSessionsPage';
-import { CustomerSessionHistoryPage } from './pages/user/CustomerSessionHistoryPage';
-import { CustomerWalletPage } from './pages/user/CustomerWalletPage';
-import { CustomerTopUpPage } from './pages/user/CustomerTopUpPage';
-import { CustomerPaymentHistoryPage } from './pages/user/CustomerPaymentHistoryPage';
-import { CustomerProfilePage } from './pages/user/CustomerProfilePage';
-import { CustomerTransactionDetailPage } from './pages/user/CustomerTransactionDetailPage';
-import { CustomerFavoritesPage } from './pages/user/CustomerFavoritesPage';
-import { CustomerHelpPage } from './pages/user/CustomerHelpPage';
-import { CustomerPaymentMethodsPage } from './pages/user/CustomerPaymentMethodsPage';
-import { CustomerPreferencesPage } from './pages/user/CustomerPreferencesPage';
-import { UserManagementPage } from './pages/admin/UserManagementPage';
-import { VendorSettingsPage } from './pages/vendor/VendorSettingsPage';
-import { AdminOperationsDashboard } from './pages/admin/AdminOperationsDashboard';
-import { AdminSessionsPage } from './pages/admin/AdminSessionsPage';
-import { AdminDevicesPage } from './pages/admin/AdminDevicesPage';
-import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
-import { SuperAdminOperationsDashboard } from './pages/superadmin/SuperAdminOperationsDashboard';
-import { SuperAdminSessionsPage } from './pages/superadmin/SuperAdminSessionsPage';
-import { SuperAdminDevicesPage } from './pages/superadmin/SuperAdminDevicesPage';
-import { SuperAdminDashboardPage } from './pages/superadmin/SuperAdminDashboardPage';
-import { SuperAdminAnalyticsPage } from './pages/superadmin/SuperAdminAnalyticsPage';
-import { SuperAdminConnectionLogsPage } from './pages/superadmin/SuperAdminConnectionLogsPage';
-import { SuperAdminTariffsPage } from './pages/superadmin/SuperAdminTariffsPage';
-import { SuperAdminReportsPage } from './pages/superadmin/SuperAdminReportsPage';
-import { SuperAdminSecurityLogsPage } from './pages/superadmin/SuperAdminSecurityLogsPage';
-import { SuperAdminHealthPage } from './pages/superadmin/SuperAdminHealthPage';
-import { SuperAdminReservationsPage } from './pages/superadmin/SuperAdminReservationsPage';
-import { SuperAdminFirmwarePage } from './pages/superadmin/SuperAdminFirmwarePage';
-import { SuperAdminDiagnosticsPage } from './pages/superadmin/SuperAdminDiagnosticsPage';
-import { SuperAdminBillingPage } from './pages/superadmin/SuperAdminBillingPage';
-import { SuperAdminSmartChargingPage } from './pages/superadmin/SuperAdminSmartChargingPage';
-import { SuperAdminLocalAuthPage } from './pages/superadmin/SuperAdminLocalAuthPage';
-import { AdminTariffsPage } from './pages/admin/AdminTariffsPage';
-import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
-import { AdminReportsPage } from './pages/admin/AdminReportsPage';
+
+const MainLayout = lazy(() =>
+  import('./layouts/MainLayout').then((m) => ({ default: m.MainLayout })),
+);
+const CustomerDashboardLayout = lazy(() =>
+  import('./layouts/CustomerDashboardLayout').then((m) => ({ default: m.CustomerDashboardLayout })),
+);
+const AdminDashboardLayout = lazy(() =>
+  import('./layouts/AdminDashboardLayout').then((m) => ({ default: m.AdminDashboardLayout })),
+);
+const SuperAdminDashboardLayout = lazy(() =>
+  import('./layouts/SuperAdminDashboardLayout').then((m) => ({ default: m.SuperAdminDashboardLayout })),
+);
+const HomePage = lazy(() =>
+  import('./pages/HomePage').then((m) => ({ default: m.HomePage })),
+);
+const StationsPage = lazy(() =>
+  import('./pages/StationsPage').then((m) => ({ default: m.StationsPage })),
+);
+const StationDetailPage = lazy(() =>
+  import('./pages/StationDetailPage').then((m) => ({ default: m.StationDetailPage })),
+);
+const SuperAdminSettingsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminSettingsPage').then((m) => ({ default: m.SuperAdminSettingsPage })),
+);
+const WalletManagementPage = lazy(() =>
+  import('./pages/admin/WalletManagementPage').then((m) => ({ default: m.WalletManagementPage })),
+);
+const VendorManagementPage = lazy(() =>
+  import('./pages/admin/VendorManagementPage').then((m) => ({ default: m.VendorManagementPage })),
+);
+const SuspendedPage = lazy(() =>
+  import('./pages/vendor/SuspendedPage').then((m) => ({ default: m.SuspendedPage })),
+);
+const DisabledPage = lazy(() =>
+  import('./pages/vendor/DisabledPage').then((m) => ({ default: m.DisabledPage })),
+);
+const OperationsDashboard = lazy(() =>
+  import('./pages/ops/OperationsDashboard').then((m) => ({ default: m.OperationsDashboard })),
+);
+const SessionsPage = lazy(() =>
+  import('./pages/ops/SessionsPage').then((m) => ({ default: m.SessionsPage })),
+);
+const DevicesPage = lazy(() =>
+  import('./pages/ops/DevicesPage').then((m) => ({ default: m.DevicesPage })),
+);
+const ChargePointDetailPage = lazy(() =>
+  import('./pages/ops/ChargePointDetailPage').then((m) => ({ default: m.ChargePointDetailPage })),
+);
+const TransactionDetailPage = lazy(() =>
+  import('./pages/ops/TransactionDetailPage').then((m) => ({ default: m.TransactionDetailPage })),
+);
+const LoginPage = lazy(() =>
+  import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
+const RegisterPage = lazy(() =>
+  import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import('./pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const CustomerDashboardPage = lazy(() =>
+  import('./pages/user/CustomerDashboardPage').then((m) => ({ default: m.CustomerDashboardPage })),
+);
+const CustomerActiveSessionsPage = lazy(() =>
+  import('./pages/user/CustomerActiveSessionsPage').then((m) => ({ default: m.CustomerActiveSessionsPage })),
+);
+const CustomerSessionHistoryPage = lazy(() =>
+  import('./pages/user/CustomerSessionHistoryPage').then((m) => ({ default: m.CustomerSessionHistoryPage })),
+);
+const CustomerWalletPage = lazy(() =>
+  import('./pages/user/CustomerWalletPage').then((m) => ({ default: m.CustomerWalletPage })),
+);
+const CustomerTopUpPage = lazy(() =>
+  import('./pages/user/CustomerTopUpPage').then((m) => ({ default: m.CustomerTopUpPage })),
+);
+const CustomerPaymentHistoryPage = lazy(() =>
+  import('./pages/user/CustomerPaymentHistoryPage').then((m) => ({ default: m.CustomerPaymentHistoryPage })),
+);
+const CustomerProfilePage = lazy(() =>
+  import('./pages/user/CustomerProfilePage').then((m) => ({ default: m.CustomerProfilePage })),
+);
+const CustomerTransactionDetailPage = lazy(() =>
+  import('./pages/user/CustomerTransactionDetailPage').then((m) => ({ default: m.CustomerTransactionDetailPage })),
+);
+const CustomerFavoritesPage = lazy(() =>
+  import('./pages/user/CustomerFavoritesPage').then((m) => ({ default: m.CustomerFavoritesPage })),
+);
+const CustomerHelpPage = lazy(() =>
+  import('./pages/user/CustomerHelpPage').then((m) => ({ default: m.CustomerHelpPage })),
+);
+const CustomerPaymentMethodsPage = lazy(() =>
+  import('./pages/user/CustomerPaymentMethodsPage').then((m) => ({ default: m.CustomerPaymentMethodsPage })),
+);
+const CustomerPreferencesPage = lazy(() =>
+  import('./pages/user/CustomerPreferencesPage').then((m) => ({ default: m.CustomerPreferencesPage })),
+);
+const UserManagementPage = lazy(() =>
+  import('./pages/admin/UserManagementPage').then((m) => ({ default: m.UserManagementPage })),
+);
+const VendorSettingsPage = lazy(() =>
+  import('./pages/vendor/VendorSettingsPage').then((m) => ({ default: m.VendorSettingsPage })),
+);
+const AdminOperationsDashboard = lazy(() =>
+  import('./pages/admin/AdminOperationsDashboard').then((m) => ({ default: m.AdminOperationsDashboard })),
+);
+const AdminSessionsPage = lazy(() =>
+  import('./pages/admin/AdminSessionsPage').then((m) => ({ default: m.AdminSessionsPage })),
+);
+const AdminDevicesPage = lazy(() =>
+  import('./pages/admin/AdminDevicesPage').then((m) => ({ default: m.AdminDevicesPage })),
+);
+const AdminDashboardPage = lazy(() =>
+  import('./pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
+);
+const SuperAdminOperationsDashboard = lazy(() =>
+  import('./pages/superadmin/SuperAdminOperationsDashboard').then((m) => ({ default: m.SuperAdminOperationsDashboard })),
+);
+const SuperAdminSessionsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminSessionsPage').then((m) => ({ default: m.SuperAdminSessionsPage })),
+);
+const SuperAdminDevicesPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminDevicesPage').then((m) => ({ default: m.SuperAdminDevicesPage })),
+);
+const SuperAdminDashboardPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminDashboardPage').then((m) => ({ default: m.SuperAdminDashboardPage })),
+);
+const SuperAdminAnalyticsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminAnalyticsPage').then((m) => ({ default: m.SuperAdminAnalyticsPage })),
+);
+const SuperAdminConnectionLogsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminConnectionLogsPage').then((m) => ({ default: m.SuperAdminConnectionLogsPage })),
+);
+const SuperAdminTariffsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminTariffsPage').then((m) => ({ default: m.SuperAdminTariffsPage })),
+);
+const SuperAdminReportsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminReportsPage').then((m) => ({ default: m.SuperAdminReportsPage })),
+);
+const SuperAdminSecurityLogsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminSecurityLogsPage').then((m) => ({ default: m.SuperAdminSecurityLogsPage })),
+);
+const SuperAdminHealthPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminHealthPage').then((m) => ({ default: m.SuperAdminHealthPage })),
+);
+const SuperAdminReservationsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminReservationsPage').then((m) => ({ default: m.SuperAdminReservationsPage })),
+);
+const SuperAdminFirmwarePage = lazy(() =>
+  import('./pages/superadmin/SuperAdminFirmwarePage').then((m) => ({ default: m.SuperAdminFirmwarePage })),
+);
+const SuperAdminDiagnosticsPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminDiagnosticsPage').then((m) => ({ default: m.SuperAdminDiagnosticsPage })),
+);
+const SuperAdminBillingPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminBillingPage').then((m) => ({ default: m.SuperAdminBillingPage })),
+);
+const SuperAdminSmartChargingPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminSmartChargingPage').then((m) => ({ default: m.SuperAdminSmartChargingPage })),
+);
+const SuperAdminLocalAuthPage = lazy(() =>
+  import('./pages/superadmin/SuperAdminLocalAuthPage').then((m) => ({ default: m.SuperAdminLocalAuthPage })),
+);
+const AdminTariffsPage = lazy(() =>
+  import('./pages/admin/AdminTariffsPage').then((m) => ({ default: m.AdminTariffsPage })),
+);
+const AdminPaymentsPage = lazy(() =>
+  import('./pages/admin/AdminPaymentsPage').then((m) => ({ default: m.AdminPaymentsPage })),
+);
+const AdminReportsPage = lazy(() =>
+  import('./pages/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })),
+);
+
+function AppLoadingFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Loading dashboard...
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+function InAppLoadingFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: 320,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+      }}
+    >
+      <CircularProgress size={28} />
+    </Box>
+  );
+}
+
+function RouteSuspense({
+  children,
+  mode = 'in-app',
+}: {
+  children: React.ReactNode;
+  mode?: 'full-page' | 'in-app';
+}) {
+  return (
+    <Suspense fallback={mode === 'full-page' ? <AppLoadingFallback /> : <InAppLoadingFallback />}>
+      {children}
+    </Suspense>
+  );
+}
 
 // Component to check vendor status and redirect if needed
 function VendorStatusGuard({ children }: { children: React.ReactNode }) {
   const { status, loading, isDisabled, isSuspended } = useVendorStatus();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && status) {
@@ -73,13 +242,13 @@ function VendorStatusGuard({ children }: { children: React.ReactNode }) {
       }
 
       if (isDisabled) {
-        window.location.href = '/disabled';
+        navigate('/disabled', { replace: true });
       } else if (isSuspended) {
         // Allow read-only access, but could redirect to suspended page
         // For now, we'll allow access but show a banner
       }
     }
-  }, [status, loading, isDisabled, isSuspended, location.pathname]);
+  }, [status, loading, isDisabled, isSuspended, location.pathname, navigate]);
 
   // Don't block rendering while loading - allow app to render normally
   // Vendor status check is non-blocking
@@ -91,20 +260,62 @@ function App() {
     <VendorStatusGuard>
       <Routes>
         {/* Vendor status pages (no guard) */}
-        <Route path="/suspended" element={<SuspendedPage />} />
-        <Route path="/disabled" element={<DisabledPage />} />
+        <Route
+          path="/suspended"
+          element={
+            <RouteSuspense mode="full-page">
+              <SuspendedPage />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="/disabled"
+          element={
+            <RouteSuspense mode="full-page">
+              <DisabledPage />
+            </RouteSuspense>
+          }
+        />
 
         {/* Auth routes */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/login"
+          element={
+            <RouteSuspense mode="full-page">
+              <LoginPage />
+            </RouteSuspense>
+          }
+        />
         <Route path="/login/super-admin" element={<Navigate to="/login" replace />} />
         <Route path="/login/admin" element={<Navigate to="/login" replace />} />
         <Route path="/login/user" element={<Navigate to="/login" replace />} />
         <Route path="/login/vendor" element={<Navigate to="/login" replace />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route
+          path="/register"
+          element={
+            <RouteSuspense mode="full-page">
+              <RegisterPage />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <RouteSuspense mode="full-page">
+              <ForgotPasswordPage />
+            </RouteSuspense>
+          }
+        />
 
         {/* Protected routes - require login */}
-        <Route path="/" element={<MainLayout />}>
+        <Route
+          path="/"
+          element={
+            <RouteSuspense mode="full-page">
+              <MainLayout />
+            </RouteSuspense>
+          }
+        >
           <Route index element={
             <ProtectedRoute>
               <HomePage />
@@ -123,7 +334,17 @@ function App() {
         </Route>
 
             {/* User/Customer routes - Customer layout only - NO SHARING */}
-            <Route path="/user" element={<CustomerDashboardLayout />}>
+            <Route
+              path="/user"
+              element={
+                <RouteSuspense>
+                  <ProtectedRoute allowedRoles={['Customer', 'WalkIn']}>
+                    <CustomerDashboardLayout />
+                  </ProtectedRoute>
+                </RouteSuspense>
+              }
+            >
+              <Route index element={<Navigate to="/user/dashboard" replace />} />
               <Route path="dashboard" element={<CustomerDashboardPage />} />
               <Route path="sessions/active" element={<CustomerActiveSessionsPage />} />
               <Route path="sessions/history" element={<CustomerSessionHistoryPage />} />
@@ -139,7 +360,17 @@ function App() {
             </Route>
 
             {/* Admin routes - Admin layout - Admin-specific pages only */}
-            <Route path="/admin" element={<AdminDashboardLayout />}>
+            <Route
+              path="/admin"
+              element={
+                <RouteSuspense>
+                  <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+                    <AdminDashboardLayout />
+                  </ProtectedRoute>
+                </RouteSuspense>
+              }
+            >
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="ops" element={<AdminOperationsDashboard />} />
               <Route path="ops/sessions" element={<AdminSessionsPage />} />
@@ -154,12 +385,31 @@ function App() {
             </Route>
 
             {/* Vendor routes - Admin layout (for Admin users) */}
-            <Route path="/vendor" element={<AdminDashboardLayout />}>
+            <Route
+              path="/vendor"
+              element={
+                <RouteSuspense>
+                  <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+                    <AdminDashboardLayout />
+                  </ProtectedRoute>
+                </RouteSuspense>
+              }
+            >
               <Route index element={<VendorSettingsPage />} />
             </Route>
 
             {/* SuperAdmin routes - SuperAdmin layout - SuperAdmin-specific pages only */}
-            <Route path="/superadmin" element={<SuperAdminDashboardLayout />}>
+            <Route
+              path="/superadmin"
+              element={
+                <RouteSuspense>
+                  <ProtectedRoute allowedRoles={['SuperAdmin']}>
+                    <SuperAdminDashboardLayout />
+                  </ProtectedRoute>
+                </RouteSuspense>
+              }
+            >
+              <Route index element={<Navigate to="/superadmin/dashboard" replace />} />
               <Route path="dashboard" element={<SuperAdminDashboardPage />} />
               <Route path="ops" element={<SuperAdminOperationsDashboard />} />
               <Route path="ops/sessions" element={<SuperAdminSessionsPage />} />

@@ -17,6 +17,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { getStoredUser } from '../../utils/authSession';
+import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
+import { getTransactionStatusColor } from '../../utils/statusColors';
 
 export function CustomerTransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,13 +42,10 @@ export function CustomerTransactionDetailPage() {
       setError(null);
       const tx = await transactionsApi.getById(parseInt(id!));
       // Verify this transaction belongs to the current user
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        if (tx.userId !== user.id) {
-          setError('Transaction not found');
-          return;
-        }
+      const user = getStoredUser();
+      if (typeof user?.id !== 'number' || tx.userId !== user.id) {
+        setError('Transaction not found');
+        return;
       }
       setTransaction(tx);
     } catch (err: any) {
@@ -53,22 +54,6 @@ export function CustomerTransactionDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    // Always use GHS for Ghana operations
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount);
-  };
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   if (loading) {
@@ -94,15 +79,19 @@ export function CustomerTransactionDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/user/sessions/history')}>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/user/sessions/history')}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Back
         </Button>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
             Transaction Details
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Transaction ID: {transaction.transactionId}
           </Typography>
         </Box>
@@ -138,13 +127,7 @@ export function CustomerTransactionDetailPage() {
                 </Typography>
                 <Chip
                   label={transaction.status}
-                  color={
-                    transaction.status === 'Completed'
-                      ? 'success'
-                      : transaction.status === 'Active'
-                      ? 'info'
-                      : 'default'
-                  }
+                  color={getTransactionStatusColor(transaction.status)}
                   size="small"
                 />
               </Grid>
@@ -153,11 +136,7 @@ export function CustomerTransactionDetailPage() {
                   Energy Consumed
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {transaction.totalEnergyKwh !== undefined && transaction.totalEnergyKwh !== null
-                    ? (typeof transaction.totalEnergyKwh === 'number' 
-                        ? transaction.totalEnergyKwh.toFixed(2)
-                        : parseFloat(String(transaction.totalEnergyKwh)).toFixed(2))
-                    : '-'} kWh
+                  {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
@@ -165,7 +144,7 @@ export function CustomerTransactionDetailPage() {
                   Duration
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {formatDuration(transaction.durationMinutes)}
+                  {formatDurationMinutes(transaction.durationMinutes)}
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
@@ -195,7 +174,7 @@ export function CustomerTransactionDetailPage() {
                 Total Cost
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                {formatCurrency(transaction.totalCost)}
+                {formatCurrency(transaction.totalCost, 'GHS')}
               </Typography>
               {transaction.status === 'Completed' && transaction.totalCost && (
                 <Button
