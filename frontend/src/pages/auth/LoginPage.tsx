@@ -10,7 +10,11 @@ import {
   Alert,
   Link,
   Divider,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
@@ -49,6 +53,7 @@ export function LoginPage() {
   const successMessage = (location.state as { message?: string })?.message;
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -231,12 +236,25 @@ export function LoginPage() {
               fullWidth
               size="small"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               margin="none"
               required
               autoComplete="current-password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button type="submit" fullWidth variant="contained" size="medium" sx={{ mt: 1.5 }} disabled={loading}>
               {loading ? 'Signing in...' : 'Sign in'}
