@@ -19,6 +19,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { CustomerMenu } from '../components/menus/CustomerMenu';
 import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
+import { LegalFooterLinks } from '../components/legal/LegalAuthNotice';
 import { customerBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
@@ -77,8 +78,24 @@ export function CustomerDashboardLayout() {
       }}
     >
       <DrawerBrandHeader subtitle="Customer Portal" />
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <CustomerMenu />
+      <Box sx={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+        <CustomerMenu onItemClick={() => setMobileOpen(false)} />
+      </Box>
+      <Box
+        component="footer"
+        sx={{
+          flexShrink: 0,
+          py: 1.5,
+          px: 2,
+          borderTop: 1,
+          borderColor: 'divider',
+          pb: { xs: `max(12px, env(safe-area-inset-bottom))`, sm: 1.5 },
+        }}
+      >
+        <LegalFooterLinks
+          onInternalNavigate={() => setMobileOpen(false)}
+          sx={{ mt: 0 }}
+        />
       </Box>
     </Box>
   );

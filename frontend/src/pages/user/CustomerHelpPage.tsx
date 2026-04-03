@@ -13,6 +13,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
+import GavelIcon from '@mui/icons-material/Gavel';
+import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
+import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 
 const faqs = [
@@ -43,6 +46,16 @@ const faqs = [
 ];
 
 export function CustomerHelpPage() {
+  const privacy = getPrivacyPolicyLink();
+  const terms = getTermsOfServiceLink();
+  const legalLinkTouchSx = {
+    minHeight: 44,
+    py: 1,
+    display: 'inline-flex' as const,
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
@@ -53,6 +66,32 @@ export function CustomerHelpPage() {
           Frequently asked questions and how to get in touch
         </Typography>
       </Box>
+
+      <Paper sx={{ mb: 3, p: 2 }}>
+        <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>
+          <GavelIcon fontSize="small" aria-hidden />
+          Privacy &amp; terms
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Read our Privacy Policy and Terms of Service (same links used in the App Store and Google Play listings).
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
+          <LegalDocLink
+            label="Privacy Policy"
+            href={privacy.href}
+            external={privacy.external}
+            variant="body2"
+            sx={legalLinkTouchSx}
+          />
+          <LegalDocLink
+            label="Terms of Service"
+            href={terms.href}
+            external={terms.external}
+            variant="body2"
+            sx={legalLinkTouchSx}
+          />
+        </Box>
+      </Paper>
 
       <Paper sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ p: 2, pb: 0 }}>

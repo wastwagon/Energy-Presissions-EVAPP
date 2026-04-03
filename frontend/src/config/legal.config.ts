@@ -1,7 +1,7 @@
 /**
- * Legal document URLs for App Store / Sign in with Apple expectations.
- * Set VITE_PRIVACY_POLICY_URL / VITE_TERMS_OF_SERVICE_URL to full https URLs to host
- * policies on your marketing site; otherwise the app serves /privacy and /terms.
+ * Legal document URLs for App Store / Play / Sign in with Apple expectations.
+ * Set VITE_PRIVACY_POLICY_URL / VITE_TERMS_OF_SERVICE_URL to full https URLs (e.g.
+ * https://cleanmotion.energyprecisions.com/privacy); otherwise the app uses in-app /privacy and /terms.
  */
 export type LegalLinkTarget = { href: string; external: boolean };
 

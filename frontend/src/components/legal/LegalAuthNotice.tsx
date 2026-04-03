@@ -1,4 +1,5 @@
-import { Box, Link, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import { Box, Link, Typography, type LinkProps } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
 
@@ -6,20 +7,37 @@ export function LegalDocLink({
   label,
   href,
   external,
+  onInternalNavigate,
+  variant = 'caption',
+  sx,
 }: {
   label: string;
   href: string;
   external: boolean;
+  /** Called when navigating to an in-app legal route (e.g. to close a mobile drawer). */
+  onInternalNavigate?: () => void;
+  variant?: 'caption' | 'body2';
+  sx?: LinkProps['sx'];
 }) {
+  const linkSx: LinkProps['sx'] = [
+    { fontWeight: 600 },
+    ...(Array.isArray(sx) ? sx : sx != null ? [sx] : []),
+  ];
   if (external) {
     return (
-      <Link href={href} target="_blank" rel="noopener noreferrer" variant="caption" sx={{ fontWeight: 600 }}>
+      <Link href={href} target="_blank" rel="noopener noreferrer" variant={variant} sx={linkSx}>
         {label}
       </Link>
     );
   }
   return (
-    <Link component={RouterLink} to={href} variant="caption" sx={{ fontWeight: 600 }}>
+    <Link
+      component={RouterLink}
+      to={href}
+      variant={variant}
+      sx={linkSx}
+      onClick={() => onInternalNavigate?.()}
+    >
       {label}
     </Link>
   );
@@ -33,27 +51,45 @@ type LegalAuthNoticeProps = {
 /**
  * Privacy / terms links and disclosures for auth screens (Apple & platform best practice).
  */
-/** Compact Privacy / Terms links for auth footers (all sign-in methods). */
-export function LegalFooterLinks() {
+export type LegalFooterLinksProps = {
+  onInternalNavigate?: () => void;
+  sx?: SxProps<Theme>;
+};
+
+/** Compact Privacy / Terms links for auth footers, drawer footers, and help screens. */
+export function LegalFooterLinks({ onInternalNavigate, sx: containerSx }: LegalFooterLinksProps = {}) {
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
   return (
     <Box
-      sx={{
-        mt: 1.5,
-        textAlign: 'center',
-        display: 'flex',
-        justifyContent: 'center',
-        gap: 1,
-        flexWrap: 'wrap',
-        alignItems: 'center',
-      }}
+      sx={[
+        {
+          mt: 1.5,
+          textAlign: 'center',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 1,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        },
+        ...(containerSx ? (Array.isArray(containerSx) ? containerSx : [containerSx]) : []),
+      ]}
     >
-      <LegalDocLink label="Privacy Policy" href={privacy.href} external={privacy.external} />
+      <LegalDocLink
+        label="Privacy Policy"
+        href={privacy.href}
+        external={privacy.external}
+        onInternalNavigate={onInternalNavigate}
+      />
       <Typography variant="caption" color="text.secondary" component="span" aria-hidden>
         ·
       </Typography>
-      <LegalDocLink label="Terms of Service" href={terms.href} external={terms.external} />
+      <LegalDocLink
+        label="Terms of Service"
+        href={terms.href}
+        external={terms.external}
+        onInternalNavigate={onInternalNavigate}
+      />
     </Box>
   );
 }

@@ -78,3 +78,7 @@ services:
         value: wss://api.cleanmotion.energyprecisions.com/ws
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
+      - key: VITE_PRIVACY_POLICY_URL
+        value: https://cleanmotion.energyprecisions.com/privacy
+      - key: VITE_TERMS_OF_SERVICE_URL
+        value: https://cleanmotion.energyprecisions.com/terms
