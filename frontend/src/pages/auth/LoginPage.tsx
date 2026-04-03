@@ -19,6 +19,7 @@ import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
+import { LegalAuthNotice, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 
 declare global {
   interface Window {
@@ -262,6 +263,8 @@ export function LoginPage() {
 
             <Divider sx={{ my: 1.5 }}>or</Divider>
 
+            <LegalAuthNotice includeAppleDisclosure />
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch' }}>
               {googleClientId && (
                 <Box
@@ -310,6 +313,8 @@ export function LoginPage() {
               Create account
             </Link>
           </Box>
+
+          <LegalFooterLinks />
         </Paper>
       </Container>
     </Box>

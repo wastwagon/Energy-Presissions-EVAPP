@@ -64,6 +64,12 @@ const RegisterPage = lazy(() =>
 const ForgotPasswordPage = lazy(() =>
   import('./pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })),
 );
+const PrivacyPolicyPage = lazy(() =>
+  import('./pages/legal/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })),
+);
+const TermsOfServicePage = lazy(() =>
+  import('./pages/legal/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })),
+);
 const CustomerDashboardPage = lazy(() =>
   import('./pages/user/CustomerDashboardPage').then((m) => ({ default: m.CustomerDashboardPage })),
 );
@@ -303,6 +309,22 @@ function App() {
           element={
             <RouteSuspense mode="full-page">
               <ForgotPasswordPage />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <RouteSuspense mode="full-page">
+              <PrivacyPolicyPage />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <RouteSuspense mode="full-page">
+              <TermsOfServicePage />
             </RouteSuspense>
           }
         />

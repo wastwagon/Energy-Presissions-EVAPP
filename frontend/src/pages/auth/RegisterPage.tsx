@@ -11,12 +11,16 @@ import {
   Link,
   IconButton,
   InputAdornment,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+import { LegalDocLink, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
+import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
 
 function phoneHasMinDigits(value: string, min: number): boolean {
   const digits = value.replace(/\D/g, '');
@@ -35,10 +39,16 @@ export function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [agreedToLegal, setAgreedToLegal] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!agreedToLegal) {
+      setError('Please agree to the Terms of Service and Privacy Policy to create an account.');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
@@ -184,6 +194,32 @@ export function RegisterPage() {
                 ),
               }}
             />
+            <FormControlLabel
+              sx={{ alignItems: 'flex-start', mt: 1.25, mr: 0 }}
+              control={
+                <Checkbox
+                  checked={agreedToLegal}
+                  onChange={(_, checked) => setAgreedToLegal(checked)}
+                  size="small"
+                  sx={{ pt: 0.25 }}
+                />
+              }
+              label={
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.45 }}>
+                  I agree to the{' '}
+                  <LegalDocLink
+                    label="Terms of Service"
+                    {...getTermsOfServiceLink()}
+                  />{' '}
+                  and{' '}
+                  <LegalDocLink
+                    label="Privacy Policy"
+                    {...getPrivacyPolicyLink()}
+                  />
+                  .
+                </Typography>
+              }
+            />
             <Button
               type="submit"
               fullWidth
@@ -206,6 +242,8 @@ export function RegisterPage() {
               Sign in instead
             </Link>
           </Box>
+
+          <LegalFooterLinks />
         </Paper>
       </Container>
     </Box>
