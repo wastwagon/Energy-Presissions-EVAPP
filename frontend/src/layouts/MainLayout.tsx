@@ -6,6 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { jampackAppBarSx } from '../theme/jampackShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
 import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
 
@@ -34,27 +35,51 @@ export function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 } }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          ...jampackAppBarSx,
+          color: 'text.primary',
+        }}
+      >
+        <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 }, px: { xs: 2, sm: 3 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
-            <img
+            <Box
+              component="img"
               src={LOGO_PUBLIC_URL}
               alt=""
-              style={{ height: 'clamp(36px, 9vw, 48px)', width: 'auto', objectFit: 'contain' }}
+              draggable={false}
+              sx={{ height: 'clamp(36px, 9vw, 48px)', width: 'auto', objectFit: 'contain', display: 'block' }}
             />
           </Box>
           {isAuthenticated && user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-              <Typography variant="body2" noWrap sx={{ maxWidth: { xs: 100, sm: 180 }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <Typography
+                variant="body2"
+                noWrap
+                sx={{
+                  maxWidth: { xs: 100, sm: 180 },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  color: 'text.primary',
+                }}
+              >
                 {user.name || user.email}
               </Typography>
-              <IconButton color="inherit" onClick={handleLogout} title="Logout" aria-label="Logout">
+              <IconButton
+                color="inherit"
+                onClick={handleLogout}
+                title="Logout"
+                aria-label="Logout"
+                sx={{ color: 'text.primary' }}
+              >
                 <LogoutIcon />
               </IconButton>
             </Box>
           )}
           {!isAuthenticated && (
-            <Button color="inherit" onClick={() => navigate('/login')}>
+            <Button color="primary" variant="text" onClick={() => navigate('/login')}>
               Login
             </Button>
           )}
