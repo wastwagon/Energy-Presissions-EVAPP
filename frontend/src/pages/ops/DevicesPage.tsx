@@ -13,8 +13,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Card,
-  CardContent,
   Grid,
   TextField,
   InputAdornment,
@@ -38,7 +36,14 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import {
   getChargePointStatusColor,
   getConnectionEventColor,
@@ -277,16 +282,25 @@ export function DevicesPage() {
               ),
               endAdornment: searchTerm && (
                 <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => {
-                    setSearchTerm('');
-                    loadChargePoints();
-                  }} aria-label="Clear device search">
+                  <IconButton
+                    onClick={() => {
+                      setSearchTerm('');
+                      loadChargePoints();
+                    }}
+                    aria-label="Clear device search"
+                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                  >
                     <ClearIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: { xs: 0, sm: 260 }, flex: { sm: 1 }, maxWidth: { sm: 400 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              minWidth: { xs: 0, sm: 260 },
+              flex: { sm: 1 },
+              maxWidth: { sm: 400 },
+            })}
           />
         </Box>
       </Box>
@@ -303,15 +317,27 @@ export function DevicesPage() {
         </Alert>
       )}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
-          <Tab label="All Devices" />
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
+          }}
+        >
+          <Tab label="All devices" />
           <Tab 
             label={
               <Badge badgeContent={recentErrors.length} color="error">
-                Recent Errors
+                Recent errors
               </Badge>
-            } 
+            }
           />
         </Tabs>
 
@@ -321,20 +347,20 @@ export function DevicesPage() {
               <CircularProgress />
             </Box>
           ) : filteredChargePoints.length === 0 ? (
-            <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-              <Typography variant="body1" gutterBottom>
-                {showOnlyRealDevices 
-                  ? 'No real devices found.' 
-                  : searchTerm 
-                    ? 'No devices found matching your search.' 
-                    : 'No charge points registered yet.'}
+            <Paper elevation={0} sx={{ ...premiumPanelCardSx, m: { xs: 2, sm: 2 } }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                {showOnlyRealDevices
+                  ? 'No real devices found'
+                  : searchTerm
+                    ? 'No devices match your search'
+                    : 'No charge points yet'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {showOnlyRealDevices
-                  ? 'Real devices are those with vendor name, serial number, and not matching dummy ID patterns (CP-ACC-*, CP-ASH-*, CP-WES-*).'
+                  ? 'Real devices have vendor name, serial number, and do not match dummy ID patterns (CP-ACC-*, CP-ASH-*, CP-WES-*).'
                   : searchTerm
-                    ? 'Try a different search term or clear the search to see all devices.'
-                    : 'Charge points will appear here after they connect and send BootNotification.'}
+                    ? 'Try another term or clear search to see all devices.'
+                    : 'Charge points appear here after they connect and send BootNotification.'}
               </Typography>
             </Paper>
           ) : (
@@ -456,22 +482,22 @@ export function DevicesPage() {
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Tooltip title="View Details">
+                            <Tooltip title="View details">
                               <IconButton
-                                size="small"
                                 onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
                                 color="primary"
                                 aria-label={`View details for ${cp.chargePointId}`}
+                                sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               >
                                 <SearchIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="View Connection Logs & Debug">
+                            <Tooltip title="Connection logs & debug">
                               <IconButton
-                                size="small"
                                 onClick={() => handleViewLogs(cp)}
                                 color={errorCount > 0 ? 'error' : 'default'}
                                 aria-label={`View connection logs for ${cp.chargePointId}`}
+                                sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               >
                                 <Badge badgeContent={errorCount} color="error">
                                   <BugReportIcon fontSize="small" />
@@ -511,19 +537,25 @@ export function DevicesPage() {
                 color="primary"
                 onClick={handleClearResolvedErrors}
                 size="small"
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                  py: 0.5,
+                  minHeight: 36,
+                  fontSize: '0.8125rem',
+                })}
               >
                 Clear Resolved Errors
               </Button>
             )}
           </Box>
           {recentErrors.length === 0 ? (
-            <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-              <Typography variant="body1" gutterBottom>
-                No recent connection errors.
+            <Paper elevation={0} sx={{ ...premiumPanelCardSx, m: { xs: 2, sm: 2 } }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                No recent connection errors
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                All devices are connecting successfully.
+                Devices are connecting successfully.
               </Typography>
             </Paper>
           ) : (
@@ -593,9 +625,10 @@ export function DevicesPage() {
         onClose={() => setLogsDialogOpen(false)}
         maxWidth="lg"
         fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
       >
-        <DialogTitle>
-          Connection Logs & Debug - {selectedChargePoint?.chargePointId}
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          Connection logs — {selectedChargePoint?.chargePointId}
         </DialogTitle>
         <DialogContent>
           {logsLoading ? (
@@ -606,52 +639,44 @@ export function DevicesPage() {
             <Box>
               {/* Connection Statistics */}
               {connectionStats && (
-                <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid container spacing={{ xs: 2, sm: 2 }} sx={{ mb: 3 }}>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="caption" color="text.secondary">
-                          Total Attempts
-                        </Typography>
-                        <Typography variant="h6">{connectionStats.totalAttempts}</Typography>
-                      </CardContent>
-                    </Card>
+                    <Paper sx={premiumPanelCardSx}>
+                      <Typography variant="caption" color="text.secondary">
+                        Total Attempts
+                      </Typography>
+                      <Typography variant="h6">{connectionStats.totalAttempts}</Typography>
+                    </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="caption" color="text.secondary">
-                          Successful
-                        </Typography>
-                        <Typography variant="h6" color="success.main">
-                          {connectionStats.successfulConnections}
-                        </Typography>
-                      </CardContent>
-                    </Card>
+                    <Paper sx={premiumPanelCardSx}>
+                      <Typography variant="caption" color="text.secondary">
+                        Successful
+                      </Typography>
+                      <Typography variant="h6" color="success.main">
+                        {connectionStats.successfulConnections}
+                      </Typography>
+                    </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="caption" color="text.secondary">
-                          Failed
-                        </Typography>
-                        <Typography variant="h6" color="error.main">
-                          {connectionStats.failedConnections}
-                        </Typography>
-                      </CardContent>
-                    </Card>
+                    <Paper sx={premiumPanelCardSx}>
+                      <Typography variant="caption" color="text.secondary">
+                        Failed
+                      </Typography>
+                      <Typography variant="h6" color="error.main">
+                        {connectionStats.failedConnections}
+                      </Typography>
+                    </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="caption" color="text.secondary">
-                          Consecutive Failures
-                        </Typography>
-                        <Typography variant="h6" color={connectionStats.consecutiveFailures > 0 ? 'error.main' : 'success.main'}>
-                          {connectionStats.consecutiveFailures}
-                        </Typography>
-                      </CardContent>
-                    </Card>
+                    <Paper sx={premiumPanelCardSx}>
+                      <Typography variant="caption" color="text.secondary">
+                        Consecutive Failures
+                      </Typography>
+                      <Typography variant="h6" color={connectionStats.consecutiveFailures > 0 ? 'error.main' : 'success.main'}>
+                        {connectionStats.consecutiveFailures}
+                      </Typography>
+                    </Paper>
                   </Grid>
                 </Grid>
               )}
@@ -744,8 +769,10 @@ export function DevicesPage() {
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLogsDialogOpen(false)}>Close</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setLogsDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

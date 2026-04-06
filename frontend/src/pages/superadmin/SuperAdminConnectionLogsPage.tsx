@@ -19,15 +19,14 @@ import {
   FormControl,
   InputLabel,
   Pagination,
-  Card,
-  CardContent,
   Grid,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import IconButton from '@mui/material/IconButton';
 import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatistics } from '../../services/connectionLogsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
 
 export function SuperAdminConnectionLogsPage() {
@@ -119,84 +118,101 @@ export function SuperAdminConnectionLogsPage() {
         </Alert>
       )}
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
         {statistics.slice(0, 4).map((stat) => (
           <Grid item xs={12} sm={6} md={3} key={stat.chargePointId}>
-            <Card>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {stat.chargePointId}
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {stat.successfulConnections} / {stat.totalAttempts}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Success Rate: {stat.totalAttempts > 0
-                    ? Math.round((stat.successfulConnections / stat.totalAttempts) * 100)
-                    : 0}%
-                </Typography>
-              </CardContent>
-            </Card>
+            <Paper elevation={0} sx={premiumPanelCardSx}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em' }}>
+                {stat.chargePointId}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5 }}>
+                {stat.successfulConnections} / {stat.totalAttempts}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Success rate:{' '}
+                {stat.totalAttempts > 0 ? Math.round((stat.successfulConnections / stat.totalAttempts) * 100) : 0}%
+              </Typography>
+            </Paper>
           </Grid>
         ))}
       </Grid>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Search by charge point ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setPage(1); // Reset to first page when searching
-                loadData();
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: searchTerm ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setPage(1);
-                      loadData();
-                    }}
-                    aria-label="Clear connection log search"
-                  >
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : null,
-            }}
-          />
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Event Type</InputLabel>
-            <Select
-              value={eventTypeFilter}
-              label="Event Type"
-              onChange={(e) => setEventTypeFilter(e.target.value as ConnectionEventType | '')}
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3 }}>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            py: { xs: 1.75, sm: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+            Filters
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-start' } }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Charge point ID or search…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setPage(1);
+                  loadData();
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => {
+                        setSearchTerm('');
+                        setPage(1);
+                        loadData();
+                      }}
+                      aria-label="Clear connection log search"
+                      sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
+              }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+            <FormControl
+              fullWidth
+              size="small"
+              sx={(th) => ({
+                ...sxObject(th, authFormFieldSx),
+                flexShrink: 0,
+                width: { xs: '100%', sm: 220 },
+              })}
             >
-              <MenuItem value="">All Events</MenuItem>
-              <MenuItem value="connection_attempt">Connection Attempt</MenuItem>
-              <MenuItem value="connection_success">Connection Success</MenuItem>
-              <MenuItem value="connection_failed">Connection Failed</MenuItem>
-              <MenuItem value="connection_closed">Connection Closed</MenuItem>
-              <MenuItem value="error">Error</MenuItem>
-              <MenuItem value="message_error">Message Error</MenuItem>
-            </Select>
-          </FormControl>
+              <InputLabel>Event type</InputLabel>
+              <Select
+                value={eventTypeFilter}
+                label="Event type"
+                onChange={(e) => setEventTypeFilter(e.target.value as ConnectionEventType | '')}
+              >
+                <MenuItem value="">All events</MenuItem>
+                <MenuItem value="connection_attempt">Connection attempt</MenuItem>
+                <MenuItem value="connection_success">Connection success</MenuItem>
+                <MenuItem value="connection_failed">Connection failed</MenuItem>
+                <MenuItem value="connection_closed">Connection closed</MenuItem>
+                <MenuItem value="error">Error</MenuItem>
+                <MenuItem value="message_error">Message error</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
-      </Paper>
-
-      <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
@@ -250,6 +266,7 @@ export function SuperAdminConnectionLogsPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      </Paper>
 
       {total > limit && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>

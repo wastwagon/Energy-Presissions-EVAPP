@@ -71,3 +71,44 @@ export const dashboardPageSubtitleSx: SystemStyleObject<Theme> = {
   lineHeight: 1.5,
   maxWidth: '44rem',
 };
+
+/** Home / landing feature tiles — white tile + hover lift (mobile-first padding). */
+export const premiumFeatureCardSx: SystemStyleObject<Theme> = {
+  ...jampackKpiCardBaseSx,
+  p: { xs: 2.5, sm: 3 },
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  textAlign: 'center',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease',
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: '0 16px 40px rgba(15, 23, 42, 0.1)',
+      borderColor: (theme) => alpha(theme.palette.primary.main, 0.28),
+    },
+  },
+};
+
+/** Detail / settings section panel — soft shadow, readable on page bg. */
+export const premiumPanelCardSx: SystemStyleObject<Theme> = {
+  ...jampackKpiCardBaseSx,
+  p: { xs: 2, sm: 2.5 },
+  borderRadius: '12px',
+  boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+};
+
+/** Centered empty state (lists, history) — same surface as panel cards. */
+export const premiumEmptyStatePaperSx: SystemStyleObject<Theme> = {
+  ...premiumPanelCardSx,
+  py: { xs: 3.5, sm: 4 },
+  textAlign: 'center',
+};
+
+/** Tables and dense list cards: elevated surface, no default padding (use header + body). */
+export const premiumTableSurfaceSx: SystemStyleObject<Theme> = {
+  ...jampackKpiCardBaseSx,
+  borderRadius: '12px',
+  boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+  overflow: 'hidden',
+};

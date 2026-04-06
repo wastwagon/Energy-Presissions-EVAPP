@@ -1,76 +1,78 @@
-import { Box, Typography, Paper, Alert } from '@mui/material';
-import WarningIcon from '@mui/icons-material/Warning';
+import { Box, Typography, Paper, Alert, Divider } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+import { authPagePaperSx, authPageRootSx } from '../../styles/authShell';
 
 export function SuspendedPage() {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-        p: 3,
-      }}
-    >
-      <Paper sx={{ p: 4, maxWidth: 600, width: '100%' }}>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
-          <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }} gutterBottom>
-            Account Suspended
+    <Box sx={authPageRootSx}>
+      <Paper
+        elevation={0}
+        sx={{
+          ...authPagePaperSx,
+          maxWidth: 520,
+          width: '100%',
+          textAlign: 'left',
+          p: { xs: 2.5, sm: 3.5 },
+        }}
+      >
+        <Box sx={{ textAlign: 'center', mb: 2.5 }}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: alpha(theme.palette.warning.main, 0.12),
+              border: `1px solid ${alpha(theme.palette.warning.main, 0.35)}`,
+            })}
+          >
+            <PauseCircleOutlineIcon sx={{ fontSize: 38, color: 'warning.dark' }} />
+          </Box>
+          <Typography variant="h6" component="h1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+            Account suspended
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.5 }}>
+            Temporary restriction — some actions are limited until your account is reviewed.
           </Typography>
         </Box>
 
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          Your account has been temporarily suspended. You have read-only access to your account.
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: 2, py: 0.5 }}>
+          You may have read-only access; new sessions, payments, or top-ups can be blocked.
         </Alert>
 
-        <Typography variant="body1" paragraph>
-          Your account is currently in <strong>suspended</strong> mode. This means:
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+          Typical restrictions
         </Typography>
-
-        <Box component="ul" sx={{ pl: 3, mb: 3 }}>
+        <Box component="ul" sx={{ pl: 2.5, mb: 2, m: 0, '& li': { mb: 1 } }}>
           <li>
-            <Typography variant="body2">
-              You can view your account information and transaction history
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
+              Viewing history may still be allowed; starting new charges may not.
             </Typography>
           </li>
           <li>
-            <Typography variant="body2">
-              You cannot start new charging sessions
-            </Typography>
-          </li>
-          <li>
-            <Typography variant="body2">
-              You cannot make payments or top up your wallet
-            </Typography>
-          </li>
-          <li>
-            <Typography variant="body2">
-              Active charging sessions can be stopped for safety
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
+              Wallet top-ups or payouts may be paused for compliance review.
             </Typography>
           </li>
         </Box>
 
-        <Typography variant="body2" color="text.secondary" paragraph>
-          If you believe this is an error, please contact our support team for assistance.
-        </Typography>
+        <Divider sx={{ my: 2 }} />
 
-        <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Support Contact:</strong>
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Email: support@evcharging.com
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Phone: +233 XX XXX XXXX
-          </Typography>
-        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em' }}>
+          SUPPORT
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.55 }}>
+          Email: support@evcharging.com
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
+          Phone: +233 XX XXX XXXX
+        </Typography>
       </Paper>
     </Box>
   );
 }
-
-
-

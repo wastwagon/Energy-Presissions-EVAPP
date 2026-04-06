@@ -4,14 +4,12 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
-  CardActions,
   Chip,
   CircularProgress,
   Alert,
   Button,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -20,12 +18,19 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { stationsApi, StationWithDistance } from '../../services/stationsApi';
 import { usersApi } from '../../services/usersApi';
 import { StartChargingDialog } from '../../components/StartChargingDialog';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumEmptyStatePaperSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 
 export function CustomerFavoritesPage() {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [stations, setStations] = useState<StationWithDistance[]>([]);
@@ -121,24 +126,44 @@ export function CustomerFavoritesPage() {
       )}
 
       {stations.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <FavoriteBorderIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
+        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: theme.palette.action.hover,
+              color: 'text.secondary',
+            })}
+          >
+            <FavoriteBorderIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
             No favorite stations yet
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Go to Find Stations and tap the heart icon on any station to add it to your favorites.
           </Typography>
-          <Button variant="contained" onClick={() => navigate('/stations')}>
-            Find Stations
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={() => navigate('/stations')}
+            sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            Find stations
           </Button>
         </Paper>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {stations.map((station) => (
-            <Card
+            <Paper
               key={station.chargePointId}
-              variant="outlined"
+              elevation={0}
               role="button"
               tabIndex={0}
               aria-label={`Open favorite station ${station.chargePointId}`}
@@ -148,16 +173,29 @@ export function CustomerFavoritesPage() {
                 }
               }}
               onKeyDown={handleFavoriteCardKeyDown(station)}
-              sx={{ cursor: station.status === 'Offline' ? 'default' : 'pointer' }}
+              sx={{
+                ...premiumTableSurfaceSx,
+                cursor: station.status === 'Offline' ? 'default' : 'pointer',
+                transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+              }}
             >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Typography variant="h6">{station.chargePointId}</Typography>
+              <Box sx={{ p: { xs: 2, sm: 2 }, pb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {station.chargePointId}
+                  </Typography>
                   <IconButton
                     color="error"
-                    onClick={() => handleRemoveFavorite(station.chargePointId)}
-                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleRemoveFavorite(station.chargePointId);
+                    }}
                     aria-label={`Remove ${station.chargePointId} from favorites`}
+                    sx={{
+                      ...sxObject(theme, premiumIconButtonTouchSx),
+                      flexShrink: 0,
+                    }}
                   >
                     <FavoriteIcon />
                   </IconButton>
@@ -176,18 +214,23 @@ export function CustomerFavoritesPage() {
                     />
                   )}
                 </Box>
-              </CardContent>
-              <CardActions>
+              </Box>
+              <Box sx={{ px: { xs: 2, sm: 2 }, pb: 2, pt: 0, flexWrap: 'wrap' }}>
                 <Button
-                  size="small"
+                  variant="contained"
+                  disableElevation
                   startIcon={<PlayArrowIcon />}
-                  onClick={() => openStartCharging(station)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openStartCharging(station);
+                  }}
                   disabled={station.status === 'Offline'}
+                  sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
-                  Start Charging
+                  Start charging
                 </Button>
-              </CardActions>
-            </Card>
+              </Box>
+            </Paper>
           ))}
         </Box>
       )}

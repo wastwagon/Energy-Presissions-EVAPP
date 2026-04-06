@@ -13,7 +13,15 @@ import {
 } from '@mui/material';
 import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
-import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+import {
+  authFormFieldSx,
+  authPagePaperSx,
+  authPageRootSx,
+  authPageTitleSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  sxObject,
+} from '../../styles/authShell';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -70,17 +78,17 @@ export function ForgotPasswordPage() {
           <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Reset your password
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, lineHeight: 1.45 }}>
             Enter the email you used to register. After you continue, you can enter your code and pick a new password below.
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 1.5, py: 0 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
           {info && (
-            <Alert severity="success" sx={{ mb: 1.5, py: 0 }} onClose={() => setInfo(null)}>
+            <Alert severity="success" sx={{ mb: 1, py: 0 }} onClose={() => setInfo(null)}>
               {info}
             </Alert>
           )}
@@ -94,53 +102,79 @@ export function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               margin="none"
-              sx={{ mb: 1.25 }}
+              sx={authFormFieldSx}
               required
               autoComplete="email"
               autoFocus
             />
-            <Button type="submit" fullWidth variant="contained" size="medium" disabled={loadingRequest}>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="medium"
+              disableElevation
+              sx={(th) => ({
+                ...sxObject(th, compactContainedCtaSx),
+                width: '100%',
+                mt: { xs: 1.125, sm: 1.25 },
+              })}
+              disabled={loadingRequest}
+            >
               {loadingRequest ? 'Working…' : 'Continue'}
             </Button>
           </Box>
 
           <Collapse in={requestDone}>
-            <Typography variant="subtitle2" sx={{ mt: 2, mb: 0.75 }}>
+            <Typography variant="subtitle2" sx={{ mt: 1.5, mb: 0.75, fontWeight: 600, letterSpacing: '-0.01em' }}>
               Enter your code and new password
             </Typography>
             <Box component="form" onSubmit={handleReset}>
-              <TextField
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.875 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Reset code"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  margin="none"
+                  sx={authFormFieldSx}
+                  required
+                  autoComplete="off"
+                  helperText="Use the code from your email, or the one support gave you."
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="New password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  margin="none"
+                  sx={authFormFieldSx}
+                  required
+                  autoComplete="new-password"
+                  inputProps={{ minLength: 8 }}
+                  helperText="Use at least 8 characters."
+                />
+              </Box>
+              <Button
+                type="submit"
                 fullWidth
-                size="small"
-                label="Reset code"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                margin="none"
-                sx={{ mb: 1.25 }}
-                required
-                autoComplete="off"
-                helperText="Use the code from your email, or the one support gave you."
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="New password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="none"
-                required
-                autoComplete="new-password"
-                inputProps={{ minLength: 8 }}
-                helperText="Use at least 8 characters."
-              />
-              <Button type="submit" fullWidth variant="outlined" size="medium" sx={{ mt: 1.5 }} disabled={loadingReset}>
+                variant="outlined"
+                size="medium"
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
+                  width: '100%',
+                  mt: { xs: 1.125, sm: 1.25 },
+                })}
+                disabled={loadingReset}
+              >
                 {loadingReset ? 'Saving…' : 'Save new password'}
               </Button>
             </Box>
           </Collapse>
 
-          <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'center' }}>
             <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
               Back to sign in
             </Link>

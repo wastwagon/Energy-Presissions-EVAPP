@@ -18,12 +18,14 @@ import {
 import { billingApi, Invoice } from '../../services/billingApi';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
   return (
     <div role="tabpanel" hidden={value !== index}>
-      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ pt: 2, px: { xs: 1.5, sm: 2 }, pb: { xs: 2, sm: 2 } }}>{children}</Box>
+      )}
     </div>
   );
 }
@@ -58,13 +60,15 @@ export function SuperAdminBillingPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Billing & Invoices
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Read-only view of billing transactions and invoices from the API.
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Billing & Invoices
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Read-only view of billing transactions and invoices from the API.
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -73,8 +77,20 @@ export function SuperAdminBillingPage() {
         </Alert>
       )}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 2 },
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
+          }}
+        >
           <Tab label="Invoices" />
           <Tab label="Billing transactions" />
         </Tabs>

@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   CircularProgress,
   Alert,
   Button,
@@ -22,7 +20,18 @@ import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { reservationsApi, Reservation } from '../../services/reservationsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumEmptyStatePaperSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactOutlinedCtaSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 
 export function SuperAdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -84,7 +93,7 @@ export function SuperAdminReservationsPage() {
             View and manage connector reservations
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexDirection: { xs: 'column', sm: 'row' } }}>
           <TextField
             size="small"
             placeholder="Filter by charge point"
@@ -97,9 +106,20 @@ export function SuperAdminReservationsPage() {
                 </InputAdornment>
               ),
             }}
-            sx={{ width: { xs: '100%', sm: 260 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              width: { xs: '100%', sm: 260 },
+            })}
           />
-          <Button startIcon={<RefreshIcon />} onClick={loadReservations} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={loadReservations}
+            variant="outlined"
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
             Refresh
           </Button>
         </Box>
@@ -116,55 +136,54 @@ export function SuperAdminReservationsPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardContent>
-          {reservations.length === 0 ? (
+      <Paper sx={premiumTableSurfaceSx}>
+        {reservations.length === 0 ? (
+          <Box sx={premiumEmptyStatePaperSx}>
             <Typography color="text.secondary">No active reservations</Typography>
-          ) : (
-            <TableContainer sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Charge Point</TableCell>
-                    <TableCell>Connector</TableCell>
-                    <TableCell>ID Tag</TableCell>
-                    <TableCell>Expires</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reservations.map((r) => {
-                    const rid = (r as any).reservationId ?? r.id;
-                    return (
-                      <TableRow key={`${r.chargePointId}-${r.connectorId}-${rid}`}>
-                        <TableCell>{r.chargePointId}</TableCell>
-                        <TableCell>{r.connectorId}</TableCell>
-                        <TableCell>{r.idTag}</TableCell>
-                        <TableCell>
-                          {r.expiryDate
-                            ? new Date(r.expiryDate).toLocaleString()
-                            : '-'}
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleCancel(r)}
-                            disabled={cancellingId === rid}
-                            aria-label={`Cancel reservation ${rid} for ${r.chargePointId}`}
-                          >
-                            <CancelIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
+          </Box>
+        ) : (
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Charge Point</TableCell>
+                  <TableCell>Connector</TableCell>
+                  <TableCell>ID Tag</TableCell>
+                  <TableCell>Expires</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {reservations.map((r) => {
+                  const rid = (r as any).reservationId ?? r.id;
+                  return (
+                    <TableRow key={`${r.chargePointId}-${r.connectorId}-${rid}`}>
+                      <TableCell>{r.chargePointId}</TableCell>
+                      <TableCell>{r.connectorId}</TableCell>
+                      <TableCell>{r.idTag}</TableCell>
+                      <TableCell>
+                        {r.expiryDate ? new Date(r.expiryDate).toLocaleString() : '-'}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                          color="error"
+                          onClick={() => handleCancel(r)}
+                          disabled={cancellingId === rid}
+                          aria-label={`Cancel reservation ${rid} for ${r.chargePointId}`}
+                        >
+                          <CancelIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
     </Box>
   );
 }

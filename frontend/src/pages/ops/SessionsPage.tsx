@@ -19,7 +19,7 @@ import {
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 
@@ -119,18 +119,28 @@ export function SessionsPage() {
         </Alert>
       )}
 
-      <Paper sx={{ mt: 2, overflow: 'hidden' }}>
-        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mt: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
+          }}
+        >
           <Tab label={`Active (${activeTransactions.length})`} />
-          <Tab label={`All Sessions (${allTransactions.length})`} />
+          <Tab label={`All sessions (${allTransactions.length})`} />
         </Tabs>
 
         {transactions.length === 0 ? (
-          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
             <Typography variant="body2" color="text.secondary">
-              {activeTab === 0
-                ? 'No active charging sessions.'
-                : 'No transactions found.'}
+              {activeTab === 0 ? 'No active charging sessions.' : 'No transactions found.'}
             </Typography>
           </Box>
         ) : (

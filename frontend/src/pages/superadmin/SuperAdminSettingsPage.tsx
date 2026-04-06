@@ -4,8 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Tabs,
   Tab,
   Button,
@@ -41,7 +39,21 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import { settingsApi } from '../../services/settingsApi';
 import { tariffsApi } from '../../services/tariffsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumPanelCardSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getStoredAccountType } from '../../utils/authSession';
 
 interface TabPanelProps {
@@ -60,7 +72,9 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`admin-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ pt: 3, px: { xs: 1.5, sm: 2, md: 3 }, pb: { xs: 2, md: 3 } }}>{children}</Box>
+      )}
     </div>
   );
 }
@@ -315,7 +329,7 @@ function SuperAdminSettingsPage() {
         </Alert>
       )}
 
-      <Paper>
+      <Paper sx={premiumTableSurfaceSx}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
           {isSuperAdmin && (
             <Tab label="System Settings" icon={<SettingsIcon />} iconPosition="start" />
@@ -342,7 +356,7 @@ function SuperAdminSettingsPage() {
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 OCPP Configuration
               </Typography>
-              <TableContainer sx={{ overflowX: 'auto' }}>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -373,6 +387,7 @@ function SuperAdminSettingsPage() {
                                 }
                               }}
                               autoFocus
+                              sx={(th) => sxObject(th, authFormFieldSx)}
                             />
                           ) : (
                             <Typography variant="body2">{setting.value || '-'}</Typography>
@@ -387,6 +402,7 @@ function SuperAdminSettingsPage() {
                           {editingSetting === setting.key ? (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
                               aria-label={`Save setting ${setting.key}`}
@@ -396,6 +412,7 @@ function SuperAdminSettingsPage() {
                           ) : (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               onClick={() => {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');
@@ -418,7 +435,7 @@ function SuperAdminSettingsPage() {
               <Typography variant="h6" gutterBottom>
                 Notification Settings
               </Typography>
-              <TableContainer sx={{ overflowX: 'auto' }}>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -455,6 +472,7 @@ function SuperAdminSettingsPage() {
                                   }
                                 }}
                                 autoFocus
+                                sx={(th) => sxObject(th, authFormFieldSx)}
                               />
                             )
                           ) : (
@@ -478,6 +496,7 @@ function SuperAdminSettingsPage() {
                           {editingSetting === setting.key ? (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
                               aria-label={`Save setting ${setting.key}`}
@@ -487,6 +506,7 @@ function SuperAdminSettingsPage() {
                           ) : (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               onClick={() => {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');
@@ -513,6 +533,7 @@ function SuperAdminSettingsPage() {
             <Typography variant="h6">Tariff Management</Typography>
             <Button
               variant="contained"
+              disableElevation
               startIcon={<AddIcon />}
               onClick={() => {
                 setEditingTariff(null);
@@ -529,6 +550,10 @@ function SuperAdminSettingsPage() {
                 });
                 setTariffDialogOpen(true);
               }}
+              sx={(th) => ({
+                ...sxObject(th, compactContainedCtaSx),
+                width: { xs: '100%', sm: 'auto' },
+              })}
             >
               Create Tariff
             </Button>
@@ -539,8 +564,8 @@ function SuperAdminSettingsPage() {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer sx={{ overflowX: 'auto' }}>
-              <Table>
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
@@ -598,6 +623,7 @@ function SuperAdminSettingsPage() {
                         <TableCell>
                           <IconButton
                             size="small"
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                             onClick={() => handleEditTariff(tariff)}
                             color="primary"
                             aria-label={`Edit tariff ${tariff.name}`}
@@ -606,6 +632,7 @@ function SuperAdminSettingsPage() {
                           </IconButton>
                           <IconButton
                             size="small"
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                             onClick={() => handleDeleteTariff(tariff.id)}
                             color="error"
                             aria-label={`Delete tariff ${tariff.name}`}
@@ -622,8 +649,16 @@ function SuperAdminSettingsPage() {
           )}
 
           {/* Tariff Dialog */}
-          <Dialog open={tariffDialogOpen} onClose={() => setTariffDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>{editingTariff ? 'Edit Tariff' : 'Create New Tariff'}</DialogTitle>
+          <Dialog
+            open={tariffDialogOpen}
+            onClose={() => setTariffDialogOpen(false)}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+          >
+            <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>
+              {editingTariff ? 'Edit Tariff' : 'Create New Tariff'}
+            </DialogTitle>
             <DialogContent>
               <Box sx={{ pt: 2 }}>
                 <Grid container spacing={2}>
@@ -634,6 +669,7 @@ function SuperAdminSettingsPage() {
                       required
                       value={tariffForm.name}
                       onChange={(e) => setTariffForm({ ...tariffForm, name: e.target.value })}
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -644,6 +680,7 @@ function SuperAdminSettingsPage() {
                       rows={2}
                       value={tariffForm.description}
                       onChange={(e) => setTariffForm({ ...tariffForm, description: e.target.value })}
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -658,6 +695,7 @@ function SuperAdminSettingsPage() {
                         endAdornment: <InputAdornment position="end">per kWh</InputAdornment>,
                       }}
                       helperText="Cost per kilowatt-hour in GHS"
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -672,6 +710,7 @@ function SuperAdminSettingsPage() {
                         endAdornment: <InputAdornment position="end">per hour</InputAdornment>,
                       }}
                       helperText="Cost per hour in GHS"
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -685,6 +724,7 @@ function SuperAdminSettingsPage() {
                         startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
                       }}
                       helperText="Fixed fee per transaction in GHS"
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -706,6 +746,7 @@ function SuperAdminSettingsPage() {
                       value={tariffForm.validFrom}
                       onChange={(e) => setTariffForm({ ...tariffForm, validFrom: e.target.value })}
                       InputLabelProps={{ shrink: true }}
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -716,14 +757,23 @@ function SuperAdminSettingsPage() {
                       value={tariffForm.validTo}
                       onChange={(e) => setTariffForm({ ...tariffForm, validTo: e.target.value })}
                       InputLabelProps={{ shrink: true }}
+                      sx={(th) => sxObject(th, authFormFieldSx)}
                     />
                   </Grid>
                 </Grid>
               </Box>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setTariffDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveTariff} variant="contained" disabled={!tariffForm.name}>
+            <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+              <Button onClick={() => setTariffDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveTariff}
+                variant="contained"
+                disableElevation
+                disabled={!tariffForm.name}
+                sx={(th) => sxObject(th, compactContainedCtaSx)}
+              >
                 {editingTariff ? 'Update' : 'Create'}
               </Button>
             </DialogActions>
@@ -734,16 +784,22 @@ function SuperAdminSettingsPage() {
             onClose={() => setDeleteTariffDialogOpen(false)}
             fullWidth
             maxWidth="xs"
+            PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
           >
-            <DialogTitle>Delete tariff?</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Delete tariff?</DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                This action cannot be undone.
-              </DialogContentText>
+              <DialogContentText component="div">This action cannot be undone.</DialogContentText>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDeleteTariffDialogOpen(false)}>Cancel</Button>
-              <Button onClick={confirmDeleteTariff} color="error" variant="contained">
+            <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+              <Button onClick={() => setDeleteTariffDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteTariff}
+                variant="contained"
+                disableElevation
+                sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+              >
                 Delete
               </Button>
             </DialogActions>
@@ -753,9 +809,9 @@ function SuperAdminSettingsPage() {
         {/* CMS & Branding Tab - Only for SuperAdmin */}
         {isSuperAdmin && (
           <TabPanel value={activeTab} index={2}>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3 }}>
+              <Paper sx={premiumPanelCardSx}>
                 <Typography variant="h6" gutterBottom>
                   System Information
                 </Typography>
@@ -765,7 +821,7 @@ function SuperAdminSettingsPage() {
                     fullWidth
                     value={systemName}
                     onChange={(e) => setSystemName(e.target.value)}
-                    sx={{ mb: 2 }}
+                    sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 2 })}
                   />
                   <TextField
                     label="System Description"
@@ -774,12 +830,13 @@ function SuperAdminSettingsPage() {
                     rows={3}
                     value={systemDescription}
                     onChange={(e) => setSystemDescription(e.target.value)}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Box>
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3 }}>
+              <Paper sx={premiumPanelCardSx}>
                 <Typography variant="h6" gutterBottom>
                   Logo Upload
                 </Typography>
@@ -798,6 +855,7 @@ function SuperAdminSettingsPage() {
                     component="label"
                     fullWidth
                     startIcon={<CloudUploadIcon />}
+                    sx={(th) => sxObject(th, compactOutlinedCtaSx)}
                   >
                     Upload Logo
                     <input
@@ -816,10 +874,13 @@ function SuperAdminSettingsPage() {
             <Grid item xs={12}>
               <Button
                 variant="contained"
+                disableElevation
                 startIcon={<SaveIcon />}
                 onClick={handleSaveBranding}
-                size="large"
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                sx={(th) => ({
+                  ...sxObject(th, compactContainedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                })}
               >
                 Save Branding Settings
               </Button>
@@ -840,7 +901,7 @@ function SuperAdminSettingsPage() {
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Paystack Configuration
               </Typography>
-              <TableContainer sx={{ overflowX: 'auto' }}>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -872,6 +933,7 @@ function SuperAdminSettingsPage() {
                                 }
                               }}
                               autoFocus
+                              sx={(th) => sxObject(th, authFormFieldSx)}
                             />
                           ) : (
                             <Typography variant="body2">
@@ -896,6 +958,7 @@ function SuperAdminSettingsPage() {
                           {editingSetting === setting.key ? (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               color="primary"
                               onClick={() => handleSaveSetting(setting.key)}
                               aria-label={`Save setting ${setting.key}`}
@@ -905,6 +968,7 @@ function SuperAdminSettingsPage() {
                           ) : (
                             <IconButton
                               size="small"
+                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                               onClick={() => {
                                 setEditingSetting(setting.key);
                                 setSettingValue(setting.value || '');

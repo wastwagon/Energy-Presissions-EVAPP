@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 
 export function SuperAdminSecurityLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -48,13 +48,15 @@ export function SuperAdminSecurityLogsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Security & Logs
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Audit trail of system activity
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Security & Logs
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Audit trail of system activity
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -63,7 +65,7 @@ export function SuperAdminSecurityLogsPage() {
         </Alert>
       )}
 
-      <Paper>
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>

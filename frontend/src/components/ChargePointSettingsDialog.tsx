@@ -21,6 +21,14 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { chargePointsApi, ChargePoint } from '../services/chargePointsApi';
 import { vendorApi, Vendor } from '../services/vendorApi';
 import { api } from '../services/api';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../styles/authShell';
 
 interface ChargePointSettingsDialogProps {
   open: boolean;
@@ -288,11 +296,23 @@ export function ChargePointSettingsDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+    >
       <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Charge Point Settings</Typography>
-          <IconButton onClick={onClose} size="small" aria-label="Close charge point settings dialog">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+            Charge Point Settings
+          </Typography>
+          <IconButton
+            onClick={onClose}
+            aria-label="Close charge point settings dialog"
+            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+          >
             <CloseIcon />
           </IconButton>
         </Box>
@@ -314,7 +334,7 @@ export function ChargePointSettingsDialog({
           </Alert>
         )}
 
-        <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: 1 }}>
           {/* Capacity Section */}
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
@@ -332,6 +352,7 @@ export function ChargePointSettingsDialog({
               InputProps={{
                 endAdornment: <InputAdornment position="end">kW</InputAdornment>,
               }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
 
@@ -352,6 +373,7 @@ export function ChargePointSettingsDialog({
               InputProps={{
                 startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
               }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
 
@@ -372,6 +394,7 @@ export function ChargePointSettingsDialog({
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
                 helperText="Select the vendor that owns/manages this charge point"
+                sx={(th) => sxObject(th, authFormFieldSx)}
               >
                 {vendors.map((vendor) => (
                   <MenuItem key={vendor.id} value={vendor.id.toString()}>
@@ -399,6 +422,7 @@ export function ChargePointSettingsDialog({
               InputProps={{
                 startAdornment: <InputAdornment position="start"><LocationOnIcon color="action" /></InputAdornment>,
               }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
           <Grid item xs={12}>
@@ -410,6 +434,7 @@ export function ChargePointSettingsDialog({
               value={formData.locationAddress}
               onChange={(e) => setFormData({ ...formData, locationAddress: e.target.value })}
               helperText="Full address of the charge station"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -420,6 +445,7 @@ export function ChargePointSettingsDialog({
               value={formData.locationLatitude}
               onChange={(e) => setFormData({ ...formData, locationLatitude: e.target.value })}
               helperText="GPS latitude coordinate"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -430,16 +456,21 @@ export function ChargePointSettingsDialog({
               value={formData.locationLongitude}
               onChange={(e) => setFormData({ ...formData, locationLongitude: e.target.value })}
               helperText="GPS longitude coordinate"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mt: 1 }}>
               <Button
                 variant="outlined"
                 startIcon={<LocationOnIcon />}
                 onClick={handleOpenGoogleMaps}
                 disabled={!formData.locationLatitude || !formData.locationLongitude}
                 title={!formData.locationLatitude || !formData.locationLongitude ? "Please enter latitude and longitude first" : "View location on Google Maps"}
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                })}
               >
                 View on Google Maps
               </Button>
@@ -448,6 +479,10 @@ export function ChargePointSettingsDialog({
                 onClick={handleGetDirections}
                 disabled={!formData.locationLatitude || !formData.locationLongitude}
                 title={!formData.locationLatitude || !formData.locationLongitude ? "Please enter latitude and longitude first" : "Get directions to this location"}
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                })}
               >
                 Get Directions
               </Button>
@@ -460,15 +495,17 @@ export function ChargePointSettingsDialog({
           </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={saving}>
+      <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+        <Button onClick={onClose} disabled={saving} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
           Cancel
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
-          startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+          disableElevation
+          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
           disabled={saving}
+          sx={(th) => sxObject(th, compactContainedCtaSx)}
         >
           Save Settings
         </Button>

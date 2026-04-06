@@ -6,8 +6,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Link,
-  Card,
-  CardContent,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -16,7 +15,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import GavelIcon from '@mui/icons-material/Gavel';
 import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 
 const faqs = [
   {
@@ -46,10 +46,11 @@ const faqs = [
 ];
 
 export function CustomerHelpPage() {
+  const theme = useTheme();
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
   const legalLinkTouchSx = {
-    minHeight: 44,
+    ...sxObject(theme, premiumIconButtonTouchSx),
     py: 1,
     display: 'inline-flex' as const,
     alignItems: 'center',
@@ -67,7 +68,7 @@ export function CustomerHelpPage() {
         </Typography>
       </Box>
 
-      <Paper sx={{ mb: 3, p: 2 }}>
+      <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3 }}>
         <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>
           <GavelIcon fontSize="small" aria-hidden />
           Privacy &amp; terms
@@ -93,14 +94,21 @@ export function CustomerHelpPage() {
         </Box>
       </Paper>
 
-      <Paper sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ p: 2, pb: 0 }}>
-          Frequently Asked Questions
+      <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3, p: 0, overflow: 'hidden' }}>
+        <Typography variant="subtitle1" sx={{ px: { xs: 2, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: 1, fontWeight: 600 }}>
+          Frequently asked questions
         </Typography>
         {faqs.map((faq, idx) => (
-          <Accordion key={idx} disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography fontWeight={500}>{faq.q}</Typography>
+          <Accordion
+            key={idx}
+            disableGutters
+            elevation={0}
+            sx={{ '&:before': { display: 'none' }, bgcolor: 'transparent' }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 48, '& .MuiAccordionSummary-content': { my: 1 } }}>
+              <Typography fontWeight={500} variant="body2">
+                {faq.q}
+              </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Typography variant="body2" color="text.secondary">
@@ -111,27 +119,43 @@ export function CustomerHelpPage() {
         ))}
       </Paper>
 
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SupportAgentIcon />
-            Contact Support
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Need more help? Reach out to our support team.
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Link href="mailto:support@cleanmotionghana.com" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EmailIcon fontSize="small" />
-              support@cleanmotionghana.com
-            </Link>
-            <Link href="tel:+233244000000" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PhoneIcon fontSize="small" />
-              +233 24 400 0000
-            </Link>
-          </Box>
-        </CardContent>
-      </Card>
+      <Paper elevation={0} sx={premiumPanelCardSx}>
+        <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>
+          <SupportAgentIcon fontSize="small" color="primary" />
+          Contact support
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Need more help? Reach out to our support team.
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Link
+            href="mailto:support@cleanmotionghana.com"
+            sx={{
+              ...sxObject(theme, premiumIconButtonTouchSx),
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              py: 0.5,
+            }}
+          >
+            <EmailIcon fontSize="small" />
+            support@cleanmotionghana.com
+          </Link>
+          <Link
+            href="tel:+233244000000"
+            sx={{
+              ...sxObject(theme, premiumIconButtonTouchSx),
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              py: 0.5,
+            }}
+          >
+            <PhoneIcon fontSize="small" />
+            +233 24 400 0000
+          </Link>
+        </Box>
+      </Paper>
     </Box>
   );
 }

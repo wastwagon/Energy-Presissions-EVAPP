@@ -5,19 +5,19 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Alert,
   Button,
   Divider,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
@@ -70,8 +70,12 @@ export function CustomerTransactionDetailPage() {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error || 'Transaction not found'}
         </Alert>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/user/sessions/history')}>
-          Back to History
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/user/sessions/history')}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        >
+          Back to history
         </Button>
       </Box>
     );
@@ -83,13 +87,13 @@ export function CustomerTransactionDetailPage() {
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/user/sessions/history')}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         >
           Back
         </Button>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Transaction Details
+            Transaction details
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Transaction ID: {transaction.transactionId}
@@ -99,68 +103,70 @@ export function CustomerTransactionDetailPage() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-              Charging Session Information
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3 }}>
+              Charging session
             </Typography>
 
             <Grid container spacing={2}>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Charge Point
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Charge point
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                   {transaction.chargePointId}
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   Connector
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                   {transaction.connectorId}
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   Status
                 </Typography>
-                <Chip
-                  label={transaction.status}
-                  color={getTransactionStatusColor(transaction.status)}
-                  size="small"
-                />
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={transaction.status}
+                    color={getTransactionStatusColor(transaction.status)}
+                    size="small"
+                  />
+                </Box>
               </Grid>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Energy Consumed
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Energy consumed
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                   {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   Duration
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                   {formatDurationMinutes(transaction.durationMinutes)}
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Start Time
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Start time
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                   {new Date(transaction.startTime).toLocaleString()}
                 </Typography>
               </Grid>
               {transaction.stopTime && (
                 <Grid item xs={6} sm={4}>
-                  <Typography variant="body2" color="text.secondary">
-                    End Time
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    End time
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
                     {new Date(transaction.stopTime).toLocaleString()}
                   </Typography>
                 </Grid>
@@ -169,22 +175,37 @@ export function CustomerTransactionDetailPage() {
 
             <Divider sx={{ my: 3 }} />
 
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Total Cost
+            <Box
+              sx={(theme) => ({
+                mt: 2,
+                p: { xs: 2, sm: 2.25 },
+                borderRadius: 2,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(
+                  theme.palette.primary.main,
+                  0.02
+                )} 100%)`,
+              })}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Total cost
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', my: 1 }}>
                 {formatCurrency(transaction.totalCost, 'GHS')}
               </Typography>
               {transaction.status === 'Completed' && transaction.totalCost && (
                 <Button
                   variant="contained"
+                  disableElevation
                   startIcon={<PaymentIcon />}
                   onClick={() => setPaymentDialogOpen(true)}
-                  size="large"
-                  sx={{ minWidth: 200 }}
+                  sx={(th) => ({
+                    ...sxObject(th, compactContainedCtaSx),
+                    width: { xs: '100%', sm: 'auto' },
+                    minWidth: { sm: 200 },
+                  })}
                 >
-                  Pay Now
+                  Pay now
                 </Button>
               )}
             </Box>
@@ -192,28 +213,29 @@ export function CustomerTransactionDetailPage() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Quick Actions
-              </Typography>
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+              Quick actions
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Button
                 fullWidth
                 variant="outlined"
-                sx={{ mb: 1 }}
                 onClick={() => navigate(`/stations/${transaction.chargePointId}`)}
+                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
               >
-                View Charge Point
+                View charge point
               </Button>
               <Button
                 fullWidth
                 variant="outlined"
                 onClick={() => navigate('/user/sessions/history')}
+                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
               >
-                Back to History
+                Back to history
               </Button>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 

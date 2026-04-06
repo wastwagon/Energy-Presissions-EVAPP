@@ -7,6 +7,7 @@ import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
 import { jampackAppBarSx } from '../theme/jampackShell';
+import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
 import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
 
@@ -72,7 +73,10 @@ export function MainLayout() {
                 onClick={handleLogout}
                 title="Logout"
                 aria-label="Logout"
-                sx={{ color: 'text.primary' }}
+                sx={{
+                  ...sxObject(theme, premiumIconButtonTouchSx),
+                  color: 'text.primary',
+                }}
               >
                 <LogoutIcon />
               </IconButton>

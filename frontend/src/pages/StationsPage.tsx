@@ -1,13 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
   Chip,
   CircularProgress,
   Alert,
@@ -22,11 +19,10 @@ import {
   List,
   ListItem,
   ListItemText,
-  Divider,
   IconButton,
   Tooltip,
-  Stack,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -35,17 +31,26 @@ import ListIcon from '@mui/icons-material/List';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import LoginIcon from '@mui/icons-material/Login';
-import BoltIcon from '@mui/icons-material/Bolt';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
 import { usersApi } from '../services/usersApi';
 import { websocketService } from '../services/websocket';
 import { StartChargingDialog } from '../components/StartChargingDialog';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../styles/authShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  jampackKpiCardBaseSx,
+  premiumEmptyStatePaperSx,
+} from '../theme/jampackShell';
+import { StationListCard } from '../components/stations/StationListCard';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
 import {
@@ -55,6 +60,7 @@ import {
 } from '../utils/authSession';
 
 export function StationsPage() {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [stations, setStations] = useState<StationWithDistance[]>([]);
@@ -123,12 +129,17 @@ export function StationsPage() {
   // WebSocket listener for real-time status updates
   useEffect(() => {
     const unsubscribe = websocketService.on('chargePointStatus', (event) => {
+      const { chargePointId, status, lastSeen, lastHeartbeat } = event.data;
       setStations((prev) =>
-        prev.map((station) =>
-          station.chargePointId === event.data.chargePointId
-            ? { ...station, ...event.data }
-            : station,
-        ),
+        prev.map((station) => {
+          if (station.chargePointId !== chargePointId) return station;
+          return {
+            ...station,
+            ...(status != null ? { status } : {}),
+            ...(lastSeen != null ? { lastSeen } : {}),
+            ...(lastHeartbeat != null ? { lastHeartbeat } : {}),
+          };
+        }),
       );
     });
 
@@ -187,43 +198,17 @@ export function StationsPage() {
     try {
       setLoading(true);
       setError(null);
-      const results = await stationsApi.search(searchTerm, 50);
-      // Convert search results to StationWithDistance format
-      const stationsWithDistance = results.map((station: any) => ({
-        ...station,
-        distanceKm: userLocation
-          ? calculateDistance(
-              userLocation.lat,
-              userLocation.lng,
-              station.locationLatitude,
-              station.locationLongitude,
-            )
-          : 0,
-        availableConnectors: 0,
-        totalConnectors: 0,
-        activeSessions: 0,
-      }));
-      setStations(stationsWithDistance);
+      const results = await stationsApi.search(
+        searchTerm.trim(),
+        50,
+        userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : undefined,
+      );
+      setStations(results);
     } catch (err: any) {
       setError(err.message || 'Search failed');
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-    if (!lat2 || !lng2) return 0;
-    const R = 6371; // Earth's radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 100) / 100;
   };
 
   const handleStationClick = (station: StationWithDistance) => {
@@ -334,10 +319,10 @@ export function StationsPage() {
                 variant="outlined"
                 startIcon={<ArrowBackIcon />}
                 onClick={() => navigate(getDashboardRoute())}
-                sx={{
-                  textTransform: 'none',
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
                   width: { xs: '100%', sm: 'auto' },
-                }}
+                })}
               >
                 Back to Dashboard
               </Button>
@@ -354,19 +339,25 @@ export function StationsPage() {
             Discover nearby EV charging stations in Ghana
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
-          <Tooltip title="List View">
+        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
+          <Tooltip title="List view">
             <IconButton
               onClick={() => setViewMode('list')}
               color={viewMode === 'list' ? 'primary' : 'default'}
               aria-label="Switch to list view"
+              sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
             >
               <ListIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Map View (Coming Soon)">
+          <Tooltip title="Map view (coming soon)">
             <span>
-              <IconButton disabled color="default" aria-label="Map view coming soon">
+              <IconButton
+                disabled
+                color="default"
+                aria-label="Map view coming soon"
+                sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
+              >
                 <MapIcon />
               </IconButton>
             </span>
@@ -386,13 +377,22 @@ export function StationsPage() {
         </Alert>
       )}
 
-      {/* Search and Filter Bar */}
-      <Paper sx={{ p: { xs: 2, sm: 2 }, mb: 3 }}>
-        <Grid container spacing={{ xs: 2, sm: 2 }} alignItems="center">
+      {/* Search and filter — mobile-first, full-width primary actions on xs */}
+      <Paper
+        elevation={0}
+        sx={{
+          ...jampackKpiCardBaseSx,
+          p: { xs: 2, sm: 2.25 },
+          mb: 3,
+          boxShadow: `0 8px 28px ${alpha(theme.palette.text.primary, 0.06)}`,
+        }}
+      >
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              placeholder="Search by location, city, or region..."
+              size="small"
+              placeholder="City, address, region, or station ID…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
@@ -403,42 +403,52 @@ export function StationsPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon fontSize="small" color="action" />
                   </InputAdornment>
                 ),
               }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
+              size="small"
               type="number"
               label="Radius (km)"
               value={radius}
               onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
               inputProps={{ min: 1, max: 200 }}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Grid>
           <Grid item xs={12} md={3}>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, height: '100%' }}>
               <Button
                 variant="contained"
+                color="primary"
                 onClick={handleSearch}
                 startIcon={<SearchIcon />}
                 fullWidth
+                size="medium"
+                disableElevation
+                sx={compactContainedCtaSx}
               >
                 Search
               </Button>
-              {userLocation && (
+              {userLocation ? (
                 <Button
                   variant="outlined"
+                  color="primary"
                   onClick={handleRefreshLocation}
                   startIcon={<MyLocationIcon />}
                   fullWidth
+                  size="medium"
+                  sx={compactOutlinedCtaSx}
                 >
-                  Refresh
+                  Near me
                 </Button>
-              )}
+              ) : null}
             </Box>
           </Grid>
         </Grid>
@@ -461,227 +471,49 @@ export function StationsPage() {
 
       {/* Stations List */}
       {!loading && stations.length === 0 && !error && (
-        <Paper sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center' }}>
-          <LocationOnIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
+        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
+          <Box
+            sx={(t) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: t.palette.action.hover,
+              color: 'text.secondary',
+            })}
+          >
+            <LocationOnIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
             No stations found
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {userLocation
-              ? `No charging stations found within ${radius}km of your location. Try increasing the search radius.`
-              : 'Please enable location services or search for a specific location.'}
+              ? `No charging stations within ${radius} km. Try a larger radius or another search.`
+              : 'Enable location or search by city, address, or station ID.'}
           </Typography>
         </Paper>
       )}
 
-      {/* Stations Grid */}
+      {/* Stations — single column on phones, multi-column from sm */}
       {!loading && stations.length > 0 && (
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }}>
           {stations.map((station) => (
-            <Grid item xs={12} sm={6} md={4} key={station.chargePointId}>
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                  '@media (hover: hover) and (pointer: fine)': {
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: (theme) => theme.shadows[4],
-                      borderColor: 'primary.main',
-                    },
-                  },
-                }}
-                onClick={() => handleStationClick(station)}
-                onKeyDown={handleStationCardKeyDown(station)}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open station ${station.locationName || station.chargePointId}`}
-              >
-                <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                  {/* Header with Icon and Status */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: 2,
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <LocalGasStationIcon fontSize="small" />
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                          {station.locationName || station.chargePointId}
-                        </Typography>
-                        {station.locationAddress && (
-                          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <LocationOnIcon fontSize="inherit" sx={{ fontSize: '0.9rem' }} />
-                            {station.locationAddress}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {isAuthenticated && (
-                        <Tooltip title={favoriteIds.includes(station.chargePointId) ? 'Remove from favorites' : 'Add to favorites'}>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => handleToggleFavorite(e, station.chargePointId)}
-                            color={favoriteIds.includes(station.chargePointId) ? 'error' : 'default'}
-                            sx={{ p: 0.5 }}
-                            aria-label={
-                              favoriteIds.includes(station.chargePointId)
-                                ? `Remove ${station.chargePointId} from favorites`
-                                : `Add ${station.chargePointId} to favorites`
-                            }
-                          >
-                            {favoriteIds.includes(station.chargePointId) ? (
-                              <FavoriteIcon fontSize="small" />
-                            ) : (
-                              <FavoriteBorderIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Chip
-                        label={station.status}
-                        color={getChargePointStatusColor(station.status)}
-                        size="small"
-                        sx={{ fontWeight: 600 }}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  {/* Station Details */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <MyLocationIcon fontSize="small" />
-                        Distance:
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="primary">
-                        {station.distanceKm.toFixed(1)} km
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <BoltIcon fontSize="small" />
-                        Available:
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold">
-                        {station.availableConnectors} / {station.totalConnectors}
-                      </Typography>
-                    </Box>
-                    {station.totalCapacityKw && (
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Capacity:
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          {station.totalCapacityKw} kW
-                        </Typography>
-                      </Box>
-                    )}
-                    {station.pricePerKwh && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          p: 1.5,
-                          borderRadius: 1,
-                          bgcolor: 'primary.light',
-                          color: 'primary.contrastText',
-                          mt: 0.5,
-                        }}
-                      >
-                        <Typography variant="body2" fontWeight="bold">
-                          Price:
-                        </Typography>
-                        <Typography variant="body1" fontWeight="bold" sx={{ fontSize: '1.1rem', textAlign: 'right', wordBreak: 'break-word' }}>
-                          {formatCurrency(Number(station.pricePerKwh), station.currency || 'GHS')}/kWh
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-
-                  {station.amenities && station.amenities.length > 0 && (
-                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {station.amenities.slice(0, 3).map((amenity, idx) => (
-                        <Chip key={idx} label={amenity} size="small" variant="outlined" />
-                      ))}
-                    </Box>
-                  )}
-                </CardContent>
-
-                {/* Action Buttons */}
-                <CardActions
-                  sx={{
-                    p: 2,
-                    pt: 0,
-                    gap: 1,
-                    flexDirection: { xs: 'column', sm: 'row' },
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    startIcon={<DirectionsIcon />}
-                    onClick={(e) => handleGetDirections(e, station)}
-                    disabled={!station.locationLatitude || !station.locationLongitude}
-                    sx={{
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
-                      width: { xs: '100%', sm: 'auto' },
-                      flex: { sm: 1 },
-                      minWidth: { sm: 0 },
-                      '&:hover': {
-                        borderColor: 'primary.dark',
-                        bgcolor: 'primary.light',
-                        color: 'primary.dark',
-                      },
-                    }}
-                  >
-                    Directions
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<PlayArrowIcon />}
-                    onClick={(e) => handleStartCharging(e, station)}
-                    disabled={station.status !== 'Available' || station.availableConnectors === 0}
-                    sx={{
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      bgcolor: 'success.main',
-                      width: { xs: '100%', sm: 'auto' },
-                      flex: { sm: 1 },
-                      minWidth: { sm: 0 },
-                      '&:hover': {
-                        bgcolor: 'success.dark',
-                      },
-                      '&:disabled': {
-                        bgcolor: 'action.disabledBackground',
-                      },
-                    }}
-                  >
-                    Start Charging
-                  </Button>
-                </CardActions>
-              </Card>
+            <Grid item xs={12} sm={6} lg={4} key={station.chargePointId}>
+              <StationListCard
+                station={station}
+                isAuthenticated={isAuthenticated}
+                isFavorite={favoriteIds.includes(station.chargePointId)}
+                onOpenDetails={handleStationClick}
+                onCardKeyDown={handleStationCardKeyDown(station)}
+                onDirections={handleGetDirections}
+                onStartCharging={handleStartCharging}
+                onToggleFavorite={handleToggleFavorite}
+              />
             </Grid>
           ))}
         </Grid>
@@ -699,10 +531,17 @@ export function StationsPage() {
       />
 
       {/* Station Details Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth scroll="paper">
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        scroll="paper"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
         {selectedStation && (
           <>
-            <DialogTitle>
+            <DialogTitle sx={{ fontWeight: 600, pb: 1 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -712,18 +551,19 @@ export function StationsPage() {
                   gap: 1,
                 }}
               >
-                <Typography variant="h6" sx={{ minWidth: 0, pr: 1 }}>
+                <Typography variant="subtitle1" sx={{ minWidth: 0, pr: 1, fontWeight: 600 }}>
                   {selectedStation.locationName || selectedStation.chargePointId}
                 </Typography>
                 <Chip
                   label={selectedStation.status}
                   color={getChargePointStatusColor(selectedStation.status)}
                   size="small"
+                  sx={{ flexShrink: 0 }}
                 />
               </Box>
             </DialogTitle>
-            <DialogContent>
-              <List>
+            <DialogContent dividers>
+              <List dense disablePadding sx={{ py: 0 }}>
                 {selectedStation.locationAddress && (
                   <ListItem>
                     <ListItemText
@@ -786,51 +626,66 @@ export function StationsPage() {
                 )}
               </List>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDialogOpen(false)}>Close</Button>
+            <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+              <Button onClick={() => setDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+                Close
+              </Button>
               {selectedStation.locationLatitude && selectedStation.locationLongitude && (
                 <Button
                   variant="outlined"
                   startIcon={<DirectionsIcon />}
                   onClick={(e) => selectedStation && handleGetDirections(e, selectedStation)}
+                  sx={(th) => sxObject(th, compactOutlinedCtaSx)}
                 >
-                  Get Directions
+                  Directions
                 </Button>
               )}
               {selectedStation.status === 'Available' && (
                 <Button
                   variant="contained"
                   color="primary"
+                  disableElevation
                   startIcon={isAuthenticated ? <PlayArrowIcon /> : <LoginIcon />}
                   onClick={(e) => {
                     if (isAuthenticated && selectedStation) {
                       handleStartCharging(e, selectedStation);
-                    } else {
-                      if (selectedStation) {
-                        openLoginPrompt(selectedStation);
-                      }
+                    } else if (selectedStation) {
+                      openLoginPrompt(selectedStation);
                     }
                   }}
-                  sx={{ ml: 1 }}
+                  sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
-                  {isAuthenticated ? 'Start Charging' : 'Login to Start Charging'}
+                  {isAuthenticated ? 'Start charging' : 'Log in to start'}
                 </Button>
               )}
             </DialogActions>
           </>
         )}
       </Dialog>
-      <Dialog open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Login Required</DialogTitle>
+      <Dialog
+        open={loginPromptOpen}
+        onClose={() => setLoginPromptOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Log in required</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            You need to login to start charging. Continue to the login page?
+          <DialogContentText component="div">
+            Log in to start charging. Continue to the login page?
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLoginPromptOpen(false)}>Cancel</Button>
-          <Button onClick={confirmLoginPrompt} variant="contained">
-            Login
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setLoginPromptOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmLoginPrompt}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            Log in
           </Button>
         </DialogActions>
       </Dialog>

@@ -8,6 +8,13 @@ import {
   Alert,
 } from '@mui/material';
 import { smartChargingApi } from '../../services/smartChargingApi';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  sxObject,
+} from '../../styles/authShell';
 
 export function SuperAdminSmartChargingPage() {
   const [chargePointId, setChargePointId] = useState('');
@@ -66,14 +73,10 @@ export function SuperAdminSmartChargingPage() {
 
   return (
     <Box>
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-      >
+      <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
         Smart charging
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 3 }}>
         Inspect composite schedules and charging profiles via the CSMS API (OCPP smart charging).
       </Typography>
 
@@ -83,7 +86,7 @@ export function SuperAdminSmartChargingPage() {
         </Alert>
       )}
 
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
           Composite schedule
         </Typography>
@@ -93,7 +96,11 @@ export function SuperAdminSmartChargingPage() {
             size="small"
             value={chargePointId}
             onChange={(e) => setChargePointId(e.target.value)}
-            sx={{ minWidth: { sm: 200 }, flex: { sm: 1 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              minWidth: { sm: 200 },
+              flex: { sm: 1 },
+            })}
           />
           <TextField
             label="Connector ID"
@@ -101,7 +108,10 @@ export function SuperAdminSmartChargingPage() {
             type="number"
             value={connectorId}
             onChange={(e) => setConnectorId(e.target.value)}
-            sx={{ width: { xs: '100%', sm: 120 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              width: { xs: '100%', sm: 120 },
+            })}
           />
           <TextField
             label="Duration (sec)"
@@ -109,9 +119,22 @@ export function SuperAdminSmartChargingPage() {
             type="number"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            sx={{ width: { xs: '100%', sm: 140 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              width: { xs: '100%', sm: 140 },
+            })}
           />
-          <Button variant="contained" onClick={fetchSchedule} disabled={loading} sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 140 }}>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={fetchSchedule}
+            disabled={loading}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: 140 },
+            })}
+          >
             {loading ? 'Loading…' : 'Fetch schedule'}
           </Button>
         </Box>
@@ -126,6 +149,7 @@ export function SuperAdminSmartChargingPage() {
               fontSize: '0.75rem',
               overflow: 'auto',
               maxHeight: 320,
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {JSON.stringify(result, null, 2)}
@@ -133,7 +157,7 @@ export function SuperAdminSmartChargingPage() {
         )}
       </Paper>
 
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+      <Paper elevation={0} sx={premiumPanelCardSx}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
           Charging profiles for charge point
         </Typography>
@@ -144,9 +168,21 @@ export function SuperAdminSmartChargingPage() {
             value={profilesCpId}
             onChange={(e) => setProfilesCpId(e.target.value)}
             fullWidth
-            sx={{ maxWidth: { sm: 400 } }}
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              maxWidth: { sm: 400 },
+            })}
           />
-          <Button variant="outlined" onClick={fetchProfiles} disabled={profilesLoading} sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 140 }}>
+          <Button
+            variant="outlined"
+            onClick={fetchProfiles}
+            disabled={profilesLoading}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: 140 },
+            })}
+          >
             {profilesLoading ? 'Loading…' : 'Load profiles'}
           </Button>
         </Box>
@@ -161,6 +197,7 @@ export function SuperAdminSmartChargingPage() {
               fontSize: '0.75rem',
               overflow: 'auto',
               maxHeight: 320,
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {JSON.stringify(profilesResult, null, 2)}

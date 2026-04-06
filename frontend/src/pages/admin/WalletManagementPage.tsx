@@ -19,8 +19,6 @@ import {
   CircularProgress,
   Chip,
   Grid,
-  Card,
-  CardContent,
   InputAdornment,
   MenuItem,
   Select,
@@ -32,7 +30,15 @@ import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getWalletTransactionTypeColor } from '../../utils/statusColors';
 
@@ -224,11 +230,16 @@ export function WalletManagementPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<PersonAddIcon />}
           onClick={() => setCreateUserDialogOpen(true)}
-          sx={{ minWidth: 140, width: { xs: '100%', sm: 'auto' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            minWidth: { sm: 140 },
+            width: { xs: '100%', sm: 'auto' },
+          })}
         >
-          Create User
+          Create user
         </Button>
       </Box>
 
@@ -246,32 +257,31 @@ export function WalletManagementPage() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Users ({filteredUsers.length})
-                </Typography>
-              </Box>
-              
-              {/* Search Bar */}
+          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Users ({filteredUsers.length})
+              </Typography>
+            </Box>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, pt: 2 }}>
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search by name or email..."
+                placeholder="Search by name or email…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ mb: 2 }}
+                sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 2 })}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon fontSize="small" />
                     </InputAdornment>
                   ),
                 }}
               />
+            </Box>
 
-              <TableContainer sx={{ overflowX: 'auto' }}>
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -328,6 +338,7 @@ export function WalletManagementPage() {
                                 size="small"
                                 variant="contained"
                                 color="primary"
+                                disableElevation
                                 startIcon={<AddIcon />}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -336,8 +347,9 @@ export function WalletManagementPage() {
                                   setNote('');
                                   setCreditDebtDialogOpen(true);
                                 }}
+                                sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
                               >
-                                Credit/Debt
+                                Credit / debt
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -347,35 +359,46 @@ export function WalletManagementPage() {
                   </TableBody>
                 </Table>
               </TableContainer>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Wallet Transactions
-                  {selectedUser && ` - ${selectedUser.firstName} ${selectedUser.lastName}`}
-                </Typography>
-                {selectedUser && (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                      setAmount('');
-                      setNote('');
-                      setCreditDebtDialogOpen(true);
-                    }}
-                  >
-                    Credit/Debt
-                  </Button>
-                )}
-              </Box>
+          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+            <Box
+              sx={{
+                px: { xs: 2, sm: 2.5 },
+                py: { xs: 1.75, sm: 2 },
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1.5,
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, minWidth: 0 }}>
+                Wallet transactions
+                {selectedUser && ` — ${selectedUser.firstName} ${selectedUser.lastName}`}
+              </Typography>
+              {selectedUser && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    setAmount('');
+                    setNote('');
+                    setCreditDebtDialogOpen(true);
+                  }}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
+                >
+                  Credit / debt
+                </Button>
+              )}
+            </Box>
 
-              {selectedUser ? (
-                <TableContainer sx={{ overflowX: 'auto' }}>
+            {selectedUser ? (
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
@@ -423,20 +446,25 @@ export function WalletManagementPage() {
                       )}
                     </TableBody>
                   </Table>
-                </TableContainer>
-              ) : (
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  Select a user to view wallet transactions
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
+              </TableContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4, px: 2 }}>
+                Select a user to view wallet transactions
+              </Typography>
+            )}
+          </Paper>
         </Grid>
       </Grid>
 
       {/* Credit/Debt Dialog - Unified Form */}
-      <Dialog open={creditDebtDialogOpen} onClose={() => setCreditDebtDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Credit / Debt Wallet</DialogTitle>
+      <Dialog
+        open={creditDebtDialogOpen}
+        onClose={() => setCreditDebtDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Credit / debt wallet</DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Box sx={{ mb: 2 }}>
@@ -469,6 +497,7 @@ export function WalletManagementPage() {
             type="number"
             fullWidth
             margin="normal"
+            sx={(th) => sxObject(th, authFormFieldSx)}
             value={amount}
             onChange={(e) => {
               const value = e.target.value;
@@ -502,9 +531,10 @@ export function WalletManagementPage() {
             }}
           />
           <TextField
-            label="Note (Optional)"
+            label="Note (optional)"
             fullWidth
             margin="normal"
+            sx={(th) => sxObject(th, authFormFieldSx)}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             multiline
@@ -532,22 +562,23 @@ export function WalletManagementPage() {
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button 
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
             onClick={() => {
               setCreditDebtDialogOpen(false);
               setAmount('');
               setNote('');
               setError(null);
-            }} 
+            }}
             disabled={processing}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
           >
             Cancel
           </Button>
           <Button
             onClick={handleCreditDebt}
             variant="contained"
-            color={amount && !isNaN(parseFloat(amount)) && parseFloat(amount) < 0 ? 'error' : 'primary'}
+            disableElevation
             disabled={
               processing ||
               !amount ||
@@ -557,21 +588,32 @@ export function WalletManagementPage() {
             }
             startIcon={processing ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
             type="button"
+            sx={(th) => {
+              const n = amount && !isNaN(parseFloat(amount)) ? parseFloat(amount) : 0;
+              if (n < 0) return { ...sxObject(th, compactErrorContainedCtaSx) };
+              return { ...sxObject(th, compactContainedCtaSx) };
+            }}
           >
             {processing
-              ? 'Processing...'
+              ? 'Processing…'
               : amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0
-              ? 'Credit Wallet'
+              ? 'Credit wallet'
               : amount && !isNaN(parseFloat(amount)) && parseFloat(amount) < 0
-              ? 'Record Debt'
+              ? 'Record debt'
               : 'Process'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create User Dialog */}
-      <Dialog open={createUserDialogOpen} onClose={() => setCreateUserDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New User</DialogTitle>
+      <Dialog
+        open={createUserDialogOpen}
+        onClose={() => setCreateUserDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Create new user</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
             <TextField
@@ -582,6 +624,7 @@ export function WalletManagementPage() {
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               disabled={processing}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               label="Password"
@@ -592,33 +635,37 @@ export function WalletManagementPage() {
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               disabled={processing}
               helperText="Minimum 6 characters"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
               <TextField
-                label="First Name"
+                label="First name"
                 fullWidth
                 required
                 value={newUser.firstName}
                 onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
                 disabled={processing}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
               <TextField
-                label="Last Name"
+                label="Last name"
                 fullWidth
                 required
                 value={newUser.lastName}
                 onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
                 disabled={processing}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Box>
             <TextField
-              label="Phone (Optional)"
+              label="Phone (optional)"
               fullWidth
               value={newUser.phone}
               onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
               disabled={processing}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={(th) => sxObject(th, authFormFieldSx)}>
               <InputLabel>Account Type</InputLabel>
               <Select
                 value={newUser.accountType}
@@ -632,7 +679,7 @@ export function WalletManagementPage() {
                 <MenuItem value="WalkIn">Walk-In</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={(th) => sxObject(th, authFormFieldSx)}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={newUser.status}
@@ -647,13 +694,18 @@ export function WalletManagementPage() {
             </FormControl>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateUserDialogOpen(false)} disabled={processing}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={() => setCreateUserDialogOpen(false)}
+            disabled={processing}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleCreateUser}
             variant="contained"
+            disableElevation
             disabled={
               processing ||
               !newUser.email ||
@@ -663,8 +715,9 @@ export function WalletManagementPage() {
               newUser.password.length < 6
             }
             startIcon={processing ? <CircularProgress size={20} /> : <PersonAddIcon />}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
-            {processing ? 'Creating...' : 'Create User'}
+            {processing ? 'Creating…' : 'Create user'}
           </Button>
         </DialogActions>
       </Dialog>

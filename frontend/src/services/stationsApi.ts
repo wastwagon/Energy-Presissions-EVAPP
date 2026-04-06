@@ -114,10 +114,18 @@ export const stationsApi = {
   /**
    * Search stations by location name, city, or region (public endpoint)
    */
-  search: async (searchTerm: string, limit?: number): Promise<StationWithDistance[]> => {
+  search: async (
+    searchTerm: string,
+    limit?: number,
+    userLocation?: { latitude: number; longitude: number },
+  ): Promise<StationWithDistance[]> => {
     const params = new URLSearchParams();
     params.append('q', searchTerm);
     if (limit) params.append('limit', limit.toString());
+    if (userLocation) {
+      params.append('latitude', String(userLocation.latitude));
+      params.append('longitude', String(userLocation.longitude));
+    }
 
     const response = await api.get(`/stations/search?${params.toString()}`);
     return response.data;

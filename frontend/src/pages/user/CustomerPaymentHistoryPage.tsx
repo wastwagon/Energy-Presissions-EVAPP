@@ -16,7 +16,12 @@ import {
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumEmptyStatePaperSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 
@@ -75,18 +80,39 @@ export function CustomerPaymentHistoryPage() {
       )}
 
       {payments.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <PaymentIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            No Payment History
+        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: theme.palette.action.hover,
+              color: 'text.secondary',
+            })}
+          >
+            <PaymentIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+            No payment history
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            You haven't made any payments yet.
+            You have not made any payments yet.
           </Typography>
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Your payments
+              </Typography>
+            </Box>
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -120,6 +146,7 @@ export function CustomerPaymentHistoryPage() {
               </TableBody>
             </Table>
           </TableContainer>
+          </Paper>
           {totalPayments > limit && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination

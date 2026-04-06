@@ -8,8 +8,6 @@ import {
   TextField,
   Button,
   Avatar,
-  Card,
-  CardContent,
   Alert,
   CircularProgress,
   Divider,
@@ -19,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -28,7 +27,15 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { usersApi } from '../../services/usersApi';
 import { authApi } from '../../services/authApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 
 export function CustomerProfilePage() {
@@ -150,11 +157,15 @@ export function CustomerProfilePage() {
         </Box>
         <Button
           variant={editing ? 'contained' : 'outlined'}
+          disableElevation
           startIcon={editing ? <SaveIcon /> : <EditIcon />}
           onClick={editing ? handleSave : () => setEditing(true)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          sx={(th) => ({
+            ...sxObject(th, editing ? compactContainedCtaSx : compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+          })}
         >
-          {editing ? 'Save Changes' : 'Edit Profile'}
+          {editing ? 'Save changes' : 'Edit profile'}
         </Button>
       </Box>
 
@@ -172,60 +183,60 @@ export function CustomerProfilePage() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', p: 4 }}>
-              <Avatar
-                sx={{
-                  width: 120,
-                  height: 120,
-                  mx: 'auto',
-                  mb: 2,
-                  bgcolor: 'primary.main',
-                  fontSize: '3rem',
-                }}
-              >
-                {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
-                {user.lastName?.[0]?.toUpperCase() || ''}
-              </Avatar>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                {user.firstName} {user.lastName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {user.email}
-              </Typography>
-              <Chip
-                label={user.accountType}
-                sx={{ mt: 2 }}
-                color="primary"
-                size="small"
-              />
-            </CardContent>
-          </Card>
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, textAlign: 'center', py: { xs: 3, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+            <Avatar
+              sx={{
+                width: 120,
+                height: 120,
+                mx: 'auto',
+                mb: 2,
+                bgcolor: 'primary.main',
+                fontSize: '3rem',
+              }}
+            >
+              {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+              {user.lastName?.[0]?.toUpperCase() || ''}
+            </Avatar>
+            <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+              {user.firstName} {user.lastName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {user.email}
+            </Typography>
+            <Chip
+              label={user.accountType}
+              sx={{ mt: 2 }}
+              color="primary"
+              size="small"
+            />
+          </Paper>
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-              Personal Information
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3 }}>
+              Personal information
             </Typography>
 
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="First Name"
+                  label="First name"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   disabled={!editing}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Last Name"
+                  label="Last name"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   disabled={!editing}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -239,26 +250,28 @@ export function CustomerProfilePage() {
                   InputProps={{
                     startAdornment: <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Phone Number"
+                  label="Phone number"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   disabled={!editing}
                   InputProps={{
                     startAdornment: <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
             </Grid>
 
             <Divider sx={{ my: 3 }} />
 
-            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-              Account Information
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+              Account information
             </Typography>
 
             <Grid container spacing={2}>
@@ -293,14 +306,24 @@ export function CustomerProfilePage() {
             </Grid>
 
             {editing && (
-              <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                <Button variant="contained" onClick={handleSave} startIcon={<SaveIcon />}>
-                  Save Changes
+              <Box sx={{ mt: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
+                <Button
+                  variant="contained"
+                  disableElevation
+                  onClick={handleSave}
+                  startIcon={<SaveIcon />}
+                  sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+                >
+                  Save changes
                 </Button>
-                <Button variant="outlined" onClick={() => {
-                  setEditing(false);
-                  loadUserData();
-                }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setEditing(false);
+                    loadUserData();
+                  }}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+                >
                   Cancel
                 </Button>
               </Box>
@@ -308,26 +331,40 @@ export function CustomerProfilePage() {
 
             <Divider sx={{ my: 3 }} />
 
-            <Typography variant="h6" color="error" gutterBottom sx={{ mb: 1 }}>
-              Danger Zone
+            <Typography variant="subtitle1" color="error" sx={{ fontWeight: 600, mb: 1 }}>
+              Danger zone
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Permanently delete your account. You will need to enter your current password to confirm.
             </Typography>
             <Button
               variant="outlined"
-              color="error"
               startIcon={<DeleteForeverIcon />}
               onClick={() => setDeleteDialogOpen(true)}
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                borderColor: alpha(th.palette.error.main, 0.45),
+                color: 'error.main',
+                '&:hover': {
+                  borderColor: 'error.main',
+                  bgcolor: alpha(th.palette.error.main, 0.06),
+                },
+              })}
             >
-              Delete Account
+              Delete account
             </Button>
           </Paper>
         </Grid>
       </Grid>
 
-      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog} fullWidth maxWidth="xs">
-        <DialogTitle>Delete account</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Delete account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
             This permanently removes your account. Billing and session records may be kept as required by law, but will
@@ -335,7 +372,6 @@ export function CustomerProfilePage() {
           </Typography>
           <TextField
             fullWidth
-            size="small"
             type="password"
             label="Current password"
             value={deletePassword}
@@ -343,13 +379,24 @@ export function CustomerProfilePage() {
             autoComplete="current-password"
             disabled={deleting}
             margin="dense"
+            sx={(th) => sxObject(th, authFormFieldSx)}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} disabled={deleting}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            disabled={deleting}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
             Cancel
           </Button>
-          <Button variant="contained" color="error" onClick={handleDeleteAccount} disabled={deleting}>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
             {deleting ? 'Deleting…' : 'Delete my account'}
           </Button>
         </DialogActions>

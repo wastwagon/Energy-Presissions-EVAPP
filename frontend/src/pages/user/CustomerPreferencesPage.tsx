@@ -13,7 +13,8 @@ import {
   Alert,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
 
 const PREF_KEYS = {
   currency: 'user_pref_currency',
@@ -69,11 +70,18 @@ export function CustomerPreferencesPage() {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
+      <Paper elevation={0} sx={premiumPanelCardSx}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
           Display
         </Typography>
-        <FormControl fullWidth sx={{ mb: 3, mt: 2 }}>
+        <FormControl
+          fullWidth
+          sx={(th) => ({
+            ...sxObject(th, authFormFieldSx),
+            mb: 3,
+            mt: 1,
+          })}
+        >
           <InputLabel>Currency</InputLabel>
           <Select value={currency} label="Currency" onChange={(e) => setCurrency(e.target.value)}>
             <MenuItem value="GHS">GHS (Ghana Cedis)</MenuItem>
@@ -84,20 +92,26 @@ export function CustomerPreferencesPage() {
         <FormControlLabel
           control={<Switch checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />}
           label="Dark mode (coming soon)"
-          sx={{ display: 'block', mb: 2 }}
+          sx={{ display: 'flex', alignItems: 'center', mb: 2, ml: 0 }}
         />
 
-        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, mt: 2 }}>
           Notifications
         </Typography>
         <FormControlLabel
           control={<Switch checked={notifications} onChange={(e) => setNotifications(e.target.checked)} />}
           label="Email notifications for charging sessions"
-          sx={{ display: 'block' }}
+          sx={{ display: 'flex', alignItems: 'center', ml: 0 }}
         />
 
-        <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} sx={{ mt: 3 }}>
-          Save Preferences
+        <Button
+          variant="contained"
+          disableElevation
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), mt: 3, width: { xs: '100%', sm: 'auto' } })}
+        >
+          Save preferences
         </Button>
       </Paper>
     </Box>

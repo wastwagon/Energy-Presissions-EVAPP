@@ -96,11 +96,6 @@ export class StationsService {
           if (!hasMinPower) continue;
         }
 
-        // Count available connectors
-        const availableConnectors = connectors.filter(
-          (c) => c.status === 'Available',
-        ).length;
-
         // Count active sessions
         const activeSessions = await this.transactionRepository.count({
           where: {
@@ -109,13 +104,14 @@ export class StationsService {
           },
         });
 
-        stationsWithDistance.push({
-          ...station,
-          distanceKm: Math.round(distance * 100) / 100, // Round to 2 decimal places
-          availableConnectors,
-          totalConnectors: connectors.length,
-          activeSessions,
-        });
+        stationsWithDistance.push(
+          this.buildStationWithDistance(
+            station,
+            connectors,
+            activeSessions,
+            Math.round(distance * 100) / 100,
+          ),
+        );
       }
     }
 
@@ -186,6 +182,61 @@ export class StationsService {
    * Calculate distance between two coordinates using Haversine formula
    * Returns distance in kilometers
    */
+  private buildStationWithDistance(
+    station: ChargePoint,
+    connectors: Connector[],
+    activeSessions: number,
+    distanceKm: number,
+  ): StationWithDistance {
+    const availableConnectors = connectors.filter((c) => c.status === 'Available').length;
+    return {
+      ...station,
+      distanceKm,
+      availableConnectors,
+      totalConnectors: connectors.length,
+      activeSessions,
+    };
+  }
+
+  /**
+   * Load connectors, session count, and optional distance from user location (for search / by-ids).
+   */
+  private async enrichChargePointToStationWithDistance(
+    station: ChargePoint,
+    options?: { userLat?: number; userLng?: number; distanceKm?: number },
+  ): Promise<StationWithDistance> {
+    const connectors = await this.connectorRepository.find({
+      where: { chargePointId: station.chargePointId },
+    });
+    const activeSessions = await this.transactionRepository.count({
+      where: {
+        chargePointId: station.chargePointId,
+        status: 'Active',
+      },
+    });
+
+    let distanceKm = options?.distanceKm ?? 0;
+    if (
+      options?.distanceKm === undefined &&
+      options?.userLat != null &&
+      options?.userLng != null &&
+      station.locationLatitude != null &&
+      station.locationLongitude != null
+    ) {
+      distanceKm =
+        Math.round(
+          this.calculateDistance(
+            options.userLat,
+            options.userLng,
+            parseFloat(station.locationLatitude.toString()),
+            parseFloat(station.locationLongitude.toString()),
+          ) * 100,
+        ) / 100;
+    }
+
+    return this.buildStationWithDistance(station, connectors, activeSessions, distanceKm);
+  }
+
   private calculateDistance(
     lat1: number,
     lon1: number,
@@ -225,26 +276,9 @@ export class StationsService {
     const result: StationWithDistance[] = [];
 
     for (const station of stations) {
-      const connectors = await this.connectorRepository.find({
-        where: { chargePointId: station.chargePointId },
-      });
-      const availableConnectors = connectors.filter(
-        (c) => c.status === 'Available',
-      ).length;
-      const activeSessions = await this.transactionRepository.count({
-        where: {
-          chargePointId: station.chargePointId,
-          status: 'Active',
-        },
-      });
-
-      result.push({
-        ...station,
-        distanceKm: 0,
-        availableConnectors,
-        totalConnectors: connectors.length,
-        activeSessions,
-      });
+      result.push(
+        await this.enrichChargePointToStationWithDistance(station, { distanceKm: 0 }),
+      );
     }
 
     return result;
@@ -253,11 +287,15 @@ export class StationsService {
   /**
    * Search stations by location name, city, region, or landmarks
    */
-  async searchStations(searchTerm: string, limit: number = 50): Promise<ChargePoint[]> {
-    return this.chargePointRepository
+  async searchStations(
+    searchTerm: string,
+    limit: number = 50,
+    userLocation?: { latitude: number; longitude: number },
+  ): Promise<StationWithDistance[]> {
+    const rows = await this.chargePointRepository
       .createQueryBuilder('cp')
       .where(
-        '(cp.location_name ILIKE :search OR cp.location_city ILIKE :search OR cp.location_region ILIKE :search OR cp.location_address ILIKE :search OR cp.location_landmarks ILIKE :search)',
+        '(cp.location_name ILIKE :search OR cp.location_city ILIKE :search OR cp.location_region ILIKE :search OR cp.location_address ILIKE :search OR cp.location_landmarks ILIKE :search OR cp.charge_point_id ILIKE :search)',
         { search: `%${searchTerm}%` },
       )
       .andWhere('cp.location_latitude IS NOT NULL')
@@ -265,6 +303,21 @@ export class StationsService {
       .orderBy('cp.location_name', 'ASC')
       .limit(limit)
       .getMany();
+
+    const enriched = await Promise.all(
+      rows.map((cp) =>
+        this.enrichChargePointToStationWithDistance(cp, {
+          userLat: userLocation?.latitude,
+          userLng: userLocation?.longitude,
+        }),
+      ),
+    );
+
+    if (userLocation) {
+      enriched.sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+
+    return enriched;
   }
 }
 

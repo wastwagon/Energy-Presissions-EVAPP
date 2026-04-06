@@ -26,7 +26,7 @@ else
   MIGRATE_URL="postgresql://${POSTGRES_USER:-evbilling}:${POSTGRES_PASSWORD:-evbilling_password}@postgres:5432/${POSTGRES_DB:-ev_billing_db}"
 fi
 if [ -f /app/database/run-migrations.sh ]; then
-  (cd /app/database && sh run-migrations.sh "$MIGRATE_URL") || true
+  (cd /app/database && sh run-migrations.sh "$MIGRATE_URL")
 fi
 
 # Start the application (use absolute path - cwd may have changed)

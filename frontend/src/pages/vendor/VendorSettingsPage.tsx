@@ -3,24 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Paper,
   Grid,
   TextField,
   Button,
   Alert,
   CircularProgress,
-  Card,
-  CardContent,
+  Paper,
   Divider,
-  InputAdornment,
-  IconButton,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BusinessIcon from '@mui/icons-material/Business';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { vendorApi } from '../../services/vendorApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  sxObject,
+} from '../../styles/authShell';
 import {
   getDashboardPathForAccountType,
   getStoredUser,
@@ -159,10 +161,14 @@ export function VendorSettingsPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<SaveIcon />}
           onClick={handleSave}
           disabled={saving}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+          })}
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
@@ -180,201 +186,214 @@ export function VendorSettingsPage() {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Business Information */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BusinessIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Business Information</Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              
-              <TextField
-                fullWidth
-                label="Vendor Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                margin="normal"
-                required
-              />
-              
-              <TextField
-                fullWidth
-                label="Business Name (for receipts)"
-                value={formData.businessName}
-                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                margin="normal"
-                helperText="Official business name displayed on receipts"
-              />
-              
-              <TextField
-                fullWidth
-                label="Business Registration Number"
-                value={formData.businessRegistrationNumber}
-                onChange={(e) => setFormData({ ...formData, businessRegistrationNumber: e.target.value })}
-                margin="normal"
-              />
-              
-              <TextField
-                fullWidth
-                label="Tax ID"
-                value={formData.taxId}
-                onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-                margin="normal"
-              />
-              
-              <TextField
-                fullWidth
-                label="Address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                margin="normal"
-                multiline
-                rows={3}
-              />
-            </CardContent>
-          </Card>
+          <Paper sx={premiumPanelCardSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <BusinessIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">Business Information</Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            <TextField
+              fullWidth
+              label="Vendor Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              margin="normal"
+              required
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Business Name (for receipts)"
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              margin="normal"
+              helperText="Official business name displayed on receipts"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Business Registration Number"
+              value={formData.businessRegistrationNumber}
+              onChange={(e) => setFormData({ ...formData, businessRegistrationNumber: e.target.value })}
+              margin="normal"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Tax ID"
+              value={formData.taxId}
+              onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+              margin="normal"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              margin="normal"
+              multiline
+              rows={3}
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+          </Paper>
         </Grid>
 
         {/* Contact Information */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BusinessIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Contact Information</Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              
-              <TextField
-                fullWidth
-                label="Contact Email"
-                type="email"
-                value={formData.contactEmail}
-                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                margin="normal"
-              />
-              
-              <TextField
-                fullWidth
-                label="Contact Phone"
-                value={formData.contactPhone}
-                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                margin="normal"
-              />
-              
-              <TextField
-                fullWidth
-                label="Support Email"
-                type="email"
-                value={formData.supportEmail}
-                onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
-                margin="normal"
-                helperText="Email displayed on receipts for customer support"
-              />
-              
-              <TextField
-                fullWidth
-                label="Support Phone"
-                value={formData.supportPhone}
-                onChange={(e) => setFormData({ ...formData, supportPhone: e.target.value })}
-                margin="normal"
-                helperText="Phone number displayed on receipts"
-              />
-              
-              <TextField
-                fullWidth
-                label="Website URL"
-                value={formData.websiteUrl}
-                onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                margin="normal"
-              />
-            </CardContent>
-          </Card>
+          <Paper sx={premiumPanelCardSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <BusinessIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">Contact Information</Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            <TextField
+              fullWidth
+              label="Contact Email"
+              type="email"
+              value={formData.contactEmail}
+              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+              margin="normal"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Contact Phone"
+              value={formData.contactPhone}
+              onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+              margin="normal"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Support Email"
+              type="email"
+              value={formData.supportEmail}
+              onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
+              margin="normal"
+              helperText="Email displayed on receipts for customer support"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Support Phone"
+              value={formData.supportPhone}
+              onChange={(e) => setFormData({ ...formData, supportPhone: e.target.value })}
+              margin="normal"
+              helperText="Phone number displayed on receipts"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Website URL"
+              value={formData.websiteUrl}
+              onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+              margin="normal"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+          </Paper>
         </Grid>
 
         {/* Branding & Logo */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <CloudUploadIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Branding & Logo</Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              
-              <Box sx={{ mb: 2 }}>
-                <input
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  id="logo-upload"
-                  type="file"
-                  onChange={handleLogoUpload}
-                />
-                <label htmlFor="logo-upload">
-                  <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />}>
-                    Upload Logo
-                  </Button>
-                </label>
-              </Box>
-              
-              {formData.logoUrl && (
-                <Box sx={{ mt: 2, mb: 2 }}>
-                  <img
-                    src={formData.logoUrl}
-                    alt="Logo"
-                    style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
-                  />
-                </Box>
-              )}
-              
-              <TextField
-                fullWidth
-                label="Logo URL"
-                value={formData.logoUrl}
-                onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-                margin="normal"
-                helperText="Or enter logo URL directly"
+          <Paper sx={premiumPanelCardSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <CloudUploadIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">Branding & Logo</Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            <Box sx={{ mb: 2 }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="logo-upload"
+                type="file"
+                onChange={handleLogoUpload}
               />
-            </CardContent>
-          </Card>
+              <label htmlFor="logo-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUploadIcon />}
+                  sx={(th) => ({
+                    ...sxObject(th, compactOutlinedCtaSx),
+                    width: { xs: '100%', sm: 'auto' },
+                  })}
+                >
+                  Upload Logo
+                </Button>
+              </label>
+            </Box>
+
+            {formData.logoUrl && (
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <img
+                  src={formData.logoUrl}
+                  alt="Logo"
+                  style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
+                />
+              </Box>
+            )}
+
+            <TextField
+              fullWidth
+              label="Logo URL"
+              value={formData.logoUrl}
+              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+              margin="normal"
+              helperText="Or enter logo URL directly"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+          </Paper>
         </Grid>
 
         {/* Receipt Customization */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ReceiptIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Receipt Customization</Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              
-              <TextField
-                fullWidth
-                label="Receipt Header Text"
-                value={formData.receiptHeaderText}
-                onChange={(e) => setFormData({ ...formData, receiptHeaderText: e.target.value })}
-                margin="normal"
-                multiline
-                rows={2}
-                helperText="Text displayed at the top of receipts"
-              />
-              
-              <TextField
-                fullWidth
-                label="Receipt Footer Text"
-                value={formData.receiptFooterText}
-                onChange={(e) => setFormData({ ...formData, receiptFooterText: e.target.value })}
-                margin="normal"
-                multiline
-                rows={3}
-                helperText="Text displayed at the bottom of receipts (e.g., support contact info)"
-              />
-            </CardContent>
-          </Card>
+          <Paper sx={premiumPanelCardSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <ReceiptIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">Receipt Customization</Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            <TextField
+              fullWidth
+              label="Receipt Header Text"
+              value={formData.receiptHeaderText}
+              onChange={(e) => setFormData({ ...formData, receiptHeaderText: e.target.value })}
+              margin="normal"
+              multiline
+              rows={2}
+              helperText="Text displayed at the top of receipts"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+
+            <TextField
+              fullWidth
+              label="Receipt Footer Text"
+              value={formData.receiptFooterText}
+              onChange={(e) => setFormData({ ...formData, receiptFooterText: e.target.value })}
+              margin="normal"
+              multiline
+              rows={3}
+              helperText="Text displayed at the bottom of receipts (e.g., support contact info)"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+          </Paper>
         </Grid>
       </Grid>
     </Box>

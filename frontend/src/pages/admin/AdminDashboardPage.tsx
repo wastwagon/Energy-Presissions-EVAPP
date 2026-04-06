@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Grid, Paper, Alert, CircularProgress, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import HistoryIcon from '@mui/icons-material/History';
@@ -19,6 +19,7 @@ import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
 } from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 
 export function AdminDashboardPage() {
@@ -88,7 +89,11 @@ export function AdminDashboardPage() {
           onClick={loadStats}
           disabled={loading}
           startIcon={loading ? <CircularProgress sx={{ width: 16, height: 16 }} /> : <RefreshIcon />}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
           Refresh
         </Button>
@@ -104,7 +109,7 @@ export function AdminDashboardPage() {
       {stats && (
         <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card
+            <Paper
               elevation={0}
               sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx, { cursor: 'pointer' }]}
               onClick={() => navigate('/admin/ops/devices')}
@@ -113,7 +118,7 @@ export function AdminDashboardPage() {
               aria-label="Open devices"
               onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
             >
-              <CardContent>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -125,12 +130,12 @@ export function AdminDashboardPage() {
                   </Box>
                   <EvStationIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card
+            <Paper
               elevation={0}
               sx={[
                 jampackKpiCardBaseSx,
@@ -148,7 +153,7 @@ export function AdminDashboardPage() {
               aria-label="Open sessions"
               onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
             >
-              <CardContent>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -160,13 +165,13 @@ export function AdminDashboardPage() {
                   </Box>
                   <BatteryChargingFullIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -178,13 +183,13 @@ export function AdminDashboardPage() {
                   </Box>
                   <PeopleIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography
@@ -205,15 +210,15 @@ export function AdminDashboardPage() {
                   </Box>
                   <AttachMoneyIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
         </Grid>
       )}
 
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('primary')}
             onClick={() => navigate('/admin/ops')}
@@ -222,7 +227,7 @@ export function AdminDashboardPage() {
             aria-label="Open operations"
             onKeyDown={createKeyboardNavHandler('/admin/ops')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="primary">
                   <DashboardIcon sx={{ color: 'primary.main', fontSize: 26 }} />
@@ -236,12 +241,12 @@ export function AdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
             onClick={() => navigate('/admin/ops/sessions')}
@@ -250,7 +255,7 @@ export function AdminDashboardPage() {
             aria-label="Open sessions"
             onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
                   <HistoryIcon sx={{ color: 'info.main', fontSize: 26 }} />
@@ -264,12 +269,12 @@ export function AdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('success')}
             onClick={() => navigate('/admin/ops/devices')}
@@ -278,7 +283,7 @@ export function AdminDashboardPage() {
             aria-label="Open devices"
             onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="success">
                   <EvStationIcon sx={{ color: 'success.main', fontSize: 26 }} />
@@ -292,12 +297,12 @@ export function AdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
             onClick={() => navigate('/vendor')}
@@ -306,7 +311,7 @@ export function AdminDashboardPage() {
             aria-label="Open vendor settings"
             onKeyDown={createKeyboardNavHandler('/vendor')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
                   <BusinessIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
@@ -320,12 +325,12 @@ export function AdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
             onClick={() => navigate('/admin/wallets')}
@@ -334,7 +339,7 @@ export function AdminDashboardPage() {
             aria-label="Open wallets"
             onKeyDown={createKeyboardNavHandler('/admin/wallets')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
                   <AccountBalanceWalletIcon sx={{ color: 'info.main', fontSize: 26 }} />
@@ -348,8 +353,8 @@ export function AdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
     </Box>

@@ -5,8 +5,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -26,6 +24,7 @@ import {
   DialogActions,
   TextField,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -41,7 +40,15 @@ import { websocketService } from '../../services/websocket';
 import { ChargePointSettingsDialog } from '../../components/ChargePointSettingsDialog';
 import { firmwareApi } from '../../services/firmwareApi';
 import { diagnosticsApi } from '../../services/diagnosticsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 
@@ -56,11 +63,8 @@ export function ChargePointDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [remoteStartDialogOpen, setRemoteStartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [configKey, setConfigKey] = useState('');
-  const [configValue, setConfigValue] = useState('');
   const [remoteStartConnector, setRemoteStartConnector] = useState<number | null>(null);
   const [remoteStartIdTag, setRemoteStartIdTag] = useState('');
   const [firmwareJobs, setFirmwareJobs] = useState<any[]>([]);
@@ -270,8 +274,12 @@ export function ChargePointDetailPage() {
   if (!chargePoint) {
     return (
       <Box>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(opsBase)} sx={{ mb: 2 }}>
-          Back to Dashboard
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(opsBase)}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mb: 2, width: { xs: '100%', sm: 'auto' } })}
+        >
+          Back to dashboard
         </Button>
         <Alert severity="error">Charge point not found</Alert>
       </Box>
@@ -284,7 +292,7 @@ export function ChargePointDetailPage() {
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate(opsBase)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         >
           Back
         </Button>
@@ -318,10 +326,9 @@ export function ChargePointDetailPage() {
       <Grid container spacing={3}>
         {/* Charge Point Info */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Charge Point Information
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                Charge point information
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
@@ -400,23 +407,23 @@ export function ChargePointDetailPage() {
                   </Grid>
                 )}
               </Grid>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
 
         {/* Actions */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                 Actions
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
                 <Button
                   variant="contained"
                   color="primary"
+                  disableElevation
                   startIcon={<EditIcon />}
                   onClick={() => setSettingsDialogOpen(true)}
+                  sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: '100%' })}
                 >
                   Settings
                 </Button>
@@ -425,60 +432,71 @@ export function ChargePointDetailPage() {
                   startIcon={<PlayArrowIcon />}
                   onClick={() => setRemoteStartDialogOpen(true)}
                   disabled={chargePoint.status === 'Offline'}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
-                  Remote Start Transaction
+                  Remote start
                 </Button>
                 <Button
                   variant="outlined"
                   startIcon={<SettingsIcon />}
                   onClick={handleGetConfiguration}
                   disabled={chargePoint.status === 'Offline'}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
-                  Get Configuration
+                  Get configuration
                 </Button>
                 <Button
                   variant="outlined"
                   color="warning"
                   onClick={() => handleReset('Soft')}
                   disabled={chargePoint.status === 'Offline' || loading}
+                  sx={(th) => ({
+                    ...sxObject(th, compactOutlinedCtaSx),
+                    width: '100%',
+                    borderColor: 'warning.main',
+                    color: 'warning.main',
+                  })}
                 >
-                  Reset (Soft)
+                  Reset (soft)
                 </Button>
                 <Button
                   variant="outlined"
                   color="error"
                   onClick={() => handleReset('Hard')}
                   disabled={chargePoint.status === 'Offline' || loading}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
-                  Reset (Hard)
+                  Reset (hard)
                 </Button>
                 <Button
                   variant="outlined"
                   onClick={handleClearCache}
                   disabled={chargePoint.status === 'Offline' || loading}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
-                  Clear Cache
+                  Clear cache
                 </Button>
               </Box>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
 
         {/* Connectors */}
         <Grid item xs={12}>
-          <Paper>
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-              <Typography variant="h6">Connectors</Typography>
+          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Connectors
+              </Typography>
             </Box>
             {connectors.length === 0 ? (
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>
                 <Typography variant="body2" color="text.secondary">
                   No connectors found
                 </Typography>
               </Box>
             ) : (
-              <TableContainer sx={{ overflowX: 'auto' }}>
-                <Table>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Connector ID</TableCell>
@@ -512,17 +530,20 @@ export function ChargePointDetailPage() {
                             : '-'}
                         </TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             <Button
                               size="small"
+                              variant="outlined"
                               startIcon={<LockOpenIcon />}
                               onClick={() => handleUnlockConnector(connector.connectorId)}
                               disabled={chargePoint.status === 'Offline'}
+                              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
                             >
                               Unlock
                             </Button>
                             <Button
                               size="small"
+                              variant="outlined"
                               onClick={() =>
                                 handleChangeAvailability(
                                   connector.connectorId,
@@ -530,6 +551,7 @@ export function ChargePointDetailPage() {
                                 )
                               }
                               disabled={chargePoint.status === 'Offline'}
+                              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
                             >
                               {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
                             </Button>
@@ -547,12 +569,14 @@ export function ChargePointDetailPage() {
         {/* Active Transactions */}
         {activeTransactions.length > 0 && (
           <Grid item xs={12}>
-            <Paper>
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="h6">Active Transactions</Typography>
+            <Paper elevation={0} sx={premiumTableSurfaceSx}>
+              <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Active transactions
+                </Typography>
               </Box>
-              <TableContainer sx={{ overflowX: 'auto' }}>
-                <Table>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Transaction ID</TableCell>
@@ -576,7 +600,8 @@ export function ChargePointDetailPage() {
                         <TableCell>
                           <Button
                             size="small"
-                            color="error"
+                            variant="outlined"
+                            disableElevation
                             startIcon={<StopIcon />}
                             onClick={async () => {
                               try {
@@ -586,6 +611,18 @@ export function ChargePointDetailPage() {
                                 setError(err.message || 'Failed to stop transaction');
                               }
                             }}
+                            sx={(th) => ({
+                              ...sxObject(th, compactOutlinedCtaSx),
+                              py: 0.5,
+                              minHeight: 36,
+                              fontSize: '0.8125rem',
+                              borderColor: 'error.main',
+                              color: 'error.main',
+                              '&:hover': {
+                                borderColor: 'error.dark',
+                                bgcolor: alpha(th.palette.error.main, 0.06),
+                              },
+                            })}
                           >
                             Stop
                           </Button>
@@ -601,34 +638,36 @@ export function ChargePointDetailPage() {
 
         {/* Firmware & Diagnostics */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CloudUploadIcon /> Firmware Update
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CloudUploadIcon fontSize="small" color="primary" /> Firmware update
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
                 <TextField
                   size="small"
                   label="Firmware URL"
-                  placeholder="https://..."
+                  placeholder="https://…"
                   value={firmwareLocation}
                   onChange={(e) => setFirmwareLocation(e.target.value)}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
                 <TextField
                   size="small"
-                  label="Retrieve Date"
+                  label="Retrieve date"
                   type="datetime-local"
                   value={firmwareRetrieveDate}
                   onChange={(e) => setFirmwareRetrieveDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
                 <Button
                   variant="outlined"
                   startIcon={<CloudUploadIcon />}
                   onClick={handleFirmwareUpdate}
                   disabled={chargePoint.status === 'Offline' || firmwareLoading || !firmwareLocation}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
-                  {firmwareLoading ? 'Starting...' : 'Start Update'}
+                  {firmwareLoading ? 'Starting…' : 'Start update'}
                 </Button>
               </Box>
               {firmwareJobs.length > 0 && (
@@ -636,7 +675,7 @@ export function ChargePointDetailPage() {
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Recent Jobs
                   </Typography>
-                  <TableContainer sx={{ overflowX: 'auto' }}>
+                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
@@ -658,30 +697,30 @@ export function ChargePointDetailPage() {
                   </TableContainer>
                 </Box>
               )}
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BugReportIcon /> Diagnostics
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BugReportIcon fontSize="small" color="primary" /> Diagnostics
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
                 <TextField
                   size="small"
                   label="Upload URL"
-                  placeholder="https://..."
+                  placeholder="https://…"
                   value={diagnosticsLocation}
                   onChange={(e) => setDiagnosticsLocation(e.target.value)}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
                 <Button
                   variant="outlined"
                   startIcon={<BugReportIcon />}
                   onClick={handleDiagnosticsGet}
                   disabled={chargePoint.status === 'Offline' || diagnosticsLoading || !diagnosticsLocation}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
-                  {diagnosticsLoading ? 'Requesting...' : 'Get Diagnostics'}
+                  {diagnosticsLoading ? 'Requesting…' : 'Get diagnostics'}
                 </Button>
               </Box>
               {diagnosticsJobs.length > 0 && (
@@ -689,7 +728,7 @@ export function ChargePointDetailPage() {
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Recent Jobs
                   </Typography>
-                  <TableContainer sx={{ overflowX: 'auto' }}>
+                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
@@ -711,22 +750,31 @@ export function ChargePointDetailPage() {
                   </TableContainer>
                 </Box>
               )}
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
       </Grid>
 
       {/* Remote Start Dialog */}
-      <Dialog open={remoteStartDialogOpen} onClose={() => setRemoteStartDialogOpen(false)}>
-        <DialogTitle>Remote Start Transaction</DialogTitle>
+      <Dialog
+        open={remoteStartDialogOpen}
+        onClose={() => setRemoteStartDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Remote start</DialogTitle>
         <DialogContent>
           <TextField
             label="Connector ID"
             type="number"
             fullWidth
             margin="normal"
-            value={remoteStartConnector || ''}
-            onChange={(e) => setRemoteStartConnector(parseInt(e.target.value))}
+            value={remoteStartConnector ?? ''}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              setRemoteStartConnector(Number.isNaN(v) ? null : v);
+            }}
+            sx={(th) => sxObject(th, authFormFieldSx)}
           />
           <TextField
             label="IdTag"
@@ -734,11 +782,20 @@ export function ChargePointDetailPage() {
             margin="normal"
             value={remoteStartIdTag}
             onChange={(e) => setRemoteStartIdTag(e.target.value)}
+            sx={(th) => sxObject(th, authFormFieldSx)}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemoteStartDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleRemoteStart} variant="contained" disabled={!remoteStartConnector || !remoteStartIdTag}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setRemoteStartDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemoteStart}
+            variant="contained"
+            disableElevation
+            disabled={!remoteStartConnector || !remoteStartIdTag}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
             Start
           </Button>
         </DialogActions>
@@ -752,21 +809,36 @@ export function ChargePointDetailPage() {
         onSave={loadData}
       />
 
-      <Dialog open={Boolean(confirmAction)} onClose={() => setConfirmAction(null)} fullWidth maxWidth="xs">
-        <DialogTitle>Confirm action</DialogTitle>
+      <Dialog
+        open={Boolean(confirmAction)}
+        onClose={() => setConfirmAction(null)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Confirm action</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             {confirmAction?.type === 'reset'
-              ? `Are you sure you want to ${confirmAction.resetType.toLowerCase()} reset this charge point?`
-              : 'Are you sure you want to clear the authorization cache?'}
+              ? `Run a ${confirmAction.resetType.toLowerCase()} reset on this charge point?`
+              : 'Clear the authorization cache for this charge point?'}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmAction(null)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setConfirmAction(null)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
           <Button
             onClick={confirmDeviceAction}
             variant="contained"
-            color={confirmAction?.type === 'reset' && confirmAction.resetType === 'Hard' ? 'error' : 'primary'}
+            disableElevation
+            sx={(th) => {
+              const hard =
+                confirmAction?.type === 'reset' && confirmAction.resetType === 'Hard';
+              return hard
+                ? { ...sxObject(th, compactErrorContainedCtaSx) }
+                : { ...sxObject(th, compactContainedCtaSx) };
+            }}
           >
             Confirm
           </Button>

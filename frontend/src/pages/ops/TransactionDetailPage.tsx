@@ -5,8 +5,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -27,7 +25,16 @@ import { transactionsApi, Transaction, MeterSample } from '../../services/transa
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { paymentsApi } from '../../services/paymentsApi';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { alpha } from '@mui/material/styles';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  compactSuccessContainedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
@@ -120,14 +127,13 @@ export function TransactionDetailPage() {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Transaction Info */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Transaction Information
-              </Typography>
+          <Paper sx={premiumPanelCardSx}>
+            <Typography variant="h6" gutterBottom>
+              Transaction Information
+            </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -192,17 +198,15 @@ export function TransactionDetailPage() {
                   />
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
 
         {/* Energy & Cost */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Energy & Cost
-              </Typography>
+          <Paper sx={premiumPanelCardSx}>
+            <Typography variant="h6" gutterBottom>
+              Energy & Cost
+            </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -238,23 +242,38 @@ export function TransactionDetailPage() {
                       <Button
                         variant="contained"
                         color="primary"
+                        disableElevation
                         startIcon={<PaymentIcon />}
                         onClick={() => setPaymentDialogOpen(true)}
-                        size="medium"
-                        sx={{ minWidth: 180 }}
+                        sx={(th) => ({
+                          ...sxObject(th, compactContainedCtaSx),
+                          minWidth: { xs: '100%', sm: 180 },
+                          width: { xs: '100%', sm: 'auto' },
+                        })}
                       >
                         Pay Now
                       </Button>
                       <Button
                         variant="outlined"
+                        color="success"
                         startIcon={<AttachMoneyIcon />}
                         onClick={() => {
                           setCashAmount(transaction.totalCost || 0);
                           setCashPaymentDialogOpen(true);
                         }}
-                        size="medium"
-                        color="success"
-                        sx={{ minWidth: 150 }}
+                        sx={(th) => ({
+                          ...sxObject(th, compactOutlinedCtaSx),
+                          borderColor: alpha(th.palette.success.main, 0.45),
+                          color: 'success.main',
+                          minWidth: { xs: '100%', sm: 150 },
+                          width: { xs: '100%', sm: 'auto' },
+                          '&:hover': {
+                            borderWidth: 1,
+                            borderColor: 'success.main',
+                            bgcolor: alpha(th.palette.success.main, 0.06),
+                            boxShadow: 'none',
+                          },
+                        })}
                       >
                         Cash Payment
                       </Button>
@@ -270,19 +289,20 @@ export function TransactionDetailPage() {
                   </Grid>
                 )}
               </Grid>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
 
         {/* Meter Values */}
         {meterValues.length > 0 && (
           <Grid item xs={12}>
-            <Paper>
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="h6">Meter Values</Typography>
+            <Paper sx={premiumTableSurfaceSx}>
+              <Box sx={{ p: { xs: 1.5, sm: 2 }, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                  Meter Values
+                </Typography>
               </Box>
-              <TableContainer sx={{ overflowX: 'auto' }}>
-                <Table>
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Table stickyHeader size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Timestamp</TableCell>
@@ -332,8 +352,14 @@ export function TransactionDetailPage() {
       />
 
       {/* Cash Payment Dialog */}
-      <Dialog open={cashPaymentDialogOpen} onClose={() => setCashPaymentDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Process Cash Payment</DialogTitle>
+      <Dialog
+        open={cashPaymentDialogOpen}
+        onClose={() => setCashPaymentDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Process Cash Payment</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <TextField
@@ -347,6 +373,7 @@ export function TransactionDetailPage() {
                 startAdornment: <Typography sx={{ mr: 1 }}>GHS</Typography>,
               }}
               helperText={`Transaction total: ${formatCurrency(transaction.totalCost ?? 0, 'GHS')}`}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               fullWidth
@@ -357,11 +384,16 @@ export function TransactionDetailPage() {
               onChange={(e) => setCashNotes(e.target.value)}
               margin="normal"
               placeholder="Additional notes about this cash payment..."
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCashPaymentDialogOpen(false)} disabled={processingCash}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={() => setCashPaymentDialogOpen(false)}
+            disabled={processingCash}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
             Cancel
           </Button>
           <Button
@@ -369,16 +401,16 @@ export function TransactionDetailPage() {
               try {
                 setProcessingCash(true);
                 setError(null);
-                
+
                 const userId = requireStoredUserId();
-                
+
                 await paymentsApi.processCashPayment(
                   transaction.transactionId,
                   cashAmount,
                   userId,
                   cashNotes,
                 );
-                
+
                 setCashPaymentDialogOpen(false);
                 setCashAmount(0);
                 setCashNotes('');
@@ -390,9 +422,10 @@ export function TransactionDetailPage() {
               }
             }}
             variant="contained"
-            color="success"
+            disableElevation
             disabled={processingCash || cashAmount <= 0}
             startIcon={<AttachMoneyIcon />}
+            sx={(th) => sxObject(th, compactSuccessContainedCtaSx)}
           >
             {processingCash ? 'Processing...' : 'Process Cash Payment'}
           </Button>

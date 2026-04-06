@@ -1,4 +1,5 @@
 import { Box, Typography, Paper, Grid, Button } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import EvStationIcon from '@mui/icons-material/EvStation';
@@ -10,6 +11,29 @@ import {
   hasValidSession,
 } from '../utils/authSession';
 import { LOGO_PUBLIC_URL } from '../config/branding';
+import { premiumFeatureCardSx, dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
+import { compactContainedCtaSx, sxObject } from '../styles/authShell';
+
+function FeatureIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        width: { xs: 56, sm: 64 },
+        height: { xs: 56, sm: 64 },
+        mx: 'auto',
+        mb: 2,
+        borderRadius: 3,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -36,7 +60,7 @@ export function HomePage() {
       navigate('/login');
       return;
     }
-    
+
     if (accountType === 'SuperAdmin') {
       navigate('/superadmin/ops');
       return;
@@ -53,113 +77,184 @@ export function HomePage() {
       navigate('/login');
       return;
     }
-    
+
     navigate(getDashboardPathForAccountType(accountType));
   };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'flex-start' }, gap: { xs: 2, md: 3 }, mb: 3 }}>
-        <img
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'center', md: 'flex-start' },
+          gap: { xs: 2, md: 3 },
+          mb: { xs: 2.5, sm: 3 },
+        }}
+      >
+        <Box
+          component="img"
           src={LOGO_PUBLIC_URL}
           alt=""
-          style={{ height: 'clamp(48px, 12vw, 88px)', width: 'auto', objectFit: 'contain' }}
+          draggable={false}
+          sx={{
+            height: { xs: 'clamp(56px, 16vw, 80px)', sm: 88 },
+            width: 'auto',
+            maxWidth: 'min(280px, 88vw)',
+            objectFit: 'contain',
+            display: 'block',
+          }}
         />
-        <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-          <Typography variant="h3" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
+        <Box sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}>
+          <Typography
+            component="h1"
+            variant="h6"
+            sx={{
+              ...dashboardPageTitleSx,
+              fontSize: { xs: '1.25rem', sm: '1.375rem', md: '1.5rem' },
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+            }}
+          >
             Welcome to Clean Motion Ghana
           </Typography>
-          <Typography variant="h6" color="text.secondary" paragraph sx={{ fontSize: { xs: '0.95rem', md: '1rem' } }}>
+          <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mt: 0.5, mx: { xs: 'auto', md: 0 } }}>
             Manage your EV charging operations and billing
           </Typography>
         </Box>
       </Box>
-      
+
       {!isAuthenticated && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
-          <Typography variant="body1" color="info.dark">
-            Please login to access all services
+        <Box
+          sx={{
+            mb: 3,
+            p: { xs: 2, sm: 2.25 },
+            borderRadius: 3,
+            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+            border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.22)}`,
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'info.dark', lineHeight: 1.5 }}>
+            Sign in to find stations, charge, and manage your wallet.
           </Typography>
         </Box>
       )}
 
       {isAuthenticated && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
-          <Typography variant="body1" color="success.dark">
-            Welcome back, {user?.email || 'User'}! 
-            <Button 
-              variant="text" 
-              onClick={() => navigate(getDashboardPathForAccountType(accountType))}
-              sx={{ ml: 1, textTransform: 'none' }}
-            >
-              Go to My Dashboard →
-            </Button>
+        <Box
+          sx={{
+            mb: 3,
+            p: { xs: 2, sm: 2.25 },
+            borderRadius: 3,
+            bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
+            border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.22)}`,
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 1.5,
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.dark', lineHeight: 1.5 }}>
+            Welcome back{user?.email ? `, ${user.email}` : ''}.
           </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            size="medium"
+            disableElevation
+            onClick={() => navigate(getDashboardPathForAccountType(accountType))}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              minWidth: { sm: 200 },
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Open my dashboard
+          </Button>
         </Box>
       )}
 
-      <Grid container spacing={3} sx={{ mt: 2 }}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mt: { xs: 0.5, sm: 1 } }}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-            <EvStationIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Find Stations
+          <Paper elevation={0} sx={premiumFeatureCardSx}>
+            <FeatureIcon>
+              <EvStationIcon sx={{ fontSize: 30, color: 'primary.main' }} />
+            </FeatureIcon>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 1 }}>
+              Find stations
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Locate nearby charging stations and start charging sessions
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1, lineHeight: 1.55, px: 0.5 }}>
+              Locate chargers nearby and start a session from your phone.
             </Typography>
-            <Button 
-              onClick={handleFindStations} 
+            <Button
+              onClick={handleFindStations}
               variant="contained"
+              color="primary"
               fullWidth
+              size="medium"
+              disableElevation
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
-              {isAuthenticated ? 'View Stations' : 'Login to View Stations'}
+              {isAuthenticated ? 'View stations' : 'Sign in to view stations'}
             </Button>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-            <DashboardIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
+          <Paper elevation={0} sx={premiumFeatureCardSx}>
+            <FeatureIcon>
+              <DashboardIcon sx={{ fontSize: 30, color: 'primary.main' }} />
+            </FeatureIcon>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 1 }}>
               Operations
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Monitor and manage charging operations, devices, and active sessions
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1, lineHeight: 1.55, px: 0.5 }}>
+              Monitor devices, sessions, and live activity for your network.
             </Typography>
-            <Button 
-              onClick={handleOperations} 
+            <Button
+              onClick={handleOperations}
               variant="contained"
+              color="primary"
               fullWidth
+              size="medium"
+              disableElevation
               disabled={isAuthenticated && !isAdminLike}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
-              {!isAuthenticated 
-                ? 'Login to Access Operations' 
+              {!isAuthenticated
+                ? 'Sign in for operations'
                 : !isAdminLike
-                ? 'Operations (Admin Only)'
-                : 'Operations Dashboard'}
+                  ? 'Admin access only'
+                  : 'Operations dashboard'}
             </Button>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-            <SettingsIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Admin
+          <Paper elevation={0} sx={premiumFeatureCardSx}>
+            <FeatureIcon>
+              <SettingsIcon sx={{ fontSize: 30, color: 'primary.main' }} />
+            </FeatureIcon>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 1 }}>
+              Administration
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              System administration, user management, and configuration
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1, lineHeight: 1.55, px: 0.5 }}>
+              Configure tariffs, users, and vendor settings from the admin console.
             </Typography>
-            <Button 
-              onClick={handleAdmin} 
+            <Button
+              onClick={handleAdmin}
               variant="contained"
+              color="primary"
               fullWidth
+              size="medium"
+              disableElevation
               disabled={isAuthenticated && !isAdminLike}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
-              {!isAuthenticated 
-                ? 'Login to Access Admin' 
+              {!isAuthenticated
+                ? 'Sign in for admin'
                 : !isAdminLike
-                ? 'Admin (Admin Only)'
-                : 'Admin Dashboard'}
+                  ? 'Admin access only'
+                  : 'Admin dashboard'}
             </Button>
           </Paper>
         </Grid>
@@ -167,6 +262,3 @@ export function HomePage() {
     </Box>
   );
 }
-
-
-

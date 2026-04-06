@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Card, CardContent, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Grid, Paper, Alert, CircularProgress, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import HistoryIcon from '@mui/icons-material/History';
@@ -22,6 +22,7 @@ import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
 } from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 
 export function SuperAdminDashboardPage() {
@@ -91,7 +92,11 @@ export function SuperAdminDashboardPage() {
           onClick={loadStats}
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
           Refresh
         </Button>
@@ -107,8 +112,8 @@ export function SuperAdminDashboardPage() {
       {stats && (
         <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -120,13 +125,13 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <BusinessIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -138,13 +143,13 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <EvStationIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -156,13 +161,13 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <PeopleIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography
@@ -183,13 +188,13 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <AttachMoneyIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -201,13 +206,13 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <BatteryChargingFullIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <CardContent>
+            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+              <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -219,15 +224,15 @@ export function SuperAdminDashboardPage() {
                   </Box>
                   <HistoryIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
                 </Box>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
           {stats.connectionHealth && (
             <>
               <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-                  <CardContent>
+                <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+                  <Box sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -239,13 +244,13 @@ export function SuperAdminDashboardPage() {
                       </Box>
                       <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.7 }} />
                     </Box>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Paper>
               </Grid>
 
               <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-                  <CardContent>
+                <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+                  <Box sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -257,8 +262,8 @@ export function SuperAdminDashboardPage() {
                       </Box>
                       <ErrorIcon sx={{ fontSize: 40, color: 'error.main', opacity: 0.7 }} />
                     </Box>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Paper>
               </Grid>
             </>
           )}
@@ -267,7 +272,7 @@ export function SuperAdminDashboardPage() {
 
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('primary')}
             onClick={() => navigate('/superadmin/ops')}
@@ -276,7 +281,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open operations"
             onKeyDown={createKeyboardNavHandler('/superadmin/ops')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="primary">
                   <DashboardIcon sx={{ color: 'primary.main', fontSize: 26 }} />
@@ -290,12 +295,12 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
             onClick={() => navigate('/superadmin/ops/sessions')}
@@ -304,7 +309,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open sessions"
             onKeyDown={createKeyboardNavHandler('/superadmin/ops/sessions')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
                   <HistoryIcon sx={{ color: 'info.main', fontSize: 26 }} />
@@ -318,12 +323,12 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('success')}
             onClick={() => navigate('/superadmin/ops/devices')}
@@ -332,7 +337,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open devices"
             onKeyDown={createKeyboardNavHandler('/superadmin/ops/devices')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="success">
                   <EvStationIcon sx={{ color: 'success.main', fontSize: 26 }} />
@@ -346,12 +351,12 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
             onClick={() => navigate('/superadmin/settings')}
@@ -360,7 +365,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open system settings"
             onKeyDown={createKeyboardNavHandler('/superadmin/settings')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
                   <SettingsIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
@@ -374,12 +379,12 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
             onClick={() => navigate('/superadmin/vendors')}
@@ -388,7 +393,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open vendors"
             onKeyDown={createKeyboardNavHandler('/superadmin/vendors')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="secondary">
                   <BusinessIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
@@ -402,12 +407,12 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={4}>
-          <Card
+          <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
             onClick={() => navigate('/superadmin/wallets')}
@@ -416,7 +421,7 @@ export function SuperAdminDashboardPage() {
             aria-label="Open wallets"
             onKeyDown={createKeyboardNavHandler('/superadmin/wallets')}
           >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
                 <DashboardNavIcon accent="info">
                   <AccountBalanceWalletIcon sx={{ color: 'info.main', fontSize: 26 }} />
@@ -430,8 +435,8 @@ export function SuperAdminDashboardPage() {
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
     </Box>

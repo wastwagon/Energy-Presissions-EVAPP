@@ -5,8 +5,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -37,7 +35,8 @@ import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getPaymentStatusColor, getTransactionStatusColor } from '../../utils/statusColors';
@@ -220,9 +219,14 @@ export function CustomerDashboardPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<LocationOnIcon />}
           onClick={() => navigate('/stations')}
-          sx={{ px: 3, width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
           Find Stations
         </Button>
@@ -241,8 +245,8 @@ export function CustomerDashboardPage() {
       {/* Summary Cards */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="primary" compact noRightMargin>
                   <AccountBalanceWalletIcon sx={{ color: 'primary.main', fontSize: 24 }} />
@@ -254,15 +258,22 @@ export function CustomerDashboardPage() {
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 1.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                 {formatCurrency(walletBalance, 'GHS')}
               </Typography>
-              <Button size="small" variant="contained" fullWidth onClick={() => navigate('/user/wallet/top-up')}>
+              <Button
+                size="small"
+                variant="contained"
+                disableElevation
+                fullWidth
+                onClick={() => navigate('/user/wallet/top-up')}
+                sx={(th) => sxObject(th, compactContainedCtaSx)}
+              >
                 Top Up Wallet
               </Button>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="success" compact noRightMargin>
                   <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
@@ -277,12 +288,12 @@ export function CustomerDashboardPage() {
               <Typography variant="caption" color="text.secondary">
                 Total charging sessions
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="info" compact noRightMargin>
                   <PaymentIcon sx={{ color: 'info.main', fontSize: 24 }} />
@@ -297,12 +308,12 @@ export function CustomerDashboardPage() {
               <Typography variant="caption" color="text.secondary">
                 Total payments made
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="secondary" compact noRightMargin>
                   <HistoryIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
@@ -317,8 +328,8 @@ export function CustomerDashboardPage() {
               <Typography variant="caption" color="text.secondary">
                 Active charging sessions
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -519,9 +530,10 @@ export function CustomerDashboardPage() {
                   {/* Profile Details Cards */}
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
-                      <Card
-                        elevation={2}
+                      <Paper
+                        elevation={0}
                         sx={{
+                          ...premiumPanelCardSx,
                           p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
@@ -556,13 +568,14 @@ export function CustomerDashboardPage() {
                             </Typography>
                           </Box>
                         </Box>
-                      </Card>
+                      </Paper>
                     </Grid>
 
                     <Grid item xs={12} md={6}>
-                      <Card
-                        elevation={2}
+                      <Paper
+                        elevation={0}
                         sx={{
+                          ...premiumPanelCardSx,
                           p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
@@ -597,13 +610,14 @@ export function CustomerDashboardPage() {
                             </Typography>
                           </Box>
                         </Box>
-                      </Card>
+                      </Paper>
                     </Grid>
 
                     <Grid item xs={12} md={6}>
-                      <Card
-                        elevation={2}
+                      <Paper
+                        elevation={0}
                         sx={{
+                          ...premiumPanelCardSx,
                           p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
@@ -638,13 +652,14 @@ export function CustomerDashboardPage() {
                             </Typography>
                           </Box>
                         </Box>
-                      </Card>
+                      </Paper>
                     </Grid>
 
                     <Grid item xs={12} md={6}>
-                      <Card
-                        elevation={2}
+                      <Paper
+                        elevation={0}
                         sx={{
+                          ...premiumPanelCardSx,
                           p: { xs: 2, sm: 3 },
                           height: '100%',
                           borderLeft: '4px solid',
@@ -689,15 +704,23 @@ export function CustomerDashboardPage() {
                               size="small"
                               variant="contained"
                               color="secondary"
+                              disableElevation
                               startIcon={<EditIcon />}
-                              sx={{ mt: 2, width: { xs: '100%', sm: 'auto' } }}
+                              sx={(th) => ({
+                                ...sxObject(th, compactContainedCtaSx),
+                                mt: 2,
+                                width: { xs: '100%', sm: 'auto' },
+                                bgcolor: 'secondary.main',
+                                color: 'secondary.contrastText',
+                                '&:hover': { bgcolor: 'secondary.dark' },
+                              })}
                               onClick={() => navigate('/user/wallet/top-up')}
                             >
                               Top Up Wallet
                             </Button>
                           </Box>
                         </Box>
-                      </Card>
+                      </Paper>
                     </Grid>
                   </Grid>
 

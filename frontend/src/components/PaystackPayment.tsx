@@ -21,6 +21,13 @@ import {
 import { paymentsApi, PaymentInitResponse } from '../services/paymentsApi';
 import { walletApi, WalletBalance } from '../services/walletApi';
 import { formatCurrency } from '../utils/formatters';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../styles/authShell';
 
 interface PaystackPaymentProps {
   open: boolean;
@@ -48,7 +55,6 @@ export function PaystackPayment({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'wallet'>('paystack');
   const [paymentChannel, setPaymentChannel] = useState<'card' | 'mobile_money' | 'bank' | 'ussd' | 'qr'>('card');
   const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
@@ -57,22 +63,10 @@ export function PaystackPayment({
   const [loadingBalance, setLoadingBalance] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      loadPublicKey();
-      if (userId) {
-        loadWalletBalance();
-      }
+    if (open && userId) {
+      loadWalletBalance();
     }
   }, [open, userId]);
-
-  const loadPublicKey = async () => {
-    try {
-      const { publicKey: key } = await paymentsApi.getPublicKey();
-      setPublicKey(key);
-    } catch (err: any) {
-      console.error('Error loading Paystack public key:', err);
-    }
-  };
 
   const loadWalletBalance = async () => {
     if (!userId) return;
@@ -138,13 +132,11 @@ export function PaystackPayment({
       return;
     }
 
-    // Validate mobile money phone if mobile money selected
     if (paymentChannel === 'mobile_money') {
       if (!mobileMoneyPhone || mobileMoneyPhone.trim() === '') {
         setError('Please enter your mobile money phone number');
         return;
       }
-      // Validate Ghana phone number format (+233XXXXXXXXX or 0XXXXXXXXX)
       const phoneRegex = /^(\+233|0)[0-9]{9}$/;
       const cleanPhone = mobileMoneyPhone.replace(/\s+/g, '');
       if (!phoneRegex.test(cleanPhone)) {
@@ -159,10 +151,8 @@ export function PaystackPayment({
     try {
       let paymentData: PaymentInitResponse;
 
-      // Format phone number for mobile money
       let formattedPhone = mobileMoneyPhone;
       if (paymentChannel === 'mobile_money' && mobileMoneyPhone) {
-        // Convert 0XXXXXXXXX to +233XXXXXXXXX
         formattedPhone = mobileMoneyPhone.replace(/^0/, '+233').replace(/\s+/g, '');
       }
 
@@ -174,7 +164,6 @@ export function PaystackPayment({
           paymentChannel === 'mobile_money' ? formattedPhone : undefined,
         );
       } else if (transactionId) {
-        // Use processTransactionPayment which handles invoice creation automatically
         paymentData = await paymentsApi.processTransactionPayment(
           transactionId,
           email,
@@ -185,7 +174,6 @@ export function PaystackPayment({
         throw new Error('Either invoiceId or transactionId is required');
       }
 
-      // Redirect to Paystack payment page
       if (paymentData.authorizationUrl) {
         window.location.href = paymentData.authorizationUrl;
       } else {
@@ -206,8 +194,14 @@ export function PaystackPayment({
   const canUseWallet = userId && walletBalance !== null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Payment</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+    >
+      <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Payment</DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -229,6 +223,9 @@ export function PaystackPayment({
             <Tabs
               value={paymentMethod}
               onChange={(_, newValue) => setPaymentMethod(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{ mb: 2 }}
             >
               <Tab label="Paystack" value="paystack" />
@@ -236,7 +233,16 @@ export function PaystackPayment({
             </Tabs>
 
             {paymentMethod === 'wallet' && (
-              <Box sx={{ mb: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  borderRadius: '10px',
+                  bgcolor: 'action.hover',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
                 <Typography variant="body2" color="text.secondary">
                   Wallet Balance:
                 </Typography>
@@ -265,15 +271,15 @@ export function PaystackPayment({
               placeholder="your.email@example.com"
               required
               disabled={loading}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
 
-            {/* Payment Channel Selection */}
-            <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
               <InputLabel>Payment Method</InputLabel>
               <Select
                 value={paymentChannel}
                 label="Payment Method"
-                onChange={(e) => setPaymentChannel(e.target.value as any)}
+                onChange={(e) => setPaymentChannel(e.target.value as typeof paymentChannel)}
                 disabled={loading}
               >
                 <MenuItem value="card">Card (Visa, Mastercard)</MenuItem>
@@ -291,15 +297,14 @@ export function PaystackPayment({
               </FormHelperText>
             </FormControl>
 
-            {/* Mobile Money Phone Input */}
             {paymentChannel === 'mobile_money' && (
               <>
-                <FormControl fullWidth margin="normal">
+                <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
                   <InputLabel>Mobile Money Provider</InputLabel>
                   <Select
                     value={mobileMoneyProvider}
                     label="Mobile Money Provider"
-                    onChange={(e) => setMobileMoneyProvider(e.target.value as any)}
+                    onChange={(e) => setMobileMoneyProvider(e.target.value as typeof mobileMoneyProvider)}
                     disabled={loading}
                   >
                     <MenuItem value="MTN">MTN Mobile Money</MenuItem>
@@ -322,6 +327,7 @@ export function PaystackPayment({
                   InputProps={{
                     startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>+233</Typography>,
                   }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
 
                 <Alert severity="info" sx={{ mt: 2 }}>
@@ -347,30 +353,31 @@ export function PaystackPayment({
           </Typography>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+      <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+        <Button onClick={onClose} disabled={loading} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
           Cancel
         </Button>
         <Button
           onClick={handlePayment}
           variant="contained"
+          disableElevation
           disabled={
             loading ||
             (paymentMethod === 'paystack' && (!email || (paymentChannel === 'mobile_money' && !mobileMoneyPhone))) ||
             (paymentMethod === 'wallet' && !hasSufficientBalance)
           }
-          startIcon={loading ? <CircularProgress size={20} /> : null}
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+          sx={(th) => sxObject(th, compactContainedCtaSx)}
         >
           {loading
             ? 'Processing...'
             : paymentMethod === 'wallet'
-            ? 'Pay with Wallet'
-            : paymentChannel === 'mobile_money'
-            ? `Pay with ${mobileMoneyProvider}`
-            : 'Proceed to Payment'}
+              ? 'Pay with Wallet'
+              : paymentChannel === 'mobile_money'
+                ? `Pay with ${mobileMoneyProvider}`
+                : 'Proceed to Payment'}
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
-

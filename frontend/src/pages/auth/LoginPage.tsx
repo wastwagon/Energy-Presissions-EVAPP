@@ -12,12 +12,22 @@ import {
   Divider,
   IconButton,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
-import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+import {
+  authFormFieldSx,
+  authPagePaperSx,
+  authPageRootSx,
+  authPageTitleSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
 import { LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 
@@ -48,6 +58,7 @@ declare global {
  * Redirects by `accountType` from the API.
  */
 export function LoginPage() {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -205,63 +216,83 @@ export function LoginPage() {
           {successMessage && (
             <Alert
               severity="success"
-              sx={{ mb: 1.5, py: 0 }}
+              sx={{ mb: 1, py: 0 }}
               onClose={() => navigate('/login', { replace: true, state: {} })}
             >
               {successMessage}
             </Alert>
           )}
           {error && (
-            <Alert severity="error" sx={{ mb: 1.5, py: 0 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
 
           <form onSubmit={handlePasswordLogin}>
-            <TextField
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.875 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Email or phone number"
+                type="text"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                margin="none"
+                sx={authFormFieldSx}
+                required
+                autoComplete="username"
+                inputMode="text"
+                autoFocus
+                helperText="Use the email or phone number you registered with."
+              />
+              <TextField
+                fullWidth
+                size="small"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                margin="none"
+                sx={authFormFieldSx}
+                required
+                autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        edge="end"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        sx={{
+                          ...sxObject(theme, premiumIconButtonTouchSx),
+                          color: 'text.secondary',
+                        }}
+                      >
+                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+            <Button
+              type="submit"
               fullWidth
-              size="small"
-              label="Email or phone number"
-              type="text"
-              value={emailOrPhone}
-              onChange={(e) => setEmailOrPhone(e.target.value)}
-              margin="none"
-              sx={{ mb: 1.25 }}
-              required
-              autoComplete="username"
-              inputMode="text"
-              autoFocus
-              helperText="Use the email or phone number you registered with."
-            />
-            <TextField
-              fullWidth
-              size="small"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              margin="none"
-              required
-              autoComplete="current-password"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button type="submit" fullWidth variant="contained" size="medium" sx={{ mt: 1.5 }} disabled={loading}>
+              variant="contained"
+              size="medium"
+              disableElevation
+              sx={(th) => ({
+                ...sxObject(th, compactContainedCtaSx),
+                width: '100%',
+                mt: { xs: 1.125, sm: 1.25 },
+              })}
+              disabled={loading}
+            >
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
-            <Divider sx={{ my: { xs: 1.25, sm: 1.5 } }}>or</Divider>
+            <Divider sx={{ my: { xs: 1, sm: 1.125 } }}>or</Divider>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch' }}>
               {googleClientId && (
@@ -282,10 +313,10 @@ export function LoginPage() {
                 onClick={handleAppleSignIn}
                 disabled={loading}
                 fullWidth
-                sx={{
+                sx={(th) => ({
+                  ...sxObject(th, compactOutlinedCtaSx),
                   py: 0.75,
-                  textTransform: 'none',
-                  fontWeight: 600,
+                  minHeight: 40,
                   fontSize: '0.8125rem',
                   borderColor: 'divider',
                   color: 'text.primary',
@@ -293,7 +324,7 @@ export function LoginPage() {
                     borderColor: 'primary.main',
                     bgcolor: 'action.hover',
                   },
-                }}
+                })}
               >
                 <Box component="span" sx={{ mr: 1, display: 'inline-flex', alignItems: 'center' }}>
                   <img src="/apple-logo.svg" alt="" width={16} height={16} style={{ display: 'block' }} />
@@ -303,7 +334,7 @@ export function LoginPage() {
             </Box>
           </form>
 
-          <Box sx={{ mt: { xs: 1.25, sm: 1.5 }, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.375 }}>
             <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
               Forgot password?
             </Link>

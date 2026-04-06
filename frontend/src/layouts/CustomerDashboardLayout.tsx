@@ -29,6 +29,7 @@ import {
   jampackAppBarSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
+import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -118,6 +119,7 @@ export function CustomerDashboardLayout() {
             edge="start"
             onClick={() => setMobileOpen(true)}
             sx={{
+              ...sxObject(theme, premiumIconButtonTouchSx),
               mr: 2,
               display: { sm: 'none' },
               color: 'text.primary',
@@ -140,6 +142,7 @@ export function CustomerDashboardLayout() {
               onClick={handleMenuOpen}
               aria-label="User menu"
               sx={{
+                ...sxObject(theme, premiumIconButtonTouchSx),
                 p: 0,
                 border: '2px solid',
                 borderColor: 'divider',
@@ -175,14 +178,8 @@ export function CustomerDashboardLayout() {
               open={open}
               onClose={handleMenuClose}
               PaperProps={{
-                elevation: 8,
-                sx: {
-                  mt: 1.5,
-                  minWidth: 200,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                },
+                elevation: 0,
+                sx: (th) => sxObject(th, premiumMenuPaperSx),
               }}
             >
               <MuiMenuItem

@@ -30,8 +30,19 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LoginIcon from '@mui/icons-material/Login';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  compactWarningContainedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
 
 export function VendorManagementPage() {
@@ -242,11 +253,16 @@ export function VendorManagementPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<AddIcon />}
           onClick={handleCreateVendor}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'auto' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'auto' },
+          })}
         >
-          Create Vendor
+          Create vendor
         </Button>
       </Box>
 
@@ -262,7 +278,12 @@ export function VendorManagementPage() {
         </Alert>
       )}
 
-      <Paper sx={{ overflow: 'hidden' }}>
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Vendors ({vendors.length})
+          </Typography>
+        </Box>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -304,58 +325,53 @@ export function VendorManagementPage() {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Tooltip title="Login as Vendor">
+                        <Tooltip title="Login as vendor">
                           <IconButton
-                            size="small"
                             onClick={() => handleLoginAsVendor(vendor)}
                             color="success"
                             disabled={vendor.status !== 'active'}
                             aria-label={`Login as vendor ${vendor.name}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <LoginIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Edit Vendor">
+                        <Tooltip title="Edit vendor">
                           <IconButton
-                            size="small"
                             onClick={() => handleEditVendor(vendor)}
                             color="primary"
                             aria-label={`Edit vendor ${vendor.name}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Change Status">
+                        <Tooltip title="Change status">
                           <IconButton
-                            size="small"
                             onClick={() => handleStatusChange(vendor)}
                             color="default"
                             aria-label={`Change status for vendor ${vendor.name}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
-                            <Chip
-                              label={vendor.status}
-                              color={getVendorStatusColor(vendor.status)}
-                              size="small"
-                              sx={{ cursor: 'pointer', minWidth: 80 }}
-                            />
+                            <SwapHorizIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="View History">
+                        <Tooltip title="View history">
                           <IconButton
-                            size="small"
                             onClick={() => handleViewHistory(vendor)}
                             color="default"
                             aria-label={`View history for vendor ${vendor.name}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <HistoryIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete Vendor">
+                        <Tooltip title="Disable vendor">
                           <IconButton
-                            size="small"
                             onClick={() => handleDeleteVendor(vendor)}
                             color="error"
                             aria-label={`Delete vendor ${vendor.name}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -371,8 +387,14 @@ export function VendorManagementPage() {
       </Paper>
 
       {/* Status Change Dialog */}
-      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Change Vendor Status</DialogTitle>
+      <Dialog
+        open={statusDialogOpen}
+        onClose={() => setStatusDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Change vendor status</DialogTitle>
         <DialogContent>
           {selectedVendor && (
             <Box sx={{ pt: 2 }}>
@@ -380,16 +402,17 @@ export function VendorManagementPage() {
                 Vendor: <strong>{selectedVendor.name}</strong>
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                Current Status: <strong>{selectedVendor.status}</strong>
+                Current status: <strong>{selectedVendor.status}</strong>
               </Typography>
 
               <TextField
                 select
-                label="New Status"
+                label="New status"
                 fullWidth
                 margin="normal"
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value as VendorStatus)}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               >
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="suspended">Suspended</MenuItem>
@@ -404,19 +427,27 @@ export function VendorManagementPage() {
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Enter reason for status change..."
+                placeholder="Reason for status change…"
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setStatusDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
           <Button
             onClick={confirmStatusChange}
             variant="contained"
-            color={newStatus === 'disabled' ? 'error' : newStatus === 'suspended' ? 'warning' : 'primary'}
+            disableElevation
+            sx={(th) => {
+              if (newStatus === 'disabled') return { ...sxObject(th, compactErrorContainedCtaSx) };
+              if (newStatus === 'suspended') return { ...sxObject(th, compactWarningContainedCtaSx) };
+              return { ...sxObject(th, compactContainedCtaSx) };
+            }}
           >
-            Change Status
+            Change status
           </Button>
         </DialogActions>
       </Dialog>
@@ -427,10 +458,9 @@ export function VendorManagementPage() {
         onClose={() => setHistoryDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
       >
-        <DialogTitle>
-          Status History - {selectedVendor?.name}
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Status history — {selectedVendor?.name}</DialogTitle>
         <DialogContent>
           {historyLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -475,31 +505,40 @@ export function VendorManagementPage() {
             </TableContainer>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setHistoryDialogOpen(false)}>Close</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setHistoryDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create Vendor Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Vendor</DialogTitle>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Create vendor</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
-                  label="Vendor Name"
+                  label="Vendor name"
                   fullWidth
                   required
                   value={formData.name}
                   onChange={(e) => {
-                    setFormData({ ...formData, name: e.target.value });
-                    // Auto-generate slug from name
+                    const name = e.target.value;
                     setFormData((prev) => ({
                       ...prev,
-                      slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                      name,
+                      slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
                     }));
                   }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -510,6 +549,7 @@ export function VendorManagementPage() {
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   helperText="Used in URLs (e.g., 'vendor-name')"
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -519,23 +559,26 @@ export function VendorManagementPage() {
                   value={formData.domain}
                   onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                   helperText="Custom domain for white-label portal (e.g., 'vendor1.evcharging.com')"
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Contact Email"
+                  label="Contact email"
                   fullWidth
                   type="email"
                   value={formData.contactEmail}
                   onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Contact Phone"
+                  label="Contact phone"
                   fullWidth
                   value={formData.contactPhone}
                   onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -546,37 +589,49 @@ export function VendorManagementPage() {
                   rows={2}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
           <Button
             onClick={confirmCreateVendor}
             variant="contained"
+            disableElevation
             disabled={!formData.name || !formData.slug}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
-            Create Vendor
+            Create vendor
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Vendor Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Vendor</DialogTitle>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Edit vendor</DialogTitle>
         <DialogContent>
           {selectedVendor && (
             <Box sx={{ pt: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
-                    label="Vendor Name"
+                    label="Vendor name"
                     fullWidth
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -587,6 +642,7 @@ export function VendorManagementPage() {
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     helperText="Used in URLs (e.g., 'vendor-name')"
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -596,23 +652,26 @@ export function VendorManagementPage() {
                     value={formData.domain}
                     onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                     helperText="Custom domain for white-label portal"
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Contact Email"
+                    label="Contact email"
                     fullWidth
                     type="email"
                     value={formData.contactEmail}
                     onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Contact Phone"
+                    label="Contact phone"
                     fullWidth
                     value={formData.contactPhone}
                     onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -623,53 +682,85 @@ export function VendorManagementPage() {
                     rows={2}
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
               </Grid>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setEditDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
           <Button
             onClick={confirmEditVendor}
             variant="contained"
+            disableElevation
             disabled={!formData.name || !formData.slug}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
-            Save Changes
+            Save changes
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Disable vendor?</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Disable vendor?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             {pendingDeleteVendor
-              ? `Are you sure you want to delete vendor "${pendingDeleteVendor.name}"? This will disable the vendor.`
-              : 'Are you sure you want to disable this vendor?'}
+              ? `Disable vendor "${pendingDeleteVendor.name}"? This disables the vendor.`
+              : 'Disable this vendor?'}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDeleteVendor} color="error" variant="contained">
-            Disable Vendor
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDeleteVendor}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
+            Disable vendor
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={loginAsDialogOpen} onClose={() => setLoginAsDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Login as vendor?</DialogTitle>
+      <Dialog
+        open={loginAsDialogOpen}
+        onClose={() => setLoginAsDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Login as vendor?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             {pendingLoginVendor
-              ? `You will be switched to vendor "${pendingLoginVendor.name}" account context. Continue?`
-              : 'You will be switched to this vendor account context. Continue?'}
+              ? `Switch to vendor "${pendingLoginVendor.name}" context?`
+              : 'Switch to this vendor context?'}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLoginAsDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmLoginAsVendor} color="primary" variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setLoginAsDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmLoginAsVendor}
+            color="primary"
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
             Continue
           </Button>
         </DialogActions>

@@ -19,7 +19,13 @@ import {
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumEmptyStatePaperSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
@@ -84,18 +90,39 @@ export function CustomerSessionHistoryPage() {
       )}
 
       {transactions.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <HistoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            No Session History
+        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: theme.palette.action.hover,
+              color: 'text.secondary',
+            })}
+          >
+            <HistoryIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+            No session history
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            You haven't completed any charging sessions yet.
+            You have not completed any charging sessions yet.
           </Typography>
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Past sessions
+              </Typography>
+            </Box>
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -124,8 +151,11 @@ export function CustomerSessionHistoryPage() {
                     <TableCell>
                       <Button
                         size="small"
+                        variant="outlined"
+                        disableElevation
                         startIcon={<VisibilityIcon />}
                         onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                        sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), minWidth: 0, px: 1.5 })}
                       >
                         View
                       </Button>
@@ -135,6 +165,7 @@ export function CustomerSessionHistoryPage() {
               </TableBody>
             </Table>
           </TableContainer>
+          </Paper>
           {total > limit && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination

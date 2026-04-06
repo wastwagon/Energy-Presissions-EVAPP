@@ -77,14 +77,36 @@ export class StationsController {
   @ApiOperation({ summary: 'Search stations by location name, city, or region (Public)' })
   @ApiQuery({ name: 'q', type: String, description: 'Search query' })
   @ApiQuery({ name: 'limit', type: Number, required: false, description: 'Maximum results (default: 50)' })
-  @ApiResponse({ status: 200, description: 'List of matching stations' })
+  @ApiQuery({
+    name: 'latitude',
+    type: Number,
+    required: false,
+    description: 'Optional user latitude to include distance (km) in results',
+  })
+  @ApiQuery({
+    name: 'longitude',
+    type: Number,
+    required: false,
+    description: 'Optional user longitude to include distance (km) in results',
+  })
+  @ApiResponse({ status: 200, description: 'List of matching stations with live connector counts' })
   async search(
     @Query('q') searchTerm: string,
     @Query('limit') limit?: number,
+    @Query('latitude') latitude?: string,
+    @Query('longitude') longitude?: string,
   ) {
+    const lat =
+      latitude !== undefined && latitude !== '' ? parseFloat(latitude) : Number.NaN;
+    const lng =
+      longitude !== undefined && longitude !== '' ? parseFloat(longitude) : Number.NaN;
+    const userLocation =
+      !Number.isNaN(lat) && !Number.isNaN(lng) ? { latitude: lat, longitude: lng } : undefined;
+
     return this.stationsService.searchStations(
       searchTerm,
-      limit ? parseInt(limit.toString()) : undefined,
+      limit ? parseInt(limit.toString(), 10) : undefined,
+      userLocation,
     );
   }
 

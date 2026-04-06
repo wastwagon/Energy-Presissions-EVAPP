@@ -3,8 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
   CircularProgress,
   Alert,
   Chip,
@@ -15,7 +13,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { healthApi } from '../../services/healthApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 
 export function SuperAdminHealthPage() {
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
@@ -58,7 +57,15 @@ export function SuperAdminHealthPage() {
             Monitor API and service status
           </Typography>
         </Box>
-        <Button startIcon={<RefreshIcon />} onClick={loadHealth} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={loadHealth}
+          variant="outlined"
+          sx={(th) => ({
+            ...sxObject(th, compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+          })}
+        >
           Refresh
         </Button>
       </Box>
@@ -69,34 +76,22 @@ export function SuperAdminHealthPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <MemoryIcon color="action" />
-            <Typography variant="h6">API Status</Typography>
-            {health ? (
-              <Chip
-                icon={<CheckCircleIcon />}
-                label="Healthy"
-                color="success"
-                size="small"
-              />
-            ) : (
-              <Chip
-                icon={<ErrorIcon />}
-                label="Unreachable"
-                color="error"
-                size="small"
-              />
-            )}
-          </Box>
-          {health && (
-            <Typography variant="body2" color="text.secondary">
-              Last check: {new Date(health.timestamp).toLocaleString()}
-            </Typography>
+      <Paper sx={premiumPanelCardSx}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+          <MemoryIcon color="action" />
+          <Typography variant="h6">API Status</Typography>
+          {health ? (
+            <Chip icon={<CheckCircleIcon />} label="Healthy" color="success" size="small" />
+          ) : (
+            <Chip icon={<ErrorIcon />} label="Unreachable" color="error" size="small" />
           )}
-        </CardContent>
-      </Card>
+        </Box>
+        {health && (
+          <Typography variant="body2" color="text.secondary">
+            Last check: {new Date(health.timestamp).toLocaleString()}
+          </Typography>
+        )}
+      </Paper>
     </Box>
   );
 }

@@ -31,7 +31,16 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { usersApi, User } from '../../services/usersApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getUserAccountStatusColor } from '../../utils/statusColors';
 
@@ -238,11 +247,16 @@ export function UserManagementPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<AddIcon />}
           onClick={handleCreate}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
-          Create User
+          Create user
         </Button>
       </Box>
 
@@ -260,29 +274,38 @@ export function UserManagementPage() {
 
       <Box sx={{ mb: 2 }}>
         <TextField
-          placeholder="Search users..."
+          placeholder="Search users…"
           size="small"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon fontSize="small" />
               </InputAdornment>
             ),
             endAdornment: searchTerm && (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchTerm('')} aria-label="Clear user search">
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear user search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
                   <ClearIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{ width: { xs: '100%', sm: 320 }, maxWidth: '100%' }}
+          sx={(th) => ({ ...sxObject(th, authFormFieldSx), width: { xs: '100%', sm: 320 }, maxWidth: '100%' })}
         />
       </Box>
 
-      <Paper>
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            All users ({filteredUsers.length})
+          </Typography>
+        </Box>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -341,33 +364,33 @@ export function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Tooltip title="Change Role">
+                        <Tooltip title="Change role">
                           <IconButton
-                            size="small"
                             onClick={() => handleChangeRole(user)}
                             color="secondary"
                             aria-label={`Change role for ${user.email}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <AdminPanelSettingsIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Edit User">
+                        <Tooltip title="Edit user">
                           <IconButton
-                            size="small"
                             onClick={() => handleEdit(user)}
                             color="primary"
                             aria-label={`Edit user ${user.email}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete User">
+                        <Tooltip title="Delete user">
                           <IconButton
-                            size="small"
                             onClick={() => handleDelete(user)}
                             color="error"
                             disabled={user.accountType === 'SuperAdmin'}
                             aria-label={`Delete user ${user.email}`}
+                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -383,8 +406,14 @@ export function UserManagementPage() {
       </Paper>
 
       {/* Create User Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New User</DialogTitle>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Create new user</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -395,6 +424,7 @@ export function UserManagementPage() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
             <Grid item xs={12}>
@@ -405,22 +435,25 @@ export function UserManagementPage() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="First Name"
+                label="First name"
                 fullWidth
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Last Name"
+                label="Last name"
                 fullWidth
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
             <Grid item xs={12}>
@@ -429,15 +462,17 @@ export function UserManagementPage() {
                 fullWidth
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 select
-                label="Account Type"
+                label="Account type"
                 fullWidth
                 value={formData.accountType}
                 onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               >
                 <MenuItem value="Customer">Customer</MenuItem>
                 <MenuItem value="Admin">Admin</MenuItem>
@@ -451,6 +486,7 @@ export function UserManagementPage() {
                 fullWidth
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                sx={(th) => sxObject(th, authFormFieldSx)}
               >
                 <MenuItem value="Active">Active</MenuItem>
                 <MenuItem value="Inactive">Inactive</MenuItem>
@@ -459,12 +495,16 @@ export function UserManagementPage() {
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
           <Button
             onClick={confirmCreate}
             variant="contained"
+            disableElevation
             disabled={!formData.email || !formData.password}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
             Create
           </Button>
@@ -472,8 +512,14 @@ export function UserManagementPage() {
       </Dialog>
 
       {/* Edit User Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit User</DialogTitle>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Edit user</DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -486,31 +532,35 @@ export function UserManagementPage() {
                   value={formData.email}
                   disabled
                   helperText="Email cannot be changed"
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="New Password (leave blank to keep current)"
+                  label="New password (leave blank to keep current)"
                   type="password"
                   fullWidth
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="First Name"
+                  label="First name"
                   fullWidth
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Last Name"
+                  label="Last name"
                   fullWidth
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -519,15 +569,17 @@ export function UserManagementPage() {
                   fullWidth
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   select
-                  label="Account Type"
+                  label="Account type"
                   fullWidth
                   value={formData.accountType}
                   onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 >
                   <MenuItem value="Customer">Customer</MenuItem>
                   <MenuItem value="Admin">Admin</MenuItem>
@@ -541,6 +593,7 @@ export function UserManagementPage() {
                   fullWidth
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
                 >
                   <MenuItem value="Active">Active</MenuItem>
                   <MenuItem value="Inactive">Inactive</MenuItem>
@@ -550,34 +603,53 @@ export function UserManagementPage() {
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmEdit} variant="contained">
-            Save Changes
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setEditDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button onClick={confirmEdit} variant="contained" disableElevation sx={(th) => sxObject(th, compactContainedCtaSx)}>
+            Save changes
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete User</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Delete user</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to delete user <strong>{selectedUser?.email}</strong>?
             This action cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} variant="contained" color="error">
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Change Role Dialog */}
-          <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Change User Role</DialogTitle>
+      <Dialog
+        open={roleDialogOpen}
+        onClose={() => setRoleDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Change user role</DialogTitle>
             <DialogContent>
               {selectedUser && (
                 <Box sx={{ pt: 2 }}>
@@ -590,11 +662,12 @@ export function UserManagementPage() {
 
                   <TextField
                     select
-                    label="New Role"
+                    label="New role"
                     fullWidth
                     margin="normal"
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
+                    sx={(th) => sxObject(th, authFormFieldSx)}
                   >
                     <MenuItem value="Customer">Customer</MenuItem>
                     <MenuItem value="Admin">Admin</MenuItem>
@@ -610,19 +683,23 @@ export function UserManagementPage() {
                 </Box>
               )}
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setRoleDialogOpen(false)}>Cancel</Button>
-              <Button
-                onClick={confirmRoleChange}
-                variant="contained"
-                color="primary"
-                disabled={newRole === selectedUser?.accountType}
-              >
-                Change Role
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
-      );
-    }
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setRoleDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmRoleChange}
+            variant="contained"
+            color="primary"
+            disableElevation
+            disabled={newRole === selectedUser?.accountType}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            Change role
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
 

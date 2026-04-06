@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Alert } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { localAuthListApi } from '../../services/localAuthListApi';
+import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
+import { dashboardPageSubtitleSx, dashboardPageTitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 
 export function SuperAdminLocalAuthPage() {
   const [chargePointId, setChargePointId] = useState('');
@@ -29,48 +32,63 @@ export function SuperAdminLocalAuthPage() {
 
   return (
     <Box>
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-      >
+      <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
         Local authorization list
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 3 }}>
         Read local list version from a charge point. Sending list updates is done via the API from trusted operators.
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2, py: 0.5 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-start' } }}>
+      <Paper elevation={0} sx={premiumPanelCardSx}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, alignItems: { sm: 'flex-end' } }}>
           <TextField
             label="Charge point ID"
             size="small"
             value={chargePointId}
             onChange={(e) => setChargePointId(e.target.value)}
             fullWidth
-            sx={{ maxWidth: { sm: 400 } }}
+            margin="none"
+            sx={(th) => ({
+              ...sxObject(th, authFormFieldSx),
+              flex: 1,
+              maxWidth: { sm: 420 },
+            })}
           />
-          <Button variant="contained" onClick={loadVersion} disabled={loading} sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 160 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            disableElevation
+            onClick={loadVersion}
+            disabled={loading}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: 168 },
+            })}
+          >
             {loading ? 'Loading…' : 'Get list version'}
           </Button>
         </Box>
         {result != null && (
           <Box
             component="pre"
-            sx={{
+            sx={(theme) => ({
               mt: 2,
               p: 2,
-              borderRadius: 1,
-              bgcolor: 'grey.100',
-              fontSize: '0.875rem',
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.text.primary, 0.04),
+              border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
+              fontSize: '0.8125rem',
               overflow: 'auto',
-            }}
+              WebkitOverflowScrolling: 'touch',
+              lineHeight: 1.5,
+            })}
           >
             {JSON.stringify(result, null, 2)}
           </Box>

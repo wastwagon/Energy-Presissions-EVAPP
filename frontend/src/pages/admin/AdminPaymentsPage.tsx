@@ -22,6 +22,8 @@ import { paymentsApi, Payment } from '../../services/paymentsApi';
 import { getStoredAccountType } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { authFormFieldSx, sxObject } from '../../styles/authShell';
 
 export function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -78,15 +80,11 @@ export function AdminPaymentsPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.75rem', sm: '2rem' } }}
-        >
-          Payment Management
+        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+          Payment management
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          View and manage all payment transactions
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+          View and manage payment transactions
         </Typography>
       </Box>
 
@@ -96,23 +94,28 @@ export function AdminPaymentsPage() {
         </Alert>
       )}
 
-      <Paper sx={{ p: { xs: 2, sm: 2 }, mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="Search payments by ID, method, or status..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Paper>
-
-      <TableContainer component={Paper} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3 }}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+            Payments
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by ID, method, or status…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+            sx={(th) => sxObject(th, authFormFieldSx)}
+          />
+        </Box>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
@@ -163,6 +166,7 @@ export function AdminPaymentsPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      </Paper>
 
       {(totalPayments > limit || filteredPayments.length > limit) && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>

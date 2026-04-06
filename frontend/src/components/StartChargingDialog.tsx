@@ -14,11 +14,20 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { StationWithDistance } from '../services/stationsApi';
+import { alpha, useTheme } from '@mui/material/styles';
+import { StationDetails, StationWithDistance } from '../services/stationsApi';
 import { walletApi } from '../services/walletApi';
 import { chargePointsApi } from '../services/chargePointsApi';
 import { requireStoredUserId } from '../utils/authSession';
 import { formatCurrency } from '../utils/formatters';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../styles/authShell';
+import { premiumPanelCardSx } from '../theme/jampackShell';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -26,7 +35,8 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 interface StartChargingDialogProps {
   open: boolean;
   onClose: () => void;
-  station: StationWithDistance | null;
+  /** Nearby list row or full station detail — both carry tariff + id fields the dialog needs. */
+  station: StationWithDistance | StationDetails | null;
   onSuccess: () => void;
 }
 
@@ -36,6 +46,7 @@ export function StartChargingDialog({
   station,
   onSuccess,
 }: StartChargingDialogProps) {
+  const theme = useTheme();
   const [amount, setAmount] = useState('');
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
@@ -143,24 +154,53 @@ export function StartChargingDialog({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: {
+        sx: (t) => ({
+          ...sxObject(t, premiumDialogPaperSx),
           maxHeight: '90vh',
           margin: { xs: 1, sm: 2 },
-        }
+        }),
       }}
     >
-      <DialogTitle sx={{ pb: 1, pt: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BoltIcon color="primary" fontSize="small" />
-          <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-            Start Charging
-          </Typography>
+      <Box
+        sx={{
+          height: 3,
+          width: '100%',
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${alpha(
+            theme.palette.primary.main,
+            0.35,
+          )} 100%)`,
+        }}
+      />
+      <DialogTitle sx={{ pb: 1, pt: 2, px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            }}
+          >
+            <BoltIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}>
+              Start charging
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Wallet hold · session starts when confirmed
+            </Typography>
+          </Box>
         </Box>
       </DialogTitle>
       <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 1 }}>
@@ -184,29 +224,44 @@ export function StartChargingDialog({
             <Divider sx={{ my: 1.5 }} />
 
             {/* Wallet Balance - Compact */}
-            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 1.5, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <AccountBalanceWalletIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />
-                  <Typography variant="body2" fontWeight="bold" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                    Balance:
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 1.75, sm: 2 },
+                mb: 1.5,
+                borderRadius: 2.5,
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                color: 'text.primary',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountBalanceWalletIcon sx={{ fontSize: 22, color: 'primary.main' }} />
+                  <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.8125rem' }}>
+                    Wallet balance
                   </Typography>
                 </Box>
-                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {loadingBalance ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    formatCurrency(walletBalance, 'GHS')
-                  )}
+                <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' }, letterSpacing: '-0.02em' }}>
+                  {loadingBalance ? <CircularProgress size={18} sx={{ color: 'primary.main' }} /> : formatCurrency(walletBalance, 'GHS')}
                 </Typography>
               </Box>
               {reservedBalance > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.75, pt: 0.75, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                  <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Available: {formatCurrency(availableBalance, 'GHS')}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mt: 1,
+                    pt: 1,
+                    borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Available {formatCurrency(availableBalance, 'GHS')}
                   </Typography>
-                  <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Reserved: {formatCurrency(reservedBalance, 'GHS')}
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Reserved {formatCurrency(reservedBalance, 'GHS')}
                   </Typography>
                 </Box>
               )}
@@ -226,17 +281,30 @@ export function StartChargingDialog({
                 }
               }}
               inputProps={{ min: 0, step: 0.01 }}
-              helperText={amountNum > 0 ? undefined : "Enter amount to charge"}
-              sx={{ mb: 1.5 }}
+              helperText={amountNum > 0 ? undefined : 'Enter amount to reserve for this session'}
+              sx={(th) => ({
+                ...sxObject(th, authFormFieldSx),
+                mb: 1.5,
+              })}
               size="small"
+              margin="none"
               InputProps={{
-                startAdornment: <Typography sx={{ mr: 1, fontSize: { xs: '0.875rem', sm: '1rem' } }}>GHS</Typography>,
+                startAdornment: (
+                  <Typography sx={{ mr: 1, fontSize: '0.8125rem', fontWeight: 600, color: 'text.secondary' }}>GHS</Typography>
+                ),
               }}
             />
 
             {/* Calculations - Compact */}
             {amountNum > 0 && pricePerKwh > 0 && (
-              <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', mb: 1 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  ...premiumPanelCardSx,
+                  mb: 1,
+                  p: { xs: 1.75, sm: 2 },
+                }}
+              >
                 <Grid container spacing={1.5} sx={{ mb: 1 }}>
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -275,29 +343,52 @@ export function StartChargingDialog({
           </Box>
         )}
       </DialogContent>
-      <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 }, gap: 1 }}>
-        <Button 
-          onClick={onClose} 
+      <DialogActions
+        sx={{
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          gap: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: { sm: 'flex-end' },
+        }}
+      >
+        <Button
+          onClick={onClose}
           variant="outlined"
+          color="primary"
           disabled={starting}
-          size="small"
-          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, minWidth: { xs: '80px', sm: '100px' } }}
+          size="medium"
+          fullWidth
+          sx={(th) => ({
+            ...sxObject(th, compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { sm: 120 },
+          })}
         >
           Cancel
         </Button>
         <Button
           onClick={handleStart}
           variant="contained"
-          disabled={starting || !amount || parseFloat(amount) <= 0 || (availableBalance !== null && parseFloat(amount) > availableBalance) || (walletBalance !== null && parseFloat(amount) > walletBalance)}
-          startIcon={starting ? <CircularProgress size={16} /> : <BoltIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
-          size="small"
-          sx={{ 
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            minWidth: { xs: '120px', sm: '140px' },
-            px: { xs: 2, sm: 3 }
-          }}
+          color="primary"
+          disableElevation
+          disabled={
+            starting ||
+            !amount ||
+            parseFloat(amount) <= 0 ||
+            (availableBalance !== null && parseFloat(amount) > availableBalance) ||
+            (walletBalance !== null && parseFloat(amount) > walletBalance)
+          }
+          startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
+          size="medium"
+          fullWidth
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { sm: 140 },
+          })}
         >
-          {starting ? 'Starting...' : 'Start'}
+          {starting ? 'Starting…' : 'Start session'}
         </Button>
       </DialogActions>
     </Dialog>

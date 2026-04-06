@@ -4,8 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -33,7 +31,13 @@ import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  compactOutlinedCtaSx,
+  compactWarningContainedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 
 export function OperationsDashboard() {
@@ -169,7 +173,7 @@ export function OperationsDashboard() {
               mb: 0,
             }}
           >
-            Operations Dashboard
+            Operations dashboard
           </Typography>
           {isImpersonating && (
             <Button
@@ -177,15 +181,15 @@ export function OperationsDashboard() {
               color="warning"
               startIcon={<ExitToAppIcon />}
               onClick={handleExitImpersonation}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                borderColor: 'warning.main',
+                color: 'warning.main',
                 width: { xs: '100%', sm: 'auto' },
                 alignSelf: { xs: 'stretch', sm: 'auto' },
-              }}
+              })}
             >
-              Exit Vendor View
+              Exit vendor view
             </Button>
           )}
         </Box>
@@ -211,8 +215,8 @@ export function OperationsDashboard() {
       {/* Stats Cards */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="primary" compact noRightMargin>
                   <EvStationIcon sx={{ color: 'primary.main', fontSize: 24 }} />
@@ -227,12 +231,12 @@ export function OperationsDashboard() {
               <Typography variant="caption" color="text.secondary">
                 Total charge points
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="success" compact noRightMargin>
                   <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
@@ -247,12 +251,12 @@ export function OperationsDashboard() {
               <Typography variant="caption" color="text.secondary">
                 Currently charging
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="info" compact noRightMargin>
                   <CheckCircleIcon sx={{ color: 'info.main', fontSize: 24 }} />
@@ -267,12 +271,12 @@ export function OperationsDashboard() {
               <Typography variant="caption" color="text.secondary">
                 Connectors available
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Card elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <DashboardNavIcon accent="secondary" compact noRightMargin>
                   <ErrorIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
@@ -287,37 +291,29 @@ export function OperationsDashboard() {
               <Typography variant="caption" color="text.secondary">
                 Stations offline
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
       {/* Charge Points List */}
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-        }}
-      >
-        <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Charge Points
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Charge points
           </Typography>
         </Box>
         {chargePoints.length === 0 ? (
-          <Box sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center' }}>
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 3, sm: 4 }, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              No charge points registered yet. Charge points will appear here after they connect and send BootNotification.
+              No charge points yet. They appear here after connecting and sending BootNotification.
             </Typography>
           </Box>
         ) : (
           <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <Table size="small">
+            <Table size="small" stickyHeader>
               <TableHead>
-                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>ID</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Vendor/Model</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Status</TableCell>
@@ -369,16 +365,29 @@ export function OperationsDashboard() {
           </TableContainer>
         )}
       </Paper>
-      <Dialog open={exitDialogOpen} onClose={() => setExitDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Exit Vendor View?</DialogTitle>
+      <Dialog
+        open={exitDialogOpen}
+        onClose={() => setExitDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Exit vendor view?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             You will leave this vendor context and return to the Super Admin vendors page.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExitDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmExitImpersonation} color="warning" variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setExitDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmExitImpersonation}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactWarningContainedCtaSx)}
+          >
             Exit
           </Button>
         </DialogActions>

@@ -18,7 +18,7 @@ export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center',
-        mb: 2,
+        mb: { xs: 1.25, sm: 1.5 },
       }}
     >
       <Box
@@ -29,9 +29,9 @@ export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
         loading="eager"
         decoding="async"
         sx={{
-          height: { xs: 56, sm: 64 },
+          height: { xs: 'clamp(72px, 22vw, 88px)', sm: 96 },
           width: 'auto',
-          maxWidth: 'min(260px, 88vw)',
+          maxWidth: 'min(300px, 92vw)',
           objectFit: 'contain',
           display: 'block',
         }}

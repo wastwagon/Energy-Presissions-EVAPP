@@ -4,18 +4,10 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   CircularProgress,
   Alert,
   Button,
-  Card,
-  CardContent,
   Grid,
   Dialog,
   DialogTitle,
@@ -30,7 +22,19 @@ import { TransactionSummaryDialog } from '../../components/TransactionSummaryDia
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumEmptyStatePaperSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import {
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
@@ -137,13 +141,15 @@ export function CustomerActiveSessionsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Active Charging Sessions
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Monitor your current charging sessions in real-time
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Active charging sessions
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Monitor your current charging sessions in real time
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -153,89 +159,123 @@ export function CustomerActiveSessionsPage() {
       )}
 
       {transactions.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <BatteryChargingFullIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            No Active Sessions
+        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              mx: 'auto',
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: theme.palette.action.hover,
+              color: 'text.secondary',
+            })}
+          >
+            <BatteryChargingFullIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+            No active sessions
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            You don't have any active charging sessions at the moment.
+            You do not have any active charging sessions at the moment.
           </Typography>
-          <Button variant="contained" onClick={() => navigate('/stations')}>
-            Find Stations
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={() => navigate('/stations')}
+            sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            Find stations
           </Button>
         </Paper>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {transactions.map((tx) => (
             <Grid item xs={12} key={tx.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                    <Box>
-                      <Typography variant="h6" gutterBottom>
+              <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, p: { xs: 2, sm: 2.5 } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 1 }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                         {tx.chargePointId}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Connector {tx.connectorId}
                       </Typography>
                     </Box>
-                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} />
+                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" sx={{ flexShrink: 0 }} />
                   </Box>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid container spacing={2}>
                     <Grid item xs={6} sm={3}>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         Duration
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
                         {formatElapsedDurationFromStart(tx.startTime)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         Energy
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
                         {formatEnergyKwh(tx.totalEnergyKwh)} kWh
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         Cost
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
                         {formatCurrency(tx.totalCost, 'GHS')}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         Started
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
                         {new Date(tx.startTime).toLocaleTimeString()}
                       </Typography>
                     </Grid>
                   </Grid>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1.5,
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     <Button
                       variant="outlined"
+                      disableElevation
                       startIcon={<VisibilityIcon />}
                       onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                      sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                     >
-                      View Details
+                      View details
                     </Button>
                     <Button
                       variant="contained"
-                      color="error"
-                      startIcon={stoppingTransactionId === tx.transactionId ? <CircularProgress size={16} /> : <StopIcon />}
+                      disableElevation
+                      startIcon={
+                        stoppingTransactionId === tx.transactionId ? <CircularProgress size={16} color="inherit" /> : <StopIcon />
+                      }
                       onClick={() => handleStopTransaction(tx)}
                       disabled={stoppingTransactionId === tx.transactionId}
+                      sx={(th) => ({
+                        ...sxObject(th, compactErrorContainedCtaSx),
+                        width: { xs: '100%', sm: 'auto' },
+                      })}
                     >
-                      {stoppingTransactionId === tx.transactionId ? 'Stopping...' : 'Stop Charging'}
+                      {stoppingTransactionId === tx.transactionId ? 'Stopping…' : 'Stop charging'}
                     </Button>
                   </Box>
-                </CardContent>
-              </Card>
+              </Paper>
             </Grid>
           ))}
         </Grid>
@@ -254,19 +294,32 @@ export function CustomerActiveSessionsPage() {
         />
       )}
 
-      <Dialog open={stopDialogOpen} onClose={() => setStopDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Stop charging session?</DialogTitle>
+      <Dialog
+        open={stopDialogOpen}
+        onClose={() => setStopDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Stop charging session?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             {pendingStopTransaction
-              ? `Are you sure you want to stop charging at ${pendingStopTransaction.chargePointId}?`
-              : 'Are you sure you want to stop this charging session?'}
+              ? `Stop charging at ${pendingStopTransaction.chargePointId}?`
+              : 'Stop this charging session?'}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStopDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmStopTransaction} color="error" variant="contained">
-            Stop Charging
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setStopDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmStopTransaction}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
+            Stop charging
           </Button>
         </DialogActions>
       </Dialog>

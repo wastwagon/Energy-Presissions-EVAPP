@@ -4,18 +4,21 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   CircularProgress,
   Alert,
   Button,
   Tabs,
   Tab,
 } from '@mui/material';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import DownloadIcon from '@mui/icons-material/Download';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumPanelCardSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 
 export function AdminReportsPage() {
@@ -71,7 +74,11 @@ export function AdminReportsPage() {
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={() => handleExport('all')}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
           Export Report
         </Button>
@@ -91,58 +98,50 @@ export function AdminReportsPage() {
 
       {stats && (
         <>
-          <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total Revenue
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                    {formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Paper sx={premiumPanelCardSx}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total Revenue
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
+                  {formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
+                </Typography>
+              </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total Sessions
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Paper sx={premiumPanelCardSx}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total Sessions
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  {stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
+                </Typography>
+              </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Active Sessions
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                    {stats.overview?.activeSessions ?? stats.activeSessions ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Paper sx={premiumPanelCardSx}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Active Sessions
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
+                  {stats.overview?.activeSessions ?? stats.activeSessions ?? 0}
+                </Typography>
+              </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total Users
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Paper sx={premiumPanelCardSx}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total Users
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  {stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
+                </Typography>
+              </Paper>
             </Grid>
           </Grid>
 
-          <Paper>
+          <Paper sx={premiumTableSurfaceSx}>
             <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
               <Tab label="Overview" />
               <Tab label="Revenue" />
@@ -150,7 +149,7 @@ export function AdminReportsPage() {
               <Tab label="Users" />
             </Tabs>
 
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               {activeTab === 0 && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
@@ -161,7 +160,7 @@ export function AdminReportsPage() {
                   </Typography>
                   <Grid container spacing={2} sx={{ mt: 2 }}>
                     <Grid item xs={12} md={6}>
-                      <Paper sx={{ p: 2 }}>
+                      <Paper sx={premiumPanelCardSx}>
                         <Typography variant="subtitle2" color="text.secondary">
                           Average Session Duration
                         </Typography>
@@ -173,7 +172,7 @@ export function AdminReportsPage() {
                       </Paper>
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Paper sx={{ p: 2 }}>
+                      <Paper sx={premiumPanelCardSx}>
                         <Typography variant="subtitle2" color="text.secondary">
                           Average Revenue per Session
                         </Typography>

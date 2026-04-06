@@ -7,8 +7,6 @@ import {
   TextField,
   Button,
   Grid,
-  Card,
-  CardContent,
   Alert,
   CircularProgress,
   InputAdornment,
@@ -16,7 +14,14 @@ import {
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactOutlinedCtaSx,
+  sxObject,
+} from '../../styles/authShell';
+import { alpha } from '@mui/material/styles';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -86,13 +91,25 @@ export function CustomerTopUpPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Top Up Wallet
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Add funds to your wallet for seamless charging
-        </Typography>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { sm: 'center' },
+          justifyContent: 'space-between',
+          gap: { xs: 1, sm: 2 },
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Top Up Wallet
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Add funds to your wallet for seamless charging
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -103,23 +120,34 @@ export function CustomerTopUpPage() {
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Paper elevation={0} sx={premiumPanelCardSx}>
             {balance && (
-              <Box sx={{ mb: 3, p: { xs: 1.5, sm: 2 }, bgcolor: 'background.default', borderRadius: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Current Balance
+              <Box
+                sx={(theme) => ({
+                  mb: 3,
+                  p: { xs: 1.75, sm: 2 },
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(
+                    theme.palette.primary.main,
+                    0.02
+                  )} 100%)`,
+                })}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Current balance
                 </Typography>
                 <Typography
                   variant="h4"
-                  sx={{ fontWeight: 700, color: 'primary.main', wordBreak: 'break-word', fontSize: { xs: '1.5rem', sm: '2rem' } }}
+                  sx={{ fontWeight: 700, color: 'primary.main', wordBreak: 'break-word', fontSize: { xs: '1.5rem', sm: '2rem' }, mt: 0.25 }}
                 >
                   {formatCurrency(balance.balance, balance.currency)}
                 </Typography>
               </Box>
             )}
 
-            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-              Select Amount
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+              Select amount
             </Typography>
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -127,13 +155,25 @@ export function CustomerTopUpPage() {
                 <Grid item xs={6} sm={4} key={value}>
                   <Button
                     fullWidth
+                    disableElevation
                     variant={quickAmount === value ? 'contained' : 'outlined'}
                     onClick={() => handleQuickAmount(value)}
-                    sx={{
-                      py: 2,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                    }}
+                    sx={(th) =>
+                      quickAmount === value
+                        ? {
+                            ...sxObject(th, compactContainedCtaSx),
+                            mt: 0,
+                            minHeight: 48,
+                            py: 1.25,
+                            fontSize: '0.9375rem',
+                          }
+                        : {
+                            ...sxObject(th, compactOutlinedCtaSx),
+                            minHeight: 48,
+                            py: 1.25,
+                            fontSize: '0.875rem',
+                          }
+                    }
                   >
                     {formatCurrency(value)}
                   </Button>
@@ -143,7 +183,7 @@ export function CustomerTopUpPage() {
 
             <TextField
               fullWidth
-              label="Custom Amount"
+              label="Custom amount"
               type="number"
               value={amount}
               onChange={(e) => {
@@ -153,37 +193,57 @@ export function CustomerTopUpPage() {
               InputProps={{
                 startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
               }}
-              sx={{ mb: 3 }}
+              sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 3 })}
               helperText="Minimum amount: GHS 1.00"
             />
 
-            <Button fullWidth variant="contained" size="large" onClick={handleTopUp} disabled={!amount || parseFloat(amount) <= 0} sx={{ py: 1.5 }}>
-              Proceed to Payment
+            <Button
+              fullWidth
+              variant="contained"
+              disableElevation
+              onClick={handleTopUp}
+              disabled={!amount || parseFloat(amount) <= 0}
+              sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), mt: 0, py: 1.25 })}
+            >
+              Proceed to payment
             </Button>
           </Paper>
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <AccountBalanceWalletIcon sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
-                <Typography variant="h6">Why Top Up?</Typography>
+          <Paper elevation={0} sx={premiumPanelCardSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 2 }}>
+              <Box
+                sx={(theme) => ({
+                  width: 44,
+                  height: 44,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: 'primary.main',
+                })}
+              >
+                <AccountBalanceWalletIcon sx={{ fontSize: 24 }} />
               </Box>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                • Instant payments for charging sessions
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Why top up?
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                • No need to enter payment details each time
-              </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                • Secure and convenient
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                • Support for mobile money and cards
-              </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
+              • Instant payments for charging sessions
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
+              • No need to enter payment details each time
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
+              • Secure and convenient
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              • Support for mobile money and cards
+            </Typography>
+          </Paper>
         </Grid>
       </Grid>
 

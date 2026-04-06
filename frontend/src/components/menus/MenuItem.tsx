@@ -9,10 +9,12 @@ import {
   Tooltip,
   Typography,
   alpha,
+  useTheme,
 } from '@mui/material';
 import { MenuItem as MenuItemType } from '../../config/menu.config';
 import { getStoredAccountType } from '../../utils/authSession';
 import { getRoleAccentColor } from '../../utils/roleTheme';
+import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 
 interface MenuItemProps {
   item: MenuItemType;
@@ -42,6 +44,7 @@ function getMenuItemActive(
 }
 
 export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
+  const theme = useTheme();
   const { pathname, search } = useLocation();
   const isActive = getMenuItemActive(item.path, pathname, search, item.activeOnlyWithoutSearch);
 
@@ -54,10 +57,10 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
           <ListItemButton
             disabled
             sx={{
+              ...sxObject(theme, premiumIconButtonTouchSx),
               borderRadius: '12px',
               py: 1.5,
               px: 2.5,
-              minHeight: 44,
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
@@ -103,11 +106,11 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
       selected={isActive}
       onClick={onClick}
       sx={{
+        ...sxObject(theme, premiumIconButtonTouchSx),
         position: 'relative',
         borderRadius: '8px',
         py: 1,
         px: 2,
-        minHeight: 44,
         mb: 0.25,
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-selected': {

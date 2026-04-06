@@ -4,8 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
   Grid,
   Button,
   CircularProgress,
@@ -18,10 +16,17 @@ import {
   TableRow,
   Chip,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import { walletApi, WalletBalance, WalletTransaction } from '../../services/walletApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import {
+  dashboardPageTitleSx,
+  dashboardPageSubtitleSx,
+  premiumPanelCardSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
@@ -81,9 +86,14 @@ export function CustomerWalletPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<AddIcon />}
           onClick={() => navigate('/user/wallet/top-up')}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'auto' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'auto' },
+          })}
         >
           Top Up Wallet
         </Button>
@@ -98,38 +108,61 @@ export function CustomerWalletPage() {
       {balance && (
         <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
           <Grid item xs={12} md={6}>
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <CardContent sx={{ py: { xs: 2, sm: 3 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                  <AccountBalanceWalletIcon sx={{ fontSize: 40, color: 'primary.main', flexShrink: 0 }} />
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Current Balance
-                    </Typography>
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        fontWeight: 700,
-                        color: 'text.primary',
-                        fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
-                        wordBreak: 'break-word',
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {formatCurrency(balance.balance, balance.currency)}
-                    </Typography>
-                  </Box>
+            <Paper
+              elevation={0}
+              sx={(theme) => ({
+                ...premiumPanelCardSx,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.07)} 0%, ${alpha(
+                  theme.palette.primary.main,
+                  0.02
+                )} 100%)`,
+                borderColor: alpha(theme.palette.primary.main, 0.18),
+              })}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Box
+                  sx={(theme) => ({
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                    color: 'primary.main',
+                  })}
+                >
+                  <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
                 </Box>
-              </CardContent>
-            </Card>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Current balance
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
+                      wordBreak: 'break-word',
+                      lineHeight: 1.2,
+                      mt: 0.25,
+                    }}
+                  >
+                    {formatCurrency(balance.balance, balance.currency)}
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
           </Grid>
         </Grid>
       )}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Transaction History
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Transaction history
           </Typography>
         </Box>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>

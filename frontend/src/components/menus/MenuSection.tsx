@@ -7,6 +7,7 @@ import {
   Divider,
   IconButton,
   alpha,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -14,6 +15,7 @@ import { MenuItem } from './MenuItem';
 import { MenuSection as MenuSectionType } from '../../config/menu.config';
 import { getStoredAccountType } from '../../utils/authSession';
 import { getRoleAccentColor } from '../../utils/roleTheme';
+import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 
 interface MenuSectionProps {
   section: MenuSectionType;
@@ -26,6 +28,7 @@ export function MenuSectionComponent({
   onItemClick,
   themeColor,
 }: MenuSectionProps) {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(
     section.defaultExpanded ?? !section.collapsible,
   );
@@ -105,8 +108,7 @@ export function MenuSectionComponent({
               size="small"
               aria-label={expanded ? `Collapse ${section.title ?? 'menu section'}` : `Expand ${section.title ?? 'menu section'}`}
               sx={{
-                minWidth: 44,
-                minHeight: 44,
+                ...sxObject(theme, premiumIconButtonTouchSx),
                 p: 0.5,
                 color: 'text.secondary',
                 transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',

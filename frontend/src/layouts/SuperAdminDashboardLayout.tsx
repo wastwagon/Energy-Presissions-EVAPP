@@ -20,6 +20,7 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -36,6 +37,14 @@ import {
   jampackAppBarSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
+import {
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  premiumMenuPaperSx,
+  sxObject,
+} from '../styles/authShell';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -130,6 +139,7 @@ export function SuperAdminDashboardLayout() {
             edge="start"
             onClick={() => setMobileOpen(true)}
             sx={{
+              ...sxObject(theme, premiumIconButtonTouchSx),
               mr: 2,
               display: { sm: 'none' },
               color: 'text.primary',
@@ -159,10 +169,18 @@ export function SuperAdminDashboardLayout() {
           {isImpersonating && (
             <Button
               variant="outlined"
-              color="error"
               startIcon={<ExitToAppIcon />}
               onClick={handleExitImpersonation}
-              sx={{ mr: 2, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                mr: 2,
+                borderColor: alpha(th.palette.error.main, 0.45),
+                color: 'error.main',
+                '&:hover': {
+                  borderColor: 'error.main',
+                  bgcolor: alpha(th.palette.error.main, 0.06),
+                },
+              })}
             >
               Exit Vendor View
             </Button>
@@ -180,6 +198,7 @@ export function SuperAdminDashboardLayout() {
               onClick={handleMenuOpen}
               aria-label="User menu"
               sx={{
+                ...sxObject(theme, premiumIconButtonTouchSx),
                 p: 0,
                 border: '2px solid',
                 borderColor: 'divider',
@@ -215,14 +234,8 @@ export function SuperAdminDashboardLayout() {
               open={open}
               onClose={handleMenuClose}
               PaperProps={{
-                elevation: 8,
-                sx: {
-                  mt: 1.5,
-                  minWidth: 200,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                },
+                elevation: 0,
+                sx: (th) => sxObject(th, premiumMenuPaperSx),
               }}
             >
               <MuiMenuItem
@@ -287,16 +300,29 @@ export function SuperAdminDashboardLayout() {
       {showBottomNav && (
         <BottomNav items={superAdminBottomNavItems} accentColor={brandColors.primary} />
       )}
-      <Dialog open={exitDialogOpen} onClose={() => setExitDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Exit Vendor View?</DialogTitle>
+      <Dialog
+        open={exitDialogOpen}
+        onClose={() => setExitDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Exit vendor view?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
             You will leave this vendor context and return to the Super Admin vendors page.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExitDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmExitImpersonation} color="error" variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setExitDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmExitImpersonation}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
             Exit
           </Button>
         </DialogActions>

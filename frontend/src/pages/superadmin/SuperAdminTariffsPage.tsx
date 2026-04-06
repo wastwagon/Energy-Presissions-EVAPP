@@ -28,7 +28,16 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  authFormFieldSx,
+  compactContainedCtaSx,
+  compactErrorContainedCtaSx,
+  compactOutlinedCtaSx,
+  premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 
 export function SuperAdminTariffsPage() {
@@ -162,11 +171,16 @@ export function SuperAdminTariffsPage() {
         </Box>
         <Button
           variant="contained"
+          disableElevation
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+          })}
         >
-          New Tariff
+          New tariff
         </Button>
       </Box>
 
@@ -176,8 +190,14 @@ export function SuperAdminTariffsPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-        <Table>
+      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            System tariff plans
+          </Typography>
+        </Box>
+        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
@@ -202,9 +222,9 @@ export function SuperAdminTariffsPage() {
                     variant="outlined"
                     startIcon={<AddIcon />}
                     onClick={() => handleOpenDialog()}
-                    sx={{ mt: 2 }}
+                    sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mt: 2 })}
                   >
-                    Create First Tariff
+                    Create first tariff
                   </Button>
                 </TableCell>
               </TableRow>
@@ -244,25 +264,30 @@ export function SuperAdminTariffsPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <IconButton
-                        size="small"
                         onClick={() => handleToggleActive(tariff)}
                         color={tariff.isActive ? 'default' : 'primary'}
                         aria-label={`${tariff.isActive ? 'Deactivate' : 'Activate'} tariff ${tariff.name}`}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                       >
                         <Switch checked={tariff.isActive} size="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleOpenDialog(tariff)} color="primary" aria-label={`Edit tariff ${tariff.name}`}>
-                        <EditIcon />
+                      <IconButton
+                        onClick={() => handleOpenDialog(tariff)}
+                        color="primary"
+                        aria-label={`Edit tariff ${tariff.name}`}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                      >
+                        <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
-                        size="small"
                         onClick={() => handleDelete(tariff.id)}
                         color="error"
                         aria-label={`Delete tariff ${tariff.name}`}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                       >
-                        <DeleteIcon />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </TableCell>
@@ -272,17 +297,27 @@ export function SuperAdminTariffsPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      </Paper>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingTariff ? 'Edit Tariff' : 'Create New Tariff'}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {editingTariff ? 'Edit tariff' : 'Create tariff'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
             <TextField
               fullWidth
-              label="Tariff Name"
+              label="Tariff name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               fullWidth
@@ -291,10 +326,11 @@ export function SuperAdminTariffsPage() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               multiline
               rows={2}
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               fullWidth
-              label="Energy Rate (per kWh)"
+              label="Energy rate (per kWh)"
               type="number"
               value={formData.energyRate || formData.energyPrice || 0}
               onChange={(e) => setFormData({ ...formData, energyRate: parseFloat(e.target.value) || 0 })}
@@ -303,10 +339,11 @@ export function SuperAdminTariffsPage() {
                 startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
               }}
               helperText="Price per kilowatt-hour in GHS"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               fullWidth
-              label="Time Rate (per hour, optional)"
+              label="Time rate (per hour, optional)"
               type="number"
               value={formData.timeRate || formData.timePrice || 0}
               onChange={(e) => setFormData({ ...formData, timeRate: parseFloat(e.target.value) || 0 })}
@@ -314,10 +351,11 @@ export function SuperAdminTariffsPage() {
                 startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
               }}
               helperText="Price per hour in GHS"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
             <TextField
               fullWidth
-              label="Base Fee (optional)"
+              label="Base fee (optional)"
               type="number"
               value={formData.baseFee || 0}
               onChange={(e) => setFormData({ ...formData, baseFee: parseFloat(e.target.value) || 0 })}
@@ -325,27 +363,47 @@ export function SuperAdminTariffsPage() {
                 startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
               }}
               helperText="Fixed fee per transaction in GHS"
+              sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={!formData.name || !(formData.energyRate || formData.energyPrice)}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={handleCloseDialog} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={handleSave}
+            disabled={!formData.name || !(formData.energyRate || formData.energyPrice)}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
             {editingTariff ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Delete tariff?</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Delete tariff?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            This action cannot be undone.
-          </DialogContentText>
+          <DialogContentText component="div">This action cannot be undone.</DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            disableElevation
+            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+          >
             Delete
           </Button>
         </DialogActions>
