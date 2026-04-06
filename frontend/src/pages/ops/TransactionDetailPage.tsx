@@ -38,6 +38,7 @@ import {
 import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -87,17 +88,18 @@ export function TransactionDetailPage() {
 
   if (!transaction) {
     return (
-      <Box>
+      <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mb: 2 }}>
           Back to Sessions
         </Button>
+        <OpsQuickActions opsBase={opsBase} />
         <Alert severity="error">Transaction not found</Alert>
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -120,6 +122,8 @@ export function TransactionDetailPage() {
           sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

@@ -66,7 +66,7 @@ export const authPageTitleSx: SxProps<Theme> = {
   fontWeight: 700,
   color: 'text.primary',
   mb: { xs: 1, sm: 1.125 },
-  textAlign: 'center',
+  textAlign: 'left',
   letterSpacing: '-0.02em',
   fontSize: { xs: '1.0625rem', sm: '1.125rem' },
   lineHeight: 1.3,

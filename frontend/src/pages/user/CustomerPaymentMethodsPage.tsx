@@ -24,6 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { paymentMethodsApi, PaymentMethod } from '../../services/paymentMethodsApi';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -145,7 +146,7 @@ export function CustomerPaymentMethodsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -168,6 +169,8 @@ export function CustomerPaymentMethodsPage() {
           Add method
         </Button>
       </Box>
+
+      <CustomerQuickActions preset="payment_methods" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

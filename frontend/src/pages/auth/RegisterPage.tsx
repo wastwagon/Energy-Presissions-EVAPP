@@ -94,7 +94,7 @@ export function RegisterPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader />
+          <AuthBrandHeader align="left" />
           <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Create account
           </Typography>
@@ -261,7 +261,7 @@ export function RegisterPage() {
             </Button>
           </form>
 
-          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'center' }}>
+          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left' }}>
             <Link
               component={RouterLink}
               to="/login"
@@ -272,7 +272,7 @@ export function RegisterPage() {
             </Link>
           </Box>
 
-          <LegalFooterLinks />
+          <LegalFooterLinks sx={{ textAlign: 'left', justifyContent: 'flex-start' }} />
         </Paper>
       </Container>
     </Box>

@@ -4,20 +4,23 @@ import { LOGO_PUBLIC_URL } from '../../config/branding';
 type AuthBrandHeaderProps = {
   /** Shown under the logo; omit for a tighter header */
   tagline?: string;
+  /** Match home/marketing left alignment; legal pages can keep centered via wrapper */
+  align?: 'center' | 'left';
 };
 
 /**
- * Centered logo for auth screens (image-only; no duplicate wordmark — see `public/logo.png`).
+ * Logo for auth screens (image-only; no duplicate wordmark — see `public/logo.png`).
  */
-export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
+export function AuthBrandHeader({ tagline, align = 'center' }: AuthBrandHeaderProps) {
+  const isLeft = align === 'left';
   return (
     <Box
       component="header"
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
+        alignItems: isLeft ? 'flex-start' : 'center',
+        textAlign: isLeft ? 'left' : 'center',
         mb: { xs: 1.25, sm: 1.5 },
       }}
     >
@@ -29,9 +32,11 @@ export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
         loading="eager"
         decoding="async"
         sx={{
-          height: { xs: 'clamp(72px, 22vw, 88px)', sm: 96 },
+          height: isLeft
+            ? { xs: 'clamp(48px, 14vw, 64px)', sm: 72 }
+            : { xs: 'clamp(72px, 22vw, 88px)', sm: 96 },
           width: 'auto',
-          maxWidth: 'min(300px, 92vw)',
+          maxWidth: isLeft ? 'min(220px, 70vw)' : 'min(300px, 92vw)',
           objectFit: 'contain',
           display: 'block',
         }}

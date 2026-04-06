@@ -43,8 +43,11 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getUserAccountStatusColor } from '../../utils/statusColors';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function UserManagementPage() {
+  const opsBase = useOpsBasePath();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,7 +238,7 @@ export function UserManagementPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -259,6 +262,8 @@ export function UserManagementPage() {
           Create user
         </Button>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

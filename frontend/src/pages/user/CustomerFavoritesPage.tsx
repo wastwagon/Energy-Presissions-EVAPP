@@ -18,6 +18,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { stationsApi, StationWithDistance } from '../../services/stationsApi';
 import { usersApi } from '../../services/usersApi';
 import { StartChargingDialog } from '../../components/StartChargingDialog';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -109,7 +110,7 @@ export function CustomerFavoritesPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Favorite Stations
@@ -118,6 +119,8 @@ export function CustomerFavoritesPage() {
           Your saved charging stations for quick access
         </Typography>
       </Box>
+
+      <CustomerQuickActions preset="favorites" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

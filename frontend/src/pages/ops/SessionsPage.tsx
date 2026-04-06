@@ -22,6 +22,7 @@ import { websocketService } from '../../services/websocket';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ export function SessionsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Charging Sessions
@@ -112,6 +113,8 @@ export function SessionsPage() {
           View active sessions and transaction history across your network.
         </Typography>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>

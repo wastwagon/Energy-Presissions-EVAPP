@@ -19,6 +19,7 @@ import {
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -73,7 +74,7 @@ export function CustomerSessionHistoryPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Session History
@@ -82,6 +83,8 @@ export function CustomerSessionHistoryPage() {
           View all your past charging sessions
         </Typography>
       </Box>
+
+      <CustomerQuickActions preset="sessions_history" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -122,7 +125,7 @@ export function CustomerSessionHistoryPage() {
                 Past sessions
               </Typography>
             </Box>
-            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>

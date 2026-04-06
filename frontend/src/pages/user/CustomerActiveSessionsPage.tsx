@@ -22,6 +22,7 @@ import { TransactionSummaryDialog } from '../../components/TransactionSummaryDia
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -140,7 +141,7 @@ export function CustomerActiveSessionsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -151,6 +152,8 @@ export function CustomerActiveSessionsPage() {
           </Typography>
         </Box>
       </Box>
+
+      <CustomerQuickActions preset="sessions_active" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

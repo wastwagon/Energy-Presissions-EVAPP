@@ -24,9 +24,12 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminDashboardPage() {
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export function SuperAdminDashboardPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box
         sx={{
           mb: 3,
@@ -101,6 +104,8 @@ export function SuperAdminDashboardPage() {
           Refresh
         </Button>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

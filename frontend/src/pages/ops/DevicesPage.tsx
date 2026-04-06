@@ -49,6 +49,7 @@ import {
   getConnectionEventColor,
   getConnectionStatusColor,
 } from '../../utils/statusColors';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -235,7 +236,7 @@ export function DevicesPage() {
   };
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -304,6 +305,8 @@ export function DevicesPage() {
           />
         </Box>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>

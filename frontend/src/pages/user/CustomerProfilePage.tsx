@@ -27,6 +27,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { usersApi } from '../../services/usersApi';
 import { authApi } from '../../services/authApi';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -145,7 +146,7 @@ export function CustomerProfilePage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -168,6 +169,8 @@ export function CustomerProfilePage() {
           {editing ? 'Save changes' : 'Edit profile'}
         </Button>
       </Box>
+
+      <CustomerQuickActions preset="profile" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

@@ -31,7 +31,6 @@ import ListIcon from '@mui/icons-material/List';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import LoginIcon from '@mui/icons-material/Login';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
 import { usersApi } from '../services/usersApi';
 import { websocketService } from '../services/websocket';
@@ -50,14 +49,11 @@ import {
   jampackKpiCardBaseSx,
   premiumEmptyStatePaperSx,
 } from '../theme/jampackShell';
+import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { StationListCard } from '../components/stations/StationListCard';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
-import {
-  getDashboardPathForAccountType,
-  getStoredUser,
-  hasValidSession,
-} from '../utils/authSession';
+import { getStoredUser, hasValidSession } from '../utils/authSession';
 
 export function StationsPage() {
   const theme = useTheme();
@@ -304,30 +300,10 @@ export function StationsPage() {
     }
   };
 
-  // Determine dashboard route based on user type
-  const getDashboardRoute = () => {
-    return getDashboardPathForAccountType(user?.accountType);
-  };
-
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 1 }}>
-            {isAuthenticated && (
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => navigate(getDashboardRoute())}
-                sx={(th) => ({
-                  ...sxObject(th, compactOutlinedCtaSx),
-                  width: { xs: '100%', sm: 'auto' },
-                })}
-              >
-                Back to Dashboard
-              </Button>
-            )}
-          </Box>
           <Typography
             variant="h6"
             component="h1"
@@ -364,6 +340,8 @@ export function StationsPage() {
           </Tooltip>
         </Box>
       </Box>
+
+      <CustomerQuickActions preset="stations" visible={isAuthenticated} />
 
       {locationError && (
         <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLocationError(null)}>

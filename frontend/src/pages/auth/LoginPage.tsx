@@ -208,7 +208,7 @@ export function LoginPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader />
+          <AuthBrandHeader align="left" />
           <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Sign in
           </Typography>
@@ -334,7 +334,7 @@ export function LoginPage() {
             </Box>
           </form>
 
-          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.375 }}>
+          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 0.375 }}>
             <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
               Forgot password?
             </Link>
@@ -343,7 +343,9 @@ export function LoginPage() {
             </Link>
           </Box>
 
-          <LegalFooterLinks sx={{ mt: { xs: 1, sm: 1.5 } }} />
+          <LegalFooterLinks
+            sx={{ mt: { xs: 1, sm: 1.5 }, textAlign: 'left', justifyContent: 'flex-start' }}
+          />
         </Paper>
       </Container>
     </Box>

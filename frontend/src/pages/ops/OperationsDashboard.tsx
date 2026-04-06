@@ -39,6 +39,7 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -151,7 +152,7 @@ export function OperationsDashboard() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Box
           sx={{
@@ -205,6 +206,8 @@ export function OperationsDashboard() {
           Real-time monitoring of charging operations and device status.
         </Typography>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setError(null)}>

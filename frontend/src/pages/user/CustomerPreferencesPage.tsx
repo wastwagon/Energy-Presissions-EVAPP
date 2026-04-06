@@ -13,6 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
 
@@ -49,7 +50,7 @@ export function CustomerPreferencesPage() {
   };
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Preferences
@@ -58,6 +59,8 @@ export function CustomerPreferencesPage() {
           Customize your experience
         </Typography>
       </Box>
+
+      <CustomerQuickActions preset="preferences" />
 
       {saved && (
         <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaved(false)}>

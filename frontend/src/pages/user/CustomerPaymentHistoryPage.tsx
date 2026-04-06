@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -63,7 +64,7 @@ export function CustomerPaymentHistoryPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Payment History
@@ -72,6 +73,8 @@ export function CustomerPaymentHistoryPage() {
           View all your payment transactions
         </Typography>
       </Box>
+
+      <CustomerQuickActions preset="payments" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -112,7 +115,7 @@ export function CustomerPaymentHistoryPage() {
                 Your payments
               </Typography>
             </Box>
-            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>

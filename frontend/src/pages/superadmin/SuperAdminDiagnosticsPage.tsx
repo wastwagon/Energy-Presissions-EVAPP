@@ -4,18 +4,22 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminDiagnosticsPage() {
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
         Diagnostics
       </Typography>
-      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 3 }}>
+      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
         Request diagnostics from charge points
       </Typography>
+      <OpsQuickActions opsBase={opsBase} />
       <Paper sx={premiumPanelCardSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <BugReportIcon color="action" sx={{ fontSize: 40 }} />

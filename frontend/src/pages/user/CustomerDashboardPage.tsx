@@ -17,6 +17,7 @@ import {
   Button,
   Tabs,
   Tab,
+  useMediaQuery,
 } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HistoryIcon from '@mui/icons-material/History';
@@ -30,10 +31,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
+import { useTheme } from '@mui/material/styles';
 import { transactionsApi } from '../../services/transactionsApi';
 import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
@@ -63,7 +66,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function CustomerDashboardPage() {
+  const theme = useTheme();
   const navigate = useNavigate();
+  const isMobileNav = useMediaQuery(theme.breakpoints.down('sm'));
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,7 +212,7 @@ export function CustomerDashboardPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
           <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
@@ -232,6 +237,8 @@ export function CustomerDashboardPage() {
         </Button>
       </Box>
 
+      <CustomerQuickActions preset="dashboard" />
+
       {error && (
         <Alert
           severity="error"
@@ -242,20 +249,30 @@ export function CustomerDashboardPage() {
         </Alert>
       )}
 
-      {/* Summary Cards */}
-      <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      {/* Summary Cards — 2×2 grid on narrow phones, 2 cols tablet, 4 cols desktop */}
+      <Grid container spacing={{ xs: 1.25, sm: 2, md: 2.5 }} sx={{ mb: 3 }}>
+        <Grid item xs={6} sm={6} md={3}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary'), height: '100%' }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 1, sm: 2 }, gap: 0.5 }}>
                 <DashboardNavIcon accent="primary" compact noRightMargin>
-                  <AccountBalanceWalletIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+                  <AccountBalanceWalletIcon sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
                 </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.75rem' }, textAlign: 'right' }}>
                   Wallet
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 1.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  mb: { xs: 1, sm: 1.5 },
+                  fontSize: { xs: '1.125rem', sm: '1.5rem', md: '1.75rem' },
+                  lineHeight: 1.2,
+                  wordBreak: 'break-word',
+                }}
+              >
                 {formatCurrency(walletBalance, 'GHS')}
               </Typography>
               <Button
@@ -264,69 +281,73 @@ export function CustomerDashboardPage() {
                 disableElevation
                 fullWidth
                 onClick={() => navigate('/user/wallet/top-up')}
-                sx={(th) => sxObject(th, compactContainedCtaSx)}
+                sx={(th) => ({
+                  ...sxObject(th, compactContainedCtaSx),
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  py: { xs: 0.75, sm: 1 },
+                })}
               >
-                Top Up Wallet
+                {isMobileNav ? 'Top up' : 'Top Up Wallet'}
               </Button>
             </Box>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Grid item xs={6} sm={6} md={3}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success'), height: '100%' }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 1, sm: 2 }, gap: 0.5 }}>
                 <DashboardNavIcon accent="success" compact noRightMargin>
-                  <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
+                  <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: { xs: 20, sm: 24 } }} />
                 </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                   Sessions
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.35rem', sm: '1.75rem' } }}>
                 {transactions.length}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total charging sessions
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, lineHeight: 1.35 }}>
+                Total sessions
               </Typography>
             </Box>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Grid item xs={6} sm={6} md={3}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info'), height: '100%' }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 1, sm: 2 }, gap: 0.5 }}>
                 <DashboardNavIcon accent="info" compact noRightMargin>
-                  <PaymentIcon sx={{ color: 'info.main', fontSize: 24 }} />
+                  <PaymentIcon sx={{ color: 'info.main', fontSize: { xs: 20, sm: 24 } }} />
                 </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                   Payments
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.35rem', sm: '1.75rem' } }}>
                 {payments.length}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total payments made
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, lineHeight: 1.35 }}>
+                Payments made
               </Typography>
             </Box>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Grid item xs={6} sm={6} md={3}>
+          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary'), height: '100%' }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 1, sm: 2 }, gap: 0.5 }}>
                 <DashboardNavIcon accent="secondary" compact noRightMargin>
-                  <HistoryIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
+                  <HistoryIcon sx={{ color: 'secondary.main', fontSize: { xs: 20, sm: 24 } }} />
                 </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                   Active
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.35rem', sm: '1.75rem' } }}>
                 {transactions.filter((t) => t.status === 'Active').length}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Active charging sessions
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, lineHeight: 1.35 }}>
+                Live sessions
               </Typography>
             </Box>
           </Paper>
@@ -341,22 +362,25 @@ export function CustomerDashboardPage() {
           border: '1px solid',
           borderColor: 'divider',
           overflow: 'hidden',
+          maxWidth: '100%',
         }}
       >
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
+          variant={isMobileNav ? 'fullWidth' : 'scrollable'}
+          scrollButtons={isMobileNav ? false : 'auto'}
+          allowScrollButtonsMobile={!isMobileNav}
           sx={{
             borderBottom: '1px solid',
             borderColor: 'divider',
+            minHeight: { xs: 48, sm: 56 },
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: '0.9375rem',
-              minHeight: 56,
+              fontSize: { xs: '0.8125rem', sm: '0.9375rem' },
+              minHeight: { xs: 48, sm: 56 },
+              px: { xs: 0.5, sm: 1.5 },
               '&.Mui-selected': {
                 color: 'primary.main',
               },
@@ -365,15 +389,18 @@ export function CustomerDashboardPage() {
               height: 3,
               borderRadius: '3px 3px 0 0',
             },
+            '& .MuiTabs-scrollButtons': {
+              width: 40,
+            },
           }}
         >
-          <Tab label="Recent Transactions" />
-          <Tab label="Payment History" />
-          <Tab label="Profile" />
+          <Tab label={isMobileNav ? 'Transactions' : 'Recent Transactions'} id="customer-tab-0" aria-controls="customer-tabpanel-0" />
+          <Tab label={isMobileNav ? 'Payments' : 'Payment History'} id="customer-tab-1" aria-controls="customer-tabpanel-1" />
+          <Tab label="Profile" id="customer-tab-2" aria-controls="customer-tabpanel-2" />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
-          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -436,7 +463,7 @@ export function CustomerDashboardPage() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <TableContainer sx={{ maxHeight: 600, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <TableContainer sx={{ width: '100%', maxWidth: '100%', maxHeight: 600, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>

@@ -44,9 +44,12 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function VendorManagementPage() {
   const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -241,7 +244,7 @@ export function VendorManagementPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -265,6 +268,8 @@ export function VendorManagementPage() {
           Create vendor
         </Button>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

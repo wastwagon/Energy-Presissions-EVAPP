@@ -24,8 +24,11 @@ import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { authFormFieldSx, sxObject } from '../../styles/authShell';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function AdminPaymentsPage() {
+  const opsBase = useOpsBasePath();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPayments, setTotalPayments] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -78,7 +81,7 @@ export function AdminPaymentsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
           Payment management
@@ -87,6 +90,8 @@ export function AdminPaymentsPage() {
           View and manage payment transactions
         </Typography>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

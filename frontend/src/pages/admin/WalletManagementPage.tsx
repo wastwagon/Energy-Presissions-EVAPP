@@ -41,8 +41,11 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getWalletTransactionTypeColor } from '../../utils/statusColors';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function WalletManagementPage() {
+  const opsBase = useOpsBasePath();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
@@ -218,7 +221,7 @@ export function WalletManagementPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -242,6 +245,8 @@ export function WalletManagementPage() {
           Create user
         </Button>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

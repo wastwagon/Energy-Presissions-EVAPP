@@ -288,6 +288,10 @@ export function SuperAdminDashboardLayout() {
         component="main"
         sx={{
           flexGrow: 1,
+          flexShrink: 1,
+          minWidth: 0,
+          maxWidth: '100%',
+          overflowX: 'hidden',
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           bgcolor: JAMPACK_PAGE_BG,

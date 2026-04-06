@@ -51,6 +51,7 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function ChargePointDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -273,7 +274,7 @@ export function ChargePointDetailPage() {
 
   if (!chargePoint) {
     return (
-      <Box>
+      <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate(opsBase)}
@@ -281,13 +282,14 @@ export function ChargePointDetailPage() {
         >
           Back to dashboard
         </Button>
+        <OpsQuickActions opsBase={opsBase} />
         <Alert severity="error">Charge point not found</Alert>
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -310,6 +312,8 @@ export function ChargePointDetailPage() {
           sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

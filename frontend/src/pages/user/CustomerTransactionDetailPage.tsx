@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
@@ -66,23 +67,24 @@ export function CustomerTransactionDetailPage() {
 
   if (error || !transaction) {
     return (
-      <Box>
+      <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {error || 'Transaction not found'}
         </Alert>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/user/sessions/history')}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' }, mb: 2 })}
         >
           Back to history
         </Button>
+        <CustomerQuickActions preset="transaction_detail" />
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -100,6 +102,8 @@ export function CustomerTransactionDetailPage() {
           </Typography>
         </Box>
       </Box>
+
+      <CustomerQuickActions preset="transaction_detail" />
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>

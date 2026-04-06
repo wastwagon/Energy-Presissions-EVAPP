@@ -44,14 +44,29 @@ export function MainLayout() {
           color: 'text.primary',
         }}
       >
-        <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 }, px: { xs: 2, sm: 3 } }}>
+        <Toolbar
+          sx={{
+            flexWrap: 'wrap',
+            gap: 1,
+            py: { xs: 1, sm: 0.75 },
+            px: { xs: 2, sm: 3 },
+            minHeight: { xs: 60, sm: 68 },
+            alignItems: 'center',
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
             <Box
               component="img"
               src={LOGO_PUBLIC_URL}
-              alt=""
+              alt="Clean Motion Ghana"
               draggable={false}
-              sx={{ height: 'clamp(36px, 9vw, 48px)', width: 'auto', objectFit: 'contain', display: 'block' }}
+              sx={{
+                height: { xs: 'clamp(48px, 14vw, 58px)', sm: 56, md: 60 },
+                width: 'auto',
+                maxWidth: { xs: 'min(280px, 72vw)', sm: 320 },
+                objectFit: 'contain',
+                display: 'block',
+              }}
             />
           </Box>
           {isAuthenticated && user && (

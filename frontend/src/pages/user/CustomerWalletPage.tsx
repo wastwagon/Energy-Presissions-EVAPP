@@ -30,6 +30,7 @@ import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
+import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export function CustomerWalletPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -98,6 +99,8 @@ export function CustomerWalletPage() {
           Top Up Wallet
         </Button>
       </Box>
+
+      <CustomerQuickActions preset="wallet" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -165,7 +168,7 @@ export function CustomerWalletPage() {
             Transaction history
           </Typography>
         </Box>
-        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>

@@ -1,8 +1,7 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Drawer,
   AppBar,
   Toolbar,
   Typography,
@@ -10,42 +9,36 @@ import {
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
+  Button,
+  Divider,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { CustomerMenu } from '../components/menus/CustomerMenu';
-import { BottomNav } from '../components/BottomNav';
-import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
-import { LegalFooterLinks } from '../components/legal/LegalAuthNotice';
+import HelpIcon from '@mui/icons-material/Help';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { customerBottomNavItems } from '../config/menu.config';
+import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
-import {
-  JAMPACK_DRAWER_WIDTH,
-  JAMPACK_PAGE_BG,
-  jampackAppBarSx,
-  jampackDrawerPaper,
-} from '../theme/jampackShell';
+import { JAMPACK_PAGE_BG, jampackAppBarSx } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
-const drawerWidth = JAMPACK_DRAWER_WIDTH;
+function isCustomerNavItemActive(pathname: string, item: BottomNavItem): boolean {
+  if (pathname === item.path) return true;
+  return item.matchPaths?.some((p) => pathname.startsWith(p)) ?? false;
+}
 
 export function CustomerDashboardLayout() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
-  const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
+  const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
 
   useEffect(() => {
     const userData = getStoredUser();
@@ -69,37 +62,14 @@ export function CustomerDashboardLayout() {
     setAnchorEl(null);
   };
 
-  const drawer = (
-    <Box
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: 'background.paper',
-      }}
-    >
-      <DrawerBrandHeader subtitle="Customer Portal" />
-      <Box sx={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-        <CustomerMenu onItemClick={() => setMobileOpen(false)} />
-      </Box>
-      <Box
-        component="footer"
-        sx={{
-          flexShrink: 0,
-          py: 1.5,
-          px: 2,
-          borderTop: 1,
-          borderColor: 'divider',
-          pb: { xs: `max(12px, env(safe-area-inset-bottom))`, sm: 1.5 },
-        }}
-      >
-        <LegalFooterLinks
-          onInternalNavigate={() => setMobileOpen(false)}
-          sx={{ mt: 0 }}
-        />
-      </Box>
-    </Box>
-  );
+  const openLegal = (href: string, external: boolean) => {
+    handleMenuClose();
+    if (external) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(href);
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: JAMPACK_PAGE_BG }}>
@@ -107,29 +77,60 @@ export function CustomerDashboardLayout() {
         position="fixed"
         elevation={0}
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: '100%',
+          left: 0,
           zIndex: (t) => t.zIndex.drawer + 1,
           ...jampackAppBarSx,
         }}
       >
-        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileOpen(true)}
+        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important', gap: 1 }}>
+          <Box
+            component="nav"
+            aria-label="Primary"
             sx={{
-              ...sxObject(theme, premiumIconButtonTouchSx),
-              mr: 2,
-              display: { sm: 'none' },
-              color: 'text.primary',
+              flex: 1,
+              display: { xs: 'none', lg: 'flex' },
+              alignItems: 'center',
+              gap: 0.25,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              minWidth: 0,
+              py: 0.5,
+              mr: 1,
+              WebkitOverflowScrolling: 'touch',
+              '&::-webkit-scrollbar': { height: 4 },
             }}
-            aria-label="open menu"
           >
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            {customerBottomNavItems.map((item) => {
+              const active = isCustomerNavItemActive(location.pathname, item);
+              return (
+                <Button
+                  key={item.id}
+                  color="inherit"
+                  onClick={() => navigate(item.path)}
+                  startIcon={item.icon}
+                  aria-current={active ? 'page' : undefined}
+                  sx={{
+                    flexShrink: 0,
+                    minHeight: 44,
+                    px: { lg: 1.25, xl: 1.5 },
+                    py: 0.75,
+                    color: active ? 'primary.main' : 'text.secondary',
+                    fontWeight: active ? 600 : 500,
+                    fontSize: { lg: '0.8125rem', xl: '0.875rem' },
+                    borderRadius: 1,
+                    borderBottom: '2px solid',
+                    borderColor: active ? 'primary.main' : 'transparent',
+                    '& .MuiButton-startIcon': { mr: 0.75 },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Box>
+          <Box sx={{ flexGrow: 1, display: { xs: 'flex', lg: 'none' }, minWidth: 0 }} />
+          <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                 {user?.firstName} {user?.lastName}
@@ -192,6 +193,46 @@ export function CustomerDashboardLayout() {
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Profile</Typography>
               </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate('/user/preferences');
+                }}
+                sx={{ py: 1.5 }}
+              >
+                <SettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography>Preferences</Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate('/user/help');
+                }}
+                sx={{ py: 1.5 }}
+              >
+                <HelpIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography>Help</Typography>
+              </MuiMenuItem>
+              <Divider sx={{ my: 0.5 }} />
+              <MuiMenuItem
+                onClick={() => {
+                  const p = getPrivacyPolicyLink();
+                  openLegal(p.href, p.external);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                <Typography sx={{ pl: 0.5 }}>Privacy Policy</Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  const t = getTermsOfServiceLink();
+                  openLegal(t.href, t.external);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                <Typography sx={{ pl: 0.5 }}>Terms of Service</Typography>
+              </MuiMenuItem>
+              <Divider sx={{ my: 0.5 }} />
               <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Logout</Typography>
@@ -201,39 +242,15 @@ export function CustomerDashboardLayout() {
         </Toolbar>
       </AppBar>
       <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="navigation"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
         component="main"
         sx={{
           flexGrow: 1,
+          flexShrink: 1,
+          minWidth: 0,
+          maxWidth: '100%',
+          overflowX: 'hidden',
           p: { xs: 2, sm: 3 },
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: '100%',
           bgcolor: JAMPACK_PAGE_BG,
           pb: showBottomNav ? 10 : 3,
         }}
@@ -247,4 +264,3 @@ export function CustomerDashboardLayout() {
     </Box>
   );
 }
-

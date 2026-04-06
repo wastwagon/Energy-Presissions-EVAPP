@@ -24,8 +24,10 @@ import {
   premiumPanelCardSx,
 } from '../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
+import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
+import { hasValidSession } from '../utils/authSession';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -87,7 +89,7 @@ export function StationDetailPage() {
 
   if (!station || error) {
     return (
-      <Box>
+      <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/stations')}
@@ -101,9 +103,10 @@ export function StationDetailPage() {
         >
           Back to stations
         </Button>
-        <Alert severity="error" sx={{ borderRadius: 2 }}>
+        <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
           {error || 'Station not found'}
         </Alert>
+        <CustomerQuickActions preset="station_detail" visible={hasValidSession()} />
       </Box>
     );
   }
@@ -114,7 +117,7 @@ export function StationDetailPage() {
       : null;
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'flex-start' }} sx={{ mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -155,6 +158,8 @@ export function StationDetailPage() {
           sx={{ fontWeight: 700, alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Stack>
+
+      <CustomerQuickActions preset="station_detail" visible={hasValidSession()} />
 
       <Stack spacing={2}>
         <Paper elevation={0} sx={premiumPanelCardSx}>

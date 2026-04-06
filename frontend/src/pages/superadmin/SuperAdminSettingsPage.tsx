@@ -55,6 +55,8 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredAccountType } from '../../utils/authSession';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -80,6 +82,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 function SuperAdminSettingsPage() {
+  const opsBase = useOpsBasePath();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -305,7 +308,7 @@ function SuperAdminSettingsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -316,6 +319,8 @@ function SuperAdminSettingsPage() {
           </Typography>
         </Box>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

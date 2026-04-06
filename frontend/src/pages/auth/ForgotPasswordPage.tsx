@@ -74,11 +74,11 @@ export function ForgotPasswordPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader />
+          <AuthBrandHeader align="left" />
           <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
             Reset your password
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, lineHeight: 1.45 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, lineHeight: 1.45, textAlign: 'left' }}>
             Enter the email you used to register. After you continue, you can enter your code and pick a new password below.
           </Typography>
 

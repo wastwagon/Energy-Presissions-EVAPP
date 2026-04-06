@@ -22,13 +22,9 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import HelpIcon from '@mui/icons-material/Help';
-import DescriptionIcon from '@mui/icons-material/Description';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import MemoryIcon from '@mui/icons-material/Memory';
@@ -431,148 +427,6 @@ export const adminMenuConfig: MenuSection[] = [
 ];
 
 /**
- * Customer Menu Configuration
- * Personal dashboard with charging and wallet features
- */
-export const customerMenuConfig: MenuSection[] = [
-  {
-    id: 'dashboard',
-    title: 'Dashboard',
-    collapsible: false,
-    defaultExpanded: true,
-    items: [
-      {
-        id: 'my-dashboard',
-        text: 'My Dashboard',
-        icon: <DashboardIcon />,
-        path: '/user/dashboard',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'find-stations',
-        text: 'Find Stations',
-        icon: <LocationOnIcon />,
-        path: '/stations',
-        roles: ['Customer', 'WalkIn'],
-      },
-    ],
-  },
-  {
-    id: 'charging',
-    title: 'Charging',
-    icon: <EvStationIcon />,
-    collapsible: true,
-    defaultExpanded: true,
-    items: [
-      {
-        id: 'active-sessions',
-        text: 'Active Sessions',
-        icon: <HistoryIcon />,
-        path: '/user/sessions/active',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'session-history',
-        text: 'Session History',
-        icon: <ReceiptIcon />,
-        path: '/user/sessions/history',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'favorite-stations',
-        text: 'Favorite Stations',
-        icon: <LocationOnIcon />,
-        path: '/user/favorites',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'saved-locations',
-        text: 'Saved Locations',
-        icon: <LocationOnIcon />,
-        path: '/user/locations',
-        disabled: true, // TODO: Create saved locations page
-        roles: ['Customer', 'WalkIn'],
-      },
-    ],
-  },
-  {
-    id: 'wallet-payments',
-    title: 'Wallet & Payments',
-    icon: <AccountBalanceWalletIcon />,
-    collapsible: true,
-    defaultExpanded: false,
-    items: [
-      {
-        id: 'wallet-balance',
-        text: 'Wallet Balance',
-        icon: <AccountBalanceWalletIcon />,
-        path: '/user/wallet',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'top-up',
-        text: 'Top Up Wallet',
-        icon: <LocalAtmIcon />,
-        path: '/user/wallet/top-up',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'payment-history',
-        text: 'Payment History',
-        icon: <PaymentIcon />,
-        path: '/user/payments',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'payment-methods',
-        text: 'Payment Methods',
-        icon: <CreditCardIcon />,
-        path: '/user/payment-methods',
-        roles: ['Customer', 'WalkIn'],
-      },
-    ],
-  },
-  {
-    id: 'account',
-    title: 'Account',
-    icon: <AccountCircleIcon />,
-    collapsible: true,
-    defaultExpanded: false,
-    items: [
-      {
-        id: 'profile',
-        text: 'Profile Settings',
-        icon: <AccountCircleIcon />,
-        path: '/user/profile',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'preferences',
-        text: 'Preferences',
-        icon: <SettingsIcon />,
-        path: '/user/preferences',
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'notifications',
-        text: 'Notifications',
-        icon: <NotificationsIcon />,
-        path: '/user/notifications',
-        disabled: true, // TODO: Create notifications page
-        roles: ['Customer', 'WalkIn'],
-      },
-      {
-        id: 'help',
-        text: 'Help & Support',
-        icon: <HelpIcon />,
-        path: '/user/help',
-        roles: ['Customer', 'WalkIn'],
-      },
-    ],
-  },
-];
-
-/**
  * Bottom navigation items for mobile/tablet (native app feel)
  */
 export const customerBottomNavItems = [
@@ -604,40 +458,3 @@ export const mainLayoutBottomNavItems = [
   { id: 'stations', label: 'Find Stations', icon: <LocationOnIcon />, path: '/stations', matchPaths: ['/stations'] },
   { id: 'login', label: 'Login', icon: <LoginIcon />, path: '/login' },
 ];
-
-/**
- * Get menu configuration for a role
- */
-export function getMenuConfig(role: string): MenuSection[] {
-  switch (role) {
-    case 'SuperAdmin':
-      return superAdminMenuConfig;
-    case 'Admin':
-      return adminMenuConfig;
-    case 'Customer':
-    case 'WalkIn':
-      return customerMenuConfig;
-    default:
-      return [];
-  }
-}
-
-/**
- * Get all menu items flattened (for search)
- */
-export function getAllMenuItems(role: string): MenuItem[] {
-  const config = getMenuConfig(role);
-  const items: MenuItem[] = [];
-  
-  config.forEach((section) => {
-    section.items.forEach((item) => {
-      items.push(item);
-      if (item.children) {
-        items.push(...item.children);
-      }
-    });
-  });
-  
-  return items;
-}
-

@@ -20,8 +20,11 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminAnalyticsPage() {
+  const opsBase = useOpsBasePath();
   const [searchParams] = useSearchParams();
   const vendorScope = searchParams.get('scope') === 'vendor';
   const [loading, setLoading] = useState(true);
@@ -73,7 +76,7 @@ export function SuperAdminAnalyticsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
@@ -98,6 +101,8 @@ export function SuperAdminAnalyticsPage() {
           Refresh
         </Button>
       </Box>
+
+      <OpsQuickActions opsBase={opsBase} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
