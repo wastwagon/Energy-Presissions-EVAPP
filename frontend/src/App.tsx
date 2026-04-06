@@ -2,6 +2,8 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { CUSTOMER_ROUTES } from './config/customerNav.paths';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
 
 const MainLayout = lazy(() =>
@@ -366,7 +368,7 @@ function App() {
                 </RouteSuspense>
               }
             >
-              <Route index element={<Navigate to="/user/dashboard" replace />} />
+              <Route index element={<Navigate to={CUSTOMER_ROUTES.dashboard} replace />} />
               <Route path="dashboard" element={<CustomerDashboardPage />} />
               <Route path="sessions/active" element={<CustomerActiveSessionsPage />} />
               <Route path="sessions/history" element={<CustomerSessionHistoryPage />} />
@@ -392,7 +394,7 @@ function App() {
                 </RouteSuspense>
               }
             >
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route index element={<Navigate to={ADMIN_ROUTES.dashboard} replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="ops" element={<AdminOperationsDashboard />} />
               <Route path="ops/sessions" element={<AdminSessionsPage />} />
@@ -431,7 +433,7 @@ function App() {
                 </RouteSuspense>
               }
             >
-              <Route index element={<Navigate to="/superadmin/dashboard" replace />} />
+              <Route index element={<Navigate to={SUPERADMIN_ROUTES.dashboard} replace />} />
               <Route path="dashboard" element={<SuperAdminDashboardPage />} />
               <Route path="ops" element={<SuperAdminOperationsDashboard />} />
               <Route path="ops/sessions" element={<SuperAdminSessionsPage />} />

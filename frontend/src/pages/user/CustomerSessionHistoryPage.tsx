@@ -28,6 +28,7 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 
@@ -157,7 +158,7 @@ export function CustomerSessionHistoryPage() {
                         variant="outlined"
                         disableElevation
                         startIcon={<VisibilityIcon />}
-                        onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                        onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
                         sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), minWidth: 0, px: 1.5 })}
                       >
                         View

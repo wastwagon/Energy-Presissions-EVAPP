@@ -20,11 +20,9 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function AdminReportsPage() {
-  const opsBase = useOpsBasePath();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
@@ -87,7 +85,7 @@ export function AdminReportsPage() {
         </Button>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

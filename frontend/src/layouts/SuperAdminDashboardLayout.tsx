@@ -29,6 +29,7 @@ import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
 import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { superAdminBottomNavItems } from '../config/menu.config';
+import { SUPERADMIN_ROUTES } from '../config/staffNav.paths';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
 import {
@@ -241,7 +242,7 @@ export function SuperAdminDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/superadmin/dashboard');
+                  navigate(SUPERADMIN_ROUTES.dashboard);
                 }}
                 sx={{ py: 1.5 }}
               >

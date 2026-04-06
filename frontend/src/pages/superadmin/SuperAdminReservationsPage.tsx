@@ -32,11 +32,9 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminReservationsPage() {
-  const opsBase = useOpsBasePath();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +126,7 @@ export function SuperAdminReservationsPage() {
         </Box>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

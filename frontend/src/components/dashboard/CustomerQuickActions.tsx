@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Paper, Grid, useMediaQuery } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { Box, Typography, Grid, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { SvgIconComponent } from '@mui/icons-material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -14,6 +14,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
+import { QuickActionTile } from './QuickActionTile';
 
 export type CustomerQuickActionsPreset =
   | 'dashboard'
@@ -55,84 +57,84 @@ interface ActionDef {
 
 const ACTION_DEFS: Record<ActionKey, ActionDef> = {
   dashboard: {
-    path: '/user/dashboard',
+    path: CUSTOMER_ROUTES.dashboard,
     label: 'Dashboard',
     shortLabel: 'Home',
     ariaLabel: 'Go to my dashboard',
     Icon: DashboardIcon,
   },
   stations: {
-    path: '/stations',
+    path: CUSTOMER_ROUTES.stations,
     label: 'Find stations',
     shortLabel: 'Stations',
     ariaLabel: 'Find charging stations',
     Icon: LocationOnIcon,
   },
   favorites: {
-    path: '/user/favorites',
+    path: CUSTOMER_ROUTES.favorites,
     label: 'Favorites',
     shortLabel: 'Saved',
     ariaLabel: 'Favorite stations',
     Icon: FavoriteBorderIcon,
   },
   live: {
-    path: '/user/sessions/active',
+    path: CUSTOMER_ROUTES.sessionsActive,
     label: 'Live charging',
     shortLabel: 'Live',
     ariaLabel: 'Active charging sessions',
     Icon: BatteryChargingFullIcon,
   },
   history: {
-    path: '/user/sessions/history',
+    path: CUSTOMER_ROUTES.sessionsHistory,
     label: 'History',
     shortLabel: 'History',
     ariaLabel: 'Session history',
     Icon: HistoryIcon,
   },
   payments: {
-    path: '/user/payments',
+    path: CUSTOMER_ROUTES.payments,
     label: 'Payments',
     shortLabel: 'Payments',
     ariaLabel: 'Payment history',
     Icon: PaymentIcon,
   },
   help: {
-    path: '/user/help',
+    path: CUSTOMER_ROUTES.help,
     label: 'Help',
     shortLabel: 'Help',
     ariaLabel: 'Help and support',
     Icon: HelpOutlineIcon,
   },
   wallet: {
-    path: '/user/wallet',
+    path: CUSTOMER_ROUTES.wallet,
     label: 'Wallet',
     shortLabel: 'Wallet',
     ariaLabel: 'My wallet',
     Icon: AccountBalanceWalletIcon,
   },
   top_up: {
-    path: '/user/wallet/top-up',
+    path: CUSTOMER_ROUTES.walletTopUp,
     label: 'Top up wallet',
     shortLabel: 'Top up',
     ariaLabel: 'Top up wallet balance',
     Icon: AddIcon,
   },
   payment_methods: {
-    path: '/user/payment-methods',
+    path: CUSTOMER_ROUTES.paymentMethods,
     label: 'Payment methods',
     shortLabel: 'Cards',
     ariaLabel: 'Payment methods',
     Icon: CreditCardIcon,
   },
   profile: {
-    path: '/user/profile',
+    path: CUSTOMER_ROUTES.profile,
     label: 'Profile',
     shortLabel: 'Profile',
     ariaLabel: 'My profile',
     Icon: PersonIcon,
   },
   preferences: {
-    path: '/user/preferences',
+    path: CUSTOMER_ROUTES.preferences,
     label: 'Preferences',
     shortLabel: 'Settings',
     ariaLabel: 'Account preferences',
@@ -190,61 +192,16 @@ export function CustomerQuickActions({
         {sectionLabel}
       </Typography>
       <Grid container spacing={{ xs: 1.25, sm: 1.5 }} sx={{ mb: 3 }}>
-        {actions.map((action) => {
-          const Icon = action.Icon;
-          return (
-            <Grid item xs={6} sm={4} md={2} key={`${preset}-${action.path}`}>
-              <Paper
-                elevation={0}
-                role="button"
-                tabIndex={0}
-                aria-label={action.ariaLabel}
-                onClick={() => navigate(action.path)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(action.path);
-                  }
-                }}
-                sx={{
-                  p: { xs: 1.25, sm: 1.5 },
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  minHeight: { xs: 88, sm: 92 },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.75,
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-                  '&:focus-visible': {
-                    outline: '2px solid',
-                    outlineColor: 'primary.main',
-                    outlineOffset: 2,
-                  },
-                  '@media (hover: hover) and (pointer: fine)': {
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      bgcolor: (t) => alpha(t.palette.primary.main, 0.04),
-                      boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
-                    },
-                  },
-                }}
-              >
-                <Box sx={{ color: 'primary.main', display: 'flex', '& .MuiSvgIcon-root': { fontSize: 26 } }}>
-                  <Icon fontSize="inherit" aria-hidden />
-                </Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.25, px: 0.5 }}>
-                  {isMobileNav ? action.shortLabel : action.label}
-                </Typography>
-              </Paper>
-            </Grid>
-          );
-        })}
+        {actions.map((action) => (
+          <Grid item xs={6} sm={4} md={2} key={`${preset}-${action.path}`}>
+            <QuickActionTile
+              Icon={action.Icon}
+              displayLabel={isMobileNav ? action.shortLabel : action.label}
+              ariaLabel={action.ariaLabel}
+              onNavigate={() => navigate(action.path)}
+            />
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );

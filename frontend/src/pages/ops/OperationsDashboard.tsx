@@ -40,6 +40,7 @@ import {
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export function OperationsDashboard() {
     localStorage.removeItem('currentVendorName');
     localStorage.removeItem('isImpersonating');
     setExitDialogOpen(false);
-    navigate('/superadmin/vendors');
+    navigate(SUPERADMIN_ROUTES.vendors);
   };
 
   const handleRowKeyDown =
@@ -207,7 +208,7 @@ export function OperationsDashboard() {
         </Typography>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setError(null)}>

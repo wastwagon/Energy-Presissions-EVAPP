@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom';
+import { getOpsNavPaths } from '../config/opsNav.paths';
 
 /**
  * Returns the ops base path based on current route context.
@@ -10,7 +11,5 @@ import { useLocation } from 'react-router-dom';
  */
 export function useOpsBasePath(): string {
   const { pathname } = useLocation();
-  if (pathname.startsWith('/superadmin')) return '/superadmin/ops';
-  if (pathname.startsWith('/admin')) return '/admin/ops';
-  return '/ops';
+  return getOpsNavPaths(pathname).opsBase;
 }

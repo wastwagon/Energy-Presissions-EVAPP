@@ -24,6 +24,7 @@ import {
 } from '../../styles/authShell';
 import { alpha } from '@mui/material/styles';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 
 export function CustomerTopUpPage() {
@@ -79,7 +80,7 @@ export function CustomerTopUpPage() {
   const handlePaymentSuccess = () => {
     setPaymentDialogOpen(false);
     loadBalance();
-    navigate('/user/wallet');
+    navigate(CUSTOMER_ROUTES.wallet);
   };
 
   if (loading) {

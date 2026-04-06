@@ -19,7 +19,6 @@ import { billingApi, Invoice } from '../../services/billingApi';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
@@ -33,7 +32,6 @@ function TabPanel({ children, value, index }: { children: ReactNode; value: numb
 }
 
 export function SuperAdminBillingPage() {
-  const opsBase = useOpsBasePath();
   const [tab, setTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -74,7 +72,7 @@ export function SuperAdminBillingPage() {
         </Box>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

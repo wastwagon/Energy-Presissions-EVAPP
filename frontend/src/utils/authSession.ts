@@ -1,3 +1,6 @@
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../config/staffNav.paths';
+
 export interface SessionUser {
   id?: number;
   firstName?: string;
@@ -34,9 +37,9 @@ export function clearSession(): void {
 }
 
 export function getDashboardPathForAccountType(accountType?: string): string {
-  if (accountType === 'SuperAdmin') return '/superadmin/dashboard';
-  if (accountType === 'Admin') return '/admin/dashboard';
-  return '/user/dashboard';
+  if (accountType === 'SuperAdmin') return SUPERADMIN_ROUTES.dashboard;
+  if (accountType === 'Admin') return ADMIN_ROUTES.dashboard;
+  return CUSTOMER_ROUTES.dashboard;
 }
 
 export function getStoredAccountType(): string | undefined {

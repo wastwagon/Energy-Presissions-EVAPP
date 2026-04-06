@@ -20,6 +20,7 @@ import { AdminMenu } from '../components/menus/AdminMenu';
 import { BottomNav } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { adminBottomNavItems } from '../config/menu.config';
+import { ADMIN_ROUTES } from '../config/staffNav.paths';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
 import {
@@ -168,7 +169,7 @@ export function AdminDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/admin/dashboard');
+                  navigate(ADMIN_ROUTES.dashboard);
                 }}
                 sx={{ py: 1.5 }}
               >

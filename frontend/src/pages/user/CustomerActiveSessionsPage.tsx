@@ -37,6 +37,7 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 
@@ -188,7 +189,7 @@ export function CustomerActiveSessionsPage() {
           <Button
             variant="contained"
             disableElevation
-            onClick={() => navigate('/stations')}
+            onClick={() => navigate(CUSTOMER_ROUTES.stations)}
             sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
           >
             Find stations
@@ -257,7 +258,7 @@ export function CustomerActiveSessionsPage() {
                       variant="outlined"
                       disableElevation
                       startIcon={<VisibilityIcon />}
-                      onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                      onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
                       sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                     >
                       View details

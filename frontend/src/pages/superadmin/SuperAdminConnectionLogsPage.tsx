@@ -28,11 +28,9 @@ import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatis
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminConnectionLogsPage() {
-  const opsBase = useOpsBasePath();
   const [logs, setLogs] = useState<ConnectionLog[]>([]);
   const [statistics, setStatistics] = useState<ConnectionStatistics[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +113,7 @@ export function SuperAdminConnectionLogsPage() {
         </Typography>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

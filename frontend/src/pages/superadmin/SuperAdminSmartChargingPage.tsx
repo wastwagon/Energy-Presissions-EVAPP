@@ -15,11 +15,9 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminSmartChargingPage() {
-  const opsBase = useOpsBasePath();
   const [chargePointId, setChargePointId] = useState('');
   const [connectorId, setConnectorId] = useState('1');
   const [duration, setDuration] = useState('3600');
@@ -83,7 +81,7 @@ export function SuperAdminSmartChargingPage() {
         Inspect composite schedules and charging profiles via the CSMS API (OCPP smart charging).
       </Typography>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

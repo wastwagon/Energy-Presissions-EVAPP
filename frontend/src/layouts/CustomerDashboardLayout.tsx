@@ -18,18 +18,14 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import HelpIcon from '@mui/icons-material/Help';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { BottomNav, type BottomNavItem } from '../components/BottomNav';
+import { BottomNav, isBottomNavItemActive } from '../components/BottomNav';
 import { customerBottomNavItems } from '../config/menu.config';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
 import { JAMPACK_PAGE_BG, jampackAppBarSx } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
-
-function isCustomerNavItemActive(pathname: string, item: BottomNavItem): boolean {
-  if (pathname === item.path) return true;
-  return item.matchPaths?.some((p) => pathname.startsWith(p)) ?? false;
-}
 
 export function CustomerDashboardLayout() {
   const navigate = useNavigate();
@@ -102,7 +98,7 @@ export function CustomerDashboardLayout() {
             }}
           >
             {customerBottomNavItems.map((item) => {
-              const active = isCustomerNavItemActive(location.pathname, item);
+              const active = isBottomNavItemActive(location.pathname, item);
               return (
                 <Button
                   key={item.id}
@@ -186,7 +182,7 @@ export function CustomerDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/user/profile');
+                  navigate(CUSTOMER_ROUTES.profile);
                 }}
                 sx={{ py: 1.5 }}
               >
@@ -196,7 +192,7 @@ export function CustomerDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/user/preferences');
+                  navigate(CUSTOMER_ROUTES.preferences);
                 }}
                 sx={{ py: 1.5 }}
               >
@@ -206,7 +202,7 @@ export function CustomerDashboardLayout() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
-                  navigate('/user/help');
+                  navigate(CUSTOMER_ROUTES.help);
                 }}
                 sx={{ py: 1.5 }}
               >

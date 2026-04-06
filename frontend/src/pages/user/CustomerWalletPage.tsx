@@ -31,6 +31,7 @@ import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ export function CustomerWalletPage() {
           variant="contained"
           disableElevation
           startIcon={<AddIcon />}
-          onClick={() => navigate('/user/wallet/top-up')}
+          onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
           sx={(th) => ({
             ...sxObject(th, compactContainedCtaSx),
             width: { xs: '100%', sm: 'auto' },

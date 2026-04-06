@@ -4,11 +4,9 @@ import { alpha } from '@mui/material/styles';
 import { localAuthListApi } from '../../services/localAuthListApi';
 import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { dashboardPageSubtitleSx, dashboardPageTitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminLocalAuthPage() {
-  const opsBase = useOpsBasePath();
   const [chargePointId, setChargePointId] = useState('');
   const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -42,7 +40,7 @@ export function SuperAdminLocalAuthPage() {
         Read local list version from a charge point. Sending list updates is done via the API from trusted operators.
       </Typography>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2, py: 0.5 }} onClose={() => setError(null)}>

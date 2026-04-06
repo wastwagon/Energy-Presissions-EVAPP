@@ -15,11 +15,9 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { healthApi } from '../../services/healthApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminHealthPage() {
-  const opsBase = useOpsBasePath();
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +71,7 @@ export function SuperAdminHealthPage() {
         </Button>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

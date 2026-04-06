@@ -21,12 +21,11 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
-  const opsBase = useOpsBasePath();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +101,7 @@ export function AdminDashboardPage() {
         </Button>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -117,11 +116,11 @@ export function AdminDashboardPage() {
             <Paper
               elevation={0}
               sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx, { cursor: 'pointer' }]}
-              onClick={() => navigate('/admin/ops/devices')}
+              onClick={() => navigate(ADMIN_ROUTES.opsDevices)}
               role="button"
               tabIndex={0}
               aria-label="Open devices"
-              onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
+              onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsDevices)}
             >
               <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -152,11 +151,11 @@ export function AdminDashboardPage() {
                   },
                 },
               ]}
-              onClick={() => navigate('/admin/ops/sessions')}
+              onClick={() => navigate('${ADMIN_ROUTES.opsSessions}')}
               role="button"
               tabIndex={0}
               aria-label="Open sessions"
-              onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
+              onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsSessions)}
             >
               <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -226,11 +225,11 @@ export function AdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('primary')}
-            onClick={() => navigate('/admin/ops')}
+            onClick={() => navigate(ADMIN_ROUTES.ops)}
             role="button"
             tabIndex={0}
             aria-label="Open operations"
-            onKeyDown={createKeyboardNavHandler('/admin/ops')}
+            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.ops)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -254,11 +253,11 @@ export function AdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
-            onClick={() => navigate('/admin/ops/sessions')}
+            onClick={() => navigate('${ADMIN_ROUTES.opsSessions}')}
             role="button"
             tabIndex={0}
             aria-label="Open sessions"
-            onKeyDown={createKeyboardNavHandler('/admin/ops/sessions')}
+            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsSessions)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -282,11 +281,11 @@ export function AdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('success')}
-            onClick={() => navigate('/admin/ops/devices')}
+            onClick={() => navigate(ADMIN_ROUTES.opsDevices)}
             role="button"
             tabIndex={0}
             aria-label="Open devices"
-            onKeyDown={createKeyboardNavHandler('/admin/ops/devices')}
+            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsDevices)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -310,11 +309,11 @@ export function AdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
-            onClick={() => navigate('/vendor')}
+            onClick={() => navigate(ADMIN_ROUTES.vendorPortal)}
             role="button"
             tabIndex={0}
             aria-label="Open vendor settings"
-            onKeyDown={createKeyboardNavHandler('/vendor')}
+            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.vendorPortal)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -338,11 +337,11 @@ export function AdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
-            onClick={() => navigate('/admin/wallets')}
+            onClick={() => navigate(ADMIN_ROUTES.wallets)}
             role="button"
             tabIndex={0}
             aria-label="Open wallets"
-            onKeyDown={createKeyboardNavHandler('/admin/wallets')}
+            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.wallets)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>

@@ -27,6 +27,7 @@ import {
 } from '../../theme/jampackShell';
 import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 
@@ -155,7 +156,7 @@ export function CustomerFavoritesPage() {
           <Button
             variant="contained"
             disableElevation
-            onClick={() => navigate('/stations')}
+            onClick={() => navigate(CUSTOMER_ROUTES.stations)}
             sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
           >
             Find stations

@@ -41,6 +41,7 @@ import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getPaymentStatusColor, getTransactionStatusColor } from '../../utils/statusColors';
 
@@ -199,7 +200,7 @@ export function CustomerDashboardPage() {
     (transactionId: string | number) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        navigate(`/user/sessions/${transactionId}`);
+        navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${transactionId}`);
       }
     };
 
@@ -226,7 +227,7 @@ export function CustomerDashboardPage() {
           variant="contained"
           disableElevation
           startIcon={<LocationOnIcon />}
-          onClick={() => navigate('/stations')}
+          onClick={() => navigate(CUSTOMER_ROUTES.stations)}
           sx={(th) => ({
             ...sxObject(th, compactContainedCtaSx),
             width: { xs: '100%', sm: 'auto' },
@@ -280,7 +281,7 @@ export function CustomerDashboardPage() {
                 variant="contained"
                 disableElevation
                 fullWidth
-                onClick={() => navigate('/user/wallet/top-up')}
+                onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
                 sx={(th) => ({
                   ...sxObject(th, compactContainedCtaSx),
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
@@ -427,7 +428,7 @@ export function CustomerDashboardPage() {
                         <TableRow
                           key={tx.id}
                           sx={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/user/sessions/${tx.transactionId}`)}
+                          onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
                           onKeyDown={handleTransactionRowKeyDown(tx.transactionId)}
                           role="button"
                           tabIndex={0}
@@ -741,7 +742,7 @@ export function CustomerDashboardPage() {
                                 color: 'secondary.contrastText',
                                 '&:hover': { bgcolor: 'secondary.dark' },
                               })}
-                              onClick={() => navigate('/user/wallet/top-up')}
+                              onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
                             >
                               Top Up Wallet
                             </Button>

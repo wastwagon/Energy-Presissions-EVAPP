@@ -44,12 +44,11 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { getOpsNavPaths } from '../../config/opsNav.paths';
 
 export function VendorManagementPage() {
   const navigate = useNavigate();
-  const opsBase = useOpsBasePath();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,10 +224,8 @@ export function VendorManagementPage() {
       setLoginAsDialogOpen(false);
       setPendingLoginVendor(null);
       
-      // Redirect to operations dashboard (vendor-specific view) - use current path context
-      const basePath = window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
       setTimeout(() => {
-        navigate(`${basePath}/ops`);
+        navigate(getOpsNavPaths(window.location.pathname).opsBase);
       }, 1000);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to login as vendor');
@@ -269,7 +266,7 @@ export function VendorManagementPage() {
         </Button>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

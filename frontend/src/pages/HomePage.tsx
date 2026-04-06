@@ -13,6 +13,8 @@ import {
   hasValidSession,
 } from '../utils/authSession';
 import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../config/staffNav.paths';
 import { premiumFeatureCardSx, dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../styles/authShell';
 
@@ -56,7 +58,7 @@ export function HomePage() {
       goLogin();
       return;
     }
-    navigate('/stations');
+    navigate(CUSTOMER_ROUTES.stations);
   };
 
   const handleWallet = () => {
@@ -64,7 +66,7 @@ export function HomePage() {
       goLogin();
       return;
     }
-    navigate('/user/wallet');
+    navigate(CUSTOMER_ROUTES.wallet);
   };
 
   const handleFavorites = () => {
@@ -72,7 +74,7 @@ export function HomePage() {
       goLogin();
       return;
     }
-    navigate('/user/favorites');
+    navigate(CUSTOMER_ROUTES.favorites);
   };
 
   const handleOperations = () => {
@@ -86,7 +88,7 @@ export function HomePage() {
       return;
     }
     if (accountType === 'Admin') {
-      navigate('/admin/ops');
+      navigate(ADMIN_ROUTES.ops);
       return;
     }
     navigate(getDashboardPathForAccountType(accountType));

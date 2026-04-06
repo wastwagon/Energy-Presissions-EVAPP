@@ -28,6 +28,7 @@ import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActio
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
 import { hasValidSession } from '../utils/authSession';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -92,7 +93,7 @@ export function StationDetailPage() {
       <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/stations')}
+          onClick={() => navigate(CUSTOMER_ROUTES.stations)}
           variant="outlined"
           color="primary"
           sx={(th) => ({
@@ -121,7 +122,7 @@ export function StationDetailPage() {
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'flex-start' }} sx={{ mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/stations')}
+          onClick={() => navigate(CUSTOMER_ROUTES.stations)}
           variant="outlined"
           color="primary"
           sx={(th) => ({

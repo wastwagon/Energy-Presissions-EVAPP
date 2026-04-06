@@ -92,7 +92,7 @@ export function TransactionDetailPage() {
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mb: 2 }}>
           Back to Sessions
         </Button>
-        <OpsQuickActions opsBase={opsBase} />
+        <OpsQuickActions />
         <Alert severity="error">Transaction not found</Alert>
       </Box>
     );
@@ -123,7 +123,7 @@ export function TransactionDetailPage() {
         />
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

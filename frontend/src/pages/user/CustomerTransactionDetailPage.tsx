@@ -20,6 +20,7 @@ import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickAc
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 
@@ -73,7 +74,7 @@ export function CustomerTransactionDetailPage() {
         </Alert>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/user/sessions/history')}
+          onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
           sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' }, mb: 2 })}
         >
           Back to history
@@ -88,7 +89,7 @@ export function CustomerTransactionDetailPage() {
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/user/sessions/history')}
+          onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
           sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         >
           Back
@@ -225,7 +226,7 @@ export function CustomerTransactionDetailPage() {
               <Button
                 fullWidth
                 variant="outlined"
-                onClick={() => navigate(`/stations/${transaction.chargePointId}`)}
+                onClick={() => navigate(`${CUSTOMER_ROUTES.stations}/${transaction.chargePointId}`)}
                 sx={(th) => sxObject(th, compactOutlinedCtaSx)}
               >
                 View charge point
@@ -233,7 +234,7 @@ export function CustomerTransactionDetailPage() {
               <Button
                 fullWidth
                 variant="outlined"
-                onClick={() => navigate('/user/sessions/history')}
+                onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
                 sx={(th) => sxObject(th, compactOutlinedCtaSx)}
               >
                 Back to history

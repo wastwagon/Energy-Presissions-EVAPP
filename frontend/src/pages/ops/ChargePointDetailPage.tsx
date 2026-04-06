@@ -282,7 +282,7 @@ export function ChargePointDetailPage() {
         >
           Back to dashboard
         </Button>
-        <OpsQuickActions opsBase={opsBase} />
+        <OpsQuickActions />
         <Alert severity="error">Charge point not found</Alert>
       </Box>
     );
@@ -313,7 +313,7 @@ export function ChargePointDetailPage() {
         />
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

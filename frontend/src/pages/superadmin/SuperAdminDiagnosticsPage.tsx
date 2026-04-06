@@ -4,12 +4,11 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminDiagnosticsPage() {
   const navigate = useNavigate();
-  const opsBase = useOpsBasePath();
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
@@ -19,7 +18,7 @@ export function SuperAdminDiagnosticsPage() {
       <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
         Request diagnostics from charge points
       </Typography>
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
       <Paper sx={premiumPanelCardSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <BugReportIcon color="action" sx={{ fontSize: 40 }} />
@@ -31,7 +30,7 @@ export function SuperAdminDiagnosticsPage() {
               variant="contained"
               disableElevation
               startIcon={<EvStationIcon />}
-              onClick={() => navigate('/superadmin/ops/devices')}
+              onClick={() => navigate(SUPERADMIN_ROUTES.opsDevices)}
               sx={(th) => ({
                 ...sxObject(th, compactContainedCtaSx),
                 mt: 2,

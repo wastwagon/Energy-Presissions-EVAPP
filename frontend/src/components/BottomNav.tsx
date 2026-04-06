@@ -18,6 +18,11 @@ export interface BottomNavItem {
   matchPaths?: string[]; // Additional paths that should highlight this tab
 }
 
+export function isBottomNavItemActive(pathname: string, item: BottomNavItem): boolean {
+  if (pathname === item.path) return true;
+  return item.matchPaths?.some((p) => pathname.startsWith(p)) ?? false;
+}
+
 interface BottomNavProps {
   items: BottomNavItem[];
   /** Accent color for active state */
@@ -31,11 +36,7 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getActiveIndex = () => {
-    const idx = items.findIndex(
-      (item) =>
-        location.pathname === item.path ||
-        (item.matchPaths && item.matchPaths.some((p) => location.pathname.startsWith(p)))
-    );
+    const idx = items.findIndex((item) => isBottomNavItemActive(location.pathname, item));
     return idx >= 0 ? idx : 0;
   };
 

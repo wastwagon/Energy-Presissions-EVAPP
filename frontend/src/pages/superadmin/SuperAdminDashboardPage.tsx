@@ -24,12 +24,11 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
-import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminDashboardPage() {
   const navigate = useNavigate();
-  const opsBase = useOpsBasePath();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +104,7 @@ export function SuperAdminDashboardPage() {
         </Button>
       </Box>
 
-      <OpsQuickActions opsBase={opsBase} />
+      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -280,11 +279,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('primary')}
-            onClick={() => navigate('/superadmin/ops')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.ops)}
             role="button"
             tabIndex={0}
             aria-label="Open operations"
-            onKeyDown={createKeyboardNavHandler('/superadmin/ops')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.ops)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -308,11 +307,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
-            onClick={() => navigate('/superadmin/ops/sessions')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.opsSessions)}
             role="button"
             tabIndex={0}
             aria-label="Open sessions"
-            onKeyDown={createKeyboardNavHandler('/superadmin/ops/sessions')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.opsSessions)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -336,11 +335,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('success')}
-            onClick={() => navigate('/superadmin/ops/devices')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.opsDevices)}
             role="button"
             tabIndex={0}
             aria-label="Open devices"
-            onKeyDown={createKeyboardNavHandler('/superadmin/ops/devices')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.opsDevices)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -364,11 +363,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
-            onClick={() => navigate('/superadmin/settings')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.settings)}
             role="button"
             tabIndex={0}
             aria-label="Open system settings"
-            onKeyDown={createKeyboardNavHandler('/superadmin/settings')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.settings)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -392,11 +391,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('secondary')}
-            onClick={() => navigate('/superadmin/vendors')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.vendors)}
             role="button"
             tabIndex={0}
             aria-label="Open vendors"
-            onKeyDown={createKeyboardNavHandler('/superadmin/vendors')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.vendors)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
@@ -420,11 +419,11 @@ export function SuperAdminDashboardPage() {
           <Paper
             elevation={0}
             sx={premiumNavCardSx('info')}
-            onClick={() => navigate('/superadmin/wallets')}
+            onClick={() => navigate(SUPERADMIN_ROUTES.wallets)}
             role="button"
             tabIndex={0}
             aria-label="Open wallets"
-            onKeyDown={createKeyboardNavHandler('/superadmin/wallets')}
+            onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.wallets)}
           >
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
