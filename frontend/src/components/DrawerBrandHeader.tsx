@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import { LOGO_PUBLIC_URL } from '../config/branding';
 
 interface DrawerBrandHeaderProps {
   /** e.g. "Super Admin Portal" */
@@ -21,21 +22,9 @@ export function DrawerBrandHeader({ subtitle }: DrawerBrandHeaderProps) {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-        <img src="/logo.jpeg" alt="" style={{ height: 34, objectFit: 'contain' }} />
+        <img src={LOGO_PUBLIC_URL} alt="" style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
         <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontWeight: 700,
-              fontSize: '1rem',
-              lineHeight: 1.25,
-              letterSpacing: '-0.02em',
-              color: 'text.primary',
-            }}
-          >
-            Clean Motion Ghana
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, display: 'block', mt: 0.25 }}>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.3 }}>
             {subtitle}
           </Typography>
         </Box>

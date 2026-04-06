@@ -6,6 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
+import { LOGO_PUBLIC_URL } from '../config/branding';
 import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
 
 export function MainLayout() {
@@ -36,14 +37,11 @@ export function MainLayout() {
       <AppBar position="static">
         <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
-            <img 
-              src="/logo.jpeg" 
-              alt="Clean Motion Ghana" 
-              style={{ height: 'clamp(32px, 8vw, 40px)', objectFit: 'contain' }}
+            <img
+              src={LOGO_PUBLIC_URL}
+              alt=""
+              style={{ height: 'clamp(36px, 9vw, 48px)', width: 'auto', objectFit: 'contain' }}
             />
-            <Typography variant="h6" component="div" noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Clean Motion Ghana
-            </Typography>
           </Box>
           {isAuthenticated && user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>

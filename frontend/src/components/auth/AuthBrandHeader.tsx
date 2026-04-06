@@ -1,7 +1,5 @@
 import { Box, Typography } from '@mui/material';
-
-const LOGO_SRC = '/logo.jpeg';
-const APP_NAME = 'Clean Motion Ghana';
+import { LOGO_PUBLIC_URL } from '../../config/branding';
 
 type AuthBrandHeaderProps = {
   /** Shown under the logo; omit for a tighter header */
@@ -9,7 +7,7 @@ type AuthBrandHeaderProps = {
 };
 
 /**
- * Centered logo + name for auth screens. Uses app favicon/logo from `public/logo.jpeg`.
+ * Centered logo for auth screens (image-only; no duplicate wordmark — see `public/logo.png`).
  */
 export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
   return (
@@ -25,34 +23,21 @@ export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
     >
       <Box
         component="img"
-        src={LOGO_SRC}
+        src={LOGO_PUBLIC_URL}
         alt=""
         role="presentation"
         loading="eager"
         decoding="async"
         sx={{
-          height: { xs: 48, sm: 56 },
+          height: { xs: 56, sm: 64 },
           width: 'auto',
-          maxWidth: 'min(220px, 85vw)',
+          maxWidth: 'min(260px, 88vw)',
           objectFit: 'contain',
           display: 'block',
         }}
       />
-      <Typography
-        component="span"
-        variant="subtitle2"
-        sx={{
-          mt: 1,
-          fontWeight: 700,
-          color: 'text.primary',
-          letterSpacing: '0.02em',
-          fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-        }}
-      >
-        {APP_NAME}
-      </Typography>
       {tagline ? (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, maxWidth: 280 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, maxWidth: 280 }}>
           {tagline}
         </Typography>
       ) : null}

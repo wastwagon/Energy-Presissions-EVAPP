@@ -9,6 +9,7 @@ import {
   getStoredUser,
   hasValidSession,
 } from '../utils/authSession';
+import { LOGO_PUBLIC_URL } from '../config/branding';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -59,10 +60,10 @@ export function HomePage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'flex-start' }, gap: { xs: 2, md: 3 }, mb: 3 }}>
-        <img 
-          src="/logo.jpeg" 
-          alt="Clean Motion Ghana" 
-          style={{ height: 'clamp(48px, 12vw, 80px)', objectFit: 'contain' }}
+        <img
+          src={LOGO_PUBLIC_URL}
+          alt=""
+          style={{ height: 'clamp(48px, 12vw, 88px)', width: 'auto', objectFit: 'contain' }}
         />
         <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
           <Typography variant="h3" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
