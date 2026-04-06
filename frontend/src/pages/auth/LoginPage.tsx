@@ -19,7 +19,7 @@ import { authApi } from '../../services/authApi';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
-import { LegalAuthNotice, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
+import { LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 
 declare global {
   interface Window {
@@ -261,9 +261,7 @@ export function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
-            <Divider sx={{ my: 1.5 }}>or</Divider>
-
-            <LegalAuthNotice includeAppleDisclosure />
+            <Divider sx={{ my: { xs: 1.25, sm: 1.5 } }}>or</Divider>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch' }}>
               {googleClientId && (
@@ -305,7 +303,7 @@ export function LoginPage() {
             </Box>
           </form>
 
-          <Box sx={{ mt: 1.5, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ mt: { xs: 1.25, sm: 1.5 }, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
               Forgot password?
             </Link>
@@ -314,7 +312,7 @@ export function LoginPage() {
             </Link>
           </Box>
 
-          <LegalFooterLinks />
+          <LegalFooterLinks sx={{ mt: { xs: 1, sm: 1.5 } }} />
         </Paper>
       </Container>
     </Box>

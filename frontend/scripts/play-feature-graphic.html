@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<!--
+  Play Store feature graphic source (1024×500). Styled from frontend/src/theme.ts,
+  theme/jampackShell.ts, DrawerBrandHeader, and StationsPage card layout.
+  Render: scripts/render-play-feature-graphic.sh (Chrome headless)
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1024" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>Clean Motion — Play feature graphic</title>
+  <style>
+    :root {
+      /* frontend/src/theme.ts — brandColors + palette */
+      --cm-primary: #0a6570;
+      --cm-primary-dark: #074854;
+      --cm-primary-light: #14919e;
+      --cm-secondary: #127a87;
+      --cm-bg: #f4f7f9;
+      --cm-paper: #ffffff;
+      --cm-text: #0f172a;
+      --cm-text-secondary: #64748b;
+      --cm-success: #0d9488;
+      --cm-success-bg: rgba(13, 148, 136, 0.12);
+      --cm-border: rgba(15, 23, 42, 0.06);
+      --cm-shell-border: rgba(47, 52, 58, 0.09);
+      --radius: 12px;
+      --radius-sm: 10px;
+      --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 1024px;
+      height: 500px;
+      overflow: hidden;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .banner {
+      width: 1024px;
+      height: 500px;
+      display: flex;
+      align-items: stretch;
+      background: linear-gradient(135deg, var(--cm-primary-dark) 0%, var(--cm-primary) 42%, var(--cm-secondary) 100%);
+      position: relative;
+    }
+
+    .banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 100% 20%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                  radial-gradient(ellipse 50% 50% at 0% 100%, rgba(20, 145, 158, 0.35) 0%, transparent 45%);
+      pointer-events: none;
+    }
+
+    .left {
+      flex: 1;
+      min-width: 0;
+      padding: 44px 40px 36px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      color: #fff;
+    }
+
+    .left-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 14px;
+    }
+
+    .left-badge svg { opacity: 0.95; }
+
+    .left h1 {
+      font-size: 2.35rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.15);
+    }
+
+    .left p.tagline {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.88);
+      letter-spacing: -0.02em;
+      line-height: 1.45;
+      max-width: 26rem;
+      margin-bottom: 22px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .left .domain {
+      margin-top: auto;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: -0.01em;
+    }
+
+    /* Phone */
+    .right {
+      width: 420px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 48px 28px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .phone {
+      position: relative;
+      width: 300px;
+      height: 444px;
+      background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+      border-radius: 36px;
+      padding: 11px;
+      box-shadow: 0 24px 56px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    }
+
+    .phone-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: var(--cm-bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status row only — Dynamic Island sits here so it never covers the app title */
+    /* No Dynamic Island on this asset — a centered black pill read as “covering” the brand in reviews. */
+    .phone-status {
+      flex-shrink: 0;
+      height: 32px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-bottom: 1px solid rgba(47, 52, 58, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+    }
+
+    .phone-status .time {
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--cm-text);
+    }
+
+    .phone-status .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      opacity: 0.42;
+    }
+
+    /* Jampack app bar */
+    .app-bar {
+      height: 50px;
+      flex-shrink: 0;
+      background: #ffffff;
+      border-bottom: 1px solid var(--cm-shell-border);
+      box-shadow: 0 1px 0 rgba(47, 52, 58, 0.04);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+    }
+
+    .app-bar img.logo {
+      height: 30px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    .app-bar .titles {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .app-bar .titles .name {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--cm-text);
+      line-height: 1.2;
+    }
+
+    .app-bar .titles .sub {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--cm-text-secondary);
+      margin-top: 2px;
+    }
+
+    .scroll {
+      flex: 1;
+      overflow: hidden;
+      padding: 10px 10px 12px;
+    }
+
+    .page-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: -0.022em;
+      color: var(--cm-text);
+      margin-bottom: 2px;
+    }
+
+    .page-sub {
+      font-size: 0.6875rem;
+      color: var(--cm-text-secondary);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    /* Premium station discovery — marketing-safe, inspired by top-tier travel/EV apps */
+    .search-premium {
+      position: relative;
+      margin-bottom: 10px;
+      border-radius: 16px;
+      background: var(--cm-paper);
+      border: 1px solid rgba(10, 101, 112, 0.1);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 8px 24px -4px rgba(10, 101, 112, 0.1),
+        0 20px 50px -12px rgba(10, 101, 112, 0.08);
+      overflow: hidden;
+    }
+
+    .search-premium::before {
+      content: "";
+      position: absolute;
+      top: -40%;
+      right: -20%;
+      width: 70%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(20, 145, 158, 0.14) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .search-premium::after {
+      content: "";
+      position: absolute;
+      bottom: -30%;
+      left: -15%;
+      width: 55%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(10, 101, 112, 0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .search-premium-inner {
+      position: relative;
+      z-index: 1;
+      padding: 14px 14px 12px;
+    }
+
+    .search-eyebrow {
+      display: block;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cm-primary);
+      opacity: 0.85;
+      margin-bottom: 6px;
+    }
+
+    .search-heading {
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      color: var(--cm-text);
+      margin-bottom: 12px;
+    }
+
+    .search-bar-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .search-input-premium {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 8px 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .search-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, rgba(10, 101, 112, 0.12) 0%, rgba(10, 101, 112, 0.06) 100%);
+      border: 1px solid rgba(10, 101, 112, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--cm-primary);
+    }
+
+    .search-icon-wrap svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.95;
+    }
+
+    .search-placeholder {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--cm-text-secondary);
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .search-cta {
+      flex-shrink: 0;
+      padding: 0 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--cm-primary-light) 0%, var(--cm-primary) 100%);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(10, 101, 112, 0.35);
+      cursor: default;
+    }
+
+    .search-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .filter-chip {
+      font-size: 0.5625rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(10, 101, 112, 0.06);
+      border: 1px solid rgba(10, 101, 112, 0.12);
+      color: var(--cm-primary-dark);
+    }
+
+    .filter-chip.active {
+      background: rgba(10, 101, 112, 0.12);
+      border-color: rgba(10, 101, 112, 0.28);
+      color: var(--cm-primary-dark);
+      box-shadow: 0 1px 2px rgba(10, 101, 112, 0.08);
+    }
+
+    /* Station Card — mirrors StationsPage.tsx Card */
+    .station-card {
+      background: var(--cm-paper);
+      border-radius: var(--radius);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .station-card:hover {
+      border-color: var(--cm-primary);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .card-head-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--cm-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .station-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--cm-text);
+      line-height: 1.25;
+    }
+
+    .station-addr {
+      font-size: 0.7rem;
+      color: var(--cm-text-secondary);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.35;
+    }
+
+    .chip {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--cm-success-bg);
+      color: #0f766e;
+      flex-shrink: 0;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(15, 23, 42, 0.08);
+      margin: 0 0 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      margin-bottom: 8px;
+    }
+
+    .row:last-child { margin-bottom: 0; }
+
+    .row .muted {
+      color: var(--cm-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .row .emph {
+      font-weight: 700;
+      color: var(--cm-primary);
+    }
+
+    .btn-start {
+      margin-top: 8px;
+      width: 100%;
+      min-height: 36px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--cm-primary);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <div class="left">
+      <div class="left-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.65c.41 0 .56.59.35.86L12 21zm-1.39-9h1.83l1.09-5.81-4.11 5.81z"/>
+        </svg>
+        EV charging
+      </div>
+      <h1>The app your stations run on</h1>
+      <p class="tagline">Real Clean Motion Ghana UI — find chargers, top up your wallet, and track every session in GHS.</p>
+      <div class="pill-row">
+        <span class="pill">Find stations</span>
+        <span class="pill">Wallet &amp; Paystack</span>
+        <span class="pill">Live session status</span>
+      </div>
+      <p class="domain">cleanmotion.energyprecisions.com</p>
+    </div>
+
+    <div class="right">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="phone-status" aria-hidden="true">
+              <span class="time">9:41</span>
+              <span class="status-icons">
+                <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 10h2V6H1v4zm4 2h2V4H5v8zm4-4h2V8H9v4zm4-6h2v10h-2V4z"/></svg>
+                <svg width="8" height="12" viewBox="0 0 8 14" fill="currentColor"><path d="M1 2c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V2zm2 0v10h2V2H3z"/></svg>
+              </span>
+            </div>
+            <header class="app-bar">
+              <img class="logo" src="../public/logo.jpeg" alt="" width="30" height="30" />
+              <div class="titles">
+                <div class="name">Clean Motion Ghana</div>
+                <div class="sub">Customer Portal</div>
+              </div>
+            </header>
+            <div class="scroll">
+              <div class="page-title">Find Stations</div>
+              <div class="page-sub">Discover chargers across Ghana with smart search and live availability.</div>
+
+              <div class="search-premium">
+                <div class="search-premium-inner">
+                  <span class="search-eyebrow">Station discovery</span>
+                  <h2 class="search-heading">Where do you want to charge?</h2>
+                  <div class="search-bar-row">
+                    <div class="search-input-premium">
+                      <span class="search-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                      </span>
+                      <span class="search-placeholder">Accra, Kumasi, Tamale, landmark…</span>
+                    </div>
+                    <button type="button" class="search-cta">Search</button>
+                  </div>
+                  <div class="search-filters">
+                    <span class="filter-chip active">Near me</span>
+                    <span class="filter-chip">50 km</span>
+                    <span class="filter-chip">Available</span>
+                  </div>
+                </div>
+              </div>
+
+              <article class="station-card">
+                <div class="card-head">
+                  <div class="card-head-left">
+                    <div class="icon-box">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
+                    </div>
+                    <div>
+                      <div class="station-name">Accra Mall EV Hub</div>
+                      <div class="station-addr">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        Plot 7, Spintex Road
+                      </div>
+                    </div>
+                  </div>
+                  <span class="chip">Available</span>
+                </div>
+                <div class="divider"></div>
+                <div class="row">
+                  <span class="muted">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                    Distance
+                  </span>
+                  <span class="emph">2.4 km</span>
+                </div>
+                <div class="row">
+                  <span class="muted">Tariff</span>
+                  <span class="emph">GHS 3.20/kWh</span>
+                </div>
+                <button type="button" class="btn-start" tabindex="-1">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  Start charging
+                </button>
+              </article>
+
+              <article class="station-card" style="opacity: 0.88; padding: 10px 12px;">
+                <div class="card-head" style="margin-bottom: 0;">
+                  <div class="card-head-left">
+                    <div class="icon-box" style="width: 36px; height: 36px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
+                    </div>
+                    <div>
+                      <div class="station-name" style="font-size: 0.8125rem;">Labone Fast Charge</div>
+                      <div class="station-addr" style="margin-top: 2px;">Labone · 5.1 km</div>
+                    </div>
+                  </div>
+                  <span class="chip" style="background: rgba(2, 132, 199, 0.12); color: #0369a1;">Charging</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
+</body>
+</html>

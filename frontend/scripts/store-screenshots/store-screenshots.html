@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<!--
+  Google Play store screenshots — 9:16 portrait, tokens from frontend/src/theme.ts
+  Render: ../render-store-screenshots.sh
+  Query: ?device=phone|tab7|tab10&screen=1..6
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <title>Clean Motion — Store screenshot</title>
+  <style>
+    :root {
+      --cm-primary: #0a6570;
+      --cm-primary-dark: #074854;
+      --cm-primary-light: #14919e;
+      --cm-secondary: #127a87;
+      --cm-bg: #f4f7f9;
+      --cm-paper: #ffffff;
+      --cm-text: #0f172a;
+      --cm-text-secondary: #64748b;
+      --cm-success: #0d9488;
+      --cm-success-bg: rgba(13, 148, 136, 0.14);
+      --cm-info-bg: rgba(2, 132, 199, 0.12);
+      --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --r: 16px;
+      --r-sm: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    body.d-phone { width: 1080px; height: 1920px; }
+    body.d-tab7 { width: 1440px; height: 2560px; }
+    body.d-tab10 { width: 1920px; height: 3413px; }
+
+    .panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      background: linear-gradient(165deg, #062f38 0%, var(--cm-primary-dark) 28%, var(--cm-primary) 55%, #0e6b78 100%);
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(255,255,255,0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 45% at 100% 100%, rgba(20, 145, 158, 0.25) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    body.s-1 .p1, body.s-2 .p2, body.s-3 .p3, body.s-4 .p4, body.s-5 .p5, body.s-6 .p6 { display: flex; }
+
+    .top-cap {
+      position: relative;
+      z-index: 1;
+      padding: 56px 56px 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    body.d-phone .top-cap { padding-top: 64px; padding-bottom: 28px; }
+    body.d-tab10 .top-cap { padding: 72px 80px 40px; }
+
+    .cap-eyebrow {
+      display: inline-block;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.72);
+      margin-bottom: 16px;
+    }
+
+    body.d-phone .cap-eyebrow { font-size: 18px; }
+    body.d-tab10 .cap-eyebrow { font-size: 26px; }
+
+    .cap-title {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+      color: #fff;
+      text-shadow: 0 4px 40px rgba(0,0,0,0.2);
+      max-width: 22ch;
+      margin: 0 auto;
+    }
+
+    body.d-phone .cap-title { font-size: 44px; }
+    body.d-tab7 .cap-title { font-size: 52px; }
+    body.d-tab10 .cap-title { font-size: 64px; max-width: 24ch; }
+
+    .cap-sub {
+      margin-top: 18px;
+      font-size: 26px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.82);
+      letter-spacing: -0.02em;
+      line-height: 1.4;
+      max-width: 36ch;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    body.d-phone .cap-sub { font-size: 22px; }
+    body.d-tab10 .cap-sub { font-size: 30px; }
+
+    .device-wrap {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 48px 56px;
+      min-height: 0;
+    }
+
+    body.d-phone .device-wrap { padding: 0 40px 72px; }
+    body.d-tab10 .device-wrap { padding: 0 72px 80px; }
+
+    .device {
+      width: 100%;
+      max-width: 920px;
+      height: 100%;
+      max-height: 1380px;
+      background: linear-gradient(160deg, #1a2332 0%, #0f172a 100%);
+      border-radius: 52px;
+      padding: 14px;
+      box-shadow:
+        0 40px 100px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(255,255,255,0.08) inset;
+    }
+
+    body.d-tab7 .device { max-width: 1180px; max-height: 1820px; border-radius: 44px; }
+    body.d-tab10 .device { max-width: 1580px; max-height: 2440px; border-radius: 40px; padding: 18px; }
+
+    .device-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 42px;
+      overflow: hidden;
+      background: var(--cm-bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.d-tab7 .device-inner { border-radius: 34px; }
+    body.d-tab10 .device-inner { border-radius: 30px; }
+
+    .status {
+      flex-shrink: 0;
+      height: 44px;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+      border-bottom: 1px solid rgba(47,52,58,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--cm-text);
+    }
+
+    body.d-phone .status { height: 38px; font-size: 18px; padding: 0 22px; }
+    body.d-tab10 .status { height: 52px; font-size: 26px; padding: 0 36px; }
+
+    .status .sig { opacity: 0.4; display: flex; gap: 10px; align-items: center; }
+
+    .appbar {
+      flex-shrink: 0;
+      height: 88px;
+      background: #fff;
+      border-bottom: 1px solid rgba(47,52,58,0.09);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 20px;
+    }
+
+    body.d-phone .appbar { height: 76px; padding: 0 20px; gap: 16px; }
+    body.d-tab10 .appbar { height: 100px; padding: 0 32px; }
+
+    .appbar img { height: 52px; width: auto; border-radius: 10px; object-fit: contain; }
+    body.d-phone .appbar img { height: 44px; }
+    body.d-tab10 .appbar img { height: 60px; }
+
+    .appbar .bn { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--cm-text); line-height: 1.2; }
+    body.d-phone .appbar .bn { font-size: 24px; }
+    body.d-tab10 .appbar .bn { font-size: 32px; }
+
+    .appbar .bs { font-size: 20px; color: var(--cm-text-secondary); font-weight: 500; margin-top: 4px; }
+    body.d-phone .appbar .bs { font-size: 17px; }
+    body.d-tab10 .appbar .bs { font-size: 22px; }
+
+    .content {
+      flex: 1;
+      overflow: hidden;
+      padding: 24px 22px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    body.d-phone .content { padding: 18px 16px 22px; gap: 16px; }
+    body.d-tab10 .content { padding: 32px 28px 36px; gap: 24px; }
+
+    .sheet {
+      background: var(--cm-paper);
+      border-radius: var(--r);
+      border: 1px solid rgba(10, 101, 112, 0.1);
+      box-shadow: 0 8px 32px rgba(10, 101, 112, 0.08), 0 2px 8px rgba(15,23,42,0.04);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body.d-phone .sheet { padding: 20px; border-radius: 14px; }
+    body.d-tab10 .sheet { padding: 36px; border-radius: 20px; }
+
+    .sheet::before {
+      content: "";
+      position: absolute;
+      top: -30%;
+      right: -20%;
+      width: 70%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(20, 145, 158, 0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cm-primary);
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    body.d-phone .eyebrow { font-size: 14px; }
+    body.d-tab10 .eyebrow { font-size: 20px; }
+
+    .h2 {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--cm-text);
+      margin-bottom: 24px;
+      position: relative;
+      line-height: 1.2;
+    }
+
+    body.d-phone .h2 { font-size: 26px; margin-bottom: 18px; }
+    body.d-tab10 .h2 { font-size: 40px; }
+
+    .search-row {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+      position: relative;
+    }
+
+    .search-in {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: var(--r-sm);
+      padding: 18px 22px;
+      font-size: 22px;
+      color: var(--cm-text-secondary);
+      font-weight: 500;
+    }
+
+    body.d-phone .search-in { font-size: 18px; padding: 14px 16px; }
+    body.d-tab10 .search-in { font-size: 26px; padding: 22px 26px; }
+
+    .sic {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(10,101,112,0.1);
+      border: 1px solid rgba(10,101,112,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cm-primary);
+      flex-shrink: 0;
+    }
+
+    body.d-phone .sic { width: 40px; height: 40px; }
+
+    .sbtn {
+      padding: 0 28px;
+      border-radius: var(--r-sm);
+      border: none;
+      background: linear-gradient(180deg, var(--cm-primary-light), var(--cm-primary));
+      color: #fff;
+      font-family: var(--font);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 16px rgba(10,101,112,0.35);
+    }
+
+    body.d-phone .sbtn { font-size: 14px; padding: 0 20px; }
+    body.d-tab10 .sbtn { font-size: 22px; padding: 0 36px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; position: relative; }
+    body.d-phone .chips { gap: 8px; margin-top: 14px; }
+
+    .chip {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(10,101,112,0.08);
+      border: 1px solid rgba(10,101,112,0.18);
+      color: var(--cm-primary-dark);
+    }
+
+    body.d-phone .chip { font-size: 13px; padding: 8px 14px; }
+
+    .chip.on { background: rgba(10,101,112,0.16); border-color: rgba(10,101,112,0.35); }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    body.d-phone .grid2 { grid-template-columns: 1fr; }
+
+    .card {
+      background: var(--cm-paper);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: var(--r);
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+    }
+
+    body.d-phone .card { padding: 18px; }
+    body.d-tab10 .card { padding: 28px; }
+
+    .card-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .ico {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--cm-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    body.d-phone .ico { width: 48px; height: 48px; }
+
+    .cname { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--cm-text); }
+    body.d-phone .cname { font-size: 22px; }
+    body.d-tab10 .cname { font-size: 32px; }
+
+    .caddr { font-size: 20px; color: var(--cm-text-secondary); margin-top: 8px; }
+    body.d-phone .caddr { font-size: 16px; }
+
+    .cstat {
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: var(--cm-success-bg);
+      color: #0f766e;
+      flex-shrink: 0;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 22px;
+      margin-top: 12px;
+      color: var(--cm-text-secondary);
+    }
+
+    body.d-phone .row { font-size: 18px; }
+    body.d-tab10 .row { font-size: 26px; }
+
+    .row b { color: var(--cm-primary); font-weight: 700; }
+
+    .wallet-hero {
+      text-align: center;
+      padding: 24px 0 8px;
+      position: relative;
+    }
+
+    .wb {
+      font-size: 72px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--cm-text);
+      line-height: 1;
+    }
+
+    body.d-phone .wb { font-size: 52px; }
+    body.d-tab10 .wb { font-size: 88px; }
+
+    .wl { font-size: 24px; color: var(--cm-text-secondary); margin-top: 12px; font-weight: 500; }
+    body.d-phone .wl { font-size: 18px; }
+
+    .bigbtn {
+      width: 100%;
+      margin-top: 28px;
+      min-height: 88px;
+      border-radius: var(--r-sm);
+      border: none;
+      background: var(--cm-primary);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    body.d-phone .bigbtn { min-height: 72px; font-size: 20px; margin-top: 20px; }
+    body.d-tab10 .bigbtn { min-height: 100px; font-size: 30px; }
+
+    .session-ring {
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+      border-radius: 50%;
+      background: conic-gradient(var(--cm-primary) 0deg 252deg, rgba(10,101,112,0.12) 252deg 360deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    body.d-phone .session-ring { width: 160px; height: 160px; }
+    body.d-tab10 .session-ring { width: 240px; height: 240px; }
+
+    .session-ring::after {
+      content: "";
+      position: absolute;
+      width: 78%;
+      height: 78%;
+      border-radius: 50%;
+      background: var(--cm-paper);
+    }
+
+    .session-mid {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .skwh { font-size: 36px; font-weight: 800; color: var(--cm-primary); }
+    body.d-phone .skwh { font-size: 28px; }
+    body.d-tab10 .skwh { font-size: 44px; }
+
+    .slab { font-size: 18px; color: var(--cm-text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    body.d-phone .slab { font-size: 14px; }
+
+    .list-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(15,23,42,0.08);
+      font-size: 24px;
+    }
+
+    body.d-phone .list-row { font-size: 19px; padding: 16px 0; }
+    body.d-tab10 .list-row { font-size: 28px; padding: 26px 0; }
+
+    .list-row:last-child { border-bottom: none; }
+
+    .profile-av {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--cm-primary-light), var(--cm-primary));
+      color: #fff;
+      font-size: 48px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    body.d-phone .profile-av { width: 96px; height: 96px; font-size: 40px; }
+
+    .legal {
+      text-align: center;
+      font-size: 20px;
+      color: var(--cm-text-secondary);
+      margin-top: 16px;
+    }
+
+    body.d-phone .legal { font-size: 16px; }
+
+    svg.i { width: 1em; height: 1em; fill: currentColor; vertical-align: -0.15em; }
+  </style>
+</head>
+<body>
+  <!-- Panel 1: Discovery -->
+  <div class="panel p1">
+    <div class="top-cap">
+      <div class="cap-eyebrow">Find &amp; filter</div>
+      <h1 class="cap-title">Find the right charger, fast</h1>
+      <p class="cap-sub">Search by city or landmark, then narrow by distance and live availability.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Clean Motion Ghana</div>
+              <div class="bs">Customer Portal</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="sheet">
+              <div class="eyebrow">Station discovery</div>
+              <div class="h2">Where do you want to charge?</div>
+              <div class="search-row">
+                <div class="search-in">
+                  <span class="sic"><svg class="i" viewBox="0 0 24 24" width="24" height="24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
+                  Accra, Kumasi, landmark…
+                </div>
+                <button type="button" class="sbtn">Search</button>
+              </div>
+              <div class="chips">
+                <span class="chip on">Near me</span>
+                <span class="chip">50 km</span>
+                <span class="chip">Available</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Stations -->
+  <div class="panel p2">
+    <div class="top-cap">
+      <div class="cap-eyebrow">Live network</div>
+      <h1 class="cap-title">See stations before you drive</h1>
+      <p class="cap-sub">Status, distance, and tariffs — the same cards you use in the live app.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Find Stations</div>
+              <div class="bs">Nearby chargers</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="grid2">
+              <div class="card">
+                <div class="card-h">
+                  <div style="display:flex;gap:14px;align-items:flex-start;">
+                    <div class="ico"><svg class="i" viewBox="0 0 24 24" width="28" height="28"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg></div>
+                    <div>
+                      <div class="cname">Accra Mall EV Hub</div>
+                      <div class="caddr">Plot 7, Spintex Road</div>
+                    </div>
+                  </div>
+                  <span class="cstat">Available</span>
+                </div>
+                <div class="row">Distance <b>2.4 km</b></div>
+                <div class="row">Tariff <b>GHS 3.20/kWh</b></div>
+              </div>
+              <div class="card">
+                <div class="card-h">
+                  <div style="display:flex;gap:14px;align-items:flex-start;">
+                    <div class="ico"><svg class="i" viewBox="0 0 24 24" width="28" height="28"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg></div>
+                    <div>
+                      <div class="cname">Labone Fast Charge</div>
+                      <div class="caddr">Labone, Accra</div>
+                    </div>
+                  </div>
+                  <span class="cstat" style="background:var(--cm-info-bg);color:#0369a1;">Charging</span>
+                </div>
+                <div class="row">Distance <b>5.1 km</b></div>
+                <div class="row">Power <b>150 kW DC</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Wallet -->
+  <div class="panel p3">
+    <div class="top-cap">
+      <div class="cap-eyebrow">Wallet</div>
+      <h1 class="cap-title">Top up with MoMo or card</h1>
+      <p class="cap-sub">Paystack-powered top-ups in GHS — ready when you plug in.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Wallet</div>
+              <div class="bs">Balance &amp; top-up</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="sheet">
+              <div class="eyebrow">Account balance</div>
+              <div class="wallet-hero">
+                <div class="wb">GHS 248.50</div>
+                <div class="wl">Ready for your next session</div>
+              </div>
+              <button type="button" class="bigbtn">Top up wallet</button>
+              <div class="row" style="margin-top:24px;"><span>Last top-up</span><b>MTN MoMo</b></div>
+              <div class="row"><span>Paystack</span><b>Secured</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Active session -->
+  <div class="panel p4">
+    <div class="top-cap">
+      <div class="cap-eyebrow">Sessions</div>
+      <h1 class="cap-title">Watch energy add up live</h1>
+      <p class="cap-sub">Clear kWh and session context while you charge.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Active charging</div>
+              <div class="bs">Accra Mall EV Hub</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="sheet">
+              <div class="session-ring">
+                <div class="session-mid">
+                  <div class="skwh">18.4</div>
+                  <div class="slab">kWh</div>
+                </div>
+              </div>
+              <div class="h2" style="text-align:center;margin-bottom:12px;">Session in progress</div>
+              <div class="row"><span>Duration</span><b>24 min</b></div>
+              <div class="row"><span>Est. cost</span><b>GHS 58.88</b></div>
+              <div class="row"><span>Status</span><b style="color:#0369a1;">Charging</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 5: History -->
+  <div class="panel p5">
+    <div class="top-cap">
+      <div class="cap-eyebrow">History</div>
+      <h1 class="cap-title">Every charge, documented</h1>
+      <p class="cap-sub">Receipts, energy, and spend — organized for you.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Session history</div>
+              <div class="bs">Recent activity</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="sheet">
+              <div class="list-row"><span>Accra Mall · 12 kWh</span><b>GHS 38.40</b></div>
+              <div class="list-row"><span>Labone · 8.2 kWh</span><b>GHS 26.24</b></div>
+              <div class="list-row"><span>Airport hub · 22 kWh</span><b>GHS 70.40</b></div>
+              <div class="list-row"><span>East Legon · 15 kWh</span><b>GHS 48.00</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 6: Account / trust -->
+  <div class="panel p6">
+    <div class="top-cap">
+      <div class="cap-eyebrow">Trust</div>
+      <h1 class="cap-title">Sign in &amp; stay in control</h1>
+      <p class="cap-sub">Google, Apple, or email — privacy &amp; terms linked in-app.</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device">
+        <div class="device-inner">
+          <div class="status"><span>9:41</span><span class="sig">●●●</span></div>
+          <div class="appbar">
+            <img src="../../public/logo.jpeg" alt="" />
+            <div>
+              <div class="bn">Profile</div>
+              <div class="bs">Your account</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="sheet">
+              <div class="profile-av">K</div>
+              <div class="h2" style="text-align:center;">Kwame A.</div>
+              <div class="list-row"><span>Email</span><b>kwame@email.com</b></div>
+              <div class="list-row"><span>Account</span><b>Customer</b></div>
+              <div class="list-row"><span>Wallet</span><b>Linked</b></div>
+              <p class="legal">Privacy Policy · Terms of Service</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var device = q.get("device") || "phone";
+      if (device !== "phone" && device !== "tab7" && device !== "tab10") device = "phone";
+      var screen = q.get("screen") || "1";
+      document.body.className = "d-" + device + " s-" + screen;
+    })();
+  </script>
+</body>
+</html>
