@@ -94,8 +94,8 @@ export function RegisterPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader align="left" />
-          <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
+          <AuthBrandHeader />
+          <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Create account
           </Typography>
 

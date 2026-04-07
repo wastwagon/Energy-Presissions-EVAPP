@@ -74,8 +74,8 @@ export function ForgotPasswordPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader align="left" />
-          <Typography component="h1" variant="subtitle1" sx={authPageTitleSx}>
+          <AuthBrandHeader />
+          <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Reset your password
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, lineHeight: 1.45, textAlign: 'left' }}>
