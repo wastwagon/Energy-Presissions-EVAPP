@@ -87,14 +87,21 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          minHeight: '100dvh',
+          backgroundColor: brandColors.background,
+        },
         body: {
           minHeight: '100dvh',
           backgroundColor: brandColors.background,
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
         },
-        html: {
+        '#root': {
           minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: brandColors.background,
         },
       },
     },

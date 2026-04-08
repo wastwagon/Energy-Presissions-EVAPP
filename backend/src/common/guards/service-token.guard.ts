@@ -7,14 +7,18 @@ export class ServiceTokenGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const authHeader = request.headers.authorization as string | undefined;
+    const serviceHeader = request.headers['x-service-token'] as string | undefined;
 
-    if (!authHeader) {
+    const bearer = authHeader?.replace(/^Bearer\s+/i, '').trim();
+    const token = bearer || (typeof serviceHeader === 'string' ? serviceHeader.trim() : '');
+
+    if (!token) {
       throw new UnauthorizedException('Service token required');
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const expectedToken = this.configService.get<string>('SERVICE_TOKEN');
+    const expectedToken =
+      this.configService.get<string>('SERVICE_TOKEN') || 'your-service-token-change-in-production';
 
     if (token !== expectedToken) {
       throw new UnauthorizedException('Invalid service token');

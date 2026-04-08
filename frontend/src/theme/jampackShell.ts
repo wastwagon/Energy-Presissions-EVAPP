@@ -47,6 +47,23 @@ export const jampackAppBarSx = {
   boxShadow: '0 1px 0 rgba(47, 52, 58, 0.04)',
 };
 
+/**
+ * Pad AppBar top so the same background fills the status-bar / notch region
+ * when `viewport-fit=cover` is set (iOS, many Android WebViews incl. WebViewGold).
+ */
+export const jampackAppBarSafeAreaTopSx: SystemStyleObject<Theme> = {
+  pt: 'env(safe-area-inset-top, 0px)',
+  boxSizing: 'border-box',
+};
+
+/**
+ * Spacer under fixed AppBar + 64px Toolbar; keeps main content below header + inset.
+ */
+export const jampackFixedAppBarMainGapSx: SystemStyleObject<Theme> = {
+  height: 'calc(64px + env(safe-area-inset-top, 0px))',
+  flexShrink: 0,
+};
+
 /** Menu list inner padding — matches .menu-content-wrap 1.5rem */
 export const jampackMenuListSx = {
   flex: 1,

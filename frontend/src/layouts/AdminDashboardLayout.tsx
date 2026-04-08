@@ -27,6 +27,8 @@ import {
   JAMPACK_DRAWER_WIDTH,
   JAMPACK_PAGE_BG,
   jampackAppBarSx,
+  jampackAppBarSafeAreaTopSx,
+  jampackFixedAppBarMainGapSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
@@ -86,7 +88,7 @@ export function AdminDashboardLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: JAMPACK_PAGE_BG }}>
+    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: JAMPACK_PAGE_BG }}>
       <AppBar
         position="fixed"
         elevation={0}
@@ -94,6 +96,7 @@ export function AdminDashboardLayout() {
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
           zIndex: (t) => t.zIndex.drawer + 1,
+          ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
         }}
       >
@@ -226,7 +229,7 @@ export function AdminDashboardLayout() {
           pb: showBottomNav ? 10 : 3,
         }}
       >
-        <Toolbar />
+        <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
         <Outlet />
       </Box>
       {showBottomNav && (

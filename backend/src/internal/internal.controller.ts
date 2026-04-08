@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Param, OnModuleInit } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, OnModuleInit, UseGuards } from '@nestjs/common';
 import { InternalService } from './internal.service';
 import { CommandQueueService } from '../services/command-queue.service';
 import { WebSocketGateway } from '../websocket/websocket.gateway';
+import { ServiceTokenGuard } from '../common/guards/service-token.guard';
 
 @Controller('internal')
+@UseGuards(ServiceTokenGuard)
 export class InternalController implements OnModuleInit {
   constructor(
     private readonly internalService: InternalService,
@@ -14,6 +16,11 @@ export class InternalController implements OnModuleInit {
     // Set command queue service and WebSocket gateway to avoid circular dependencies
     this.internalService.setCommandQueueService(this.commandQueueService);
     this.internalService.setWebSocketGateway(WebSocketGateway.instance);
+  }
+
+  @Get('authorize/:idTag')
+  async authorizeIdTag(@Param('idTag') idTag: string) {
+    return this.internalService.authorizeIdTag(idTag);
   }
 
   @Post('charge-points')

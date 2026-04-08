@@ -6,7 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
-import { jampackAppBarSx } from '../theme/jampackShell';
+import { jampackAppBarSx, jampackAppBarSafeAreaTopSx } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
 import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
@@ -35,11 +35,12 @@ export function MainLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <AppBar
         position="static"
         elevation={0}
         sx={{
+          ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
           color: 'text.primary',
         }}

@@ -46,8 +46,8 @@ if [ -d "$(dirname "$SPLASH")" ]; then
 fi
 
 # WebViewGold assets
-mkdir -p "$PROJECT_ROOT/-Energy-Presissions-EVAPP/assets"
-cp "$LOGO" "$PROJECT_ROOT/-Energy-Presissions-EVAPP/assets/newlog.png"
-echo "  -> -Energy-Presissions-EVAPP/assets/newlog.png"
+mkdir -p "$PROJECT_ROOT/EnergyPresissionsEVAPP/assets"
+cp "$LOGO" "$PROJECT_ROOT/EnergyPresissionsEVAPP/assets/newlog.png"
+echo "  -> EnergyPresissionsEVAPP/assets/newlog.png"
 
 echo "Done. newlog.png applied to all targets."

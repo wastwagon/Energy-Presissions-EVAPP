@@ -24,7 +24,12 @@ import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
-import { JAMPACK_PAGE_BG, jampackAppBarSx } from '../theme/jampackShell';
+import {
+  JAMPACK_PAGE_BG,
+  jampackAppBarSx,
+  jampackAppBarSafeAreaTopSx,
+  jampackFixedAppBarMainGapSx,
+} from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
 export function CustomerDashboardLayout() {
@@ -68,7 +73,7 @@ export function CustomerDashboardLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: JAMPACK_PAGE_BG }}>
+    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: JAMPACK_PAGE_BG }}>
       <AppBar
         position="fixed"
         elevation={0}
@@ -76,6 +81,7 @@ export function CustomerDashboardLayout() {
           width: '100%',
           left: 0,
           zIndex: (t) => t.zIndex.drawer + 1,
+          ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
         }}
       >
@@ -251,7 +257,7 @@ export function CustomerDashboardLayout() {
           pb: showBottomNav ? 10 : 3,
         }}
       >
-        <Toolbar />
+        <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
         <Outlet />
       </Box>
       {showBottomNav && (

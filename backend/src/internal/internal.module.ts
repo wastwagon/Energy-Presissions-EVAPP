@@ -18,6 +18,7 @@ import { ConnectionLogsModule } from '../connection-logs/connection-logs.module'
 import { WalletModule } from '../wallet/wallet.module';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { User } from '../entities/user.entity';
+import { ServiceTokenGuard } from '../common/guards/service-token.guard';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { User } from '../entities/user.entity';
     WalletModule,
   ],
   controllers: [InternalController],
-  providers: [InternalService, CommandQueueService],
+  providers: [InternalService, CommandQueueService, ServiceTokenGuard],
   exports: [InternalService],
 })
 export class InternalModule {}

@@ -52,10 +52,11 @@ export class AuthorizeHandler {
     const csmsApiUrl = process.env.CSMS_API_URL || 'http://csms-api:3000';
     
     try {
+      const token = process.env.SERVICE_TOKEN || 'your-service-token-change-in-production';
       const response = await axios.get(`${csmsApiUrl}/api/internal/authorize/${idTag}`, {
         headers: {
-          'Authorization': `Bearer ${process.env.SERVICE_TOKEN}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       return response.data as IdTagInfo;
