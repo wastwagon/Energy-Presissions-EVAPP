@@ -264,6 +264,28 @@ function VendorStatusGuard({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    const isWhiteChromeRoute =
+      path === '/login' ||
+      path.startsWith('/register') ||
+      path.startsWith('/forgot-password') ||
+      path.startsWith('/privacy') ||
+      path.startsWith('/terms');
+
+    const chromeColor = isWhiteChromeRoute ? '#ffffff' : '#f4f7f9';
+
+    document.documentElement.style.setProperty('--app-chrome-bg', chromeColor);
+    document.body.style.backgroundColor = chromeColor;
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute('content', chromeColor);
+    }
+  }, [location.pathname]);
+
   return (
     <VendorStatusGuard>
       <Routes>
