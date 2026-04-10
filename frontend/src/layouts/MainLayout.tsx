@@ -11,7 +11,6 @@ import {
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
-  mobileMainLayoutBottomMarginSx,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
@@ -41,7 +40,16 @@ export function MainLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        minHeight: '100dvh',
+        overflow: 'hidden',
+      }}
+    >
       <AppBar
         position="fixed"
         elevation={0}
@@ -115,30 +123,45 @@ export function MainLayout() {
         </Toolbar>
       </AppBar>
       <Box sx={mainLayoutFixedHeaderGapSx} aria-hidden />
-      <Container
-        maxWidth="lg"
+      <Box
         sx={{
-          mt: { xs: 1, sm: 2 },
-          ...(showBottomNav ? mobileMainLayoutBottomMarginSx : { mb: 4 }),
-          px: { xs: 2, sm: 3 },
           flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
         }}
       >
-        <Outlet />
-      </Container>
-      {showBottomNav && (
-        <BottomNav
-          items={
-            isAuthenticated
-              ? [
-                  ...mainLayoutBottomNavItems.slice(0, 2),
-                  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
-                ]
-              : mainLayoutBottomNavItems
-          }
-          accentColor={brandColors.primary}
-        />
-      )}
+        <Container
+          maxWidth="lg"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorY: 'contain',
+            mt: { xs: 1, sm: 2 },
+            px: { xs: 2, sm: 3 },
+            pb: showBottomNav ? 2 : 4,
+            width: '100%',
+          }}
+        >
+          <Outlet />
+        </Container>
+        {showBottomNav && (
+          <BottomNav
+            items={
+              isAuthenticated
+                ? [
+                    ...mainLayoutBottomNavItems.slice(0, 2),
+                    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
+                  ]
+                : mainLayoutBottomNavItems
+            }
+            accentColor={brandColors.primary}
+          />
+        )}
+      </Box>
     </Box>
   );
 }

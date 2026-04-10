@@ -10,13 +10,17 @@ export function sxObject(theme: Theme, sx: SxProps<Theme>): Record<string, unkno
 
 /** Shared light shell for all auth pages (mobile-first). */
 export const authPageRootSx: SxProps<Theme> = {
+  width: '100%',
+  flex: 1,
+  alignSelf: 'stretch',
   minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   bgcolor: 'background.default',
-  px: { xs: 2, sm: 3 },
-  py: { xs: 'max(env(safe-area-inset-top), env(safe-area-inset-bottom), 12px)', sm: 3 },
+  /** Clear horizontal inset so the card never sits flush with screen edges. */
+  px: { xs: 3, sm: 4 },
+  py: { xs: 'max(env(safe-area-inset-top), env(safe-area-inset-bottom), 16px)', sm: 3 },
   boxSizing: 'border-box',
   '@supports (min-height: 100dvh)': {
     minHeight: '100dvh',
@@ -27,7 +31,7 @@ export const authPagePaperSx: SxProps<Theme> = {
   p: { xs: 1.75, sm: 2.75 },
   borderRadius: 3,
   width: '100%',
-  maxWidth: { xs: 400, sm: 440 },
+  maxWidth: { xs: 360, sm: 420 },
   mx: 'auto',
   bgcolor: 'background.paper',
   border: '1px solid',

@@ -30,7 +30,6 @@ import {
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarMainGapSx,
   jampackFixedAppBarZIndexSx,
-  mobileBottomContentReserveSx,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
@@ -75,7 +74,17 @@ export function CustomerDashboardLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: JAMPACK_PAGE_BG }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        minHeight: '100dvh',
+        overflow: 'hidden',
+        bgcolor: JAMPACK_PAGE_BG,
+      }}
+    >
       <AppBar
         position="fixed"
         elevation={0}
@@ -251,25 +260,38 @@ export function CustomerDashboardLayout() {
         </Toolbar>
       </AppBar>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          flexShrink: 1,
-          minWidth: 0,
-          maxWidth: '100%',
-          overflowX: 'hidden',
-          p: { xs: 2, sm: 3 },
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
           width: '100%',
           bgcolor: JAMPACK_PAGE_BG,
-          ...(showBottomNav ? mobileBottomContentReserveSx : { pb: 3 }),
         }}
       >
-        <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
-        <Outlet />
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorY: 'contain',
+            overflowX: 'hidden',
+            p: { xs: 2, sm: 3 },
+            pb: showBottomNav ? { xs: 2, sm: 2 } : 3,
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
+          }}
+        >
+          <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+          <Outlet />
+        </Box>
+        {showBottomNav && (
+          <BottomNav items={customerBottomNavItems} accentColor={brandColors.primary} />
+        )}
       </Box>
-      {showBottomNav && (
-        <BottomNav items={customerBottomNavItems} accentColor={brandColors.primary} />
-      )}
     </Box>
   );
 }

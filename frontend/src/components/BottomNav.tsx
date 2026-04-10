@@ -46,10 +46,11 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
       aria-label="Primary navigation"
       elevation={8}
       sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        /**
+         * Docked in a column flex layout (not position:fixed) so WebView / iOS rubber-band
+         * scroll does not drag the bar with the document. Parent supplies viewport height + scroll.
+         */
+        flexShrink: 0,
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
@@ -62,8 +63,6 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         background: 'rgba(255, 255, 255, 0.97)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        transform: 'translateZ(0)',
-        WebkitTransform: 'translateZ(0)',
       }}
     >
       <BottomNavigation

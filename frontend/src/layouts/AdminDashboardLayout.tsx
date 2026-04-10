@@ -31,7 +31,6 @@ import {
   jampackFixedAppBarMainGapSx,
   jampackFixedAppBarZIndexSx,
   jampackDrawerPaper,
-  mobileBottomContentReserveSx,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
@@ -90,7 +89,17 @@ export function AdminDashboardLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: JAMPACK_PAGE_BG }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        minHeight: '100dvh',
+        overflow: 'hidden',
+        bgcolor: JAMPACK_PAGE_BG,
+      }}
+    >
       <AppBar
         position="fixed"
         elevation={0}
@@ -195,53 +204,75 @@ export function AdminDashboardLayout() {
         </Toolbar>
       </AppBar>
       <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="navigation"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { ...jampackDrawerPaper },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          flexShrink: 1,
+          flex: 1,
+          minHeight: 0,
           minWidth: 0,
-          maxWidth: '100%',
-          overflowX: 'hidden',
-          p: { xs: 2, sm: 3 },
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: JAMPACK_PAGE_BG,
-          ...(showBottomNav ? mobileBottomContentReserveSx : { pb: 3 }),
+          display: 'flex',
+          flexDirection: 'row',
         }}
       >
-        <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
-        <Outlet />
+        <Box
+          component="nav"
+          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+          aria-label="navigation"
+        >
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: 'block', sm: 'none' },
+              '& .MuiDrawer-paper': { ...jampackDrawerPaper },
+            }}
+          >
+            {drawer}
+          </Drawer>
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              '& .MuiDrawer-paper': { ...jampackDrawerPaper },
+            }}
+            open
+          >
+            {drawer}
+          </Drawer>
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            bgcolor: JAMPACK_PAGE_BG,
+          }}
+        >
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehaviorY: 'contain',
+              overflowX: 'hidden',
+              p: { xs: 2, sm: 3 },
+              pb: showBottomNav ? { xs: 2, sm: 2 } : 3,
+              width: '100%',
+              maxWidth: '100%',
+            }}
+          >
+            <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+            <Outlet />
+          </Box>
+          {showBottomNav && (
+            <BottomNav items={adminBottomNavItems} accentColor={brandColors.secondary} />
+          )}
+        </Box>
       </Box>
-      {showBottomNav && (
-        <BottomNav items={adminBottomNavItems} accentColor={brandColors.secondary} />
-      )}
     </Box>
   );
 }

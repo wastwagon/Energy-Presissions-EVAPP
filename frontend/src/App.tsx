@@ -231,7 +231,22 @@ function RouteSuspense({
 }) {
   return (
     <Suspense fallback={mode === 'full-page' ? <AppLoadingFallback /> : <InAppLoadingFallback />}>
-      {children}
+      {mode === 'full-page' ? (
+        <Box
+          sx={{
+            flex: 1,
+            alignSelf: 'stretch',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            width: '100%',
+          }}
+        >
+          {children}
+        </Box>
+      ) : (
+        children
+      )}
     </Suspense>
   );
 }
