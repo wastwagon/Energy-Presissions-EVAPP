@@ -1,7 +1,7 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { Box, Link, Typography, type LinkProps } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
+import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
 
 export function LegalDocLink({
   label,
@@ -60,6 +60,7 @@ export type LegalFooterLinksProps = {
 export function LegalFooterLinks({ onInternalNavigate, sx: containerSx }: LegalFooterLinksProps = {}) {
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
+  const support = getSupportLink();
   return (
     <Box
       sx={[
@@ -88,6 +89,15 @@ export function LegalFooterLinks({ onInternalNavigate, sx: containerSx }: LegalF
         label="Terms of Service"
         href={terms.href}
         external={terms.external}
+        onInternalNavigate={onInternalNavigate}
+      />
+      <Typography variant="caption" color="text.secondary" component="span" aria-hidden>
+        ·
+      </Typography>
+      <LegalDocLink
+        label="Support"
+        href={support.href}
+        external={support.external}
         onInternalNavigate={onInternalNavigate}
       />
     </Box>

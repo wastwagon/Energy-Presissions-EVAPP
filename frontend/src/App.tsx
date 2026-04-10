@@ -72,6 +72,9 @@ const PrivacyPolicyPage = lazy(() =>
 const TermsOfServicePage = lazy(() =>
   import('./pages/legal/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })),
 );
+const SupportPage = lazy(() =>
+  import('./pages/legal/SupportPage').then((m) => ({ default: m.SupportPage })),
+);
 const CustomerDashboardPage = lazy(() =>
   import('./pages/user/CustomerDashboardPage').then((m) => ({ default: m.CustomerDashboardPage })),
 );
@@ -288,7 +291,8 @@ function App() {
       path.startsWith('/register') ||
       path.startsWith('/forgot-password') ||
       path.startsWith('/privacy') ||
-      path.startsWith('/terms');
+      path.startsWith('/terms') ||
+      path.startsWith('/support');
 
     const chromeColor = isWhiteChromeRoute ? '#ffffff' : '#f4f7f9';
 
@@ -364,6 +368,14 @@ function App() {
           element={
             <RouteSuspense mode="full-page">
               <TermsOfServicePage />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="/support"
+          element={
+            <RouteSuspense mode="full-page">
+              <SupportPage />
             </RouteSuspense>
           }
         />

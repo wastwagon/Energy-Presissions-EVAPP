@@ -14,7 +14,8 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import GavelIcon from '@mui/icons-material/Gavel';
 import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
-import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
+import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../legal/supportPageContent';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
@@ -50,6 +51,7 @@ export function CustomerHelpPage() {
   const theme = useTheme();
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
+  const support = getSupportLink();
   const legalLinkTouchSx = {
     ...sxObject(theme, premiumIconButtonTouchSx),
     py: 1,
@@ -94,6 +96,13 @@ export function CustomerHelpPage() {
             variant="body2"
             sx={legalLinkTouchSx}
           />
+          <LegalDocLink
+            label="Help & support (web)"
+            href={support.href}
+            external={support.external}
+            variant="body2"
+            sx={legalLinkTouchSx}
+          />
         </Box>
       </Paper>
 
@@ -132,7 +141,7 @@ export function CustomerHelpPage() {
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           <Link
-            href="mailto:support@cleanmotionghana.com"
+            href={`mailto:${SUPPORT_EMAIL}`}
             sx={{
               ...sxObject(theme, premiumIconButtonTouchSx),
               display: 'inline-flex',
@@ -142,10 +151,10 @@ export function CustomerHelpPage() {
             }}
           >
             <EmailIcon fontSize="small" />
-            support@cleanmotionghana.com
+            {SUPPORT_EMAIL}
           </Link>
           <Link
-            href="tel:+233244000000"
+            href={SUPPORT_PHONE_TEL}
             sx={{
               ...sxObject(theme, premiumIconButtonTouchSx),
               display: 'inline-flex',
@@ -155,7 +164,7 @@ export function CustomerHelpPage() {
             }}
           >
             <PhoneIcon fontSize="small" />
-            +233 24 400 0000
+            {SUPPORT_PHONE_DISPLAY}
           </Link>
         </Box>
       </Paper>

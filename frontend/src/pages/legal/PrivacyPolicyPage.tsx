@@ -57,6 +57,9 @@ export function PrivacyPolicyPage() {
             <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
               ← Back to sign in
             </Link>
+            <Link component={RouterLink} to="/support" variant="caption" sx={{ textDecoration: 'none' }}>
+              Help &amp; support
+            </Link>
             <Link component={RouterLink} to="/terms" variant="caption" sx={{ textDecoration: 'none' }}>
               Terms of Service
             </Link>
