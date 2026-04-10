@@ -10,19 +10,25 @@ export function sxObject(theme: Theme, sx: SxProps<Theme>): Record<string, unkno
 
 /** Shared light shell for all auth pages (mobile-first). */
 export const authPageRootSx: SxProps<Theme> = {
-  minHeight: '100dvh',
+  minHeight: '100vh',
   display: 'flex',
-  alignItems: { xs: 'flex-start', sm: 'center' },
+  alignItems: 'center',
   justifyContent: 'center',
   bgcolor: 'background.default',
   px: { xs: 2, sm: 3 },
-  pt: { xs: 'max(env(safe-area-inset-top), 16px)', sm: 'max(env(safe-area-inset-top), 24px)' },
-  pb: 'max(env(safe-area-inset-bottom), 16px)',
+  py: { xs: 'max(env(safe-area-inset-top), env(safe-area-inset-bottom), 12px)', sm: 3 },
+  boxSizing: 'border-box',
+  '@supports (min-height: 100dvh)': {
+    minHeight: '100dvh',
+  },
 };
 
 export const authPagePaperSx: SxProps<Theme> = {
-  p: { xs: 2.25, sm: 3 },
+  p: { xs: 1.75, sm: 2.75 },
   borderRadius: 3,
+  width: '100%',
+  maxWidth: { xs: 400, sm: 440 },
+  mx: 'auto',
   bgcolor: 'background.paper',
   border: '1px solid',
   borderColor: (theme) => alpha(theme.palette.text.primary, 0.07),
@@ -74,6 +80,7 @@ export const authPageTitleSx: SxProps<Theme> = {
 
 /** Compact outlined fields: tighter helper text, soft borders, focus ring. */
 export const authFormFieldSx: SxProps<Theme> = (theme) => ({
+  mt: 0.25,
   '& .MuiOutlinedInput-root': {
     borderRadius: '10px',
     transition: 'box-shadow 0.18s ease, background-color 0.18s ease',

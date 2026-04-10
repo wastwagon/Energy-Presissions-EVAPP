@@ -68,8 +68,15 @@ export function CustomerFavoritesPage() {
         const favoriteStations = await stationsApi.getByIds(ids);
         setStations(favoriteStations);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load favorites');
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const status = ax.response?.status;
+      const serverMsg = ax.response?.data?.message;
+      if (status === 500) {
+        setError(serverMsg || 'Server error loading favorites. Please try again or contact support.');
+      } else {
+        setError(ax.message || serverMsg || 'Failed to load favorites');
+      }
     } finally {
       setLoading(false);
     }

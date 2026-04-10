@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { ChargePoint } from '../entities/charge-point.entity';
@@ -24,6 +24,8 @@ export interface StationWithDistance extends ChargePoint {
 
 @Injectable()
 export class StationsService {
+  private readonly logger = new Logger(StationsService.name);
+
   constructor(
     @InjectRepository(ChargePoint)
     private chargePointRepository: Repository<ChargePoint>,
@@ -276,9 +278,14 @@ export class StationsService {
     const result: StationWithDistance[] = [];
 
     for (const station of stations) {
-      result.push(
-        await this.enrichChargePointToStationWithDistance(station, { distanceKm: 0 }),
-      );
+      try {
+        result.push(
+          await this.enrichChargePointToStationWithDistance(station, { distanceKm: 0 }),
+        );
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`getByIds: skip ${station.chargePointId}: ${msg}`);
+      }
     }
 
     return result;

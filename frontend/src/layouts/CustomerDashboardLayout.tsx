@@ -29,6 +29,8 @@ import {
   jampackAppBarSx,
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarMainGapSx,
+  jampackFixedAppBarZIndexSx,
+  mobileBottomContentReserveSx,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 
@@ -80,7 +82,7 @@ export function CustomerDashboardLayout() {
         sx={{
           width: '100%',
           left: 0,
-          zIndex: (t) => t.zIndex.drawer + 1,
+          ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
         }}
@@ -166,11 +168,10 @@ export function CustomerDashboardLayout() {
               </Avatar>
             </IconButton>
             <Menu
-              sx={{ mt: '50px' }}
               id="menu-appbar"
               anchorEl={anchorEl}
               anchorOrigin={{
-                vertical: 'top',
+                vertical: 'bottom',
                 horizontal: 'right',
               }}
               keepMounted
@@ -180,9 +181,15 @@ export function CustomerDashboardLayout() {
               }}
               open={open}
               onClose={handleMenuClose}
+              disableScrollLock
               PaperProps={{
                 elevation: 0,
-                sx: (th) => sxObject(th, premiumMenuPaperSx),
+                sx: (th) => ({
+                  ...sxObject(th, premiumMenuPaperSx),
+                  zIndex: th.zIndex.snackbar,
+                  maxHeight: 'min(75dvh, 420px)',
+                  overflowY: 'auto',
+                }),
               }}
             >
               <MuiMenuItem
@@ -254,7 +261,7 @@ export function CustomerDashboardLayout() {
           p: { xs: 2, sm: 3 },
           width: '100%',
           bgcolor: JAMPACK_PAGE_BG,
-          pb: showBottomNav ? 10 : 3,
+          ...(showBottomNav ? mobileBottomContentReserveSx : { pb: 3 }),
         }}
       >
         <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />

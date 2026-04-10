@@ -208,7 +208,7 @@ export function LoginPage() {
     <Box sx={authPageRootSx}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader />
+          <AuthBrandHeader compact />
           <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Sign in
           </Typography>

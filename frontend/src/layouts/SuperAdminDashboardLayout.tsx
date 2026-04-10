@@ -38,7 +38,9 @@ import {
   jampackAppBarSx,
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarMainGapSx,
+  jampackFixedAppBarZIndexSx,
   jampackDrawerPaper,
+  mobileBottomContentReserveSx,
 } from '../theme/jampackShell';
 import {
   compactErrorContainedCtaSx,
@@ -132,7 +134,7 @@ export function SuperAdminDashboardLayout() {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          zIndex: (t) => t.zIndex.drawer + 1,
+          ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
         }}
@@ -223,11 +225,10 @@ export function SuperAdminDashboardLayout() {
               </Avatar>
             </IconButton>
             <Menu
-              sx={{ mt: '50px' }}
               id="menu-appbar"
               anchorEl={anchorEl}
               anchorOrigin={{
-                vertical: 'top',
+                vertical: 'bottom',
                 horizontal: 'right',
               }}
               keepMounted
@@ -237,9 +238,15 @@ export function SuperAdminDashboardLayout() {
               }}
               open={open}
               onClose={handleMenuClose}
+              disableScrollLock
               PaperProps={{
                 elevation: 0,
-                sx: (th) => sxObject(th, premiumMenuPaperSx),
+                sx: (th) => ({
+                  ...sxObject(th, premiumMenuPaperSx),
+                  zIndex: th.zIndex.snackbar,
+                  maxHeight: 'min(75dvh, 420px)',
+                  overflowY: 'auto',
+                }),
               }}
             >
               <MuiMenuItem
@@ -299,7 +306,7 @@ export function SuperAdminDashboardLayout() {
           p: { xs: 2, sm: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           bgcolor: JAMPACK_PAGE_BG,
-          pb: showBottomNav ? 10 : 3,
+          ...(showBottomNav ? mobileBottomContentReserveSx : { pb: 3 }),
         }}
       >
         <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />

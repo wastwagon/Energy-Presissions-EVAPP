@@ -42,18 +42,28 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
 
   return (
     <Paper
+      component="nav"
+      aria-label="Primary navigation"
       elevation={8}
       sx={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
         zIndex: theme.zIndex.appBar,
         borderTop: '1px solid',
         borderColor: 'divider',
-        pb: 'env(safe-area-inset-bottom, 0)',
-        background: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 0,
+        pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+        pt: 0,
+        background: 'rgba(255, 255, 255, 0.97)',
         backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)',
       }}
     >
       <BottomNavigation
@@ -64,21 +74,33 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         }}
         showLabels
         sx={{
-          height: 56,
-          minHeight: 56,
+          height: 'auto',
+          minHeight: 64,
+          py: 0.5,
+          boxSizing: 'border-box',
           '& .MuiBottomNavigationAction-root': {
-            minWidth: isMobile ? 56 : 72,
-            py: 1,
+            minWidth: isMobile ? 52 : 72,
+            maxWidth: 'none',
+            flex: '1 1 0',
+            py: 0.5,
+            pt: 0.75,
+            pb: 0.25,
           },
           '& .MuiBottomNavigationAction-root.Mui-selected': {
             color: accentColor,
             '& .MuiSvgIcon-root': {
-              transform: 'scale(1.1)',
+              transform: 'scale(1.08)',
             },
           },
           '& .MuiBottomNavigationAction-label': {
-            fontSize: isMobile ? '0.75rem' : '0.8rem',
+            fontSize: isMobile ? '0.6875rem' : '0.8rem',
             fontWeight: 500,
+            lineHeight: 1.2,
+            opacity: 1,
+            whiteSpace: 'nowrap',
+            '&.Mui-selected': {
+              fontSize: isMobile ? '0.6875rem' : '0.8rem',
+            },
           },
         }}
       >

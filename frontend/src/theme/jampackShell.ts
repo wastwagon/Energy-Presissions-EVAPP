@@ -64,6 +64,33 @@ export const jampackFixedAppBarMainGapSx: SystemStyleObject<Theme> = {
   flexShrink: 0,
 };
 
+/** Same layer as MUI AppBar; stays below Drawer (1200) so mobile side menu stays on top. */
+export const jampackFixedAppBarZIndexSx: SystemStyleObject<Theme> = {
+  zIndex: (t) => t.zIndex.appBar,
+};
+
+/**
+ * MainLayout header row is slightly taller than 64px (logo + wrap); keeps content clear of fixed AppBar.
+ */
+export const mainLayoutFixedHeaderGapSx: SystemStyleObject<Theme> = {
+  height: 'calc(72px + env(safe-area-inset-top, 0px))',
+  flexShrink: 0,
+};
+
+/**
+ * Space reserved above the home indicator so content is not hidden under the
+ * fixed bottom nav. Nav row uses ~68px plus device safe-area (nav bar adds its own pb).
+ */
+export const BOTTOM_NAV_ROW_MIN_HEIGHT_PX = 68;
+
+export const mobileBottomContentReserveSx: SystemStyleObject<Theme> = {
+  pb: `calc(${BOTTOM_NAV_ROW_MIN_HEIGHT_PX}px + env(safe-area-inset-bottom, 0px) + 12px)`,
+};
+
+export const mobileMainLayoutBottomMarginSx: SystemStyleObject<Theme> = {
+  mb: `calc(${BOTTOM_NAV_ROW_MIN_HEIGHT_PX}px + env(safe-area-inset-bottom, 0px) + 12px)`,
+};
+
 /** Menu list inner padding — matches .menu-content-wrap 1.5rem */
 export const jampackMenuListSx = {
   flex: 1,

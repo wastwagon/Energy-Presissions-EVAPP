@@ -6,7 +6,13 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { BottomNav } from '../components/BottomNav';
 import { mainLayoutBottomNavItems } from '../config/menu.config';
 import { brandColors } from '../theme';
-import { jampackAppBarSx, jampackAppBarSafeAreaTopSx } from '../theme/jampackShell';
+import {
+  jampackAppBarSx,
+  jampackAppBarSafeAreaTopSx,
+  jampackFixedAppBarZIndexSx,
+  mainLayoutFixedHeaderGapSx,
+  mobileMainLayoutBottomMarginSx,
+} from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
 import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
@@ -37,9 +43,12 @@ export function MainLayout() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <AppBar
-        position="static"
+        position="fixed"
         elevation={0}
         sx={{
+          width: '100%',
+          left: 0,
+          ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
           ...jampackAppBarSx,
           color: 'text.primary',
@@ -105,7 +114,16 @@ export function MainLayout() {
           )}
         </Toolbar>
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: showBottomNav ? 10 : 4, px: { xs: 2, sm: 3 }, flex: 1 }}>
+      <Box sx={mainLayoutFixedHeaderGapSx} aria-hidden />
+      <Container
+        maxWidth="lg"
+        sx={{
+          mt: { xs: 1, sm: 2 },
+          ...(showBottomNav ? mobileMainLayoutBottomMarginSx : { mb: 4 }),
+          px: { xs: 2, sm: 3 },
+          flex: 1,
+        }}
+      >
         <Outlet />
       </Container>
       {showBottomNav && (

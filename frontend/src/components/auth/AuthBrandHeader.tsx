@@ -6,12 +6,14 @@ type AuthBrandHeaderProps = {
   tagline?: string;
   /** Match home/marketing left alignment; legal pages can keep centered via wrapper */
   align?: 'center' | 'left';
+  /** Smaller logo and spacing for sign-in / register (mobile-first) */
+  compact?: boolean;
 };
 
 /**
  * Logo for auth screens (image-only; no duplicate wordmark — see `public/logo.png`).
  */
-export function AuthBrandHeader({ tagline, align = 'center' }: AuthBrandHeaderProps) {
+export function AuthBrandHeader({ tagline, align = 'center', compact = false }: AuthBrandHeaderProps) {
   const isLeft = align === 'left';
   return (
     <Box
@@ -21,7 +23,7 @@ export function AuthBrandHeader({ tagline, align = 'center' }: AuthBrandHeaderPr
         flexDirection: 'column',
         alignItems: isLeft ? 'flex-start' : 'center',
         textAlign: isLeft ? 'left' : 'center',
-        mb: { xs: 1.25, sm: 1.5 },
+        mb: compact ? { xs: 0.75, sm: 1 } : { xs: 1.25, sm: 1.5 },
       }}
     >
       <Box
@@ -32,11 +34,17 @@ export function AuthBrandHeader({ tagline, align = 'center' }: AuthBrandHeaderPr
         loading="eager"
         decoding="async"
         sx={{
-          height: isLeft
-            ? { xs: 'clamp(48px, 14vw, 64px)', sm: 72 }
-            : { xs: 'clamp(72px, 22vw, 88px)', sm: 96 },
+          height: compact
+            ? { xs: 'clamp(44px, 12vw, 56px)', sm: 64 }
+            : isLeft
+              ? { xs: 'clamp(48px, 14vw, 64px)', sm: 72 }
+              : { xs: 'clamp(72px, 22vw, 88px)', sm: 96 },
           width: 'auto',
-          maxWidth: isLeft ? 'min(220px, 70vw)' : 'min(300px, 92vw)',
+          maxWidth: compact
+            ? 'min(240px, 80vw)'
+            : isLeft
+              ? 'min(220px, 70vw)'
+              : 'min(300px, 92vw)',
           objectFit: 'contain',
           display: 'block',
         }}

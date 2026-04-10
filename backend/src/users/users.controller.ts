@@ -53,6 +53,60 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  // Register :id/* before bare :id so paths like /users/1/favorites match correctly.
+  @Get(':id/favorites')
+  @UseGuards(SelfOrAdminGuard)
+  @ApiOperation({ summary: 'Get user favorite stations' })
+  @ApiResponse({ status: 200, description: 'List of favorite charge point IDs' })
+  async getFavorites(@Param('id', ParseIntPipe) id: number): Promise<string[]> {
+    return this.usersService.getFavorites(id);
+  }
+
+  @Get(':id/id-tags')
+  @UseGuards(SelfOrAdminGuard)
+  @ApiOperation({ summary: 'Get user IdTags' })
+  @ApiResponse({ status: 200, description: 'List of IdTags' })
+  async getIdTags(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.getIdTags(id);
+  }
+
+  @Post(':id/favorites/:chargePointId')
+  @UseGuards(SelfOrAdminGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add station to favorites' })
+  @ApiResponse({ status: 201, description: 'Added to favorites' })
+  async addFavorite(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('chargePointId') chargePointId: string,
+  ): Promise<void> {
+    return this.usersService.addFavorite(id, chargePointId);
+  }
+
+  @Delete(':id/favorites/:chargePointId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SelfOrAdminGuard)
+  @ApiOperation({ summary: 'Remove station from favorites' })
+  @ApiResponse({ status: 204, description: 'Removed from favorites' })
+  async removeFavorite(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('chargePointId') chargePointId: string,
+  ): Promise<void> {
+    return this.usersService.removeFavorite(id, chargePointId);
+  }
+
+  @Put(':id/role')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'Change user role (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User role updated' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async changeRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { accountType: string },
+  ): Promise<User> {
+    return this.usersService.update(id, { accountType: body.accountType });
+  }
+
   @Get(':id')
   @UseGuards(SelfOrAdminGuard)
   @ApiOperation({ summary: 'Get user by ID' })
@@ -92,59 +146,6 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.usersService.delete(id);
-  }
-
-  @Get(':id/id-tags')
-  @UseGuards(SelfOrAdminGuard)
-  @ApiOperation({ summary: 'Get user IdTags' })
-  @ApiResponse({ status: 200, description: 'List of IdTags' })
-  async getIdTags(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.getIdTags(id);
-  }
-
-  @Put(':id/role')
-  @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Change user role (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User role updated' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async changeRole(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { accountType: string },
-  ): Promise<User> {
-    return this.usersService.update(id, { accountType: body.accountType });
-  }
-
-  @Get(':id/favorites')
-  @UseGuards(SelfOrAdminGuard)
-  @ApiOperation({ summary: 'Get user favorite stations' })
-  @ApiResponse({ status: 200, description: 'List of favorite charge point IDs' })
-  async getFavorites(@Param('id', ParseIntPipe) id: number): Promise<string[]> {
-    return this.usersService.getFavorites(id);
-  }
-
-  @Post(':id/favorites/:chargePointId')
-  @UseGuards(SelfOrAdminGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Add station to favorites' })
-  @ApiResponse({ status: 201, description: 'Added to favorites' })
-  async addFavorite(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('chargePointId') chargePointId: string,
-  ): Promise<void> {
-    return this.usersService.addFavorite(id, chargePointId);
-  }
-
-  @Delete(':id/favorites/:chargePointId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(SelfOrAdminGuard)
-  @ApiOperation({ summary: 'Remove station from favorites' })
-  @ApiResponse({ status: 204, description: 'Removed from favorites' })
-  async removeFavorite(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('chargePointId') chargePointId: string,
-  ): Promise<void> {
-    return this.usersService.removeFavorite(id, chargePointId);
   }
 }
 
