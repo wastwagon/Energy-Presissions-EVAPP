@@ -109,12 +109,11 @@ export class PaymentsController {
     );
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get payment by ID' })
-  @ApiResponse({ status: 200, description: 'Payment details' })
-  @ApiResponse({ status: 404, description: 'Payment not found' })
-  async getPayment(@Param('id', ParseIntPipe) id: number) {
-    return this.paymentsService.getPayment(id);
+  @Get('public-key')
+  @ApiOperation({ summary: 'Get Paystack public key' })
+  @ApiResponse({ status: 200, description: 'Public key' })
+  async getPublicKey() {
+    return { publicKey: this.paymentsService.getPublicKey() };
   }
 
   @Get('user/:userId')
@@ -132,11 +131,12 @@ export class PaymentsController {
     );
   }
 
-  @Get('public-key')
-  @ApiOperation({ summary: 'Get Paystack public key' })
-  @ApiResponse({ status: 200, description: 'Public key' })
-  async getPublicKey() {
-    return { publicKey: this.paymentsService.getPublicKey() };
+  @Get(':id')
+  @ApiOperation({ summary: 'Get payment by ID' })
+  @ApiResponse({ status: 200, description: 'Payment details' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
+  async getPayment(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentsService.getPayment(id);
   }
 
   @Post('wallet/invoice/:invoiceId')

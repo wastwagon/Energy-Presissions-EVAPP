@@ -37,7 +37,8 @@ import { ChargePointsService } from './charge-points/charge-points.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      // Root `.env` (docker-compose / monorepo) and `backend/.env` (local nest start from ./backend)
+      envFilePath: ['.env', '../.env'],
     }),
     DatabaseModule,
     TypeOrmModule.forFeature([User, Vendor]), // For seed service

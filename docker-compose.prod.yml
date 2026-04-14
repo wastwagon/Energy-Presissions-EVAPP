@@ -88,7 +88,7 @@ services:
       FRONTEND_URL: http://localhost:8080
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
       PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
-      PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-http://localhost:8080/api/payments/verify}
+      PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-http://localhost:3001/user/wallet/top-up}
     ports:
       - "3000:3000"
     depends_on:

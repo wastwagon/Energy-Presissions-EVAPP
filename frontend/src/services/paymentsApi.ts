@@ -59,7 +59,7 @@ export const paymentsApi = {
    * Get Paystack public key
    */
   getPublicKey: async (): Promise<{ publicKey: string }> => {
-    const response = await api.get('/payments/paystack/public-key');
+    const response = await api.get('/payments/public-key');
     return response.data;
   },
 
