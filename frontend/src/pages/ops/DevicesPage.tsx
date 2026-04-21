@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -50,6 +51,7 @@ import {
   getConnectionStatusColor,
 } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { getStoredUser } from '../../utils/authSession';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -99,6 +101,61 @@ export function DevicesPage() {
   const [connectionStats, setConnectionStats] = useState<ConnectionStatistics | null>(null);
   const [logsLoading, setLogsLoading] = useState(false);
   const [recentErrors, setRecentErrors] = useState<ConnectionLog[]>([]);
+
+  const [deleteTarget, setDeleteTarget] = useState<ChargePoint | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  const canUserDeleteDevice = (cp: ChargePoint): boolean => {
+    const user = getStoredUser();
+    const role = user?.accountType;
+    if (role === 'SuperAdmin') {
+      return true;
+    }
+    if (role === 'Admin' && typeof user?.vendorId === 'number' && typeof cp.vendorId === 'number') {
+      return cp.vendorId === user.vendorId;
+    }
+    return false;
+  };
+
+  const deleteDisabledReason = (cp: ChargePoint): string | null => {
+    if (!canUserDeleteDevice(cp)) {
+      return null;
+    }
+    if (cp.status === 'Charging' || cp.status === 'Preparing') {
+      return 'Stop the active session before removing this device.';
+    }
+    return null;
+  };
+
+  const openDeleteDialog = (cp: ChargePoint) => {
+    setDeleteTarget(cp);
+    setDeleteDialogOpen(true);
+    setError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleteSubmitting(true);
+      setError(null);
+      await chargePointsApi.delete(deleteTarget.chargePointId);
+      setSuccess(`Removed charge point ${deleteTarget.chargePointId}.`);
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+      await loadChargePoints();
+      await loadRecentErrors();
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        (Array.isArray(err.response?.data?.message) ? err.response.data.message.join(', ') : null) ||
+        err.message ||
+        'Failed to delete device';
+      setError(msg);
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     loadChargePoints();
@@ -490,10 +547,12 @@ export function DevicesPage() {
                             '-'}
                         </TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                             <Tooltip title="View details">
                               <IconButton
-                                onClick={() => navigate(`${opsBase}/devices/${cp.chargePointId}`)}
+                                onClick={() =>
+                                  navigate(`${opsBase}/devices/${encodeURIComponent(cp.chargePointId)}`)
+                                }
                                 color="primary"
                                 aria-label={`View details for ${cp.chargePointId}`}
                                 sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -513,6 +572,21 @@ export function DevicesPage() {
                                 </Badge>
                               </IconButton>
                             </Tooltip>
+                            {canUserDeleteDevice(cp) && (
+                              <Tooltip title={deleteDisabledReason(cp) || 'Remove device from CSMS'}>
+                                <span>
+                                  <IconButton
+                                    onClick={() => openDeleteDialog(cp)}
+                                    color="error"
+                                    disabled={Boolean(deleteDisabledReason(cp))}
+                                    aria-label={`Remove device ${cp.chargePointId}`}
+                                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                                  >
+                                    <DeleteOutlineIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -627,6 +701,45 @@ export function DevicesPage() {
           )}
         </TabPanel>
       </Paper>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !deleteSubmitting && setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Remove device?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            This permanently deletes <strong>{deleteTarget?.chargePointId}</strong> from the CSMS, including
+            connectors, sessions, and related billing rows. The charger can register again later if it reconnects.
+          </Typography>
+          {deleteTarget?.status === 'Charging' || deleteTarget?.status === 'Preparing' ? (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              Stop the active session first; removal is blocked while charging.
+            </Alert>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            disabled={deleteSubmitting}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={deleteSubmitting || Boolean(deleteTarget && deleteDisabledReason(deleteTarget))}
+            onClick={handleConfirmDelete}
+            sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 44 }}
+          >
+            {deleteSubmitting ? 'Removing…' : 'Remove device'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Connection Logs Dialog */}
       <Dialog

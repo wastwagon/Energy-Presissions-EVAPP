@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { ChargePoint } from '../entities/charge-point.entity';
@@ -26,6 +27,8 @@ export class ChargePointsService {
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
     private configService: ConfigService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {
     // OCPP Gateway URL - use internal Docker network URL
     this.ocppGatewayUrl = process.env.OCPP_GATEWAY_URL || 'http://ocpp-gateway:9000';
@@ -102,9 +105,58 @@ export class ChargePointsService {
     return this.chargePointRepository.save(chargePoint);
   }
 
+  /**
+   * Remove a charge point and dependent rows (FK-safe). Blocks if an OCPP session is still Active.
+   */
   async delete(chargePointId: string): Promise<void> {
-    const chargePoint = await this.findOne(chargePointId);
-    await this.chargePointRepository.remove(chargePoint);
+    await this.findOne(chargePointId);
+    const active = await this.transactionRepository.count({
+      where: { chargePointId, status: 'Active' },
+    });
+    if (active > 0) {
+      throw new BadRequestException(
+        'This charge point has an active session. Stop charging before removing the device.',
+      );
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const run = (sql: string, params: string[] = [chargePointId]) => manager.query(sql, params);
+
+      await run(
+        `DELETE FROM wallet_transactions wt WHERE wt.transaction_id IN (SELECT t.id FROM transactions t WHERE t.charge_point_id = $1)`,
+      );
+      await run(
+        `DELETE FROM wallet_transactions wt WHERE wt.payment_id IN (
+          SELECT p.id FROM payments p WHERE p.transaction_id IN (SELECT t.id FROM transactions t WHERE t.charge_point_id = $1)
+        )`,
+      );
+      await run(
+        `DELETE FROM payments p WHERE p.transaction_id IN (SELECT t.id FROM transactions t WHERE t.charge_point_id = $1)`,
+      );
+      await run(
+        `DELETE FROM invoices i WHERE i.transaction_id IN (SELECT t.id FROM transactions t WHERE t.charge_point_id = $1)`,
+      );
+      await run(`DELETE FROM meter_samples WHERE charge_point_id = $1`);
+      await run(
+        `DELETE FROM meter_samples WHERE transaction_id IN (SELECT t.id FROM transactions t WHERE t.charge_point_id = $1)`,
+      );
+      await run(`DELETE FROM reservations WHERE charge_point_id = $1`);
+      await run(`DELETE FROM firmware_jobs WHERE charge_point_id = $1`);
+      await run(`DELETE FROM diagnostics_jobs WHERE charge_point_id = $1`);
+      await run(`DELETE FROM charging_profiles WHERE charge_point_id = $1`);
+      await run(`DELETE FROM pending_commands WHERE charge_point_id = $1`);
+      await run(`DELETE FROM connection_logs WHERE charge_point_id = $1`);
+      await run(`DELETE FROM connection_statistics WHERE charge_point_id = $1`);
+      await run(`DELETE FROM local_auth_list WHERE charge_point_id = $1`);
+      await run(`DELETE FROM local_auth_list_versions WHERE charge_point_id = $1`);
+      await run(`DELETE FROM user_favorites WHERE charge_point_id = $1`);
+      await run(`DELETE FROM config_keys WHERE charge_point_id = $1`);
+      await run(`DELETE FROM transactions WHERE charge_point_id = $1`);
+      await run(`DELETE FROM connectors WHERE charge_point_id = $1`);
+      await run(`DELETE FROM charge_points WHERE charge_point_id = $1`);
+    });
+
+    this.logger.log(`Charge point ${chargePointId} deleted`);
   }
 
   async getStatus(chargePointId: string): Promise<any> {

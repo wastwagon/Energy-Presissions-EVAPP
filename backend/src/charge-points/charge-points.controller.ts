@@ -11,9 +11,15 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
-import { ApiQuery, ApiHeader } from '@nestjs/swagger';
+import { ApiQuery, ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePoint } from '../entities/charge-point.entity';
 
@@ -68,10 +74,23 @@ export class ChargePointsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete charge point' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'Delete charge point (removes related billing/connector data)' })
   @ApiResponse({ status: 204, description: 'Charge point deleted' })
   @ApiResponse({ status: 404, description: 'Charge point not found' })
-  async delete(@Param('id') id: string): Promise<void> {
+  @ApiResponse({ status: 403, description: 'Admin may only delete devices for their vendor' })
+  async delete(
+    @Param('id') id: string,
+    @Request() req: { user: { accountType: string; vendorId?: number } },
+  ): Promise<void> {
+    const cp = await this.chargePointsService.findOne(id);
+    if (req.user.accountType === 'Admin') {
+      if (cp.vendorId == null || req.user.vendorId == null || cp.vendorId !== req.user.vendorId) {
+        throw new ForbiddenException('You can only delete charge points that belong to your vendor.');
+      }
+    }
     return this.chargePointsService.delete(id);
   }
 

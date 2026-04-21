@@ -53,13 +53,17 @@ export const chargePointsApi = {
   },
 
   getById: async (id: string): Promise<ChargePoint> => {
-    const response = await api.get(`/charge-points/${id}`);
+    const response = await api.get(`/charge-points/${encodeURIComponent(id)}`);
     return response.data;
   },
 
   update: async (id: string, data: Partial<ChargePoint>): Promise<ChargePoint> => {
-    const response = await api.put(`/charge-points/${id}`, data);
+    const response = await api.put(`/charge-points/${encodeURIComponent(id)}`, data);
     return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/charge-points/${encodeURIComponent(id)}`);
   },
 
   getStatus: async (id: string): Promise<ChargePointStatus> => {
