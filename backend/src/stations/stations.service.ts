@@ -170,12 +170,19 @@ export class StationsService {
       },
     });
 
+    const status = this.deriveCustomerVisibleStatus(station, connectors, activeSessions.length);
+    const activeSessionsDisplay = this.effectiveActiveSessionCount(
+      connectors,
+      activeSessions.length,
+    );
+
     return {
       ...station,
+      status,
       connectors,
-      availableConnectors: connectors.filter((c) => c.status === 'Available').length,
+      availableConnectors: this.countCustomerVisibleAvailableConnectors(connectors),
       totalConnectors: connectors.length,
-      activeSessions: activeSessions.length,
+      activeSessions: activeSessionsDisplay,
       activeTransactions: activeSessions,
     };
   }
@@ -184,19 +191,62 @@ export class StationsService {
    * Calculate distance between two coordinates using Haversine formula
    * Returns distance in kilometers
    */
+  /** Slots that can accept Remote Start (matches device-management semantics). */
+  private countCustomerVisibleAvailableConnectors(connectors: Connector[]): number {
+    return connectors.filter((c) => ['Available', 'Preparing'].includes(c.status)).length;
+  }
+
+  /**
+   * Match Operations → Devices: CP row shows Charging when connectors report charging-like states,
+   * even if charge_points.status was not updated or CSMS missed an Active transaction row.
+   */
+  private deriveCustomerVisibleStatus(
+    station: ChargePoint,
+    connectors: Connector[],
+    activeDbSessions: number,
+  ): string {
+    if (activeDbSessions > 0) {
+      return 'Charging';
+    }
+    const chargingLike = connectors.some((c) =>
+      ['Charging', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'].includes(c.status),
+    );
+    if (chargingLike) {
+      return 'Charging';
+    }
+    if (connectors.some((c) => c.status === 'Preparing')) {
+      return 'Preparing';
+    }
+    return station.status;
+  }
+
+  private effectiveActiveSessionCount(
+    connectors: Connector[],
+    activeDbSessionCount: number,
+  ): number {
+    if (activeDbSessionCount > 0) return activeDbSessionCount;
+    const connectorLive = connectors.some((c) =>
+      ['Charging', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'].includes(c.status),
+    );
+    return connectorLive ? 1 : 0;
+  }
+
   private buildStationWithDistance(
     station: ChargePoint,
     connectors: Connector[],
     activeSessions: number,
     distanceKm: number,
   ): StationWithDistance {
-    const availableConnectors = connectors.filter((c) => c.status === 'Available').length;
+    const availableConnectors = this.countCustomerVisibleAvailableConnectors(connectors);
+    const status = this.deriveCustomerVisibleStatus(station, connectors, activeSessions);
+    const activeSessionsDisplay = this.effectiveActiveSessionCount(connectors, activeSessions);
     return {
       ...station,
+      status,
       distanceKm,
       availableConnectors,
       totalConnectors: connectors.length,
-      activeSessions,
+      activeSessions: activeSessionsDisplay,
     };
   }
 

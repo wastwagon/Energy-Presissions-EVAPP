@@ -25,6 +25,7 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { parseLatLng } from '../../utils/googleMapsDirections';
 
 export type StationListCardProps = {
   station: StationWithDistance;
@@ -60,14 +61,20 @@ export function StationListCard({
   const title = station.locationName?.trim() || station.chargePointId;
   const locality =
     [station.locationCity, station.locationRegion].filter(Boolean).join(', ') || null;
-  const canNavigate = Boolean(station.locationLatitude && station.locationLongitude);
+  const canNavigate =
+    parseLatLng(station.locationLatitude, station.locationLongitude) != null;
   const canStart =
     station.status === 'Available' && station.availableConnectors > 0;
 
   const metaRows: { label: string; value: string; icon?: React.ReactNode }[] = [
     {
       label: 'Distance',
-      value: station.distanceKm > 0 ? `${station.distanceKm.toFixed(1)} km` : '—',
+      value:
+        typeof station.distanceKm === 'number' &&
+        Number.isFinite(station.distanceKm) &&
+        station.distanceKm >= 0
+          ? `${station.distanceKm.toFixed(1)} km`
+          : '—',
       icon: <StraightenIcon sx={{ fontSize: 16, opacity: 0.75 }} />,
     },
     {

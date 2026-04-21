@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Tooltip,
 } from '@mui/material';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { chargePointsApi } from '../../services/chargePointsApi';
@@ -162,6 +163,13 @@ export function CustomerActiveSessionsPage() {
         </Alert>
       )}
 
+      {transactions.some((t) => t.recordPending) && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          One or more sessions are still syncing with the charger. Energy and billing may update shortly.
+          Stop charging may be unavailable until the session appears with a transaction number—unplugging also ends the session on the vehicle side.
+        </Alert>
+      )}
+
       {transactions.length === 0 ? (
         <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
           <Box
@@ -198,7 +206,11 @@ export function CustomerActiveSessionsPage() {
       ) : (
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           {transactions.map((tx) => (
-            <Grid item xs={12} key={tx.id}>
+            <Grid
+              item
+              xs={12}
+              key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}`}
+            >
               <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, p: { xs: 2, sm: 2.5 } }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 1 }}>
                     <Box sx={{ minWidth: 0 }}>
@@ -207,9 +219,15 @@ export function CustomerActiveSessionsPage() {
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Connector {tx.connectorId}
+                        {tx.recordPending ? ' · session sync pending' : ''}
                       </Typography>
                     </Box>
-                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" sx={{ flexShrink: 0 }} />
+                    <Chip
+                      label={tx.recordPending ? 'Active (syncing)' : tx.status}
+                      color={getTransactionStatusColor(tx.status)}
+                      size="small"
+                      sx={{ flexShrink: 0 }}
+                    />
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={6} sm={3}>
@@ -258,26 +276,47 @@ export function CustomerActiveSessionsPage() {
                       variant="outlined"
                       disableElevation
                       startIcon={<VisibilityIcon />}
-                      onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
+                      onClick={() =>
+                        tx.recordPending
+                          ? navigate(CUSTOMER_ROUTES.stations)
+                          : navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)
+                      }
                       sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                     >
-                      View details
+                      {tx.recordPending ? 'Back to stations' : 'View details'}
                     </Button>
-                    <Button
-                      variant="contained"
-                      disableElevation
-                      startIcon={
-                        stoppingTransactionId === tx.transactionId ? <CircularProgress size={16} color="inherit" /> : <StopIcon />
+                    <Tooltip
+                      title={
+                        tx.recordPending
+                          ? 'Stop is available after the session is fully registered, or you can unplug the cable to end charging.'
+                          : 'Send a remote stop to the charger'
                       }
-                      onClick={() => handleStopTransaction(tx)}
-                      disabled={stoppingTransactionId === tx.transactionId}
-                      sx={(th) => ({
-                        ...sxObject(th, compactErrorContainedCtaSx),
-                        width: { xs: '100%', sm: 'auto' },
-                      })}
                     >
-                      {stoppingTransactionId === tx.transactionId ? 'Stopping…' : 'Stop charging'}
-                    </Button>
+                      <Box
+                        component="span"
+                        sx={{ display: 'inline-block', width: { xs: '100%', sm: 'auto' } }}
+                      >
+                        <Button
+                          variant="contained"
+                          disableElevation
+                          startIcon={
+                            stoppingTransactionId === tx.transactionId ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : (
+                              <StopIcon />
+                            )
+                          }
+                          onClick={() => handleStopTransaction(tx)}
+                          disabled={Boolean(tx.recordPending) || stoppingTransactionId === tx.transactionId}
+                          sx={(th) => ({
+                            ...sxObject(th, compactErrorContainedCtaSx),
+                            width: { xs: '100%', sm: 'auto' },
+                          })}
+                        >
+                          {stoppingTransactionId === tx.transactionId ? 'Stopping…' : 'Stop charging'}
+                        </Button>
+                      </Box>
+                    </Tooltip>
                   </Box>
               </Paper>
             </Grid>

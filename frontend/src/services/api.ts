@@ -21,9 +21,9 @@ const getApiUrl = () => {
       return '/api'; // Relative path goes through NGINX
     }
     
-    // If accessing directly on port 3001, connect to backend on port 3000
+    // Vite dev server (port 3001): use same-origin /api — vite.config.ts proxies to the Nest API :3000
     if (port === '3001' || host.includes(':3001')) {
-      return `http://${hostname}:3000/api`;
+      return '/api';
     }
     
     // If no port specified but on localhost, check if it's likely port 3001
@@ -53,18 +53,26 @@ api.interceptors.request.use(
     
     // Only add auth token if not a public endpoint
     // Public endpoints: /stations/nearby, /stations/map, /stations/search
-    const isPublicEndpoint = config.url?.includes('/stations/nearby') || 
-                           config.url?.includes('/stations/map') || 
-                           config.url?.includes('/stations/search');
+    const isPublicEndpoint =
+      config.url?.includes('/stations/nearby') ||
+      config.url?.includes('/stations/map') ||
+      config.url?.includes('/stations/search') ||
+      config.url?.includes('/utils/reverse-geocode');
     
     const token = localStorage.getItem('token');
     if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add vendor context header if impersonating
+    // Vendor scope: backend filters /charge-points (and similar) by X-Vendor-Id.
+    // Super Admin Ops should list all charge points unless they are actively impersonating;
+    // otherwise a stale currentVendorId (e.g. from vendor management) yields an empty list.
     const vendorId = localStorage.getItem('currentVendorId');
-    if (vendorId) {
+    const pathname =
+      typeof window !== 'undefined' ? window.location.pathname : '';
+    const isSuperAdminOps = pathname.startsWith('/superadmin/ops');
+    const isImpersonating = localStorage.getItem('isImpersonating') === 'true';
+    if (vendorId && !(isSuperAdminOps && !isImpersonating)) {
       config.headers['X-Vendor-Id'] = vendorId;
     }
     

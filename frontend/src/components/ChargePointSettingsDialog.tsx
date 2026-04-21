@@ -18,6 +18,7 @@ import {
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { chargePointsApi, ChargePoint } from '../services/chargePointsApi';
 import { vendorApi, Vendor } from '../services/vendorApi';
 import { api } from '../services/api';
@@ -49,6 +50,7 @@ export function ChargePointSettingsDialog({
   const [success, setSuccess] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
+  const [locatingDevice, setLocatingDevice] = useState(false);
 
   const [formData, setFormData] = useState({
     totalCapacityKw: '',
@@ -60,6 +62,12 @@ export function ChargePointSettingsDialog({
     locationAddress: '',
     googleMapsUrl: '', // New field for Google Maps URL
   });
+
+  useEffect(() => {
+    if (!open) {
+      setLocatingDevice(false);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -171,6 +179,42 @@ export function ChargePointSettingsDialog({
     } else {
       setError('Please set latitude and longitude first.');
     }
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setError('This browser does not support GPS location. Enter coordinates manually or paste a Maps link.');
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setLocatingDevice(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setFormData((prev) => ({
+          ...prev,
+          locationLatitude: lat.toFixed(7),
+          locationLongitude: lng.toFixed(7),
+        }));
+        setSuccess(
+          'Latitude and longitude filled from this device. Move the pin or edit values if you are not exactly at the charger, then save.',
+        );
+        setTimeout(() => setSuccess(null), 5000);
+        setLocatingDevice(false);
+      },
+      (err: GeolocationPositionError) => {
+        setLocatingDevice(false);
+        const byCode: Record<number, string> = {
+          1: 'Location permission was denied. Allow location for this site in your browser or OS settings, then try again.',
+          2: 'Position could not be determined. Try outdoors or enter coordinates manually.',
+          3: 'Location request timed out. Try again or enter coordinates manually.',
+        };
+        setError(byCode[err.code] || err.message || 'Could not read this device’s location.');
+      },
+      { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 },
+    );
   };
 
   /**
@@ -409,6 +453,29 @@ export function ChargePointSettingsDialog({
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
               Location
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={
+                locatingDevice ? <CircularProgress size={18} color="inherit" /> : <MyLocationIcon />
+              }
+              onClick={handleUseMyLocation}
+              disabled={locatingDevice}
+              aria-label="Use this device GPS to fill latitude and longitude"
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: 44,
+              })}
+            >
+              {locatingDevice ? 'Getting location…' : 'Use this device’s location'}
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, maxWidth: 'sm' }}>
+              Fills latitude and longitude from your phone or laptop when you allow location. Stand at the charger for
+              best results, then adjust if needed.
             </Typography>
           </Grid>
           <Grid item xs={12}>

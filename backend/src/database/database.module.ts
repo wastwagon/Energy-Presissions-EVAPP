@@ -25,6 +25,7 @@ import { BrandingAsset } from '../entities/branding-asset.entity';
 import { ConnectionLog } from '../entities/connection-log.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
+import { UserFavorite } from '../entities/user-favorite.entity';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { WalletTransaction } from '../entities/wallet-transaction.entity';
           ConnectionLog,
           ConnectionStatistics,
           WalletTransaction,
+          UserFavorite,
         ],
         synchronize: false, // Disabled - using SQL initialization scripts
         logging: configService.get<string>('NODE_ENV') === 'development',

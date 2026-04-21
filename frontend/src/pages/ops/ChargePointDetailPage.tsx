@@ -23,6 +23,7 @@ import {
   DialogContentText,
   DialogActions,
   TextField,
+  Tooltip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -52,6 +53,12 @@ import {
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+
+const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
+
+function connectorAllowsRemoteStart(status: string | undefined): boolean {
+  return !!status && CONNECTOR_REMOTE_START_STATUSES.includes(status as (typeof CONNECTOR_REMOTE_START_STATUSES)[number]);
+}
 
 export function ChargePointDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -126,6 +133,16 @@ export function ChargePointDetailPage() {
     }
   }, [id]);
 
+  const remoteStartBlockedByConnectors =
+    connectors.length > 0 &&
+    !connectors.some((c) => connectorAllowsRemoteStart(c.status));
+
+  const remoteStartSelectedConnector = connectors.find((c) => c.connectorId === remoteStartConnector);
+  const remoteStartSubmitDisabled =
+    !remoteStartConnector ||
+    !remoteStartIdTag ||
+    !!(remoteStartSelectedConnector && !connectorAllowsRemoteStart(remoteStartSelectedConnector.status));
+
   const loadData = async () => {
     if (!id) return;
     try {
@@ -189,14 +206,22 @@ export function ChargePointDetailPage() {
 
   const handleRemoteStart = async () => {
     if (!id || !remoteStartConnector || !remoteStartIdTag) return;
+    const match = connectors.find((c) => c.connectorId === remoteStartConnector);
+    if (match && !connectorAllowsRemoteStart(match.status)) {
+      setError(
+        `Connector ${remoteStartConnector} is ${match.status}${match.errorCode ? ` (${match.errorCode})` : ''}. Clear the fault or wait until status is Available or Preparing.`,
+      );
+      return;
+    }
     try {
+      setError(null);
       await chargePointsApi.remoteStart(id, remoteStartConnector, remoteStartIdTag);
       setRemoteStartDialogOpen(false);
       setRemoteStartConnector(null);
       setRemoteStartIdTag('');
       loadData();
     } catch (err: any) {
-      setError(err.message || 'Failed to start transaction');
+      setError(err.response?.data?.message || err.message || 'Failed to start transaction');
     }
   };
 
@@ -431,15 +456,26 @@ export function ChargePointDetailPage() {
                 >
                   Settings
                 </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<PlayArrowIcon />}
-                  onClick={() => setRemoteStartDialogOpen(true)}
-                  disabled={chargePoint.status === 'Offline'}
-                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                <Tooltip
+                  title={
+                    remoteStartBlockedByConnectors
+                      ? 'No connector is Available or Preparing (e.g. Faulted). Fix the station or reset before remote start.'
+                      : ''
+                  }
+                  disableHoverListener={!remoteStartBlockedByConnectors}
                 >
-                  Remote start
-                </Button>
+                  <span style={{ width: '100%', display: 'block' }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<PlayArrowIcon />}
+                      onClick={() => setRemoteStartDialogOpen(true)}
+                      disabled={chargePoint.status === 'Offline' || remoteStartBlockedByConnectors}
+                      sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                    >
+                      Remote start
+                    </Button>
+                  </span>
+                </Tooltip>
                 <Button
                   variant="outlined"
                   startIcon={<SettingsIcon />}
@@ -768,6 +804,12 @@ export function ChargePointDetailPage() {
       >
         <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Remote start</DialogTitle>
         <DialogContent>
+          {remoteStartBlockedByConnectors && (
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              No connector is Available or Preparing. Remote start will be blocked until the station reports a
+              startable connector.
+            </Alert>
+          )}
           <TextField
             label="Connector ID"
             type="number"
@@ -797,7 +839,7 @@ export function ChargePointDetailPage() {
             onClick={handleRemoteStart}
             variant="contained"
             disableElevation
-            disabled={!remoteStartConnector || !remoteStartIdTag}
+            disabled={remoteStartSubmitDisabled}
             sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
             Start

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -8,9 +8,12 @@ import { Vendor } from '../entities/vendor.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
+import { Connector } from '../entities/connector.entity';
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -26,12 +29,53 @@ export class DashboardService {
     private paymentRepository: Repository<Payment>,
     @InjectRepository(ConnectionStatistics)
     private connectionStatisticsRepository: Repository<ConnectionStatistics>,
+    @InjectRepository(Connector)
+    private connectorRepository: Repository<Connector>,
   ) {}
+
+  /** Distinct charge points that have either an Active CSMS transaction or OCPP connectors in session. */
+  private async countOperationalActiveChargePoints(vendorId?: number): Promise<number> {
+    const busyStatuses = ['Charging', 'Finishing'];
+
+    const txQ = this.transactionRepository
+      .createQueryBuilder('tx')
+      .select('DISTINCT tx.chargePointId', 'cid')
+      .where('tx.status = :status', { status: 'Active' });
+
+    const connQ = this.connectorRepository
+      .createQueryBuilder('c')
+      .select('DISTINCT c.chargePointId', 'cid')
+      .where('c.status IN (:...busy)', { busy: busyStatuses });
+
+    if (vendorId != null) {
+      txQ.innerJoin('charge_points', 'cp1', 'cp1.charge_point_id = tx.charge_point_id').andWhere(
+        'cp1.vendor_id = :vendorId',
+        { vendorId },
+      );
+      connQ
+        .innerJoin('charge_points', 'cp2', 'cp2.charge_point_id = c.charge_point_id')
+        .andWhere('cp2.vendor_id = :vendorId', { vendorId });
+    }
+
+    const txRows = await txQ.getRawMany();
+    const connRows = await connQ.getRawMany();
+
+    const ids = new Set<string>();
+    for (const r of txRows) {
+      if (r.cid) ids.add(String(r.cid));
+    }
+    for (const r of connRows) {
+      if (r.cid) ids.add(String(r.cid));
+    }
+    return ids.size;
+  }
 
   /**
    * Get dashboard statistics for Super Admin (all vendors)
    */
   async getSuperAdminStats() {
+    const connectionStats = await this.safeGetConnectionStats();
+
     const [
       totalUsers,
       totalChargePoints,
@@ -40,16 +84,14 @@ export class DashboardService {
       totalTransactions,
       totalInvoices,
       totalPayments,
-      connectionStats,
     ] = await Promise.all([
       this.userRepository.count(),
       this.chargePointRepository.count(),
       this.vendorRepository.count(),
-      this.transactionRepository.count({ where: { status: 'Active' } }),
+      this.countOperationalActiveChargePoints(),
       this.transactionRepository.count(),
       this.invoiceRepository.count(),
       this.paymentRepository.count(),
-      this.connectionStatisticsRepository.find(),
     ]);
 
     // Calculate revenue from completed transactions
@@ -131,6 +173,24 @@ export class DashboardService {
     };
   }
 
+  private async safeGetConnectionStats(): Promise<ConnectionStatistics[]> {
+    try {
+      return await this.connectionStatisticsRepository.find();
+    } catch (error: any) {
+      const message = String(error?.message ?? '');
+      if (
+        message.includes('relation "connection_statistics" does not exist') ||
+        message.includes("relation 'connection_statistics' does not exist")
+      ) {
+        this.logger.warn(
+          'connection_statistics table missing; returning empty connection health stats',
+        );
+        return [];
+      }
+      throw error;
+    }
+  }
+
   /**
    * Get dashboard statistics for Vendor Admin (vendor-scoped)
    */
@@ -145,12 +205,7 @@ export class DashboardService {
     ] = await Promise.all([
       this.userRepository.count({ where: { vendorId } }),
       this.chargePointRepository.count({ where: { vendorId } }),
-      this.transactionRepository
-        .createQueryBuilder('tx')
-        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
-        .where('cp.vendor_id = :vendorId', { vendorId })
-        .andWhere('tx.status = :status', { status: 'Active' })
-        .getCount(),
+      this.countOperationalActiveChargePoints(vendorId),
       this.transactionRepository
         .createQueryBuilder('tx')
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')

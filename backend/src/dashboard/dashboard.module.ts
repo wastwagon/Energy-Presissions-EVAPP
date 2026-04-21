@@ -11,6 +11,7 @@ import { Vendor } from '../entities/vendor.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
+import { Connector } from '../entities/connector.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConnectionStatistics } from '../entities/connection-statistics.entity';
       Invoice,
       Payment,
       ConnectionStatistics,
+      Connector,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

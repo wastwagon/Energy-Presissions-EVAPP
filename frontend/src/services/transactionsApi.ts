@@ -5,6 +5,8 @@ export interface Transaction {
   transactionId: number;
   chargePointId: string;
   connectorId: number;
+  /** Backend could not correlate OCPP charging with a CSMS transaction row yet */
+  recordPending?: boolean;
   idTag?: string;
   userId?: number;
   meterStart: number;

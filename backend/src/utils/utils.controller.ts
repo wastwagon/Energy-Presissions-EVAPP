@@ -1,10 +1,88 @@
-import { Controller, Get, Query, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Query, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import axios from 'axios';
 
 @ApiTags('Utils')
 @Controller('utils')
 export class UtilsController {
+  private readonly logger = new Logger(UtilsController.name);
+  /** Short cache to respect Nominatim usage limits and speed repeat loads */
+  private readonly reverseGeoCache = new Map<string, { expires: number; label: string }>();
+  private readonly reverseGeoTtlMs = 12 * 60 * 60 * 1000;
+
+  @Get('reverse-geocode')
+  @ApiOperation({ summary: 'Resolve coordinates to a short human-readable area label' })
+  @ApiQuery({ name: 'lat', description: 'Latitude (WGS84)' })
+  @ApiQuery({ name: 'lng', description: 'Longitude (WGS84)' })
+  @ApiResponse({ status: 200, description: 'Area label (may be empty if unknown)' })
+  async reverseGeocode(@Query('lat') latStr: string, @Query('lng') lngStr: string) {
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      throw new HttpException('Valid lat and lng are required', HttpStatus.BAD_REQUEST);
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw new HttpException('Coordinates out of range', HttpStatus.BAD_REQUEST);
+    }
+
+    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const hit = this.reverseGeoCache.get(cacheKey);
+    if (hit && hit.expires > Date.now()) {
+      return { label: hit.label };
+    }
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&format=json`;
+      const { data } = await axios.get(url, {
+        headers: {
+          // https://operations.osmfoundation.org/policies/nominatim/
+          'User-Agent': 'EnergyPresissionsEVAP/1.0 (reverse-geocode)',
+          'Accept-Language': 'en',
+        },
+        timeout: 10000,
+      });
+      const label = this.formatNominatimLabel(data);
+      this.reverseGeoCache.set(cacheKey, {
+        label,
+        expires: Date.now() + this.reverseGeoTtlMs,
+      });
+      return { label };
+    } catch (err: any) {
+      this.logger.warn(`Reverse geocode failed: ${err?.message ?? err}`);
+      return { label: '' };
+    }
+  }
+
+  private formatNominatimLabel(payload: any): string {
+    if (!payload || typeof payload !== 'object') return '';
+    const a = payload.address || {};
+    const locality =
+      a.city ||
+      a.town ||
+      a.village ||
+      a.suburb ||
+      a.neighbourhood ||
+      a.hamlet ||
+      a.quarter ||
+      a.district;
+    const region = a.state || a.region || a.province || a.county;
+    const country = a.country;
+    const parts: string[] = [];
+    if (locality) parts.push(String(locality));
+    if (region && String(region) !== String(locality)) parts.push(String(region));
+    if (country && parts.length < 2) parts.push(String(country));
+    if (parts.length) return parts.join(', ');
+    if (typeof payload.display_name === 'string') {
+      return payload.display_name
+        .split(',')
+        .slice(0, 3)
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+        .join(', ');
+    }
+    return '';
+  }
+
   /**
    * Resolve short Google Maps URLs (goo.gl, maps.app.goo.gl) to extract coordinates
    */

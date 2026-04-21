@@ -85,14 +85,6 @@ export function SessionsPage() {
     }
   };
 
-  const handleSessionRowKeyDown =
-    (transactionId: string | number) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        navigate(`${opsBase}/sessions/${transactionId}`);
-      }
-    };
-
   const transactions = activeTab === 0 ? activeTransactions : allTransactions;
 
   if (loading) {
@@ -165,15 +157,33 @@ export function SessionsPage() {
               <TableBody>
                 {transactions.map((tx) => (
                   <TableRow 
-                    key={tx.transactionId}
+                    key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}`}
                     sx={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`${opsBase}/sessions/${tx.transactionId}`)}
-                    onKeyDown={handleSessionRowKeyDown(tx.transactionId)}
+                    onClick={() =>
+                      tx.recordPending
+                        ? navigate(`${opsBase}/devices/${encodeURIComponent(tx.chargePointId)}`)
+                        : navigate(`${opsBase}/sessions/${tx.transactionId}`)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      if (tx.recordPending) {
+                        navigate(`${opsBase}/devices/${encodeURIComponent(tx.chargePointId)}`);
+                      } else {
+                        navigate(`${opsBase}/sessions/${tx.transactionId}`);
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Open session ${tx.transactionId}`}
+                    aria-label={
+                      tx.recordPending
+                        ? `Open device ${tx.chargePointId}`
+                        : `Open session ${tx.transactionId}`
+                    }
                   >
-                    <TableCell>{tx.transactionId}</TableCell>
+                    <TableCell>
+                      {tx.recordPending ? 'Pending sync' : tx.transactionId}
+                    </TableCell>
                     <TableCell>{tx.chargePointId}</TableCell>
                     <TableCell>{tx.connectorId}</TableCell>
                     <TableCell>{tx.idTag || '-'}</TableCell>
@@ -195,7 +205,7 @@ export function SessionsPage() {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={tx.status}
+                        label={tx.recordPending ? 'Active (connector)' : tx.status}
                         color={getTransactionStatusColor(tx.status)}
                         size="small"
                       />

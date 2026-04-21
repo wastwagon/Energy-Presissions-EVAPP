@@ -189,6 +189,36 @@ export class ChargePointsService {
       throw new BadRequestException('Connector ID 0 is not valid for transactions');
     }
 
+    let connector = await this.connectorRepository.findOne({
+      where: { chargePointId, connectorId },
+    });
+    if (connector && !['Available', 'Preparing'].includes(connector.status)) {
+      const activeCount = await this.transactionRepository.count({
+        where: { chargePointId, connectorId, status: 'Active' },
+      });
+      if (
+        activeCount === 0 &&
+        ['Charging', 'Finishing'].includes(connector.status)
+      ) {
+        this.logger.warn(
+          `Healing connector ${chargePointId}/${connectorId} from ${connector.status} to Available (no active transaction)`,
+        );
+        connector.status = 'Available';
+        connector.errorCode = null;
+        connector.vendorErrorCode = null;
+        await this.connectorRepository.save(connector);
+      }
+    }
+    if (connector) {
+      const startable = ['Available', 'Preparing'];
+      if (!startable.includes(connector.status)) {
+        const hint = connector.errorCode ? ` (${connector.errorCode})` : '';
+        throw new BadRequestException(
+          `Connector ${connectorId} is ${connector.status}${hint}. Remote start is only offered when the connector is Available or Preparing.`,
+        );
+      }
+    }
+
     const messageId = `remote-start-${Date.now()}`;
     const message = [
       2, // CALL

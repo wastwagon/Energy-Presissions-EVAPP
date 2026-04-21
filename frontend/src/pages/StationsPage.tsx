@@ -54,6 +54,11 @@ import { StationListCard } from '../components/stations/StationListCard';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
 import { getStoredUser, hasValidSession } from '../utils/authSession';
+import {
+  buildGoogleMapsDrivingDirectionsUrl,
+  openGoogleMapsDirections,
+} from '../utils/googleMapsDirections';
+import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 
 export function StationsPage() {
   const theme = useTheme();
@@ -63,6 +68,7 @@ export function StationsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userAreaLabel, setUserAreaLabel] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [selectedStation, setSelectedStation] = useState<StationWithDistance | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -96,12 +102,13 @@ export function StationsPage() {
       setLoading(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setUserLocation({ lat, lng });
           setLocationError(null);
-          loadNearbyStations(position.coords.latitude, position.coords.longitude);
+          setUserAreaLabel(null);
+          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
+          loadNearbyStations(lat, lng);
         },
         (err) => {
           setLocationError(
@@ -169,11 +176,12 @@ export function StationsPage() {
       setLoading(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          loadNearbyStations(position.coords.latitude, position.coords.longitude);
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setUserLocation({ lat, lng });
+          setUserAreaLabel(null);
+          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
+          loadNearbyStations(lat, lng);
         },
         (err) => {
           setLocationError('Failed to refresh location');
@@ -214,32 +222,13 @@ export function StationsPage() {
 
   const handleGetDirections = (e: React.MouseEvent, station: StationWithDistance) => {
     e.stopPropagation(); // Prevent card click
-    if (station.locationLatitude && station.locationLongitude) {
-      const lat = station.locationLatitude;
-      const lng = station.locationLongitude;
-      
-      // Detect device type
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      const isMobile = isIOS || isAndroid;
-      
-      if (isMobile) {
-        if (isAndroid) {
-          // Android: Use intent URL that prompts to open in Google Maps app
-          // This will show a dialog asking which app to use
-          const intentUrl = `intent://maps.google.com/maps?daddr=${lat},${lng}&directionsmode=driving#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=https://maps.google.com/maps?daddr=${lat},${lng};end`;
-          window.location.href = intentUrl;
-        } else if (isIOS) {
-          // iOS: Use Google Maps web URL which prompts to open in app
-          // Safari will show "Open in Google Maps" banner if app is installed
-          const googleMapsUrl = `https://maps.google.com/maps?daddr=${lat},${lng}&directionsmode=driving`;
-          window.location.href = googleMapsUrl;
-        }
-      } else {
-        // Desktop: Use standard Google Maps URL
-        const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-        window.open(webUrl, '_blank');
-      }
+    const url = buildGoogleMapsDrivingDirectionsUrl(
+      station.locationLatitude,
+      station.locationLongitude,
+      userLocation,
+    );
+    if (url) {
+      openGoogleMapsDirections(url);
     }
   };
 
@@ -435,8 +424,19 @@ export function StationsPage() {
       {/* User Location Info */}
       {userLocation && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Showing stations within {radius}km of your location (
-          {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
+          <Typography variant="body2" component="div">
+            Showing stations within {radius} km of{' '}
+            {userAreaLabel ? (
+              <Box component="span" sx={{ fontWeight: 600 }}>
+                {userAreaLabel}
+              </Box>
+            ) : (
+              'your location'
+            )}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+            GPS: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+          </Typography>
         </Alert>
       )}
 

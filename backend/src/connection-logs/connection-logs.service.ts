@@ -1,12 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, LessThan, MoreThan } from 'typeorm';
+import { Repository, Like, Between, LessThan, MoreThan, QueryFailedError } from 'typeorm';
 import { ConnectionLog, ConnectionEventType, ConnectionStatus } from '../entities/connection-log.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 
 @Injectable()
 export class ConnectionLogsService {
   private readonly logger = new Logger(ConnectionLogsService.name);
+
+  /** True when Postgres has never had connection_logs / connection_statistics applied. */
+  private isMissingConnectionsSchemaError(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) return false;
+    const msg = String(error.message ?? '');
+    return (
+      msg.includes('relation') &&
+      msg.includes('does not exist') &&
+      (msg.includes('connection_logs') || msg.includes('connection_statistics'))
+    );
+  }
 
   constructor(
     @InjectRepository(ConnectionLog)
@@ -33,7 +44,15 @@ export class ConnectionLogsService {
     metadata?: Record<string, any>;
   }): Promise<ConnectionLog> {
     const log = this.connectionLogRepository.create(data);
-    return this.connectionLogRepository.save(log);
+    try {
+      return await this.connectionLogRepository.save(log);
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; connection event not persisted');
+        return log;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -61,15 +80,21 @@ export class ConnectionLogsService {
       where.createdAt = Between(startDate, endDate);
     }
 
-    const [logs, total] = await this.connectionLogRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-      // relations: ['vendor'], // Commented out to avoid relation errors if vendor doesn't exist
-    });
-
-    return { logs, total };
+    try {
+      const [logs, total] = await this.connectionLogRepository.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        skip: offset,
+      });
+      return { logs, total };
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; returning empty list');
+        return { logs: [], total: 0 };
+      }
+      throw error;
+    }
   }
 
   /**
@@ -80,38 +105,61 @@ export class ConnectionLogsService {
     limit: number = 100,
     offset: number = 0,
   ): Promise<{ logs: ConnectionLog[]; total: number }> {
-    const [logs, total] = await this.connectionLogRepository.findAndCount({
-      where: [
-        { chargePointId: Like(`%${searchTerm}%`) },
-        { errorMessage: Like(`%${searchTerm}%`) },
-        { errorCode: Like(`%${searchTerm}%`) },
-        { closeReason: Like(`%${searchTerm}%`) },
-      ],
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-      relations: ['vendor'],
-    });
-
-    return { logs, total };
+    try {
+      const [logs, total] = await this.connectionLogRepository.findAndCount({
+        where: [
+          { chargePointId: Like(`%${searchTerm}%`) },
+          { errorMessage: Like(`%${searchTerm}%`) },
+          { errorCode: Like(`%${searchTerm}%`) },
+          { closeReason: Like(`%${searchTerm}%`) },
+        ],
+        order: { createdAt: 'DESC' },
+        take: limit,
+        skip: offset,
+        relations: ['vendor'],
+      });
+      return { logs, total };
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; returning empty search');
+        return { logs: [], total: 0 };
+      }
+      throw error;
+    }
   }
 
   /**
    * Get connection statistics for a charge point
    */
   async getStatistics(chargePointId: string): Promise<ConnectionStatistics | null> {
-    return this.connectionStatisticsRepository.findOne({
-      where: { chargePointId },
-    });
+    try {
+      return await this.connectionStatisticsRepository.findOne({
+        where: { chargePointId },
+      });
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_statistics table missing');
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
    * Get all connection statistics
    */
   async getAllStatistics(): Promise<ConnectionStatistics[]> {
-    return this.connectionStatisticsRepository.find({
-      order: { updatedAt: 'DESC' },
-    });
+    try {
+      return await this.connectionStatisticsRepository.find({
+        order: { updatedAt: 'DESC' },
+      });
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_statistics table missing; returning empty');
+        return [];
+      }
+      throw error;
+    }
   }
 
   /**
@@ -127,11 +175,13 @@ export class ConnectionLogsService {
         ],
         order: { createdAt: 'DESC' },
         take: limit,
-        // Removed relations to avoid potential issues if vendor doesn't exist
-        // relations: ['vendor'],
       });
     } catch (error) {
-      this.logger.error(`Error fetching recent connection errors: ${error.message}`, error.stack);
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; returning no recent errors');
+        return [];
+      }
+      this.logger.error(`Error fetching recent connection errors: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -145,8 +195,22 @@ export class ConnectionLogsService {
     recentFailures: number;
     averageSuccessRate: number;
   }> {
-    const stats = await this.connectionStatisticsRepository.find();
-    
+    let stats: ConnectionStatistics[];
+    try {
+      stats = await this.connectionStatisticsRepository.find();
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_statistics table missing; returning empty health summary');
+        return {
+          totalDevices: 0,
+          devicesWithErrors: 0,
+          recentFailures: 0,
+          averageSuccessRate: 0,
+        };
+      }
+      throw error;
+    }
+
     const totalDevices = stats.length;
     const devicesWithErrors = stats.filter(s => s.consecutiveFailures > 0).length;
     const recentFailures = stats.filter(s => {
@@ -192,11 +256,19 @@ export class ConnectionLogsService {
       where.errorCode = errorCode;
     }
 
-    // Get all error logs matching criteria
-    const errors = await this.connectionLogRepository.find({
-      where,
-      order: { createdAt: 'DESC' },
-    });
+    let errors: ConnectionLog[];
+    try {
+      errors = await this.connectionLogRepository.find({
+        where,
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; skip deleteResolvedErrors');
+        return { deleted: 0 };
+      }
+      throw error;
+    }
 
     if (errors.length === 0) {
       return { deleted: 0 };
@@ -269,8 +341,16 @@ export class ConnectionLogsService {
    * Delete a specific error log by ID
    */
   async deleteError(id: number): Promise<void> {
-    await this.connectionLogRepository.delete(id);
-    this.logger.log(`Deleted connection error log with ID ${id}`);
+    try {
+      await this.connectionLogRepository.delete(id);
+      this.logger.log(`Deleted connection error log with ID ${id}`);
+    } catch (error) {
+      if (this.isMissingConnectionsSchemaError(error)) {
+        this.logger.warn('connection_logs table missing; skip deleteError');
+        return;
+      }
+      throw error;
+    }
   }
 }
 

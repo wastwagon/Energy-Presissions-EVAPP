@@ -39,9 +39,8 @@ class WebSocketService {
           // Use relative URL - socket.io will handle the protocol upgrade
           this.wsUrl = window.location.origin;
         } else if (port === '3001' || window.location.host.includes(':3001')) {
-          // Direct connection to backend
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          this.wsUrl = `${protocol}//${hostname}:3000`;
+          // Same origin as Vite; proxy forwards /ws to Nest (avoids cross-origin WS + wrong host on phones)
+          this.wsUrl = window.location.origin;
         } else {
           // Default: use current origin
           const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

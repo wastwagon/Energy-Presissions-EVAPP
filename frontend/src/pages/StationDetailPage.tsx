@@ -29,6 +29,11 @@ import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
 import { hasValidSession } from '../utils/authSession';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
+import {
+  buildGoogleMapsDrivingDirectionsUrl,
+  openGoogleMapsDirections,
+  parseLatLng,
+} from '../utils/googleMapsDirections';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -74,9 +79,14 @@ export function StationDetailPage() {
   };
 
   const handleGetDirections = () => {
-    if (station?.locationLatitude && station?.locationLongitude) {
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${station.locationLatitude},${station.locationLongitude}`;
-      window.open(url, '_blank');
+    if (!station) return;
+    const url = buildGoogleMapsDrivingDirectionsUrl(
+      station.locationLatitude,
+      station.locationLongitude,
+      null,
+    );
+    if (url) {
+      openGoogleMapsDirections(url);
     }
   };
 
@@ -177,7 +187,7 @@ export function StationDetailPage() {
               {[station.locationCity, station.locationRegion].filter(Boolean).join(', ')}
             </Typography>
           )}
-          {station.locationLatitude && station.locationLongitude && (
+          {parseLatLng(station.locationLatitude, station.locationLongitude) && (
             <Button
               variant="outlined"
               color="primary"

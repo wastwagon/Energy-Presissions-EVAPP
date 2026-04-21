@@ -72,6 +72,14 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+/** API may return decimals as strings; avoid calling .toFixed on non-numbers. */
+function formatLatLngPair(lat: unknown, lng: unknown): string | null {
+  const a = typeof lat === 'number' && !Number.isNaN(lat) ? lat : parseFloat(String(lat ?? ''));
+  const b = typeof lng === 'number' && !Number.isNaN(lng) ? lng : parseFloat(String(lng ?? ''));
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return `${a.toFixed(6)}, ${b.toFixed(6)}`;
+}
+
 export function DevicesPage() {
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
@@ -477,11 +485,9 @@ export function DevicesPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {cp.locationAddress || (
-                            cp.locationLatitude && cp.locationLongitude
-                              ? `${cp.locationLatitude.toFixed(6)}, ${cp.locationLongitude.toFixed(6)}`
-                              : '-'
-                          )}
+                          {cp.locationAddress ||
+                            formatLatLngPair(cp.locationLatitude, cp.locationLongitude) ||
+                            '-'}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 1 }}>
