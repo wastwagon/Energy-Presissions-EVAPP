@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Vendor, VendorStatus } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
 import { VendorStatusService } from './vendor-status.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class VendorsService {
@@ -15,6 +16,7 @@ export class VendorsService {
     @InjectRepository(VendorDisablement)
     private disablementRepository: Repository<VendorDisablement>,
     private vendorStatusService: VendorStatusService,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -126,6 +128,32 @@ export class VendorsService {
 
     Object.assign(vendor, updateVendorDto);
     return this.vendorRepository.save(vendor);
+  }
+
+  /**
+   * Upload logo to object storage and set vendors.logo_url (replaces previous stored object when possible).
+   */
+  async uploadLogo(
+    id: number,
+    buffer: Buffer,
+    originalName: string,
+    mimeType: string,
+  ): Promise<Vendor> {
+    const vendor = await this.findOne(id);
+    const previousUrl = vendor.logoUrl;
+    const newUrl = await this.storageService.uploadVendorLogo(id, buffer, originalName, mimeType);
+    vendor.logoUrl = newUrl;
+    const saved = await this.vendorRepository.save(vendor);
+    const oldKey = previousUrl ? this.storageService.parseObjectKeyFromStoredPath(previousUrl) : null;
+    const newKey = this.storageService.parseObjectKeyFromStoredPath(newUrl);
+    if (oldKey && oldKey !== newKey) {
+      try {
+        await this.storageService.removeObjectIfKey(oldKey);
+      } catch (e: any) {
+        this.logger.warn(`Could not remove previous vendor logo: ${e?.message || e}`);
+      }
+    }
+    return saved;
   }
 
   /**

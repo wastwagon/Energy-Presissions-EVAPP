@@ -32,6 +32,18 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
+  /** New customers (register / social) when no vendor is specified; set DEFAULT_CUSTOMER_VENDOR_ID in production. */
+  private getDefaultCustomerVendorId(): number {
+    const raw = this.configService.get<string>('DEFAULT_CUSTOMER_VENDOR_ID');
+    if (raw != null && String(raw).trim() !== '') {
+      const n = parseInt(String(raw).trim(), 10);
+      if (Number.isFinite(n) && n > 0) {
+        return n;
+      }
+    }
+    return 1;
+  }
+
   private toAuthUserPayload(user: User): AuthUserPayload {
     const payload: AuthUserPayload = {
       id: user.id,
@@ -165,7 +177,7 @@ export class AuthService {
         firstName,
         lastName,
         accountType: 'Customer',
-        vendorId: 1,
+        vendorId: this.getDefaultCustomerVendorId(),
         balance: 0,
         currency: 'GHS',
         status: 'Active',
@@ -218,7 +230,7 @@ export class AuthService {
         firstName,
         lastName,
         accountType: 'Customer',
-        vendorId: 1,
+        vendorId: this.getDefaultCustomerVendorId(),
         balance: 0,
         currency: 'GHS',
         status: 'Active',
@@ -264,7 +276,7 @@ export class AuthService {
       lastName: data.lastName,
       phone: normalizedPhone,
       accountType: 'Customer',
-      vendorId: data.vendorId || 1,
+      vendorId: data.vendorId ?? this.getDefaultCustomerVendorId(),
       balance: 0,
       currency: 'GHS',
       status: 'Active',

@@ -29,7 +29,6 @@ import { StationsModule } from './stations/stations.module';
 import { UtilsModule } from './utils/utils.module';
 import { SeedService } from './database/seed.service';
 import { User } from './entities/user.entity';
-import { Vendor } from './entities/vendor.entity';
 import { InternalService } from './internal/internal.service';
 import { ChargePointsService } from './charge-points/charge-points.service';
 
@@ -41,7 +40,7 @@ import { ChargePointsService } from './charge-points/charge-points.service';
       envFilePath: ['.env', '../.env'],
     }),
     DatabaseModule,
-    TypeOrmModule.forFeature([User, Vendor]), // For seed service
+    TypeOrmModule.forFeature([User]),
     AuthModule,
     UsersModule,
     ChargePointsModule,

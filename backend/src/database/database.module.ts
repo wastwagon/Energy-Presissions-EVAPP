@@ -26,6 +26,9 @@ import { ConnectionLog } from '../entities/connection-log.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { UserFavorite } from '../entities/user-favorite.entity';
+import { PaymentMethod } from '../entities/payment-method.entity';
+import { AuditLog } from '../entities/audit-log.entity';
+import { PendingCommand } from '../entities/pending-command.entity';
 
 @Module({
   imports: [
@@ -60,6 +63,9 @@ import { UserFavorite } from '../entities/user-favorite.entity';
           ConnectionStatistics,
           WalletTransaction,
           UserFavorite,
+          PaymentMethod,
+          AuditLog,
+          PendingCommand,
         ],
         synchronize: false, // Disabled - using SQL initialization scripts
         logging: configService.get<string>('NODE_ENV') === 'development',

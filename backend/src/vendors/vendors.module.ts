@@ -7,10 +7,12 @@ import { VendorsService } from './vendors.service';
 import { VendorStatusService } from './vendor-status.service';
 import { Vendor } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Vendor, VendorDisablement]),
+    StorageModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

@@ -12,8 +12,13 @@ import {
   HttpCode,
   HttpStatus,
   HttpException,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { readFile } from 'fs/promises';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
 import { VendorStatusService } from './vendor-status.service';
 import { Vendor, VendorStatus } from '../entities/vendor.entity';
@@ -43,6 +48,42 @@ export class VendorsController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Post(':id/logo')
+  @Roles('SuperAdmin', 'Admin')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({ summary: 'Upload vendor logo to object storage' })
+  @ApiResponse({ status: 200, description: 'Vendor with updated logo_url', type: Vendor })
+  async uploadLogo(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile()
+    file: { buffer?: Buffer; path?: string; originalname: string; mimetype: string },
+    @Request() req: any,
+  ): Promise<Vendor> {
+    if (req.user?.accountType !== 'SuperAdmin' && req.user?.vendorId !== id) {
+      throw new HttpException('Forbidden - can only update own vendor', HttpStatus.FORBIDDEN);
+    }
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const buffer = file.buffer
+      ? file.buffer
+      : file.path
+        ? await readFile(file.path)
+        : null;
+    if (!buffer) {
+      throw new BadRequestException('Could not read uploaded file');
+    }
+    return this.vendorsService.uploadLogo(id, buffer, file.originalname, file.mimetype);
   }
 
   @Get(':id')
@@ -139,7 +180,10 @@ export class VendorsController {
     @Body() body: { status: VendorStatus; reason?: string },
     @Request() req: any,
   ): Promise<{ ok: boolean; appliedAt: string }> {
-    const byUserId = req.user?.id || 1;
+    const byUserId = req.user?.id;
+    if (!byUserId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
     return this.vendorsService.changeStatus(id, body.status, body.reason || '', byUserId);
   }
 
@@ -153,7 +197,10 @@ export class VendorsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ): Promise<void> {
-    const byUserId = req.user?.id || 1;
+    const byUserId = req.user?.id;
+    if (!byUserId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
     return this.vendorsService.delete(id, byUserId);
   }
 
@@ -178,7 +225,11 @@ export class VendorsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ): Promise<{ success: boolean; message: string; vendorId: number }> {
-    return this.vendorsService.loginAsVendor(id, req.user?.id);
+    const adminUserId = req.user?.id;
+    if (!adminUserId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+    return this.vendorsService.loginAsVendor(id, adminUserId);
   }
 }
 

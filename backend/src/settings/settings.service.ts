@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemSetting, SettingCategory } from '../entities/system-setting.entity';
 import { CmsContent, ContentType } from '../entities/cms-content.entity';
 import { BrandingAsset, AssetType } from '../entities/branding-asset.entity';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class SettingsService {
+  private readonly logger = new Logger(SettingsService.name);
+
   constructor(
     @InjectRepository(SystemSetting)
     private systemSettingRepository: Repository<SystemSetting>,
@@ -14,6 +17,7 @@ export class SettingsService {
     private cmsContentRepository: Repository<CmsContent>,
     @InjectRepository(BrandingAsset)
     private brandingAssetRepository: Repository<BrandingAsset>,
+    private readonly storageService: StorageService,
   ) {}
 
   // System Settings Methods
@@ -240,10 +244,19 @@ export class SettingsService {
   }
 
   async deleteAsset(id: number): Promise<void> {
-    const result = await this.brandingAssetRepository.delete(id);
-    if (result.affected === 0) {
+    const asset = await this.brandingAssetRepository.findOne({ where: { id } });
+    if (!asset) {
       throw new NotFoundException(`Asset with ID ${id} not found`);
     }
+    const objectKey = this.storageService.parseObjectKeyFromStoredPath(asset.filePath);
+    if (objectKey) {
+      try {
+        await this.storageService.removeObjectIfKey(objectKey);
+      } catch (e: any) {
+        this.logger.warn(`Could not remove object storage key for asset ${id}: ${e?.message || e}`);
+      }
+    }
+    await this.brandingAssetRepository.delete(id);
   }
 
   // Helper methods

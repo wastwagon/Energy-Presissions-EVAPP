@@ -35,6 +35,7 @@ export function VendorSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [vendor, setVendor] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   
@@ -57,11 +58,16 @@ export function VendorSettingsPage() {
   }, [navigate]);
   
   // Get current vendor ID from impersonation context or current user.
-  const getCurrentVendorId = () => {
-    const vendorId = localStorage.getItem('currentVendorId');
-    if (vendorId) return Number.parseInt(vendorId, 10);
-    if (typeof user?.vendorId === 'number') return user.vendorId;
-    return 1; // Default
+  const getCurrentVendorId = (): number | null => {
+    const stored = localStorage.getItem('currentVendorId');
+    if (stored) {
+      const n = Number.parseInt(stored, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }
+    if (typeof user?.vendorId === 'number' && user.vendorId > 0) {
+      return user.vendorId;
+    }
+    return null;
   };
 
   const [formData, setFormData] = useState({
@@ -91,6 +97,10 @@ export function VendorSettingsPage() {
       setLoading(true);
       setError(null);
       const vendorId = getCurrentVendorId();
+      if (vendorId == null) {
+        setError('No vendor is selected for this account. Contact support if this persists.');
+        return;
+      }
       const data = await vendorApi.getById(vendorId);
       setVendor(data);
       setFormData({
@@ -120,6 +130,10 @@ export function VendorSettingsPage() {
       setSaving(true);
       setError(null);
       const vendorId = getCurrentVendorId();
+      if (vendorId == null) {
+        setError('No vendor is selected for this account.');
+        return;
+      }
       await vendorApi.update(vendorId, formData);
       setSuccess('Vendor settings saved successfully');
       setTimeout(() => setSuccess(null), 3000);
@@ -134,10 +148,24 @@ export function VendorSettingsPage() {
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // TODO: Upload to MinIO and get URL
-    // For now, just show a placeholder
-    setFormData({ ...formData, logoUrl: URL.createObjectURL(file) });
+    const vendorId = getCurrentVendorId();
+    if (vendorId == null) {
+      setError('No vendor is selected for this account.');
+      event.target.value = '';
+      return;
+    }
+    try {
+      setLogoUploading(true);
+      setError(null);
+      const updated = await vendorApi.uploadLogo(vendorId, file);
+      setFormData((prev) => ({ ...prev, logoUrl: updated.logoUrl || '' }));
+      setVendor(updated);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Logo upload failed');
+    } finally {
+      setLogoUploading(false);
+      event.target.value = '';
+    }
   };
 
   if (loading) {
@@ -329,12 +357,13 @@ export function VendorSettingsPage() {
                   variant="outlined"
                   component="span"
                   startIcon={<CloudUploadIcon />}
+                  disabled={logoUploading}
                   sx={(th) => ({
                     ...sxObject(th, compactOutlinedCtaSx),
                     width: { xs: '100%', sm: 'auto' },
                   })}
                 >
-                  Upload Logo
+                  {logoUploading ? 'Uploading…' : 'Upload Logo'}
                 </Button>
               </label>
             </Box>
@@ -355,7 +384,7 @@ export function VendorSettingsPage() {
               value={formData.logoUrl}
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               margin="normal"
-              helperText="Or enter logo URL directly"
+              helperText="Upload stores the file in your configured object storage; you can also paste an external image URL."
               sx={(th) => sxObject(th, authFormFieldSx)}
             />
           </Paper>

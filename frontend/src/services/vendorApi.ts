@@ -99,6 +99,18 @@ export const vendorApi = {
   },
 
   /**
+   * Upload vendor logo (multipart) — stores file in object storage and sets logoUrl
+   */
+  uploadLogo: async (id: number, file: File): Promise<Vendor> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/admin/vendors/${id}/logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
    * Change vendor status
    */
   changeStatus: async (id: number, data: ChangeStatusRequest): Promise<{ ok: boolean; appliedAt: string }> => {

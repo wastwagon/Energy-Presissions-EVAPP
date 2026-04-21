@@ -50,6 +50,12 @@ services:
         sync: false
       - key: MINIO_BUCKET
         value: ev-billing
+      - key: MINIO_USE_SSL
+        value: "true"
+      - key: MINIO_PUBLIC_BASE_URL
+        sync: false
+      - key: DEFAULT_CUSTOMER_VENDOR_ID
+        value: "1"
       - key: JWT_SECRET
         sync: false
       - key: SERVICE_TOKEN

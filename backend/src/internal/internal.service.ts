@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChargePoint } from '../entities/charge-point.entity';
@@ -142,10 +142,17 @@ export class InternalService {
       throw new Error(`Charge point ${chargePointId} not found`);
     }
 
+    const vendorId = chargePoint.vendorId;
+    if (vendorId == null || Number(vendorId) < 1) {
+      throw new BadRequestException(
+        `Charge point ${chargePointId} has no valid vendor_id. Assign a vendor before using this device.`,
+      );
+    }
+
     return {
       id: chargePoint.id,
       chargePointId: chargePoint.chargePointId,
-      vendorId: chargePoint.vendorId || 1, // Default to vendor 1 if not set
+      vendorId,
     };
   }
 

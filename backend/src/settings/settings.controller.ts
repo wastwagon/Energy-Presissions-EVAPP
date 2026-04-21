@@ -10,18 +10,28 @@ import {
   UseInterceptors,
   UploadedFile,
   ParseIntPipe,
+  UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
+import { readFile } from 'fs/promises';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { SystemSetting, SettingCategory } from '../entities/system-setting.entity';
 import { CmsContent, ContentType } from '../entities/cms-content.entity';
 import { BrandingAsset, AssetType } from '../entities/branding-asset.entity';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { StorageService } from '../storage/storage.service';
 
 @ApiTags('Settings')
 @Controller('admin/settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly storageService: StorageService,
+  ) {}
 
   // System Settings Endpoints
   @Get('system')
@@ -168,6 +178,9 @@ export class SettingsController {
   }
 
   @Post('branding/upload')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Upload a branding asset' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -184,13 +197,26 @@ export class SettingsController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiResponse({ status: 201, description: 'Asset uploaded', type: BrandingAsset })
   async uploadAsset(
-    @UploadedFile() file: any,
+    @UploadedFile() file: { buffer?: Buffer; path?: string; originalname: string; size: number; mimetype: string },
     @Body() body: { assetType: AssetType; vendorId?: number },
   ): Promise<BrandingAsset> {
-    // TODO: Upload file to MinIO and get file path
-    // For now, return a placeholder
-    const filePath = `/uploads/branding/${Date.now()}-${file.originalname}`;
-    
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const buffer = file.buffer
+      ? file.buffer
+      : file.path
+        ? await readFile(file.path)
+        : null;
+    if (!buffer) {
+      throw new BadRequestException('Could not read uploaded file');
+    }
+    const filePath = await this.storageService.uploadBrandingObject(
+      buffer,
+      file.originalname,
+      file.mimetype,
+    );
+
     return this.settingsService.createAsset(
       body.assetType,
       filePath,
@@ -204,6 +230,9 @@ export class SettingsController {
   }
 
   @Delete('branding/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Delete a branding asset' })
   @ApiResponse({ status: 204, description: 'Asset deleted' })
   async deleteAsset(@Param('id', ParseIntPipe) id: number): Promise<void> {

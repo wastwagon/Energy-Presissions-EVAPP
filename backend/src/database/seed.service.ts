@@ -1,22 +1,38 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../entities/user.entity';
-import { Vendor } from '../entities/vendor.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
+    private readonly config: ConfigService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(Vendor)
-    private vendorRepository: Repository<Vendor>,
   ) {}
 
+  private seedVendorId(): number {
+    const raw = this.config.get<string>('DEFAULT_CUSTOMER_VENDOR_ID');
+    if (raw != null && String(raw).trim() !== '') {
+      const n = parseInt(String(raw).trim(), 10);
+      if (Number.isFinite(n) && n > 0) {
+        return n;
+      }
+    }
+    return 1;
+  }
+
   async onModuleInit() {
+    const isProd = this.config.get<string>('NODE_ENV') === 'production';
+    const forceSeed = this.config.get<string>('ENABLE_DEV_SEED') === 'true';
+    if (isProd && !forceSeed) {
+      this.logger.log('Skipping default user seed in production (set ENABLE_DEV_SEED=true to allow).');
+      return;
+    }
     await this.seedDefaultUsers();
   }
 
@@ -40,7 +56,7 @@ export class SeedService implements OnModuleInit {
           currency: 'GHS',
           status: 'Active',
           emailVerified: true,
-          vendorId: 1, // Default vendor
+          vendorId: this.seedVendorId(),
         });
         await this.userRepository.save(adminUser);
         this.logger.log('✅ Default admin user created: admin@evcharging.com / admin123');
@@ -65,7 +81,7 @@ export class SeedService implements OnModuleInit {
           currency: 'GHS',
           status: 'Active',
           emailVerified: false,
-          vendorId: 1, // Default vendor
+          vendorId: this.seedVendorId(),
         });
         await this.userRepository.save(walkInUser);
         this.logger.log('✅ Walk-in customer user created');
@@ -96,7 +112,7 @@ export class SeedService implements OnModuleInit {
             currency: 'GHS',
             status: 'Active',
             emailVerified: true,
-            vendorId: 1, // Default vendor
+            vendorId: this.seedVendorId(),
           });
           await this.userRepository.save(adminUser);
           this.logger.log(`✅ Admin user created: ${adminData.email} / admin123`);
@@ -135,7 +151,7 @@ export class SeedService implements OnModuleInit {
             currency: 'GHS',
             status: 'Active',
             emailVerified: true,
-            vendorId: 1, // Default vendor
+            vendorId: this.seedVendorId(),
           });
           await this.userRepository.save(customerUser);
           this.logger.log(`✅ Customer user created: ${customerData.email} / customer123`);

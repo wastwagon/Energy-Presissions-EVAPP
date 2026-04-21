@@ -43,6 +43,12 @@ services:
         value: ev-billing
       - key: MINIO_USE_SSL
         value: "true"
+      # Public base URL for object keys (branding + vendor logos). Set in dashboard if bucket is not path-style public.
+      - key: MINIO_PUBLIC_BASE_URL
+        sync: false
+      # Customers from register / social sign-in when no vendorId is sent (single-tenant default).
+      - key: DEFAULT_CUSTOMER_VENDOR_ID
+        value: "1"
       - key: JWT_SECRET
         sync: false
       - key: SERVICE_TOKEN
