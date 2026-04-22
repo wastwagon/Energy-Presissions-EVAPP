@@ -72,6 +72,21 @@ export class ChargePointsController {
     return this.chargePointsService.update(id, data);
   }
 
+  @Delete('registry-block/:chargePointId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
+  @ApiOperation({
+    summary:
+      'Remove registration tombstone for a charge point ID (allows OCPP / API create again after admin delete)',
+  })
+  @ApiResponse({ status: 204, description: 'Block removed' })
+  @ApiResponse({ status: 404, description: 'No block record for this ID' })
+  async removeRegistrationBlock(@Param('chargePointId') chargePointId: string): Promise<void> {
+    return this.chargePointsService.removeRegistrationBlock(chargePointId);
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()

@@ -14,7 +14,9 @@ import { ConnectionLogsService } from '../connection-logs/connection-logs.servic
 import { WalletService } from '../wallet/wallet.service';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { User } from '../entities/user.entity';
+import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { ConnectionEventType, ConnectionStatus } from '../entities/connection-log.entity';
+import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
 
 @Injectable()
 export class InternalService {
@@ -44,6 +46,8 @@ export class InternalService {
     private vendorsService: VendorsService,
     private connectionLogsService: ConnectionLogsService,
     private walletService: WalletService,
+    @InjectRepository(BlockedChargePointId)
+    private blockedChargePointIdRepository: Repository<BlockedChargePointId>,
   ) {}
 
   // Set ChargePointsService (injected via setter to avoid circular dependency)
@@ -61,29 +65,6 @@ export class InternalService {
     this.commandQueueService = service;
   }
 
-  /**
-   * Comma-separated charge point IDs that must not be (re-)registered via OCPP internal upsert.
-   * Set on Render when you remove simulators/test devices but they keep reconnecting and recreating rows.
-   */
-  private parseBlockedChargePointIds(): Set<string> {
-    const raw = process.env.BLOCKED_CHARGE_POINT_IDS ?? '';
-    return new Set(
-      raw
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0),
-    );
-  }
-
-  private assertChargePointRegistrationAllowed(chargePointId: string): void {
-    if (this.parseBlockedChargePointIds().has(chargePointId)) {
-      this.logger.warn(`Blocked OCPP upsert for charge point ${chargePointId} (BLOCKED_CHARGE_POINT_IDS)`);
-      throw new BadRequestException(
-        `Charge point ${chargePointId} is blocked from registration. Remove its ID from BLOCKED_CHARGE_POINT_IDS when the device should be allowed again.`,
-      );
-    }
-  }
-
   async upsertChargePoint(data: {
     chargePointId: string;
     vendor?: string;
@@ -93,7 +74,11 @@ export class InternalService {
     iccid?: string;
     imsi?: string;
   }) {
-    this.assertChargePointRegistrationAllowed(data.chargePointId);
+    await assertChargePointRegistrationAllowed(
+      data.chargePointId,
+      this.blockedChargePointIdRepository,
+      this.logger,
+    );
 
     let chargePoint = await this.chargePointRepository.findOne({
       where: { chargePointId: data.chargePointId },

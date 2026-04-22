@@ -29,6 +29,7 @@ import { UserFavorite } from '../entities/user-favorite.entity';
 import { PaymentMethod } from '../entities/payment-method.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { PendingCommand } from '../entities/pending-command.entity';
+import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { PendingCommand } from '../entities/pending-command.entity';
           PaymentMethod,
           AuditLog,
           PendingCommand,
+          BlockedChargePointId,
         ],
         synchronize: false, // Disabled - using SQL initialization scripts
         logging: configService.get<string>('NODE_ENV') === 'development',

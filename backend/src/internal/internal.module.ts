@@ -18,6 +18,7 @@ import { ConnectionLogsModule } from '../connection-logs/connection-logs.module'
 import { WalletModule } from '../wallet/wallet.module';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { User } from '../entities/user.entity';
+import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { ServiceTokenGuard } from '../common/guards/service-token.guard';
 
 @Module({
@@ -31,6 +32,7 @@ import { ServiceTokenGuard } from '../common/guards/service-token.guard';
       PendingCommand,
       WalletTransaction,
       User,
+      BlockedChargePointId,
     ]),
     BillingModule,
     forwardRef(() => ChargePointsModule),

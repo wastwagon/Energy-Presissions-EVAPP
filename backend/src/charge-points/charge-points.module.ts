@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePointsController } from './charge-points.controller';
 import { ChargePoint } from '../entities/charge-point.entity';
+import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
@@ -14,7 +15,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User]),
+    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User, BlockedChargePointId]),
     ConfigModule,
     WalletModule,
     JwtModule.registerAsync({

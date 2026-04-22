@@ -9,6 +9,8 @@ import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
 import { WalletService } from '../wallet/wallet.service';
+import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
+import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
 
 @Injectable()
 export class ChargePointsService {
@@ -24,6 +26,8 @@ export class ChargePointsService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(BlockedChargePointId)
+    private blockedChargePointIdRepository: Repository<BlockedChargePointId>,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
     private configService: ConfigService,
@@ -111,6 +115,13 @@ export class ChargePointsService {
   }
 
   async create(data: Partial<ChargePoint>): Promise<ChargePoint> {
+    if (typeof data.chargePointId === 'string' && data.chargePointId.trim().length > 0) {
+      await assertChargePointRegistrationAllowed(
+        data.chargePointId.trim(),
+        this.blockedChargePointIdRepository,
+        this.logger,
+      );
+    }
     const chargePoint = this.chargePointRepository.create(data);
     return this.chargePointRepository.save(chargePoint);
   }
@@ -170,9 +181,25 @@ export class ChargePointsService {
       await run(`DELETE FROM transactions WHERE charge_point_id = $1`);
       await run(`DELETE FROM connectors WHERE charge_point_id = $1`);
       await run(`DELETE FROM charge_points WHERE charge_point_id = $1`);
+      await run(
+        `INSERT INTO blocked_charge_point_ids (charge_point_id, reason, blocked_at)
+         VALUES ($1, 'admin_delete', NOW())
+         ON CONFLICT (charge_point_id) DO UPDATE SET blocked_at = EXCLUDED.blocked_at, reason = EXCLUDED.reason`,
+      );
     });
 
-    this.logger.log(`Charge point ${chargePointId} deleted`);
+    this.logger.log(`Charge point ${chargePointId} deleted; OCPP re-registration blocked until Super Admin clears block`);
+  }
+
+  /**
+   * Allow this charge point ID to register again (OCPP + REST create). Super Admin only at controller.
+   */
+  async removeRegistrationBlock(chargePointId: string): Promise<void> {
+    const res = await this.blockedChargePointIdRepository.delete({ chargePointId });
+    if (!res.affected) {
+      throw new NotFoundException(`No registration block found for charge point ${chargePointId}`);
+    }
+    this.logger.log(`Registration block removed for ${chargePointId}`);
   }
 
   /**
