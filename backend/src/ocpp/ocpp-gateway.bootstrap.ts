@@ -186,7 +186,11 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
   if (redisUrl) {
     redisSubscriber = new Redis(redisUrl, {
       maxRetriesPerRequest: null,
-      enableOfflineQueue: false,
+      enableOfflineQueue: true,
+      retryStrategy: (times: number) => {
+        if (times > 15) return null;
+        return Math.min(times * 200, 3000);
+      },
     });
     redisSubscriber.on('error', (err) => {
       logger.warn(`OCPP Redis subscriber error: ${err.message}`);
