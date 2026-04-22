@@ -155,8 +155,13 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
 
   app.use(ocppHttpMiddleware);
 
-  const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
-  const redisSubscriber = new Redis(redisUrl);
+  const explicitRedis = process.env.REDIS_URL?.trim();
+  // Only use Docker hostname when unset outside production (compose sets REDIS_URL explicitly in prod).
+  const redisUrl =
+    explicitRedis ||
+    (process.env.NODE_ENV !== 'production' ? 'redis://redis:6379' : '');
+
+  let redisSubscriber: Redis | null = null;
 
   async function handleVendorStatusChange(payload: {
     vendorId: number;
@@ -178,17 +183,32 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     }
   }
 
-  redisSubscriber.subscribe(VENDOR_STATUS_CHANNEL);
-  redisSubscriber.on('message', (channel, message) => {
-    if (channel === VENDOR_STATUS_CHANNEL) {
-      try {
-        const payload = JSON.parse(message);
-        void handleVendorStatusChange(payload);
-      } catch (error) {
-        logger.error('Error parsing vendor status change message:', error);
+  if (redisUrl) {
+    redisSubscriber = new Redis(redisUrl, {
+      maxRetriesPerRequest: null,
+      enableOfflineQueue: false,
+    });
+    redisSubscriber.on('error', (err) => {
+      logger.warn(`OCPP Redis subscriber error: ${err.message}`);
+    });
+    redisSubscriber.on('message', (channel, message) => {
+      if (channel === VENDOR_STATUS_CHANNEL) {
+        try {
+          const payload = JSON.parse(message);
+          void handleVendorStatusChange(payload);
+        } catch (error) {
+          logger.error('Error parsing vendor status change message:', error);
+        }
       }
-    }
-  });
+    });
+    redisSubscriber.subscribe(VENDOR_STATUS_CHANNEL).catch((err) => {
+      logger.warn(`OCPP Redis subscribe failed: ${(err as Error).message}`);
+    });
+  } else {
+    logger.warn(
+      'REDIS_URL is not set; OCPP vendor pub/sub disabled. On Render, link Key Value REDIS_URL to this service.',
+    );
+  }
 
   const httpServer = app.getHttpServer();
   const wss = new WebSocketServer({ server: httpServer });
@@ -404,7 +424,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     await new Promise<void>((resolve) => {
       wss.close(() => resolve());
     });
-    redisSubscriber.disconnect();
+    redisSubscriber?.disconnect();
   };
 
   return { shutdown };
