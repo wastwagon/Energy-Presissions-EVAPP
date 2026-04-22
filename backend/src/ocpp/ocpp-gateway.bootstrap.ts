@@ -55,11 +55,17 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
   const vendorResolver = new VendorResolver();
 
   const ocppHttpMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const pathname = (req.url || '').split('?')[0] || '';
+
+    // REST API uses Nest `enableCors` with credentials + explicit origins. Do not inject
+    // `Access-Control-Allow-Origin: *` here — it breaks credentialed browser calls (wallet, admin).
+    if (pathname.startsWith('/api')) {
+      return next();
+    }
+
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    const pathname = (req.url || '').split('?')[0] || '';
 
     if (req.method === 'OPTIONS' && (pathname.startsWith('/command') || pathname.startsWith('/health/connection'))) {
       res.status(200).end();
