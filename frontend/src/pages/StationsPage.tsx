@@ -32,6 +32,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapIcon from '@mui/icons-material/Map';
+import MenuIcon from '@mui/icons-material/Menu';
 import ListIcon from '@mui/icons-material/List';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -56,8 +57,8 @@ import {
 } from '../theme/jampackShell';
 import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
-import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { StationListCard } from '../components/stations/StationListCard';
+import { StationsNavDrawer } from '../components/stations/StationsNavDrawer';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
@@ -125,6 +126,7 @@ export function StationsPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [pendingStationForLogin, setPendingStationForLogin] = useState<StationWithDistance | null>(null);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
 
   // Check authentication status and load favorites
   useEffect(() => {
@@ -438,6 +440,20 @@ export function StationsPage() {
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
+          {isAuthenticated && (
+            <Tooltip title="Menu — dashboard, wallet, and more">
+              <IconButton
+                onClick={() => setNavDrawerOpen(true)}
+                color="default"
+                aria-label="Open navigation menu"
+                aria-expanded={navDrawerOpen}
+                aria-controls="stations-nav-drawer"
+                sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="List view">
             <IconButton
               onClick={() => setViewMode('list')}
@@ -461,7 +477,9 @@ export function StationsPage() {
         </Box>
       </Box>
 
-      <CustomerQuickActions preset="stations" visible={isAuthenticated} />
+      {isAuthenticated && (
+        <StationsNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
+      )}
 
       {locationError && (
         <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLocationError(null)}>
