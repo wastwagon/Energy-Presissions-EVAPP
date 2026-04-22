@@ -241,7 +241,7 @@ export class VendorsService {
    * Delete vendor (soft delete - set to disabled)
    */
   async delete(id: number, byUserId: number): Promise<void> {
-    const vendor = await this.findOne(id);
+    await this.findOne(id);
     await this.changeStatus(id, 'disabled', 'Vendor deleted', byUserId);
   }
 

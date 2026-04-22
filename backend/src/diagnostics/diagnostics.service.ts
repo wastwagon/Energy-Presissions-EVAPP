@@ -129,7 +129,7 @@ export class DiagnosticsService {
   async updateDiagnosticsJobStatus(
     chargePointId: string,
     status: 'Uploading' | 'Uploaded' | 'UploadFailed',
-    fileName?: string,
+    _fileName?: string,
   ): Promise<void> {
     const job = await this.diagnosticsJobRepository.findOne({
       where: {

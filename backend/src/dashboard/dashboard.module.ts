@@ -12,6 +12,7 @@ import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { Connector } from '../entities/connector.entity';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { Connector } from '../entities/connector.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production',
+        secret: resolveJwtSecret(configService),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

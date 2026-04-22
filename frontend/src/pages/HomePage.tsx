@@ -14,7 +14,7 @@ import {
 } from '../utils/authSession';
 import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
-import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../config/staffNav.paths';
+import { ADMIN_ROUTES } from '../config/staffNav.paths';
 import { premiumFeatureCardSx, dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../styles/authShell';
 

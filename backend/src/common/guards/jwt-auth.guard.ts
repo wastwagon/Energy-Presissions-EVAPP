@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { resolveJwtSecret } from '../utils/jwt-secret';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -18,9 +19,9 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
+    const secret = resolveJwtSecret(this.configService);
+
     try {
-      const secret = this.configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production';
       const payload = this.jwtService.verify(token, { secret });
       
       // Attach user info to request

@@ -7,6 +7,7 @@ import { PaymentMethodsController } from './payment-methods.controller';
 import { PaymentMethodsService } from './payment-methods.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { SelfOrAdminGuard } from '../common/guards/self-or-admin.guard';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { SelfOrAdminGuard } from '../common/guards/self-or-admin.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production',
+        secret: resolveJwtSecret(config),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

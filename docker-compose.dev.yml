@@ -19,8 +19,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      REACT_APP_API_URL: http://localhost:3000
-      REACT_APP_WS_URL: ws://localhost:9000
+      # Vite uses VITE_*; omit API/WS to rely on /api and /ws via proxy (see vite.config.ts + DEV_API_PROXY_TARGET in base compose)
       CHOKIDAR_USEPOLLING: "true"  # For file watching on Mac
     command: npm start
 

@@ -36,7 +36,7 @@ export function VendorSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [vendor, setVendor] = useState<any>(null);
+  const [, setVendor] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   
   // Check session + role on mount.

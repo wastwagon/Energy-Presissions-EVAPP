@@ -1479,9 +1479,9 @@ Docker Network: ev-billing-network
 - `SERVICE_TOKEN` - Service authentication token
 - `LOG_RAW_FRAMES` - Enable OCPP frame logging
 
-**Frontend**:
-- `REACT_APP_API_URL` - API base URL
-- `REACT_APP_WS_URL` - WebSocket URL
+**Frontend** (Vite):
+- `VITE_API_URL` - API base URL (e.g. `https://<api-host>/api`)
+- `VITE_WS_URL` - Socket.IO URL for the browser (e.g. `wss://<api-host>/ws`); OCPP for charge points is separate (`/ocpp` on the same API when embedded)
 
 ---
 

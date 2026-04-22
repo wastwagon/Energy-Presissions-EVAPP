@@ -205,9 +205,9 @@ Update these environment variables with actual service URLs:
 - `PAYSTACK_CALLBACK_URL` - Update to: `https://ev-billing-api.onrender.com/api/payments/verify`
 - `MINIO_ENDPOINT` - Update to: `ev-billing-minio.onrender.com`
 
-**Frontend:**
-- `REACT_APP_API_URL` - Should auto-update to: `https://ev-billing-api.onrender.com/api`
-- `REACT_APP_WS_URL` - Should auto-update to: `wss://ev-billing-ocpp-gateway.onrender.com/ocpp`
+**Frontend (Vite — variables must be `VITE_*`):**
+- `VITE_API_URL` - e.g. `https://ev-billing-api.onrender.com/api` (baked in at build time on Render)
+- `VITE_WS_URL` - Socket.IO for the web app, same host as the API, e.g. `wss://ev-billing-api.onrender.com/ws` (not the OCPP `/ocpp` path; that is for chargers)
 
 **OCPP Gateway:**
 - `CSMS_API_URL` - Should auto-update to: `https://ev-billing-api.onrender.com`

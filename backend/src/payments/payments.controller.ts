@@ -24,11 +24,6 @@ class InitializePaymentDto {
   phone?: string; // For mobile money payments
 }
 
-class ProcessTransactionPaymentDto {
-  transactionId: number;
-  email: string;
-}
-
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {

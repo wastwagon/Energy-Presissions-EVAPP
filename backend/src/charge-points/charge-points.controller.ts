@@ -10,7 +10,6 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
   UseGuards,
   Request,
   ForbiddenException,

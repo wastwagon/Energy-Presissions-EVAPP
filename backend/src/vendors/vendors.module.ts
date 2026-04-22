@@ -8,6 +8,7 @@ import { VendorStatusService } from './vendor-status.service';
 import { Vendor } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
 import { StorageModule } from '../storage/storage.module';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { StorageModule } from '../storage/storage.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production',
+        secret: resolveJwtSecret(configService),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

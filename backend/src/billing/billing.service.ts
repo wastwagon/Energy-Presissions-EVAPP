@@ -162,14 +162,11 @@ export class BillingService {
       return existingInvoice;
     }
 
-    // Get vendor information for branding
-    // Vendor info will be used when generating PDF receipts
-    let vendorId = 1; // Default vendor
-    if (transaction.chargePoint && (transaction.chargePoint as any).vendorId) {
-      vendorId = (transaction.chargePoint as any).vendorId;
-    } else if (transaction.user && (transaction.user as any).vendorId) {
-      vendorId = (transaction.user as any).vendorId;
-    }
+    // Vendor for future PDF branding (not stored on invoice row yet)
+    const _resolvedVendorIdForBranding =
+      (transaction.chargePoint as any)?.vendorId ??
+      (transaction.user as any)?.vendorId ??
+      1;
 
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${transaction.transactionId}`;

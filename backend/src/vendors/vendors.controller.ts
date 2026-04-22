@@ -39,7 +39,7 @@ export class VendorsController {
   @SkipVendorCheck()
   @ApiOperation({ summary: 'Get all vendors' })
   @ApiResponse({ status: 200, description: 'List of vendors', type: [Vendor] })
-  async findAll(@Request() req: any): Promise<Vendor[]> {
+  async findAll(@Request() _req: any): Promise<Vendor[]> {
     try {
       return await this.vendorsService.findAll();
     } catch (error: any) {

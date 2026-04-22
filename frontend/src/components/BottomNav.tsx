@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Box,
   BottomNavigation,
   BottomNavigationAction,
   Paper,

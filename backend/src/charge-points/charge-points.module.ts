@@ -12,6 +12,7 @@ import { User } from '../entities/user.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production',
+        secret: resolveJwtSecret(config),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

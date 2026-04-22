@@ -62,6 +62,8 @@ services:
         sync: false
       - key: PAYSTACK_CALLBACK_URL
         value: https://ev-billing-api.onrender.com/api/payments/verify
+      - key: ENABLE_SWAGGER
+        value: "false"
     healthCheckPath: /health
 
   # Frontend (React)
@@ -74,9 +76,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: REACT_APP_API_URL
+      - key: VITE_API_URL
         value: https://ev-billing-api.onrender.com/api
-      - key: REACT_APP_WS_URL
+      - key: VITE_WS_URL
         value: wss://ev-billing-api.onrender.com/ws
 
   # MinIO Object Storage

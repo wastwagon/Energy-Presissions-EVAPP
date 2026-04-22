@@ -339,7 +339,7 @@ export class ChargePointsService {
       throw new BadRequestException('Connector ID 0 is not valid for transactions');
     }
 
-    let connector = await this.connectorRepository.findOne({
+    const connector = await this.connectorRepository.findOne({
       where: { chargePointId, connectorId },
     });
     if (connector && !['Available', 'Preparing'].includes(connector.status)) {
@@ -395,8 +395,8 @@ export class ChargePointsService {
     amount: number,
   ): Promise<{ success: boolean; transactionId?: number; message: string }> {
     // Verify charge point exists
-    const chargePoint = await this.findOne(chargePointId);
-    
+    await this.findOne(chargePointId);
+
     if (connectorId === 0) {
       throw new BadRequestException('Connector ID 0 is not valid for transactions');
     }

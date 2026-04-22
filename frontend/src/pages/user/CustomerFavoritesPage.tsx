@@ -34,7 +34,6 @@ import { getChargePointStatusColor } from '../../utils/statusColors';
 export function CustomerFavoritesPage() {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [stations, setStations] = useState<StationWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +59,6 @@ export function CustomerFavoritesPage() {
         return;
       }
       const ids = await usersApi.getFavorites(userId);
-      setFavoriteIds(ids);
 
       if (ids.length === 0) {
         setStations([]);
@@ -87,7 +85,6 @@ export function CustomerFavoritesPage() {
       const userId = getCurrentUserId();
       if (!userId) return;
       await usersApi.removeFavorite(userId, chargePointId);
-      setFavoriteIds((prev) => prev.filter((id) => id !== chargePointId));
       setStations((prev) => prev.filter((s) => s.chargePointId !== chargePointId));
     } catch (err: any) {
       setError(err.message || 'Failed to remove favorite');

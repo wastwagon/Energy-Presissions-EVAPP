@@ -21,7 +21,6 @@ import {
   DialogActions,
   DialogContentText,
   TextField,
-  MenuItem,
   Switch,
   FormControlLabel,
   Alert,

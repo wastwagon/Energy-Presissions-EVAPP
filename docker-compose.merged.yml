@@ -111,8 +111,8 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3001
-      REACT_APP_API_URL: http://localhost/api
-      REACT_APP_WS_URL: ws://localhost/ws
+      VITE_API_URL: http://localhost/api
+      VITE_WS_URL: ws://localhost/ws
     ports:
       - "3001:3001"
     volumes:

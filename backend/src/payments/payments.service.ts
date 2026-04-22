@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -529,7 +529,7 @@ export class PaymentsService {
   /**
    * Get or create walk-in user for a vendor
    */
-  private async getOrCreateWalkInUser(chargePointId: string): Promise<User> {
+  private async getOrCreateWalkInUser(_chargePointId: string): Promise<User> {
     // For now, use default vendor (1)
     // In production, resolve vendor from charge point
     const vendorId = 1;

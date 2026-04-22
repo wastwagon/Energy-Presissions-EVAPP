@@ -6,7 +6,7 @@ import axios from 'axios';
 export class HeartbeatHandler {
   constructor(private connectionManager: ConnectionManager) {}
 
-  async handle(chargePointId: string, messageId: string, payload: any): Promise<void> {
+  async handle(chargePointId: string, messageId: string, _payload: unknown): Promise<void> {
     logger.debug(`Processing Heartbeat from ${chargePointId}`);
 
     // Update last heartbeat timestamp in database via CSMS API

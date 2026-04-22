@@ -4,7 +4,6 @@ import {
   Query,
   Param,
   ParseFloatPipe,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { StationsService } from './stations.service';

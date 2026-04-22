@@ -148,14 +148,15 @@ All tables are created automatically:
 After deployment, update environment variables with actual URLs:
 - `OCPP_GATEWAY_URL` → OCPP Gateway URL
 - `PAYSTACK_CALLBACK_URL` → Backend API URL
-- `REACT_APP_API_URL` → Backend API URL
-- `REACT_APP_WS_URL` → OCPP Gateway WebSocket URL
+- `VITE_API_URL` → Backend API base URL, including `/api` (Vite; rebuild frontend after change)
+- `VITE_WS_URL` → Socket.IO for the web app, e.g. `wss://<api-host>/ws` (same host as the API, not the OCPP charger path)
 
 ### 2. Configure Charger
-Set charger OCPP URL to:
+OCPP 1.6J WebSocket (charge points) is served by the **API** when using the embedded gateway (typical on Render), e.g.:
 ```
-wss://ev-billing-ocpp-gateway.onrender.com/ocpp/{chargePointId}
+wss://<your-api-host>/ocpp
 ```
+Use a standalone OCPP service only if you still deploy `ocpp-gateway/` separately.
 
 ### 3. Test Features
 - [ ] User login/logout

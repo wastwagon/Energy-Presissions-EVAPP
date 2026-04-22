@@ -9,7 +9,7 @@ const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'your-service-token-change-in
 export class GetLocalListVersionHandler {
   constructor(private connectionManager: ConnectionManager) {}
 
-  async handle(chargePointId: string, messageId: string, payload: {}): Promise<void> {
+  async handle(chargePointId: string, messageId: string, _payload: unknown): Promise<void> {
     try {
       logger.info(`GetLocalListVersion from ${chargePointId}`);
 

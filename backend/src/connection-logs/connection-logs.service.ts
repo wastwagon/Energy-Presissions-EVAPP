@@ -306,7 +306,7 @@ export class ConnectionLogsService {
       // Also check by error message pattern if chargePointId is UNKNOWN
       if (!isResolved && error.chargePointId === 'UNKNOWN' && error.errorMessage) {
         // Extract charge point ID from error message if possible
-        const match = error.errorMessage.match(/\/ocpp\/([^\/\s]+)/);
+        const match = error.errorMessage.match(/\/ocpp\/([^/\s]+)/);
         if (match && match[1]) {
           const extractedId = match[1];
           const successAfterErrorByMessage = await this.connectionLogRepository.findOne({

@@ -9,7 +9,6 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { MenuItem } from './MenuItem';
 import { MenuSection as MenuSectionType } from '../../config/menu.config';

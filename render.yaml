@@ -77,6 +77,9 @@ services:
       # Optional: "all" = log every HTTP request; unset = log only 4xx/5xx (helps Render Logs when debugging 502 vs CORS).
       - key: LOG_HTTP_REQUESTS
         sync: false
+      # API docs: default off in production; set to "true" to expose /api/docs
+      - key: ENABLE_SWAGGER
+        value: "false"
     healthCheckPath: /health
 
   # Frontend (React + Vite)

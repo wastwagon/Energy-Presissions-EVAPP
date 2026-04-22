@@ -42,15 +42,6 @@ const SuspendedPage = lazy(() =>
 const DisabledPage = lazy(() =>
   import('./pages/vendor/DisabledPage').then((m) => ({ default: m.DisabledPage })),
 );
-const OperationsDashboard = lazy(() =>
-  import('./pages/ops/OperationsDashboard').then((m) => ({ default: m.OperationsDashboard })),
-);
-const SessionsPage = lazy(() =>
-  import('./pages/ops/SessionsPage').then((m) => ({ default: m.SessionsPage })),
-);
-const DevicesPage = lazy(() =>
-  import('./pages/ops/DevicesPage').then((m) => ({ default: m.DevicesPage })),
-);
 const ChargePointDetailPage = lazy(() =>
   import('./pages/ops/ChargePointDetailPage').then((m) => ({ default: m.ChargePointDetailPage })),
 );

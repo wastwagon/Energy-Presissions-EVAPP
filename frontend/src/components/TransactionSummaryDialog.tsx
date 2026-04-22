@@ -10,7 +10,6 @@ import {
   Grid,
   Paper,
   Divider,
-  Chip,
   IconButton,
   CircularProgress,
 } from '@mui/material';

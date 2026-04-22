@@ -115,8 +115,8 @@ services:
       PORT: 3001
       # Vite dev server proxy target (see frontend/vite.config.ts). Required in Docker: 127.0.0.1 is the frontend container, not the API.
       DEV_API_PROXY_TARGET: http://csms-api:3000
-      REACT_APP_API_URL: http://localhost/api
-      REACT_APP_WS_URL: ws://localhost/ws
+      VITE_API_URL: http://localhost/api
+      VITE_WS_URL: ws://localhost/ws
     ports:
       - "3001:3001"
     volumes:

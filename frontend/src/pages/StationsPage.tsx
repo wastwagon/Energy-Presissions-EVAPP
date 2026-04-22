@@ -194,7 +194,7 @@ export function StationsPage() {
           void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
           loadNearbyStations(lat, lng);
         },
-        (err) => {
+        (_err) => {
           setLocationError('Failed to refresh location');
           setLoading(false);
         },

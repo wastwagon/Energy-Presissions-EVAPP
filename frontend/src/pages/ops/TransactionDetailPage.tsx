@@ -15,7 +15,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Divider,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';

@@ -15,8 +15,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Tabs,
-  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,6 +32,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import HealingIcon from '@mui/icons-material/Healing';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint, Connector } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
@@ -57,6 +56,7 @@ import { getStoredUser } from '../../utils/authSession';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
 
+/** Connector statuses that may indicate a stuck session with no DB billing row */
 const STALE_OPERATIONAL_CONNECTOR_STATUSES = [
   'Charging',
   'Finishing',
@@ -79,7 +79,6 @@ export function ChargePointDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(0);
   const [remoteStartDialogOpen, setRemoteStartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [remoteStartConnector, setRemoteStartConnector] = useState<number | null>(null);
@@ -97,26 +96,6 @@ export function ChargePointDetailPage() {
     { type: 'reset'; resetType: 'Hard' | 'Soft' } | { type: 'clearCache' } | null
   >(null);
   const [clearStaleSubmitting, setClearStaleSubmitting] = useState(false);
-
-  const canUserManageDeviceRemoval = (): boolean => {
-    const user = getStoredUser();
-    const role = user?.accountType;
-    if (role === 'SuperAdmin') return true;
-    if (role === 'Admin' && typeof user?.vendorId === 'number' && typeof chargePoint?.vendorId === 'number') {
-      return chargePoint.vendorId === user.vendorId;
-    }
-    return false;
-  };
-
-  const showClearStaleOperationalState =
-    !!chargePoint &&
-    canUserManageDeviceRemoval() &&
-    (chargePoint.activeTransactionCount ?? 0) === 0 &&
-    activeTransactions.length === 0 &&
-    (['Charging', 'Preparing', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'].includes(chargePoint.status) ||
-      connectors.some((c) =>
-        (STALE_OPERATIONAL_CONNECTOR_STATUSES as readonly string[]).includes(c.status),
-      ));
 
   useEffect(() => {
     if (id) {
@@ -166,6 +145,37 @@ export function ChargePointDetailPage() {
   const remoteStartBlockedByConnectors =
     connectors.length > 0 &&
     !connectors.some((c) => connectorAllowsRemoteStart(c.status));
+
+  const canUserClearStaleOperationalState =
+    !!chargePoint &&
+    (() => {
+      const user = getStoredUser();
+      const role = user?.accountType;
+      if (role === 'SuperAdmin') return true;
+      if (
+        role === 'Admin' &&
+        typeof user?.vendorId === 'number' &&
+        typeof chargePoint.vendorId === 'number'
+      ) {
+        return chargePoint.vendorId === user.vendorId;
+      }
+      return false;
+    })();
+
+  const chargePointLooksOperationallyStuck =
+    !!chargePoint &&
+    ['Charging', 'Preparing', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'].includes(chargePoint.status);
+
+  const connectorLooksOperationallyStuck = connectors.some((c) =>
+    (STALE_OPERATIONAL_CONNECTOR_STATUSES as readonly string[]).includes(c.status),
+  );
+
+  const clearStaleOperationalAvailable =
+    !!chargePoint &&
+    canUserClearStaleOperationalState &&
+    (chargePoint.activeTransactionCount ?? 0) === 0 &&
+    activeTransactions.length === 0 &&
+    (chargePointLooksOperationallyStuck || connectorLooksOperationallyStuck);
 
   const remoteStartSelectedConnector = connectors.find((c) => c.connectorId === remoteStartConnector);
   const remoteStartSubmitDisabled =
@@ -539,6 +549,30 @@ export function ChargePointDetailPage() {
                     </Button>
                   </span>
                 </Tooltip>
+                {clearStaleOperationalAvailable && (
+                  <Tooltip title="No active billing session in the database: resets connector/charge-point operational status when the UI is stuck after disconnect or simulator issues.">
+                    <span style={{ width: '100%', display: 'block' }}>
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        startIcon={
+                          clearStaleSubmitting ? (
+                            <CircularProgress size={18} color="inherit" />
+                          ) : (
+                            <HealingIcon />
+                          )
+                        }
+                        onClick={handleClearStaleOperationalState}
+                        disabled={
+                          chargePoint.status === 'Offline' || clearStaleSubmitting || loading
+                        }
+                        sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                      >
+                        Clear stuck operational state
+                      </Button>
+                    </span>
+                  </Tooltip>
+                )}
                 <Button
                   variant="outlined"
                   startIcon={<SettingsIcon />}
