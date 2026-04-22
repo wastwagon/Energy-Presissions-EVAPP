@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from './common/cors-origins';
@@ -16,6 +17,24 @@ async function bootstrap() {
   setupMergedOcppGateway(app);
 
   const allowedOrigins = collectAllowedOrigins();
+
+  // Optional HTTP logging for Render/debug: set LOG_HTTP_REQUESTS=all to log every request;
+  // otherwise only 4xx/5xx are logged (low noise).
+  const httpLogger = new Logger('HTTP');
+  const logHttpMode = (process.env.LOG_HTTP_REQUESTS || '').toLowerCase();
+  const logAllHttp = logHttpMode === 'true' || logHttpMode === 'all';
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const ms = Date.now() - start;
+      const code = res.statusCode;
+      if (logAllHttp || code >= 400) {
+        const path = req.originalUrl || req.url || '';
+        httpLogger.log(`${req.method} ${path} ${code} ${ms}ms`);
+      }
+    });
+    next();
+  });
 
   app.enableCors({
     origin: (origin, callback) => {

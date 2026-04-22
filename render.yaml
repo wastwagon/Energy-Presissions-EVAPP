@@ -74,6 +74,9 @@ services:
         sync: false
       - key: LOG_RAW_FRAMES
         value: "false"
+      # Optional: "all" = log every HTTP request; unset = log only 4xx/5xx (helps Render Logs when debugging 502 vs CORS).
+      - key: LOG_HTTP_REQUESTS
+        sync: false
     healthCheckPath: /health
 
   # Frontend (React + Vite)
