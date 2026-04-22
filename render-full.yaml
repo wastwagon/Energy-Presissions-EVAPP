@@ -1,6 +1,4 @@
-# Full render.yaml with all services (Redis, OCPP Gateway, MinIO)
-# Use this if you want the complete setup later
-# Rename this to render.yaml to use it
+# Alternate blueprint (Redis + MinIO). OCPP is embedded in ev-billing-api (same host as /ocpp).
 
 databases:
   # PostgreSQL Database
@@ -10,32 +8,30 @@ databases:
     postgresMajorVersion: "15"
 
 services:
-  # Redis Cache
-  - type: redis
+  # Render Key Value (Redis-compatible)
+  - type: keyvalue
     name: ev-billing-redis
     plan: starter
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
-  # Backend API (NestJS)
+  # Backend API (NestJS) + OCPP WebSocket at /ocpp
   - type: web
     name: ev-billing-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: starter
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
       - key: DATABASE_URL
         fromDatabase:
           name: ev-billing-postgres
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: ev-billing-redis
           property: connectionString
       - key: MINIO_ENDPOINT
@@ -60,8 +56,6 @@ services:
         sync: false
       - key: SERVICE_TOKEN
         sync: false
-      - key: OCPP_GATEWAY_URL
-        value: https://ev-billing-ocpp-gateway.onrender.com
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
@@ -83,32 +77,7 @@ services:
       - key: REACT_APP_API_URL
         value: https://ev-billing-api.onrender.com/api
       - key: REACT_APP_WS_URL
-        value: wss://ev-billing-ocpp-gateway.onrender.com/ocpp
-
-  # OCPP Gateway (WebSocket Server)
-  - type: web
-    name: ev-billing-ocpp-gateway
-    runtime: docker
-    dockerfilePath: ./ocpp-gateway/Dockerfile
-    dockerContext: ./ocpp-gateway
-    plan: starter
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 9000
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: ev-billing-redis
-          property: connectionString
-      - key: CSMS_API_URL
-        value: https://ev-billing-api.onrender.com
-      - key: SERVICE_TOKEN
-        sync: false
-      - key: LOG_RAW_FRAMES
-        value: false
-    healthCheckPath: /health
+        value: wss://ev-billing-api.onrender.com/ws
 
   # MinIO Object Storage
   - type: web

@@ -62,35 +62,7 @@ services:
       - ev-billing-network
     restart: unless-stopped
 
-  # OCPP Gateway (Node.js + TypeScript WebSocket Server)
-  ocpp-gateway:
-    build:
-      context: ./ocpp-gateway
-      dockerfile: Dockerfile.dev
-    container_name: ev-billing-ocpp-gateway
-    environment:
-      NODE_ENV: development
-      PORT: 9000
-      REDIS_URL: redis://redis:6379
-      CSMS_API_URL: http://csms-api:3000
-      SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
-      LOG_RAW_FRAMES: ${LOG_RAW_FRAMES:-true}
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./ocpp-gateway:/app
-      - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
-      csms-api:
-        condition: service_started
-    networks:
-      - ev-billing-network
-    restart: unless-stopped
-    command: npm run dev
-
-  # CSMS API (NestJS + TypeScript)
+  # CSMS API (NestJS + TypeScript) — OCPP WebSocket at /ocpp on same port
   csms-api:
     build:
       context: ./backend
@@ -108,6 +80,8 @@ services:
       MINIO_BUCKET: ev-billing
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_change_in_production}
       SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
+      CSMS_API_URL: http://127.0.0.1:3000
+      OCPP_GATEWAY_URL: http://127.0.0.1:3000
       # Payment Gateway (example)
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
@@ -138,7 +112,7 @@ services:
       NODE_ENV: development
       PORT: 3001
       REACT_APP_API_URL: http://localhost/api
-      REACT_APP_WS_URL: ws://localhost/ocpp
+      REACT_APP_WS_URL: ws://localhost/ws
     ports:
       - "3001:3001"
     volumes:
@@ -146,7 +120,6 @@ services:
       - /app/node_modules
     depends_on:
       - csms-api
-      - ocpp-gateway
     networks:
       - ev-billing-network
     restart: unless-stopped
@@ -166,7 +139,6 @@ services:
       # - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - csms-api
-      - ocpp-gateway
       - frontend
     networks:
       - ev-billing-network

@@ -62,35 +62,7 @@ services:
       - ev-billing-network
     restart: unless-stopped
 
-  # OCPP Gateway (Node.js + TypeScript WebSocket Server)
-  ocpp-gateway:
-    build:
-      context: ./ocpp-gateway
-      dockerfile: Dockerfile.dev
-    container_name: ev-billing-ocpp-gateway
-    environment:
-      NODE_ENV: development
-      PORT: 9000
-      REDIS_URL: redis://redis:6379
-      CSMS_API_URL: http://csms-api:3000
-      SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
-      LOG_RAW_FRAMES: ${LOG_RAW_FRAMES:-true}
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./ocpp-gateway:/app
-      - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
-      csms-api:
-        condition: service_started
-    networks:
-      - ev-billing-network
-    restart: unless-stopped
-    command: npm run dev
-
-  # CSMS API (NestJS + TypeScript)
+  # CSMS API (NestJS + TypeScript) — includes OCPP WebSocket at /ocpp
   csms-api:
     build:
       context: ./backend
@@ -109,7 +81,8 @@ services:
       MINIO_BUCKET: ev-billing
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_change_in_production}
       SERVICE_TOKEN: ${SERVICE_TOKEN:-your-service-token-change-in-production}
-      OCPP_GATEWAY_URL: http://ocpp-gateway:9000
+      CSMS_API_URL: http://127.0.0.1:3000
+      OCPP_GATEWAY_URL: http://127.0.0.1:3000
       # Payment Gateway - Paystack (Ghana)
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
       PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
@@ -143,7 +116,7 @@ services:
       # Vite dev server proxy target (see frontend/vite.config.ts). Required in Docker: 127.0.0.1 is the frontend container, not the API.
       DEV_API_PROXY_TARGET: http://csms-api:3000
       REACT_APP_API_URL: http://localhost/api
-      REACT_APP_WS_URL: ws://localhost/ocpp
+      REACT_APP_WS_URL: ws://localhost/ws
     ports:
       - "3001:3001"
     volumes:
@@ -151,7 +124,6 @@ services:
       - /app/node_modules
     depends_on:
       - csms-api
-      - ocpp-gateway
     networks:
       - ev-billing-network
     restart: unless-stopped
@@ -169,7 +141,6 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - csms-api
-      - ocpp-gateway
       - frontend
     networks:
       - ev-billing-network

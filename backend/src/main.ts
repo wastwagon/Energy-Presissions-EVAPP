@@ -2,9 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
 
 async function bootstrap() {
+  const port = Number(process.env.PORT || 3000);
+  // OCPP handlers call the CSMS REST API; same process → loopback (avoids hairpin TLS to public URL).
+  if (!process.env.CSMS_API_URL) {
+    process.env.CSMS_API_URL = `http://127.0.0.1:${port}`;
+  }
+
   const app = await NestFactory.create(AppModule);
+  setupMergedOcppGateway(app);
 
   // Enable CORS for both web and mobile apps
   const allowedOrigins = [
@@ -81,9 +89,8 @@ async function bootstrap() {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  console.log(`CSMS API is running on: http://localhost:${port}`);
+  console.log(`CSMS API + OCPP (/ocpp) on: http://0.0.0.0:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
 }
 

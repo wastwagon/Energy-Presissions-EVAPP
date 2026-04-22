@@ -6,7 +6,13 @@ databases:
     postgresMajorVersion: "15"
 
 services:
-  # Backend API (NestJS)
+  # Render Key Value (Redis-compatible) — OCPP pub/sub + vendor events (embedded in API)
+  - type: keyvalue
+    name: ev-billing-redis
+    plan: starter
+    ipAllowList: []
+
+  # Backend API (NestJS) + embedded OCPP 1.6J WebSocket at wss://<this-host>/ocpp
   - type: web
     name: ev-billing-api
     runtime: docker
@@ -18,17 +24,17 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
       - key: DATABASE_URL
         fromDatabase:
           name: ev-billing-postgres
           property: connectionString
       - key: FRONTEND_URL
         value: https://cleanmotion.energyprecisions.com
-      # Redis is optional - app will use in-memory cache if not provided
-      # - key: REDIS_URL
-      #   value: redis://your-redis-url:6379
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: ev-billing-redis
+          property: connectionString
       - key: MINIO_ENDPOINT
         value: s3.amazonaws.com
       - key: MINIO_PORT
@@ -53,8 +59,6 @@ services:
         sync: false
       - key: SERVICE_TOKEN
         sync: false
-      - key: OCPP_GATEWAY_URL
-        value: https://api.cleanmotion.energyprecisions.com
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
@@ -63,6 +67,8 @@ services:
         value: https://api.cleanmotion.energyprecisions.com
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: LOG_RAW_FRAMES
+        value: "false"
     healthCheckPath: /health
 
   # Frontend (React + Vite)

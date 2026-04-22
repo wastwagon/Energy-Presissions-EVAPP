@@ -30,8 +30,10 @@ export class ChargePointsService {
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {
-    // OCPP Gateway URL - use internal Docker network URL
-    this.ocppGatewayUrl = process.env.OCPP_GATEWAY_URL || 'http://ocpp-gateway:9000';
+    // Same host as API when OCPP is embedded (Render / single container). Override for split compose.
+    this.ocppGatewayUrl =
+      this.configService.get<string>('OCPP_GATEWAY_URL') ||
+      `http://127.0.0.1:${process.env.PORT || 3000}`;
   }
 
   async findAll(search?: string, vendorId?: number): Promise<ChargePoint[]> {
