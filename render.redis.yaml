@@ -1,0 +1,9 @@
+# Minimal Render Blueprint: Key Value (Redis) only.
+# Use when full render.yaml hits "domain already taken" — set Blueprint path to
+# render.redis.yaml, apply once, then copy Internal Redis URL into ev-billing-api as REDIS_URL.
+
+services:
+  - type: keyvalue
+    name: ev-billing-redis
+    plan: starter
+    ipAllowList: []

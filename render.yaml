@@ -1,3 +1,7 @@
+# Custom domains (api.cleanmotion…, cleanmotion…) are attached in the Render dashboard
+# on existing services. Omitting `domains` here avoids "domain already taken" when you
+# apply or sync a Blueprint alongside manually configured hostnames.
+
 databases:
   # PostgreSQL Database
   - name: ev-billing-postgres
@@ -16,8 +20,6 @@ services:
   - type: web
     name: ev-billing-api
     runtime: docker
-    domains:
-      - api.cleanmotion.energyprecisions.com
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
     plan: starter
@@ -75,8 +77,6 @@ services:
   - type: web
     name: ev-billing-frontend
     runtime: docker
-    domains:
-      - cleanmotion.energyprecisions.com
     dockerfilePath: ./frontend/Dockerfile.prod
     dockerContext: ./frontend
     plan: starter
