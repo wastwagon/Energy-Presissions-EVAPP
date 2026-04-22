@@ -69,6 +69,9 @@ services:
         value: https://api.cleanmotion.energyprecisions.com
       - key: GOOGLE_CLIENT_ID
         sync: false
+      # Optional: comma-separated charge point IDs blocked from OCPP re-registration (simulators reconnecting after admin delete).
+      - key: BLOCKED_CHARGE_POINT_IDS
+        sync: false
       - key: LOG_RAW_FRAMES
         value: "false"
     healthCheckPath: /health

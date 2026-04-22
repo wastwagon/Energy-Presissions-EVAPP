@@ -61,6 +61,29 @@ export class InternalService {
     this.commandQueueService = service;
   }
 
+  /**
+   * Comma-separated charge point IDs that must not be (re-)registered via OCPP internal upsert.
+   * Set on Render when you remove simulators/test devices but they keep reconnecting and recreating rows.
+   */
+  private parseBlockedChargePointIds(): Set<string> {
+    const raw = process.env.BLOCKED_CHARGE_POINT_IDS ?? '';
+    return new Set(
+      raw
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0),
+    );
+  }
+
+  private assertChargePointRegistrationAllowed(chargePointId: string): void {
+    if (this.parseBlockedChargePointIds().has(chargePointId)) {
+      this.logger.warn(`Blocked OCPP upsert for charge point ${chargePointId} (BLOCKED_CHARGE_POINT_IDS)`);
+      throw new BadRequestException(
+        `Charge point ${chargePointId} is blocked from registration. Remove its ID from BLOCKED_CHARGE_POINT_IDS when the device should be allowed again.`,
+      );
+    }
+  }
+
   async upsertChargePoint(data: {
     chargePointId: string;
     vendor?: string;
@@ -70,6 +93,8 @@ export class InternalService {
     iccid?: string;
     imsi?: string;
   }) {
+    this.assertChargePointRegistrationAllowed(data.chargePointId);
+
     let chargePoint = await this.chargePointRepository.findOne({
       where: { chargePointId: data.chargePointId },
     });

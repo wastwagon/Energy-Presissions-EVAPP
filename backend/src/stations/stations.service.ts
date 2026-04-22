@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import axios from 'axios';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
@@ -68,9 +68,8 @@ export class StationsService {
     // For better performance with large datasets, consider using PostGIS
     const stations = await queryBuilder.getMany();
 
-    // Calculate distance and filter by radius
-    const stationsWithDistance: StationWithDistance[] = [];
-
+    // Pre-filter by distance (no per-station DB round-trips)
+    const candidates: { station: ChargePoint; distance: number }[] = [];
     for (const station of stations) {
       if (!station.locationLatitude || !station.locationLongitude) continue;
 
@@ -82,42 +81,64 @@ export class StationsService {
       );
 
       if (distance <= radiusKm) {
-        // Get connector information
-        const connectors = await this.connectorRepository.find({
-          where: { chargePointId: station.chargePointId },
-        });
-
-        // Filter by connector type if specified
-        if (connectorType) {
-          const filteredConnectors = connectors.filter(
-            (c) => c.connectorType === connectorType,
-          );
-          if (filteredConnectors.length === 0) continue;
-        }
-
-        // Filter by minimum power if specified
-        if (minPowerKw) {
-          const hasMinPower = connectors.some((c) => (c.powerRatingKw || 0) >= minPowerKw);
-          if (!hasMinPower) continue;
-        }
-
-        // Count active sessions
-        const activeSessions = await this.transactionRepository.count({
-          where: {
-            chargePointId: station.chargePointId,
-            status: 'Active',
-          },
-        });
-
-        stationsWithDistance.push(
-          this.buildStationWithDistance(
-            station,
-            connectors,
-            activeSessions,
-            Math.round(distance * 100) / 100,
-          ),
-        );
+        candidates.push({ station, distance: Math.round(distance * 100) / 100 });
       }
+    }
+
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    const candidateIds = candidates.map((c) => c.station.chargePointId);
+
+    // Batch-load connectors and active session counts (avoids N+1 queries per station)
+    const [allConnectors, activeCountRows] = await Promise.all([
+      this.connectorRepository.find({
+        where: { chargePointId: In(candidateIds) },
+      }),
+      this.transactionRepository
+        .createQueryBuilder('t')
+        .select('t.chargePointId', 'cpId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('t.status = :st', { st: 'Active' })
+        .andWhere('t.chargePointId IN (:...ids)', { ids: candidateIds })
+        .groupBy('t.chargePointId')
+        .getRawMany<{ cpId: string; cnt: string }>(),
+    ]);
+
+    const connectorsByCp = new Map<string, Connector[]>();
+    for (const c of allConnectors) {
+      const list = connectorsByCp.get(c.chargePointId) ?? [];
+      list.push(c);
+      connectorsByCp.set(c.chargePointId, list);
+    }
+
+    const activeByCp = new Map<string, number>();
+    for (const row of activeCountRows) {
+      const id = String(row.cpId ?? '');
+      if (id) activeByCp.set(id, parseInt(String(row.cnt), 10) || 0);
+    }
+
+    const stationsWithDistance: StationWithDistance[] = [];
+
+    for (const { station, distance } of candidates) {
+      const connectors = connectorsByCp.get(station.chargePointId) ?? [];
+
+      if (connectorType) {
+        const filteredConnectors = connectors.filter((c) => c.connectorType === connectorType);
+        if (filteredConnectors.length === 0) continue;
+      }
+
+      if (minPowerKw) {
+        const hasMinPower = connectors.some((c) => (c.powerRatingKw || 0) >= minPowerKw);
+        if (!hasMinPower) continue;
+      }
+
+      const activeSessions = activeByCp.get(station.chargePointId) ?? 0;
+
+      stationsWithDistance.push(
+        this.buildStationWithDistance(station, connectors, activeSessions, distance),
+      );
     }
 
     // Sort by distance and limit results
