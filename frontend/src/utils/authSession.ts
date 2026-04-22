@@ -46,6 +46,12 @@ export function getStoredAccountType(): string | undefined {
   return getStoredUser()?.accountType;
 }
 
+/** Web app (non-staff) accounts that use the customer layout and /user routes. */
+export function isCustomerOrWalkInAccount(user?: SessionUser | null): boolean {
+  const t = user?.accountType;
+  return t === 'Customer' || t === 'WalkIn';
+}
+
 export function getStoredUserId(): number | null {
   const user = getStoredUser();
   return typeof user?.id === 'number' ? user.id : null;

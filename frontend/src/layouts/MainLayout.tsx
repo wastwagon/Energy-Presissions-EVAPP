@@ -12,9 +12,21 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
-import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { LOGO_PUBLIC_URL } from '../config/branding';
-import { clearSession, getDashboardPathForAccountType, getStoredUser, hasValidSession } from '../utils/authSession';
+import {
+  clearSession,
+  getDashboardPathForAccountType,
+  getStoredUser,
+  hasValidSession,
+  isCustomerOrWalkInAccount,
+} from '../utils/authSession';
+import MenuIcon from '@mui/icons-material/Menu';
+import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
+import {
+  customerPremiumAppBarActionIconSx,
+  customerPremiumMobileAppBarSx,
+} from '../theme/chargingPremiumShell';
+import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 
 export function MainLayout() {
   const navigate = useNavigate();
@@ -22,6 +34,7 @@ export function MainLayout() {
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
 
   useEffect(() => {
     const userData = getStoredUser();
@@ -38,6 +51,9 @@ export function MainLayout() {
   const getDashboardPath = () => {
     return getDashboardPathForAccountType(user?.accountType);
   };
+
+  const isCustomer = isCustomerOrWalkInAccount(user);
+  const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
 
   return (
     <Box
@@ -58,8 +74,9 @@ export function MainLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...jampackAppBarSx,
-          color: 'text.primary',
+          ...(usePremiumCustomerHeader
+            ? customerPremiumMobileAppBarSx
+            : { ...jampackAppBarSx, color: 'text.primary' }),
         }}
       >
         <Toolbar
@@ -72,18 +89,59 @@ export function MainLayout() {
             alignItems: 'center',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
+          {usePremiumCustomerHeader && (
+            <IconButton
+              onClick={() => setNavDrawerOpen(true)}
+              aria-label="Open app menu"
+              aria-expanded={navDrawerOpen}
+              aria-controls="customer-app-nav-drawer-main"
+              edge="start"
+              sx={customerPremiumAppBarActionIconSx}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 1, sm: 2 },
+              flexGrow: 1,
+              minWidth: 0,
+            }}
+          >
+            {usePremiumCustomerHeader && (
+              <Typography
+                component="div"
+                variant="h6"
+                sx={{
+                  display: { xs: 'block', sm: 'none' },
+                  fontWeight: 700,
+                  color: 'common.white',
+                  letterSpacing: '-0.02em',
+                  fontSize: '0.95rem',
+                  mr: 0.5,
+                }}
+              >
+                CleanMotion
+              </Typography>
+            )}
             <Box
               component="img"
               src={LOGO_PUBLIC_URL}
               alt="Clean Motion Ghana"
               draggable={false}
               sx={{
-                height: { xs: 'clamp(48px, 14vw, 58px)', sm: 56, md: 60 },
+                height: { xs: 'clamp(40px, 12vw, 50px)', sm: 56, md: 60 },
                 width: 'auto',
-                maxWidth: { xs: 'min(280px, 72vw)', sm: 320 },
+                maxWidth: { xs: 'min(220px, 58vw)', sm: 320 },
                 objectFit: 'contain',
                 display: 'block',
+                ...(usePremiumCustomerHeader
+                  ? {
+                      filter: 'brightness(0) invert(1)',
+                    }
+                  : {}),
               }}
             />
           </Box>
@@ -96,7 +154,7 @@ export function MainLayout() {
                   maxWidth: { xs: 100, sm: 180 },
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  color: 'text.primary',
+                  color: usePremiumCustomerHeader ? 'common.white' : 'text.primary',
                 }}
               >
                 {user.name || user.email}
@@ -108,7 +166,7 @@ export function MainLayout() {
                 aria-label="Logout"
                 sx={{
                   ...sxObject(theme, premiumIconButtonTouchSx),
-                  color: 'text.primary',
+                  color: usePremiumCustomerHeader ? 'common.white' : 'text.primary',
                 }}
               >
                 <LogoutIcon />
@@ -122,6 +180,13 @@ export function MainLayout() {
           )}
         </Toolbar>
       </AppBar>
+      {usePremiumCustomerHeader && (
+        <CustomerAppNavDrawer
+          id="customer-app-nav-drawer-main"
+          open={navDrawerOpen}
+          onClose={() => setNavDrawerOpen(false)}
+        />
+      )}
       <Box sx={mainLayoutFixedHeaderGapSx} aria-hidden />
       <Box
         sx={{

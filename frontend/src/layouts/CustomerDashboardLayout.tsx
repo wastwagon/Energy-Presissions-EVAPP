@@ -23,7 +23,13 @@ import { customerBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { brandColors } from '../theme';
-import { clearSession, getStoredUser } from '../utils/authSession';
+import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
+import MenuIcon from '@mui/icons-material/Menu';
+import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
+import {
+  customerPremiumAppBarActionIconSx,
+  customerPremiumMobileAppBarSx,
+} from '../theme/chargingPremiumShell';
 import {
   JAMPACK_PAGE_BG,
   jampackAppBarSx,
@@ -40,7 +46,9 @@ export function CustomerDashboardLayout() {
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const open = Boolean(anchorEl);
+  const isCustomer = isCustomerOrWalkInAccount(user);
 
   useEffect(() => {
     const userData = getStoredUser();
@@ -93,10 +101,41 @@ export function CustomerDashboardLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...jampackAppBarSx,
+          ...(showBottomNav && isCustomer
+            ? customerPremiumMobileAppBarSx
+            : { ...jampackAppBarSx, color: 'text.primary' }),
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important', gap: 1 }}>
+          {showBottomNav && isCustomer && (
+            <IconButton
+              onClick={() => setNavDrawerOpen(true)}
+              aria-label="Open app menu"
+              aria-expanded={navDrawerOpen}
+              aria-controls="customer-app-nav-drawer"
+              edge="start"
+              sx={customerPremiumAppBarActionIconSx}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          {showBottomNav && isCustomer && (
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                fontSize: { xs: '1rem', sm: '1.0625rem' },
+                color: 'common.white',
+                minWidth: 0,
+                flex: '0 1 auto',
+                mr: 1,
+              }}
+            >
+              CleanMotion
+            </Typography>
+          )}
           <Box
             component="nav"
             aria-label="Primary"
@@ -142,13 +181,30 @@ export function CustomerDashboardLayout() {
               );
             })}
           </Box>
-          <Box sx={{ flexGrow: 1, display: { xs: 'flex', lg: 'none' }, minWidth: 0 }} />
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: { xs: 'flex', lg: 'none' },
+              minWidth: 0,
+            }}
+          />
           <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: showBottomNav && isCustomer ? 'common.white' : 'text.primary',
+                }}
+              >
                 {user?.firstName} {user?.lastName}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: showBottomNav && isCustomer ? 'rgba(255,255,255,0.65)' : 'text.secondary',
+                }}
+              >
                 {user?.email}
               </Typography>
             </Box>
@@ -259,6 +315,9 @@ export function CustomerDashboardLayout() {
           </Box>
         </Toolbar>
       </AppBar>
+      {showBottomNav && isCustomer && (
+        <CustomerAppNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
+      )}
       <Box
         sx={{
           flex: 1,

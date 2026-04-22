@@ -11,6 +11,20 @@ const ink = '#0a0a0b';
 const ink2 = '#121214';
 const stroke = 'rgba(255, 255, 255, 0.08)';
 
+/** Dark app bar (mobile) — pairs with `CustomerAppNavDrawer` for signed-in customers. */
+export const customerPremiumMobileAppBarSx: SystemStyleObject<Theme> = {
+  background: `linear-gradient(180deg, ${ink} 0%, #131316 100%)`,
+  color: 'common.white',
+  boxShadow: '0 2px 16px rgba(0, 0, 0, 0.2)',
+  borderBottom: '1px solid',
+  borderColor: stroke,
+};
+
+export const customerPremiumAppBarActionIconSx: SystemStyleObject<Theme> = {
+  color: 'common.white',
+  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+};
+
 export const chargingHeroShellSx: SystemStyleObject<Theme> = {
   background: `linear-gradient(160deg, ${ink} 0%, ${ink2} 55%, #16161a 100%)`,
   color: 'common.white',

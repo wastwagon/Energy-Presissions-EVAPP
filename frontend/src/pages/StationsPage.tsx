@@ -30,9 +30,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapIcon from '@mui/icons-material/Map';
-import MenuIcon from '@mui/icons-material/Menu';
 import ListIcon from '@mui/icons-material/List';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -58,7 +56,6 @@ import {
 import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
-import { StationsNavDrawer } from '../components/stations/StationsNavDrawer';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
@@ -72,6 +69,9 @@ import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 const STATIONS_VIEW_KEY = 'cm_stations_view_v1';
 
 type SortBy = 'distance' | 'price' | 'name';
+
+/** Server-side search radius (km) when loading by GPS; not shown in the UI. */
+const NEARBY_LOAD_RADIUS_KM = 50;
 
 function formatStationsLoadError(err: unknown): string {
   const e = err as { message?: string; code?: string; response?: { data?: { message?: string } } };
@@ -120,13 +120,11 @@ export function StationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const searchTermRef = useRef(searchTerm);
   searchTermRef.current = searchTerm;
-  const [radius, setRadius] = useState(50); // Default 50km radius
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [pendingStationForLogin, setPendingStationForLogin] = useState<StationWithDistance | null>(null);
-  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
 
   // Check authentication status and load favorites
   useEffect(() => {
@@ -208,7 +206,7 @@ export function StationsPage() {
         const nearbyStations = await stationsApi.findNearby({
           latitude: lat,
           longitude: lng,
-          radiusKm: radius,
+          radiusKm: NEARBY_LOAD_RADIUS_KM,
           status: ['Available', 'Charging', 'Preparing', 'Finishing'], // Only show active stations
           limit: 50,
         });
@@ -221,7 +219,7 @@ export function StationsPage() {
         setLoading(false);
       }
     },
-    [bumpMapFit, radius],
+    [bumpMapFit],
   );
 
   const loadNearbyStationsRef = useRef(loadNearbyStations);
@@ -280,26 +278,6 @@ export function StationsPage() {
       setLocationError('Geolocation is not supported by your browser.');
     }
   }, []);
-
-  const handleRefreshLocation = () => {
-    if (navigator.geolocation) {
-      setLoading(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserLocation({ lat, lng });
-          setUserAreaLabel(null);
-          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
-          loadNearbyStations(lat, lng);
-        },
-        (_err) => {
-          setLocationError('Failed to refresh location');
-          setLoading(false);
-        },
-      );
-    }
-  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -440,20 +418,6 @@ export function StationsPage() {
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
-          {isAuthenticated && (
-            <Tooltip title="Menu — dashboard, wallet, and more">
-              <IconButton
-                onClick={() => setNavDrawerOpen(true)}
-                color="default"
-                aria-label="Open navigation menu"
-                aria-expanded={navDrawerOpen}
-                aria-controls="stations-nav-drawer"
-                sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Tooltip>
-          )}
           <Tooltip title="List view">
             <IconButton
               onClick={() => setViewMode('list')}
@@ -476,10 +440,6 @@ export function StationsPage() {
           </Tooltip>
         </Box>
       </Box>
-
-      {isAuthenticated && (
-        <StationsNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
-      )}
 
       {locationError && (
         <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLocationError(null)}>
@@ -505,7 +465,7 @@ export function StationsPage() {
           }}
         >
           <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
-            <Grid item xs={12} md={5}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 size="small"
@@ -527,19 +487,7 @@ export function StationsPage() {
                 sx={(th) => sxObject(th, authFormFieldSx)}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                label="Radius (km)"
-                value={radius}
-                onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
-                inputProps={{ min: 1, max: 200 }}
-                sx={(th) => sxObject(th, authFormFieldSx)}
-              />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid item xs={12} sm={4} md={3}>
               <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
                 <InputLabel id="stations-sort-label-list">Sort</InputLabel>
                 <Select
@@ -554,34 +502,19 @@ export function StationsPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={4} md={3}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, height: '100%' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSearch}
-                  startIcon={<SearchIcon />}
-                  fullWidth
-                  size="medium"
-                  disableElevation
-                  sx={compactContainedCtaSx}
-                >
-                  Search
-                </Button>
-                {userLocation ? (
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleRefreshLocation}
-                    startIcon={<MyLocationIcon />}
-                    fullWidth
-                    size="medium"
-                    sx={compactOutlinedCtaSx}
-                  >
-                    Near me
-                  </Button>
-                ) : null}
-              </Box>
+            <Grid item xs={12} sm={8} md={3}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSearch}
+                startIcon={<SearchIcon />}
+                fullWidth
+                size="medium"
+                disableElevation
+                sx={{ ...compactContainedCtaSx, height: { sm: 40 } }}
+              >
+                Search
+              </Button>
             </Grid>
           </Grid>
         </Paper>
@@ -684,19 +617,7 @@ export function StationsPage() {
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="number"
-                  label="Radius (km)"
-                  value={radius}
-                  onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
-                  inputProps={{ min: 1, max: 200 }}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-              </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={12} sm={6}>
                 <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
                   <InputLabel id="stations-sort-label-map">Sort</InputLabel>
                   <Select
@@ -712,30 +633,17 @@ export function StationsPage() {
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSearch}
-                    startIcon={<SearchIcon />}
-                    fullWidth
-                    disableElevation
-                    sx={compactContainedCtaSx}
-                  >
-                    Search
-                  </Button>
-                  {userLocation ? (
-                    <Button
-                      variant="outlined"
-                      onClick={handleRefreshLocation}
-                      startIcon={<MyLocationIcon />}
-                      fullWidth
-                      sx={compactOutlinedCtaSx}
-                    >
-                      Near me
-                    </Button>
-                  ) : null}
-                </Box>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSearch}
+                  startIcon={<SearchIcon />}
+                  fullWidth
+                  disableElevation
+                  sx={compactContainedCtaSx}
+                >
+                  Search
+                </Button>
               </Grid>
             </Grid>
             {loading && stations.length === 0 && (
@@ -747,7 +655,7 @@ export function StationsPage() {
               <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2 }}>
                 <Typography variant="body2" color="text.secondary" align="center">
                   {userLocation
-                    ? `No stations in range. Try a larger radius or another search.`
+                    ? 'No stations found for this area. Try a different search.'
                     : 'Enable location or search by area or station ID.'}
                 </Typography>
               </Paper>
@@ -778,7 +686,7 @@ export function StationsPage() {
       {userLocation && (
         <Alert severity="info" sx={{ mb: 2 }}>
           <Typography variant="body2" component="div">
-            Showing stations within {radius} km of{' '}
+            Showing stations near{' '}
             {userAreaLabel ? (
               <Box component="span" sx={{ fontWeight: 600 }}>
                 {userAreaLabel}
@@ -824,7 +732,7 @@ export function StationsPage() {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {userLocation
-              ? `No charging stations within ${radius} km. Try a larger radius or another search.`
+              ? 'No charging stations found for this area. Try a different search.'
               : 'Enable location or search by city, address, or station ID.'}
           </Typography>
         </Paper>
