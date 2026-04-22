@@ -1,0 +1,8 @@
+/* Leaflet divIcon: remove default leaflet image positioning */
+.stations-map-marker-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+.stations-map-marker-wrap--selected {
+  z-index: 1000 !important;
+}

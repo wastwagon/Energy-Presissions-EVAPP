@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -7,6 +7,7 @@ import {
   Grid,
   Chip,
   CircularProgress,
+  LinearProgress,
   Alert,
   TextField,
   InputAdornment,
@@ -21,6 +22,10 @@ import {
   ListItemText,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
@@ -51,6 +56,7 @@ import {
 } from '../theme/jampackShell';
 import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { StationListCard } from '../components/stations/StationListCard';
+import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
 import { getStoredUser, hasValidSession } from '../utils/authSession';
@@ -59,6 +65,10 @@ import {
   openGoogleMapsDirections,
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
+
+const STATIONS_VIEW_KEY = 'cm_stations_view_v1';
+
+type SortBy = 'distance' | 'price' | 'name';
 
 function formatStationsLoadError(err: unknown): string {
   const e = err as { message?: string; code?: string; response?: { data?: { message?: string } } };
@@ -74,7 +84,26 @@ function formatStationsLoadError(err: unknown): string {
 export function StationsPage() {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
+    try {
+      const v = sessionStorage.getItem(STATIONS_VIEW_KEY);
+      if (v === 'list' || v === 'map') {
+        return v;
+      }
+    } catch {
+      /* ignore */
+    }
+    return 'map';
+  });
+  const [sortBy, setSortBy] = useState<SortBy>('distance');
+  const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
+  /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
+  const [mapFitToken, setMapFitToken] = useState(0);
+  /** Reject findInBounds until this time to avoid spurious fetches right after `fitBounds` / `flyTo`. */
+  const [ignoreViewportBoundsMoveEndsBefore, setIgnoreViewportBoundsMoveEndsBefore] = useState(
+    () => Date.now() + 2000,
+  );
+  const [viewportStationsLoading, setViewportStationsLoading] = useState(false);
   const [stations, setStations] = useState<StationWithDistance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +115,8 @@ export function StationsPage() {
   const [startChargingDialogOpen, setStartChargingDialogOpen] = useState(false);
   const [selectedStationForCharging, setSelectedStationForCharging] = useState<StationWithDistance | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const searchTermRef = useRef(searchTerm);
+  searchTermRef.current = searchTerm;
   const [radius, setRadius] = useState(50); // Default 50km radius
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -107,38 +138,41 @@ export function StationsPage() {
     }
   }, []);
 
-  // Get user's current location
   useEffect(() => {
-    if (navigator.geolocation) {
-      setLoading(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserLocation({ lat, lng });
-          setLocationError(null);
-          setUserAreaLabel(null);
-          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
-          loadNearbyStations(lat, lng);
-        },
-        (err) => {
-          setLocationError(
-            err.message === 'User denied Geolocation'
-              ? 'Location access denied. Please enable location services to find nearby stations.'
-              : 'Unable to get your location. Please search for stations manually.',
-          );
-          setLoading(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        },
-      );
-    } else {
-      setLocationError('Geolocation is not supported by your browser.');
+    try {
+      sessionStorage.setItem(STATIONS_VIEW_KEY, viewMode);
+    } catch {
+      /* ignore */
     }
+  }, [viewMode]);
+
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+
+  const bumpMapFit = useCallback(() => {
+    setMapFitToken((n) => n + 1);
+    setIgnoreViewportBoundsMoveEndsBefore(Date.now() + 1500);
   }, []);
+
+  const sortedStations = useMemo(() => {
+    const list = [...stations];
+    list.sort((a, b) => {
+      if (sortBy === 'price') {
+        const pa = a.pricePerKwh != null ? Number(a.pricePerKwh) : Number.POSITIVE_INFINITY;
+        const pb = b.pricePerKwh != null ? Number(b.pricePerKwh) : Number.POSITIVE_INFINITY;
+        if (Number.isFinite(pa) && Number.isFinite(pb) && pa !== pb) {
+          return pa - pb;
+        }
+      }
+      if (sortBy === 'name') {
+        const na = (a.locationName || a.chargePointId).toLowerCase();
+        const nb = (b.locationName || b.chargePointId).toLowerCase();
+        return na.localeCompare(nb);
+      }
+      return a.distanceKm - b.distanceKm;
+    });
+    return list;
+  }, [stations, sortBy]);
 
   // WebSocket listener for real-time status updates
   useEffect(() => {
@@ -162,25 +196,86 @@ export function StationsPage() {
     };
   }, []);
 
-  const loadNearbyStations = async (lat: number, lng: number) => {
+  const loadNearbyStations = useCallback(
+    async (lat: number, lng: number) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const nearbyStations = await stationsApi.findNearby({
+          latitude: lat,
+          longitude: lng,
+          radiusKm: radius,
+          status: ['Available', 'Charging', 'Preparing', 'Finishing'], // Only show active stations
+          limit: 50,
+        });
+        setStations(nearbyStations);
+        bumpMapFit();
+      } catch (err: unknown) {
+        setError(formatStationsLoadError(err));
+        console.error('Error loading nearby stations:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [bumpMapFit, radius],
+  );
+
+  const loadNearbyStationsRef = useRef(loadNearbyStations);
+  loadNearbyStationsRef.current = loadNearbyStations;
+
+  const handleViewportBoundsStable = useCallback(async (bounds: MapViewportBounds) => {
+    if (viewModeRef.current !== 'map' || searchTermRef.current.trim() !== '') {
+      return;
+    }
+    const activeStatuses: string[] = ['Available', 'Charging', 'Preparing', 'Finishing'];
+    setViewportStationsLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      const nearbyStations = await stationsApi.findNearby({
-        latitude: lat,
-        longitude: lng,
-        radiusKm: radius,
-        status: ['Available', 'Charging', 'Preparing', 'Finishing'], // Only show active stations
-        limit: 50,
+      const list = await stationsApi.findInBounds({
+        ...bounds,
+        status: activeStatuses,
       });
-      setStations(nearbyStations);
+      if (viewModeRef.current === 'map' && searchTermRef.current.trim() === '') {
+        setStations(list);
+      }
     } catch (err: unknown) {
       setError(formatStationsLoadError(err));
-      console.error('Error loading nearby stations:', err);
     } finally {
-      setLoading(false);
+      setViewportStationsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      setLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setUserLocation({ lat, lng });
+          setLocationError(null);
+          setUserAreaLabel(null);
+          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
+          loadNearbyStationsRef.current(lat, lng);
+        },
+        (err) => {
+          setLocationError(
+            err.message === 'User denied Geolocation'
+              ? 'Location access denied. Please enable location services to find nearby stations.'
+              : 'Unable to get your location. Please search for stations manually.',
+          );
+          setLoading(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    } else {
+      setLocationError('Geolocation is not supported by your browser.');
+    }
+  }, []);
 
   const handleRefreshLocation = () => {
     if (navigator.geolocation) {
@@ -219,6 +314,7 @@ export function StationsPage() {
         userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : undefined,
       );
       setStations(results);
+      bumpMapFit();
     } catch (err: unknown) {
       setError(formatStationsLoadError(err));
     } finally {
@@ -227,9 +323,16 @@ export function StationsPage() {
   };
 
   const handleStationClick = (station: StationWithDistance) => {
+    setMapSelectionId(station.chargePointId);
     setSelectedStation(station);
     setDialogOpen(true);
   };
+
+  const closeDetailsDialog = useCallback(() => {
+    setDialogOpen(false);
+    setMapSelectionId(null);
+    setSelectedStation(null);
+  }, []);
 
   const handleGetDirections = (e: React.MouseEvent, station: StationWithDistance) => {
     e.stopPropagation(); // Prevent card click
@@ -326,17 +429,15 @@ export function StationsPage() {
               <ListIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Map view (coming soon)">
-            <span>
-              <IconButton
-                disabled
-                color="default"
-                aria-label="Map view coming soon"
-                sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
-              >
-                <MapIcon />
-              </IconButton>
-            </span>
+          <Tooltip title="Map view: stations on a map with list below (like trip planners)">
+            <IconButton
+              onClick={() => setViewMode('map')}
+              color={viewMode === 'map' ? 'primary' : 'default'}
+              aria-label="Switch to map view"
+              sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
+            >
+              <MapIcon />
+            </IconButton>
           </Tooltip>
         </Box>
       </Box>
@@ -355,82 +456,283 @@ export function StationsPage() {
         </Alert>
       )}
 
-      {/* Search and filter — mobile-first, full-width primary actions on xs */}
-      <Paper
-        elevation={0}
-        sx={{
-          ...jampackKpiCardBaseSx,
-          p: { xs: 2, sm: 2.25 },
-          mb: 3,
-          boxShadow: `0 8px 28px ${alpha(theme.palette.text.primary, 0.06)}`,
-        }}
-      >
-        <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="City, address, region, or station ID…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              label="Radius (km)"
-              value={radius}
-              onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
-              inputProps={{ min: 1, max: 200 }}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, height: '100%' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSearch}
-                startIcon={<SearchIcon />}
+      {/* List view: search + sort */}
+      {viewMode === 'list' && (
+        <Paper
+          elevation={0}
+          sx={{
+            ...jampackKpiCardBaseSx,
+            p: { xs: 2, sm: 2.25 },
+            mb: 3,
+            boxShadow: `0 8px 28px ${alpha(theme.palette.text.primary, 0.06)}`,
+          }}
+        >
+          <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
+            <Grid item xs={12} md={5}>
+              <TextField
                 fullWidth
-                size="medium"
-                disableElevation
-                sx={compactContainedCtaSx}
-              >
-                Search
-              </Button>
-              {userLocation ? (
+                size="small"
+                placeholder="City, address, region, or station ID…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                label="Radius (km)"
+                value={radius}
+                onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
+                inputProps={{ min: 1, max: 200 }}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
+                <InputLabel id="stations-sort-label-list">Sort</InputLabel>
+                <Select
+                  labelId="stations-sort-label-list"
+                  label="Sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortBy)}
+                >
+                  <MenuItem value="distance">Distance</MenuItem>
+                  <MenuItem value="price">Price (low to high)</MenuItem>
+                  <MenuItem value="name">Name</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4} md={3}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, height: '100%' }}>
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   color="primary"
-                  onClick={handleRefreshLocation}
-                  startIcon={<MyLocationIcon />}
+                  onClick={handleSearch}
+                  startIcon={<SearchIcon />}
                   fullWidth
                   size="medium"
-                  sx={compactOutlinedCtaSx}
+                  disableElevation
+                  sx={compactContainedCtaSx}
                 >
-                  Near me
+                  Search
                 </Button>
-              ) : null}
-            </Box>
+                {userLocation ? (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleRefreshLocation}
+                    startIcon={<MyLocationIcon />}
+                    fullWidth
+                    size="medium"
+                    sx={compactOutlinedCtaSx}
+                  >
+                    Near me
+                  </Button>
+                ) : null}
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
+      )}
+
+      {/* Map + bottom sheet (trip-planner style) */}
+      {viewMode === 'map' && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0,
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              height: { xs: '38dvh', sm: 400 },
+              minHeight: 200,
+              position: 'relative',
+              borderRadius: { xs: 0, sm: 1 },
+              overflow: 'hidden',
+              mx: { xs: -2, sm: 0 },
+              border: (t) => `1px solid ${t.palette.divider}`,
+            }}
+          >
+            {loading && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'rgba(255,255,255,0.55)',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            <StationsMapView
+              stations={stations}
+              userLocation={userLocation}
+              selectedChargePointId={mapSelectionId}
+              onSelectStation={handleStationClick}
+              mapFitToken={mapFitToken}
+              ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
+              onViewportBoundsStable={handleViewportBoundsStable}
+              viewportSearchEnabled={viewMode === 'map' && stations.length > 0 && !searchTerm.trim()}
+            />
+          </Box>
+          <Paper
+            elevation={3}
+            sx={{
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              mt: { xs: -0.5, sm: 0 },
+              p: { xs: 2, sm: 2.25 },
+              flex: 1,
+              minHeight: 180,
+              maxHeight: { xs: 'min(48dvh, 480px)', sm: 'none' },
+              overflow: 'auto',
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+              Find stations
+            </Typography>
+            {viewportStationsLoading && (
+              <LinearProgress
+                color="primary"
+                sx={{ mb: 1.5, borderRadius: 0.5, width: '100%' }}
+                aria-label="Loading stations in map area"
+              />
+            )}
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch" sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search city, address, or ID…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  label="Radius (km)"
+                  value={radius}
+                  onChange={(e) => setRadius(parseFloat(e.target.value) || 50)}
+                  inputProps={{ min: 1, max: 200 }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
+                  <InputLabel id="stations-sort-label-map">Sort</InputLabel>
+                  <Select
+                    labelId="stations-sort-label-map"
+                    label="Sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortBy)}
+                  >
+                    <MenuItem value="distance">Distance</MenuItem>
+                    <MenuItem value="price">Price</MenuItem>
+                    <MenuItem value="name">Name</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSearch}
+                    startIcon={<SearchIcon />}
+                    fullWidth
+                    disableElevation
+                    sx={compactContainedCtaSx}
+                  >
+                    Search
+                  </Button>
+                  {userLocation ? (
+                    <Button
+                      variant="outlined"
+                      onClick={handleRefreshLocation}
+                      startIcon={<MyLocationIcon />}
+                      fullWidth
+                      sx={compactOutlinedCtaSx}
+                    >
+                      Near me
+                    </Button>
+                  ) : null}
+                </Box>
+              </Grid>
+            </Grid>
+            {loading && stations.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                Finding stations…
+              </Typography>
+            )}
+            {!loading && stations.length === 0 && !error && (
+              <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2 }}>
+                <Typography variant="body2" color="text.secondary" align="center">
+                  {userLocation
+                    ? `No stations in range. Try a larger radius or another search.`
+                    : 'Enable location or search by area or station ID.'}
+                </Typography>
+              </Paper>
+            )}
+            {!loading && sortedStations.length > 0 && (
+              <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                {sortedStations.map((station) => (
+                  <Grid item xs={12} sm={6} key={station.chargePointId}>
+                    <StationListCard
+                      station={station}
+                      isAuthenticated={isAuthenticated}
+                      isFavorite={favoriteIds.includes(station.chargePointId)}
+                      onOpenDetails={handleStationClick}
+                      onCardKeyDown={handleStationCardKeyDown(station)}
+                      onDirections={handleGetDirections}
+                      onStartCharging={handleStartCharging}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Paper>
+        </Box>
+      )}
 
       {/* User Location Info */}
       {userLocation && (
@@ -451,15 +753,15 @@ export function StationsPage() {
         </Alert>
       )}
 
-      {/* Loading State */}
-      {loading && (
+      {/* Loading (list view only; map view uses map overlay) */}
+      {loading && viewMode === 'list' && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
         </Box>
       )}
 
-      {/* Stations List */}
-      {!loading && stations.length === 0 && !error && (
+      {/* Empty state — list view */}
+      {viewMode === 'list' && !loading && stations.length === 0 && !error && (
         <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
           <Box
             sx={(t) => ({
@@ -488,10 +790,10 @@ export function StationsPage() {
         </Paper>
       )}
 
-      {/* Stations — single column on phones, multi-column from sm */}
-      {!loading && stations.length > 0 && (
+      {/* Stations — list view */}
+      {viewMode === 'list' && !loading && sortedStations.length > 0 && (
         <Grid container spacing={{ xs: 2, sm: 2.5 }}>
-          {stations.map((station) => (
+          {sortedStations.map((station) => (
             <Grid item xs={12} sm={6} lg={4} key={station.chargePointId}>
               <StationListCard
                 station={station}
@@ -616,7 +918,7 @@ export function StationsPage() {
               </List>
             </DialogContent>
             <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-              <Button onClick={() => setDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+              <Button onClick={closeDetailsDialog} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
                 Close
               </Button>
               {selectedStation.locationLatitude && selectedStation.locationLongitude && (
