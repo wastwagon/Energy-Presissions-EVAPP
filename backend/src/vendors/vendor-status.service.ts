@@ -25,15 +25,20 @@ export class VendorStatusService implements OnModuleInit, OnModuleDestroy {
     // Only initialize Redis if URL is provided and not localhost (for production)
     if (redisUrl && !redisUrl.includes('localhost') && !redisUrl.includes('127.0.0.1')) {
       try {
+        const retryStrategy = (times: number) => {
+          if (times > 15) return null;
+          return Math.min(times * 200, 3000);
+        };
         this.redis = new Redis(redisUrl, {
-          retryStrategy: () => null, // Disable retries to fail fast
-          maxRetriesPerRequest: null, // Disable per-request retries
-          enableOfflineQueue: false, // Don't queue commands when offline
+          retryStrategy,
+          maxRetriesPerRequest: 3,
+          enableOfflineQueue: true,
         });
+        // Subscriber: queue SUBSCRIBE until the socket is ready (avoids "Stream isn't writeable" at boot).
         this.redisSubscriber = new Redis(redisUrl, {
-          retryStrategy: () => null,
+          retryStrategy,
           maxRetriesPerRequest: null,
-          enableOfflineQueue: false,
+          enableOfflineQueue: true,
         });
         
         // Handle connection errors gracefully
@@ -61,13 +66,12 @@ export class VendorStatusService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     if (this.redisEnabled && this.redisSubscriber) {
       try {
-        // Subscribe to vendor status changes
-        await this.redisSubscriber.subscribe(this.PUBSUB_CHANNEL);
         this.redisSubscriber.on('message', (channel, message) => {
           if (channel === this.PUBSUB_CHANNEL) {
             this.handleStatusChange(JSON.parse(message));
           }
         });
+        await this.redisSubscriber.subscribe(this.PUBSUB_CHANNEL);
       } catch (error) {
         this.logger.warn(`Failed to subscribe to Redis channel: ${error.message}`);
         this.redisEnabled = false;
