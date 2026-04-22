@@ -94,6 +94,31 @@ export class ChargePointsController {
     return this.chargePointsService.delete(id);
   }
 
+  @Post(':id/clear-stale-operational-state')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({
+    summary:
+      'Clear stuck Charging/Preparing state when there is no Active transaction (resets connector rows in DB)',
+  })
+  @ApiResponse({ status: 200, description: 'Stale operational state cleared' })
+  @ApiResponse({ status: 400, description: 'Active session still exists' })
+  @ApiResponse({ status: 403, description: 'Admin may only clear devices for their vendor' })
+  async clearStaleOperationalState(
+    @Param('id') id: string,
+    @Request() req: { user: { accountType: string; vendorId?: number } },
+  ) {
+    const cp = await this.chargePointsService.findOne(id);
+    if (req.user.accountType === 'Admin') {
+      if (cp.vendorId == null || req.user.vendorId == null || cp.vendorId !== req.user.vendorId) {
+        throw new ForbiddenException('You can only manage charge points that belong to your vendor.');
+      }
+    }
+    return this.chargePointsService.clearStaleOperationalState(id);
+  }
+
   @Get(':id/status')
   @ApiOperation({ summary: 'Get charge point status' })
   @ApiResponse({ status: 200, description: 'Charge point status' })

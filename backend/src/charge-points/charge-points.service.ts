@@ -53,34 +53,43 @@ export class ChargePointsService {
     }
 
     const chargePoints = await queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
-    
+
+    const cpIds = chargePoints.map((cp) => cp.chargePointId);
+    const activeCountByCp = new Map<string, number>();
+    if (cpIds.length > 0) {
+      const rows = await this.transactionRepository
+        .createQueryBuilder('t')
+        .select('t.chargePointId', 'cpId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('t.status = :st', { st: 'Active' })
+        .andWhere('t.chargePointId IN (:...cpIds)', { cpIds })
+        .groupBy('t.chargePointId')
+        .getRawMany<{ cpId: string; cnt: string }>();
+      for (const r of rows) {
+        const id = String(r.cpId ?? (r as { cpid?: string }).cpid ?? '');
+        if (id) activeCountByCp.set(id, parseInt(String(r.cnt), 10) || 0);
+      }
+    }
+
     // Update status based on active transactions and connector status
     for (const cp of chargePoints) {
-      // Check for active transactions
-      const activeTransactions = await this.transactionRepository.count({
-        where: {
-          chargePointId: cp.chargePointId,
-          status: 'Active',
-        },
-      });
-      
+      const activeTransactions = activeCountByCp.get(cp.chargePointId) ?? 0;
+      cp.activeTransactionCount = activeTransactions;
+
       if (activeTransactions > 0) {
-        // If there's an active transaction, status should be "Charging"
         cp.status = 'Charging';
       } else {
-        // Check connector status - if any connector is charging, set status to Charging
         const connectors = await this.connectorRepository.find({
           where: { chargePointId: cp.chargePointId },
         });
-        
-        const hasChargingConnector = connectors.some(c => c.status === 'Charging');
+
+        const hasChargingConnector = connectors.some((c) => c.status === 'Charging');
         if (hasChargingConnector) {
           cp.status = 'Charging';
         }
-        // Otherwise keep the original status (Available, Offline, etc.)
       }
     }
-    
+
     return chargePoints;
   }
 
@@ -92,6 +101,11 @@ export class ChargePointsService {
     if (!chargePoint) {
       throw new NotFoundException(`Charge point ${chargePointId} not found`);
     }
+
+    const activeTransactions = await this.transactionRepository.count({
+      where: { chargePointId, status: 'Active' },
+    });
+    chargePoint.activeTransactionCount = activeTransactions;
 
     return chargePoint;
   }
@@ -159,6 +173,61 @@ export class ChargePointsService {
     });
 
     this.logger.log(`Charge point ${chargePointId} deleted`);
+  }
+
+  /**
+   * When connectors or CP row show Charging/Preparing but there is no Active transaction,
+   * reset stored connector + CP status so ops can delete or re-use the device.
+   * Does not send OCPP RemoteStop (use remoteStopTransaction when a real session exists).
+   */
+  async clearStaleOperationalState(chargePointId: string): Promise<{
+    clearedConnectors: number;
+    chargePointStatus: string;
+  }> {
+    const cp = await this.findOne(chargePointId);
+    const active = await this.transactionRepository.count({
+      where: { chargePointId, status: 'Active' },
+    });
+    if (active > 0) {
+      throw new BadRequestException(
+        'This charge point has an active billing session. Use Remote Stop with the transaction ID, or end the session from Charging Sessions, before clearing state.',
+      );
+    }
+
+    const staleConnectorStatuses = [
+      'Charging',
+      'Finishing',
+      'SuspendedEVSE',
+      'SuspendedEV',
+      'Preparing',
+    ];
+    const connectors = await this.connectorRepository.find({
+      where: { chargePointId },
+    });
+
+    let clearedConnectors = 0;
+    for (const c of connectors) {
+      if (staleConnectorStatuses.includes(c.status)) {
+        c.status = 'Available';
+        c.errorCode = null;
+        c.vendorErrorCode = null;
+        c.lastStatusUpdate = new Date();
+        await this.connectorRepository.save(c);
+        clearedConnectors += 1;
+      }
+    }
+
+    const staleCpStatuses = ['Charging', 'Preparing', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'];
+    if (staleCpStatuses.includes(cp.status)) {
+      cp.status = 'Available';
+      await this.chargePointRepository.save(cp);
+    }
+
+    this.logger.warn(
+      `clearStaleOperationalState: ${chargePointId} cleared ${clearedConnectors} connector(s); CP status now ${cp.status}`,
+    );
+
+    return { clearedConnectors, chargePointStatus: cp.status };
   }
 
   async getStatus(chargePointId: string): Promise<any> {

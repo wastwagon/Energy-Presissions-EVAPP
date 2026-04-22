@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
+import axios from 'axios';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
@@ -25,6 +26,8 @@ export interface StationWithDistance extends ChargePoint {
 @Injectable()
 export class StationsService {
   private readonly logger = new Logger(StationsService.name);
+  private readonly forwardGeoCache = new Map<string, { expires: number; lat: number; lng: number }>();
+  private readonly forwardGeoTtlMs = 6 * 60 * 60 * 1000;
 
   constructor(
     @InjectRepository(ChargePoint)
@@ -315,6 +318,56 @@ export class StationsService {
   }
 
   /**
+   * Forward geocode a free-text place (city, area, address) for Ghana-biased search.
+   * Used when text columns are empty but the station has coordinates only.
+   */
+  private async forwardGeocodeGhana(term: string): Promise<{ lat: number; lng: number } | null> {
+    const q = term.trim();
+    if (q.length < 3) return null;
+
+    const cacheKey = q.toLowerCase();
+    const hit = this.forwardGeoCache.get(cacheKey);
+    if (hit && hit.expires > Date.now()) {
+      return { lat: hit.lat, lng: hit.lng };
+    }
+
+    try {
+      const url =
+        `https://nominatim.openstreetmap.org/search?` +
+        new URLSearchParams({
+          q: `${q}, Ghana`,
+          format: 'json',
+          limit: '1',
+          countrycodes: 'gh',
+        }).toString();
+      const { data } = await axios.get<
+        { lat: string; lon: string; importance?: number }[]
+      >(url, {
+        headers: {
+          'User-Agent': 'EnergyPresissionsEVAP/1.0 (station-search)',
+          'Accept-Language': 'en',
+        },
+        timeout: 10000,
+      });
+      const first = Array.isArray(data) ? data[0] : null;
+      if (!first?.lat || !first?.lon) return null;
+      const lat = parseFloat(first.lat);
+      const lng = parseFloat(first.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      this.forwardGeoCache.set(cacheKey, {
+        lat,
+        lng,
+        expires: Date.now() + this.forwardGeoTtlMs,
+      });
+      return { lat, lng };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Forward geocode failed for "${q}": ${msg}`);
+      return null;
+    }
+  }
+
+  /**
    * Get stations by charge point IDs (for favorites)
    */
   async getByIds(chargePointIds: string[]): Promise<StationWithDistance[]> {
@@ -349,32 +402,51 @@ export class StationsService {
     limit: number = 50,
     userLocation?: { latitude: number; longitude: number },
   ): Promise<StationWithDistance[]> {
+    const trimmed = searchTerm.trim();
     const rows = await this.chargePointRepository
       .createQueryBuilder('cp')
       .where(
         '(cp.location_name ILIKE :search OR cp.location_city ILIKE :search OR cp.location_region ILIKE :search OR cp.location_address ILIKE :search OR cp.location_landmarks ILIKE :search OR cp.charge_point_id ILIKE :search)',
-        { search: `%${searchTerm}%` },
+        { search: `%${trimmed}%` },
       )
       .andWhere('cp.location_latitude IS NOT NULL')
       .andWhere('cp.location_longitude IS NOT NULL')
-      .orderBy('cp.location_name', 'ASC')
+      .orderBy('cp.location_name', 'ASC', 'NULLS LAST')
+      .addOrderBy('cp.charge_point_id', 'ASC')
       .limit(limit)
       .getMany();
 
-    const enriched = await Promise.all(
-      rows.map((cp) =>
-        this.enrichChargePointToStationWithDistance(cp, {
-          userLat: userLocation?.latitude,
-          userLng: userLocation?.longitude,
-        }),
-      ),
-    );
+    const enrichRows = async (cps: ChargePoint[]) =>
+      Promise.all(
+        cps.map((cp) =>
+          this.enrichChargePointToStationWithDistance(cp, {
+            userLat: userLocation?.latitude,
+            userLng: userLocation?.longitude,
+          }),
+        ),
+      );
+
+    let enriched = await enrichRows(rows);
+
+    if (enriched.length === 0 && trimmed.length >= 3) {
+      const geo = await this.forwardGeocodeGhana(trimmed);
+      if (geo) {
+        const nearby = await this.findNearby({
+          latitude: geo.lat,
+          longitude: geo.lng,
+          radiusKm: 25,
+          limit: Math.max(limit, 30),
+        });
+        const byId = new Map(nearby.map((s) => [s.chargePointId, s]));
+        enriched = Array.from(byId.values());
+      }
+    }
 
     if (userLocation) {
       enriched.sort((a, b) => a.distanceKm - b.distanceKm);
     }
 
-    return enriched;
+    return enriched.slice(0, limit);
   }
 }
 

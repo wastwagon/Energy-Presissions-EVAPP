@@ -19,7 +19,9 @@ export class CommandQueueService {
     private configService: ConfigService,
     private vendorStatusService: VendorStatusService,
   ) {
-    this.ocppGatewayUrl = process.env.OCPP_GATEWAY_URL || 'http://ocpp-gateway:9000';
+    this.ocppGatewayUrl =
+      this.configService.get<string>('OCPP_GATEWAY_URL') ||
+      `http://127.0.0.1:${process.env.PORT || 3000}`;
   }
 
   /**

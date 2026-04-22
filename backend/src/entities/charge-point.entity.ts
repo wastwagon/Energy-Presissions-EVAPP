@@ -104,5 +104,8 @@ export class ChargePoint {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  /** Set in ChargePointsService.findAll only; not persisted. */
+  activeTransactionCount?: number;
 }
 
