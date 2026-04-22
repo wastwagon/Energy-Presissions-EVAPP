@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -29,16 +29,24 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
 import { useTheme } from '@mui/material/styles';
-import { transactionsApi } from '../../services/transactionsApi';
+import { transactionsApi, type Transaction } from '../../services/transactionsApi';
 import { walletApi } from '../../services/walletApi';
 import { paymentsApi } from '../../services/paymentsApi';
 import { websocketService } from '../../services/websocket';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import {
+  chargingDashboardLastChargeStripSx,
+  chargingHubPromoCardSx,
+  chargingSubtleTextSx,
+  chargingTitleSx,
+} from '../../theme/chargingPremiumShell';
+import { pickLastEndedChargingSession } from '../../utils/chargingSession';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
@@ -161,7 +169,7 @@ export function CustomerDashboardPage() {
         if (typeof user?.id !== 'number') {
           setTransactions([]);
         } else {
-          const txsResponse = await transactionsApi.getAll(10, 0, undefined, undefined, user.id);
+          const txsResponse = await transactionsApi.getAll(25, 0, undefined, undefined, user.id);
           if (txsResponse && txsResponse.transactions) {
             setTransactions(txsResponse.transactions);
           } else if (Array.isArray(txsResponse)) {
@@ -204,6 +212,11 @@ export function CustomerDashboardPage() {
       }
     };
 
+  const lastCharge = useMemo(
+    () => pickLastEndedChargingSession(transactions as Transaction[]),
+    [transactions],
+  );
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -237,6 +250,119 @@ export function CustomerDashboardPage() {
           Find Stations
         </Button>
       </Box>
+
+      <Box
+        component={RouterLink}
+        to={CUSTOMER_ROUTES.charging}
+        sx={chargingHubPromoCardSx}
+        aria-label="Open charging hub"
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+            position: 'relative',
+            zIndex: 1,
+            minHeight: 44,
+          }}
+        >
+          <Box>
+            <Typography
+              component="h2"
+              sx={{
+                ...chargingTitleSx,
+                fontSize: { xs: '1.2rem', sm: '1.35rem' },
+                mb: 0.5,
+              }}
+            >
+              Charging hub
+            </Typography>
+            <Typography sx={chargingSubtleTextSx} component="p">
+              Find chargers, live sessions, wallet, and history
+            </Typography>
+          </Box>
+          <ChevronRightIcon sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 32, flexShrink: 0 }} />
+        </Box>
+      </Box>
+
+      {lastCharge && lastCharge.stopTime && (
+        <Box
+          component={RouterLink}
+          to={`${CUSTOMER_ROUTES.sessionsRoot}/${lastCharge.transactionId}`}
+          sx={chargingDashboardLastChargeStripSx}
+          aria-label="View your last charging session"
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 1.5,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, minWidth: 0, flex: '1 1 auto' }}>
+              <LocationOnIcon
+                sx={{ color: 'error.main', fontSize: 20, flexShrink: 0, mt: 0.25, opacity: 0.9 }}
+                aria-hidden
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  component="h2"
+                  variant="overline"
+                  sx={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.3, display: 'block' }}
+                >
+                  Last charge
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.72)' }}>
+                  {new Date(lastCharge.stopTime).toLocaleString(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })}
+                </Typography>
+                {lastCharge.chargePointId ? (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mt: 0.25 }}
+                    noWrap
+                    title={lastCharge.chargePointId}
+                  >
+                    {lastCharge.chargePointId}
+                  </Typography>
+                ) : null}
+              </Box>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                gap: 1.5,
+                width: { xs: '100%', sm: 'auto' },
+                pl: { xs: 0, sm: 0 },
+              }}
+            >
+              <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                {lastCharge.totalCost != null && (
+                  <Typography sx={{ color: 'common.white', fontWeight: 700, fontSize: '1.1rem' }}>
+                    {formatCurrency(Number(lastCharge.totalCost), lastCharge.currency || 'GHS')}
+                  </Typography>
+                )}
+                {lastCharge.totalEnergyKwh != null && (
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)' }} display="block">
+                    {formatEnergyKwh(Number(lastCharge.totalEnergyKwh))} kWh
+                  </Typography>
+                )}
+              </Box>
+              <ChevronRightIcon sx={{ color: 'rgba(255,255,255,0.45)', fontSize: 28, flexShrink: 0 }} />
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       <CustomerQuickActions preset="dashboard" />
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -54,6 +54,8 @@ import {
   jampackKpiCardBaseSx,
   premiumEmptyStatePaperSx,
 } from '../theme/jampackShell';
+import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { StationListCard } from '../components/stations/StationListCard';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
@@ -417,6 +419,23 @@ export function StationsPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Discover nearby EV charging stations in Ghana
           </Typography>
+          {isAuthenticated && (
+            <Button
+              component={RouterLink}
+              to={CUSTOMER_ROUTES.charging}
+              size="small"
+              variant="outlined"
+              sx={{
+                mt: 1.25,
+                textTransform: 'none',
+                fontWeight: 600,
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: 1.5,
+              }}
+            >
+              Charging hub
+            </Button>
+          )}
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
           <Tooltip title="List view">
@@ -569,7 +588,9 @@ export function StationsPage() {
               borderRadius: { xs: 0, sm: 1 },
               overflow: 'hidden',
               mx: { xs: -2, sm: 0 },
-              border: (t) => `1px solid ${t.palette.divider}`,
+              ...(isAuthenticated
+                ? chargingMapChromeSx
+                : { border: (t) => `1px solid ${t.palette.divider}` }),
             }}
           >
             {loading && (
@@ -609,6 +630,7 @@ export function StationsPage() {
               minHeight: 180,
               maxHeight: { xs: 'min(48dvh, 480px)', sm: 'none' },
               overflow: 'auto',
+              ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>

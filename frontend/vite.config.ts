@@ -14,6 +14,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    // Ensures ESM prebundle in Vite 5+ when /app/node_modules is a Docker volume
+    include: ['react-leaflet', 'leaflet', '@react-leaflet/core'],
+  },
   server: {
     port: 3001,
     host: true,

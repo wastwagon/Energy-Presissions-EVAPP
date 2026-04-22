@@ -102,6 +102,9 @@ const CustomerPaymentMethodsPage = lazy(() =>
 const CustomerPreferencesPage = lazy(() =>
   import('./pages/user/CustomerPreferencesPage').then((m) => ({ default: m.CustomerPreferencesPage })),
 );
+const CustomerChargingPage = lazy(() =>
+  import('./pages/user/CustomerChargingPage').then((m) => ({ default: m.CustomerChargingPage })),
+);
 const UserManagementPage = lazy(() =>
   import('./pages/admin/UserManagementPage').then((m) => ({ default: m.UserManagementPage })),
 );
@@ -410,6 +413,7 @@ function App() {
             >
               <Route index element={<Navigate to={CUSTOMER_ROUTES.dashboard} replace />} />
               <Route path="dashboard" element={<CustomerDashboardPage />} />
+              <Route path="charging" element={<CustomerChargingPage />} />
               <Route path="sessions/active" element={<CustomerActiveSessionsPage />} />
               <Route path="sessions/history" element={<CustomerSessionHistoryPage />} />
               <Route path="sessions/:id" element={<CustomerTransactionDetailPage />} />

@@ -439,10 +439,10 @@ export const customerBottomNavItems = [
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
   },
   {
-    id: 'sessions',
-    label: 'Sessions',
-    icon: <HistoryIcon />,
-    path: CUSTOMER_ROUTES.sessionsActive,
+    id: 'charging',
+    label: 'Charging',
+    icon: <EvStationIcon />,
+    path: CUSTOMER_ROUTES.charging,
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.sessions],
   },
   {

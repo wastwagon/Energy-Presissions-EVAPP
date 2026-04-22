@@ -14,6 +14,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import EvStationIcon from '@mui/icons-material/EvStation';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { QuickActionTile } from './QuickActionTile';
 
@@ -31,7 +32,8 @@ export type CustomerQuickActionsPreset =
   | 'payment_methods'
   | 'preferences'
   | 'transaction_detail'
-  | 'station_detail';
+  | 'station_detail'
+  | 'charging';
 
 type ActionKey =
   | 'dashboard'
@@ -45,7 +47,8 @@ type ActionKey =
   | 'top_up'
   | 'payment_methods'
   | 'profile'
-  | 'preferences';
+  | 'preferences'
+  | 'charging';
 
 interface ActionDef {
   path: string;
@@ -56,6 +59,13 @@ interface ActionDef {
 }
 
 const ACTION_DEFS: Record<ActionKey, ActionDef> = {
+  charging: {
+    path: CUSTOMER_ROUTES.charging,
+    label: 'Charging',
+    shortLabel: 'Charging',
+    ariaLabel: 'Charging hub',
+    Icon: EvStationIcon,
+  },
   dashboard: {
     path: CUSTOMER_ROUTES.dashboard,
     label: 'Dashboard',
@@ -143,12 +153,13 @@ const ACTION_DEFS: Record<ActionKey, ActionDef> = {
 };
 
 const PRESET_KEYS: Record<CustomerQuickActionsPreset, ActionKey[]> = {
-  dashboard: ['stations', 'favorites', 'live', 'history', 'payments', 'help'],
+  charging: ['dashboard', 'stations', 'favorites', 'live', 'history', 'wallet', 'help'],
+  dashboard: ['charging', 'stations', 'favorites', 'live', 'history', 'payments', 'help'],
   wallet: ['dashboard', 'top_up', 'payment_methods', 'stations', 'live', 'history'],
   top_up: ['dashboard', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
-  stations: ['dashboard', 'favorites', 'live', 'wallet', 'history', 'help'],
-  sessions_active: ['dashboard', 'stations', 'history', 'wallet', 'payments', 'help'],
-  sessions_history: ['dashboard', 'live', 'stations', 'wallet', 'payments', 'help'],
+  stations: ['charging', 'dashboard', 'favorites', 'live', 'wallet', 'history', 'help'],
+  sessions_active: ['charging', 'dashboard', 'stations', 'history', 'wallet', 'payments', 'help'],
+  sessions_history: ['charging', 'dashboard', 'live', 'stations', 'wallet', 'payments', 'help'],
   favorites: ['dashboard', 'stations', 'live', 'wallet', 'payments', 'help'],
   payments: ['dashboard', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
   help: ['dashboard', 'stations', 'wallet', 'live', 'profile', 'payments'],

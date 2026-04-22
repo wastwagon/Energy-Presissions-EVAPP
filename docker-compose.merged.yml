@@ -123,7 +123,7 @@ services:
     networks:
       - ev-billing-network
     restart: unless-stopped
-    command: npm start
+    command: sh -c "npm install && npm start"
 
   # NGINX Reverse Proxy
   nginx:

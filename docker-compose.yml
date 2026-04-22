@@ -127,7 +127,8 @@ services:
     networks:
       - ev-billing-network
     restart: unless-stopped
-    command: npm start
+    # `/app/node_modules` is a named anonymous volume: refresh deps on start when package.json/lock change (e.g. new packages like react-leaflet)
+    command: sh -c "npm install && npm start"
 
   # NGINX Reverse Proxy
   nginx:

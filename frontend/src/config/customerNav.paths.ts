@@ -3,6 +3,8 @@
  */
 export const CUSTOMER_ROUTES = {
   dashboard: '/user/dashboard',
+  /** Premium hub: find chargers, sessions, wallet (Tesla-style entry). */
+  charging: '/user/charging',
   stations: '/stations',
   favorites: '/user/favorites',
   /** Prefix for `/user/sessions/:transactionId` (detail under sessions tab). */
@@ -21,7 +23,7 @@ export const CUSTOMER_ROUTES = {
 /** Path prefixes for BottomNav tab highlighting (matchPaths). */
 export const CUSTOMER_BOTTOM_NAV_PREFIXES = {
   stations: [CUSTOMER_ROUTES.stations],
-  sessions: [CUSTOMER_ROUTES.sessionsRoot],
+  sessions: [CUSTOMER_ROUTES.sessionsRoot, CUSTOMER_ROUTES.charging],
   wallet: [CUSTOMER_ROUTES.wallet, CUSTOMER_ROUTES.payments],
   profile: [CUSTOMER_ROUTES.profile, CUSTOMER_ROUTES.preferences, CUSTOMER_ROUTES.help],
 } as const;
