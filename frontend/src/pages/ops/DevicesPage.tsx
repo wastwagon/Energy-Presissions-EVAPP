@@ -34,6 +34,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import HealingIcon from '@mui/icons-material/Healing';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
@@ -105,6 +106,7 @@ export function DevicesPage() {
   const [deleteTarget, setDeleteTarget] = useState<ChargePoint | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [clearStaleSubmittingId, setClearStaleSubmittingId] = useState<string | null>(null);
 
   const canUserDeleteDevice = (cp: ChargePoint): boolean => {
     const user = getStoredUser();
@@ -122,10 +124,40 @@ export function DevicesPage() {
     if (!canUserDeleteDevice(cp)) {
       return null;
     }
-    if (cp.status === 'Charging' || cp.status === 'Preparing') {
-      return 'Stop the active session before removing this device.';
+    const active = cp.activeTransactionCount ?? 0;
+    if (active > 0) {
+      return 'This device has an active billing session. Remote stop the session (or end it from Charging Sessions) before removing it.';
     }
     return null;
+  };
+
+  const canClearStaleChargingUi = (cp: ChargePoint): boolean => {
+    if (!canUserDeleteDevice(cp)) return false;
+    const active = cp.activeTransactionCount ?? 0;
+    if (active > 0) return false;
+    return cp.status === 'Charging' || cp.status === 'Preparing';
+  };
+
+  const handleClearStaleOperationalState = async (cp: ChargePoint) => {
+    try {
+      setClearStaleSubmittingId(cp.chargePointId);
+      setError(null);
+      const res = await chargePointsApi.clearStaleOperationalState(cp.chargePointId);
+      setSuccess(
+        `Cleared stuck operational state for ${cp.chargePointId} (${res.clearedConnectors} connector(s); status ${res.chargePointStatus}).`,
+      );
+      await loadChargePoints();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string | string[] } }; message?: string };
+      const msg =
+        e.response?.data?.message ||
+        (Array.isArray(e.response?.data?.message) ? e.response.data.message.join(', ') : null) ||
+        e.message ||
+        'Failed to clear stuck state';
+      setError(typeof msg === 'string' ? msg : 'Failed to clear stuck state');
+    } finally {
+      setClearStaleSubmittingId(null);
+    }
   };
 
   const openDeleteDialog = (cp: ChargePoint) => {
@@ -572,6 +604,27 @@ export function DevicesPage() {
                                 </Badge>
                               </IconButton>
                             </Tooltip>
+                            {canClearStaleChargingUi(cp) && (
+                              <Tooltip
+                                title="No active session in the database: reset connector/charge-point status so you can remove the device or start fresh."
+                              >
+                                <span>
+                                  <IconButton
+                                    onClick={() => handleClearStaleOperationalState(cp)}
+                                    disabled={clearStaleSubmittingId === cp.chargePointId}
+                                    color="warning"
+                                    aria-label={`Clear stuck charging state for ${cp.chargePointId}`}
+                                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                                  >
+                                    {clearStaleSubmittingId === cp.chargePointId ? (
+                                      <CircularProgress size={20} color="inherit" />
+                                    ) : (
+                                      <HealingIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
                             {canUserDeleteDevice(cp) && (
                               <Tooltip title={deleteDisabledReason(cp) || 'Remove device from CSMS'}>
                                 <span>
@@ -715,10 +768,25 @@ export function DevicesPage() {
             This permanently deletes <strong>{deleteTarget?.chargePointId}</strong> from the CSMS, including
             connectors, sessions, and related billing rows. The charger can register again later if it reconnects.
           </Typography>
-          {deleteTarget?.status === 'Charging' || deleteTarget?.status === 'Preparing' ? (
-            <Alert severity="warning" sx={{ mt: 1 }}>
-              Stop the active session first; removal is blocked while charging.
-            </Alert>
+          {(deleteTarget?.activeTransactionCount ?? 0) > 0 ? (
+            <>
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                This device has an active billing session. Remote stop or end the session from Charging Sessions
+                before removal.
+              </Alert>
+              <Button
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 2, minHeight: 44 }}
+                onClick={() => {
+                  const cpId = deleteTarget?.chargePointId;
+                  setDeleteDialogOpen(false);
+                  if (cpId) navigate(`${opsBase}/devices/${encodeURIComponent(cpId)}`);
+                }}
+              >
+                Open device details (remote stop)
+              </Button>
+            </>
           ) : null}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>

@@ -60,6 +60,17 @@ import {
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 
+function formatStationsLoadError(err: unknown): string {
+  const e = err as { message?: string; code?: string; response?: { data?: { message?: string } } };
+  if (e.response?.data?.message && typeof e.response.data.message === 'string') {
+    return e.response.data.message;
+  }
+  if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+    return 'Cannot reach the server. Check your connection, VPN, or try again shortly. If this persists, the API may be unavailable.';
+  }
+  return e.message || 'Request failed';
+}
+
 export function StationsPage() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -163,8 +174,8 @@ export function StationsPage() {
         limit: 50,
       });
       setStations(nearbyStations);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load nearby stations');
+    } catch (err: unknown) {
+      setError(formatStationsLoadError(err));
       console.error('Error loading nearby stations:', err);
     } finally {
       setLoading(false);
@@ -208,8 +219,8 @@ export function StationsPage() {
         userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : undefined,
       );
       setStations(results);
-    } catch (err: any) {
-      setError(err.message || 'Search failed');
+    } catch (err: unknown) {
+      setError(formatStationsLoadError(err));
     } finally {
       setLoading(false);
     }

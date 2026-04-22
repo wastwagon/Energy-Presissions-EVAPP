@@ -53,8 +53,17 @@ import {
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { getStoredUser } from '../../utils/authSession';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
+
+const STALE_OPERATIONAL_CONNECTOR_STATUSES = [
+  'Charging',
+  'Finishing',
+  'SuspendedEVSE',
+  'SuspendedEV',
+  'Preparing',
+] as const;
 
 function connectorAllowsRemoteStart(status: string | undefined): boolean {
   return !!status && CONNECTOR_REMOTE_START_STATUSES.includes(status as (typeof CONNECTOR_REMOTE_START_STATUSES)[number]);
@@ -87,6 +96,27 @@ export function ChargePointDetailPage() {
   const [confirmAction, setConfirmAction] = useState<
     { type: 'reset'; resetType: 'Hard' | 'Soft' } | { type: 'clearCache' } | null
   >(null);
+  const [clearStaleSubmitting, setClearStaleSubmitting] = useState(false);
+
+  const canUserManageDeviceRemoval = (): boolean => {
+    const user = getStoredUser();
+    const role = user?.accountType;
+    if (role === 'SuperAdmin') return true;
+    if (role === 'Admin' && typeof user?.vendorId === 'number' && typeof chargePoint?.vendorId === 'number') {
+      return chargePoint.vendorId === user.vendorId;
+    }
+    return false;
+  };
+
+  const showClearStaleOperationalState =
+    !!chargePoint &&
+    canUserManageDeviceRemoval() &&
+    (chargePoint.activeTransactionCount ?? 0) === 0 &&
+    activeTransactions.length === 0 &&
+    (['Charging', 'Preparing', 'Finishing', 'SuspendedEVSE', 'SuspendedEV'].includes(chargePoint.status) ||
+      connectors.some((c) =>
+        (STALE_OPERATIONAL_CONNECTOR_STATUSES as readonly string[]).includes(c.status),
+      ));
 
   useEffect(() => {
     if (id) {
@@ -278,6 +308,31 @@ export function ChargePointDetailPage() {
     }
   };
 
+  const handleClearStaleOperationalState = async () => {
+    if (!id) return;
+    try {
+      setClearStaleSubmitting(true);
+      setError(null);
+      const res = await chargePointsApi.clearStaleOperationalState(id);
+      setSuccess(
+        `Cleared stuck operational state (${res.clearedConnectors} connector(s); charge point status ${res.chargePointStatus}).`,
+      );
+      await loadData();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: unknown } }; message?: string };
+      const raw = e.response?.data?.message;
+      const msg =
+        typeof raw === 'string'
+          ? raw
+          : Array.isArray(raw)
+            ? raw.join(', ')
+            : e.message || 'Failed to clear stuck state';
+      setError(msg);
+    } finally {
+      setClearStaleSubmitting(false);
+    }
+  };
+
   const handleGetConfiguration = async () => {
     if (!id) return;
     try {
@@ -413,6 +468,14 @@ export function ChargePointDetailPage() {
                     {chargePoint.lastSeen
                       ? new Date(chargePoint.lastSeen).toLocaleString()
                       : 'Never'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Active billing sessions (DB)
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {chargePoint.activeTransactionCount ?? 0}
                   </Typography>
                 </Grid>
                 {chargePoint.totalCapacityKw && (
@@ -647,8 +710,19 @@ export function ChargePointDetailPage() {
                               try {
                                 await chargePointsApi.remoteStop(id!, tx.transactionId);
                                 loadData();
-                              } catch (err: any) {
-                                setError(err.message || 'Failed to stop transaction');
+                              } catch (err: unknown) {
+                                const e = err as {
+                                  response?: { data?: { message?: unknown } };
+                                  message?: string;
+                                };
+                                const raw = e.response?.data?.message;
+                                const msg =
+                                  typeof raw === 'string'
+                                    ? raw
+                                    : Array.isArray(raw)
+                                      ? raw.join(', ')
+                                      : e.message || 'Failed to stop transaction';
+                                setError(msg);
                               }
                             }}
                             sx={(th) => ({

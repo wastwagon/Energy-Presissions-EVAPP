@@ -20,6 +20,8 @@ export interface ChargePoint {
   currency?: string;
   createdAt: string;
   updatedAt: string;
+  /** From GET /charge-points list; number of DB rows with status Active. */
+  activeTransactionCount?: number;
 }
 
 export interface Connector {
@@ -64,6 +66,16 @@ export const chargePointsApi = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/charge-points/${encodeURIComponent(id)}`);
+  },
+
+  clearStaleOperationalState: async (
+    id: string,
+  ): Promise<{ clearedConnectors: number; chargePointStatus: string }> => {
+    const response = await api.post(
+      `/charge-points/${encodeURIComponent(id)}/clear-stale-operational-state`,
+      {},
+    );
+    return response.data;
   },
 
   getStatus: async (id: string): Promise<ChargePointStatus> => {
