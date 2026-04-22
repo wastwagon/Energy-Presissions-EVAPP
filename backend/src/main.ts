@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
+import { collectAllowedOrigins, isBrowserOriginAllowed } from './common/cors-origins';
 
 async function bootstrap() {
   const port = Number(process.env.PORT || 3000);
@@ -14,33 +15,32 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   setupMergedOcppGateway(app);
 
-  // Enable CORS for both web and mobile apps
-  const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3001',
-    process.env.MOBILE_API_URL || 'http://localhost:3000',
-    'https://cleanmotion.energyprecisions.com',
-    'https://www.cleanmotion.energyprecisions.com',
-    'https://ev-billing-frontend.onrender.com',
-    'https://ev-billing-frontend-ah8t.onrender.com',
-  ].filter(Boolean);
+  const allowedOrigins = collectAllowedOrigins();
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
+      if (isBrowserOriginAllowed(origin, allowedOrigins)) {
         return callback(null, true);
       }
-      // Local / LAN dev: allow any browser origin (localhost, 127.0.0.1, 192.168.x.x on :3001, etc.)
       if (process.env.NODE_ENV !== 'production') {
         return callback(null, true);
       }
-      callback(new Error('Not allowed by CORS'));
+      // Use (null, false) so the response is a normal 403-style CORS block, not an uncaught error
+      // that can omit Access-Control-* headers on some stacks.
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Vendor-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Vendor-Id',
+      'Accept',
+      'Accept-Language',
+      'Origin',
+      'X-Requested-With',
+    ],
   });
 
   // Global validation pipe

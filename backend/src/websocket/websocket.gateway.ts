@@ -7,10 +7,28 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { collectAllowedOrigins, isBrowserOriginAllowed } from '../common/cors-origins';
+
+const socketCorsOrigins = collectAllowedOrigins();
 
 @NestWebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (isBrowserOriginAllowed(origin, socketCorsOrigins)) {
+        callback(null, true);
+        return;
+      }
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+    credentials: true,
   },
   path: '/ws',
 })
