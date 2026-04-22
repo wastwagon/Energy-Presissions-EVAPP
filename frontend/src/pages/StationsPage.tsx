@@ -20,18 +20,12 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton,
-  Tooltip,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import MapIcon from '@mui/icons-material/Map';
-import ListIcon from '@mui/icons-material/List';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import LoginIcon from '@mui/icons-material/Login';
@@ -44,13 +38,11 @@ import {
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   premiumDialogPaperSx,
-  premiumIconButtonTouchSx,
   sxObject,
 } from '../styles/authShell';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
-  jampackKpiCardBaseSx,
   premiumEmptyStatePaperSx,
 } from '../theme/jampackShell';
 import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
@@ -65,8 +57,6 @@ import {
   openGoogleMapsDirections,
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
-
-const STATIONS_VIEW_KEY = 'cm_stations_view_v1';
 
 type SortBy = 'distance' | 'price' | 'name';
 
@@ -85,19 +75,7 @@ function formatStationsLoadError(err: unknown): string {
 }
 
 export function StationsPage() {
-  const theme = useTheme();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
-    try {
-      const v = sessionStorage.getItem(STATIONS_VIEW_KEY);
-      if (v === 'list' || v === 'map') {
-        return v;
-      }
-    } catch {
-      /* ignore */
-    }
-    return 'map';
-  });
   const [sortBy, setSortBy] = useState<SortBy>('distance');
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
@@ -139,17 +117,6 @@ export function StationsPage() {
       }
     }
   }, []);
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STATIONS_VIEW_KEY, viewMode);
-    } catch {
-      /* ignore */
-    }
-  }, [viewMode]);
-
-  const viewModeRef = useRef(viewMode);
-  viewModeRef.current = viewMode;
 
   const bumpMapFit = useCallback(() => {
     setMapFitToken((n) => n + 1);
@@ -226,7 +193,7 @@ export function StationsPage() {
   loadNearbyStationsRef.current = loadNearbyStations;
 
   const handleViewportBoundsStable = useCallback(async (bounds: MapViewportBounds) => {
-    if (viewModeRef.current !== 'map' || searchTermRef.current.trim() !== '') {
+    if (searchTermRef.current.trim() !== '') {
       return;
     }
     const activeStatuses: string[] = ['Available', 'Charging', 'Preparing', 'Finishing'];
@@ -237,7 +204,7 @@ export function StationsPage() {
         ...bounds,
         status: activeStatuses,
       });
-      if (viewModeRef.current === 'map' && searchTermRef.current.trim() === '') {
+      if (searchTermRef.current.trim() === '') {
         setStations(list);
       }
     } catch (err: unknown) {
@@ -387,58 +354,34 @@ export function StationsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
-          <Typography
-            variant="h6"
-            component="h1"
-            sx={dashboardPageTitleSx}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h6"
+          component="h1"
+          sx={dashboardPageTitleSx}
+        >
+          Find Charging Stations
+        </Typography>
+        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+          Discover nearby EV charging stations in Ghana
+        </Typography>
+        {isAuthenticated && (
+          <Button
+            component={RouterLink}
+            to={CUSTOMER_ROUTES.charging}
+            size="small"
+            variant="outlined"
+            sx={{
+              mt: 1.25,
+              textTransform: 'none',
+              fontWeight: 600,
+              width: { xs: '100%', sm: 'auto' },
+              borderRadius: 1.5,
+            }}
           >
-            Find Charging Stations
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Discover nearby EV charging stations in Ghana
-          </Typography>
-          {isAuthenticated && (
-            <Button
-              component={RouterLink}
-              to={CUSTOMER_ROUTES.charging}
-              size="small"
-              variant="outlined"
-              sx={{
-                mt: 1.25,
-                textTransform: 'none',
-                fontWeight: 600,
-                width: { xs: '100%', sm: 'auto' },
-                borderRadius: 1.5,
-              }}
-            >
-              Charging hub
-            </Button>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
-          <Tooltip title="List view">
-            <IconButton
-              onClick={() => setViewMode('list')}
-              color={viewMode === 'list' ? 'primary' : 'default'}
-              aria-label="Switch to list view"
-              sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
-            >
-              <ListIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Map view: stations on a map with list below (like trip planners)">
-            <IconButton
-              onClick={() => setViewMode('map')}
-              color={viewMode === 'map' ? 'primary' : 'default'}
-              aria-label="Switch to map view"
-              sx={{ ...sxObject(theme, premiumIconButtonTouchSx) }}
-            >
-              <MapIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+            Charging hub
+          </Button>
+        )}
       </Box>
 
       {locationError && (
@@ -453,75 +396,7 @@ export function StationsPage() {
         </Alert>
       )}
 
-      {/* List view: search + sort */}
-      {viewMode === 'list' && (
-        <Paper
-          elevation={0}
-          sx={{
-            ...jampackKpiCardBaseSx,
-            p: { xs: 2, sm: 2.25 },
-            mb: 3,
-            boxShadow: `0 8px 28px ${alpha(theme.palette.text.primary, 0.06)}`,
-          }}
-        >
-          <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="City, address, region, or station ID…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={(th) => sxObject(th, authFormFieldSx)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4} md={3}>
-              <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
-                <InputLabel id="stations-sort-label-list">Sort</InputLabel>
-                <Select
-                  labelId="stations-sort-label-list"
-                  label="Sort"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortBy)}
-                >
-                  <MenuItem value="distance">Distance</MenuItem>
-                  <MenuItem value="price">Price (low to high)</MenuItem>
-                  <MenuItem value="name">Name</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={8} md={3}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSearch}
-                startIcon={<SearchIcon />}
-                fullWidth
-                size="medium"
-                disableElevation
-                sx={{ ...compactContainedCtaSx, height: { sm: 40 } }}
-              >
-                Search
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
-
       {/* Map + bottom sheet (trip-planner style) */}
-      {viewMode === 'map' && (
         <Box
           sx={{
             display: 'flex',
@@ -567,7 +442,7 @@ export function StationsPage() {
               mapFitToken={mapFitToken}
               ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
               onViewportBoundsStable={handleViewportBoundsStable}
-              viewportSearchEnabled={viewMode === 'map' && stations.length > 0 && !searchTerm.trim()}
+              viewportSearchEnabled={stations.length > 0 && !searchTerm.trim()}
             />
           </Box>
           <Paper
@@ -680,7 +555,6 @@ export function StationsPage() {
             )}
           </Paper>
         </Box>
-      )}
 
       {/* User Location Info */}
       {userLocation && (
@@ -699,63 +573,6 @@ export function StationsPage() {
             GPS: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
           </Typography>
         </Alert>
-      )}
-
-      {/* Loading (list view only; map view uses map overlay) */}
-      {loading && viewMode === 'list' && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* Empty state — list view */}
-      {viewMode === 'list' && !loading && stations.length === 0 && !error && (
-        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
-          <Box
-            sx={(t) => ({
-              width: 72,
-              height: 72,
-              mx: 'auto',
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: t.palette.action.hover,
-              color: 'text.secondary',
-            })}
-          >
-            <LocationOnIcon sx={{ fontSize: 36 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-            No stations found
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {userLocation
-              ? 'No charging stations found for this area. Try a different search.'
-              : 'Enable location or search by city, address, or station ID.'}
-          </Typography>
-        </Paper>
-      )}
-
-      {/* Stations — list view */}
-      {viewMode === 'list' && !loading && sortedStations.length > 0 && (
-        <Grid container spacing={{ xs: 2, sm: 2.5 }}>
-          {sortedStations.map((station) => (
-            <Grid item xs={12} sm={6} lg={4} key={station.chargePointId}>
-              <StationListCard
-                station={station}
-                isAuthenticated={isAuthenticated}
-                isFavorite={favoriteIds.includes(station.chargePointId)}
-                onOpenDetails={handleStationClick}
-                onCardKeyDown={handleStationCardKeyDown(station)}
-                onDirections={handleGetDirections}
-                onStartCharging={handleStartCharging}
-                onToggleFavorite={handleToggleFavorite}
-              />
-            </Grid>
-          ))}
-        </Grid>
       )}
 
       {/* Start Charging Dialog */}
