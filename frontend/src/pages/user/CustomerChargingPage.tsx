@@ -20,7 +20,6 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import { transactionsApi, type Transaction } from '../../services/transactionsApi';
 import { pickLastEndedChargingSession } from '../../utils/chargingSession';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
@@ -244,12 +243,6 @@ export function CustomerChargingPage() {
           </Box>
         </Paper>
       )}
-
-      <CustomerQuickActions
-        preset="charging"
-        sectionLabel="Go to"
-        visible
-      />
     </Box>
   );
 }

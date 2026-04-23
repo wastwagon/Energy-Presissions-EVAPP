@@ -1,10 +1,13 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Container, AppBar, Toolbar, Typography, Box, Button, IconButton, useTheme, useMediaQuery } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import { BottomNav } from '../components/BottomNav';
-import { mainLayoutBottomNavItems } from '../config/menu.config';
+import HomeIcon from '@mui/icons-material/Home';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { BottomNav, isBottomNavItemActive, type BottomNavItem } from '../components/BottomNav';
+import { customerBottomNavItems, mainLayoutBottomNavItems } from '../config/menu.config';
+import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { brandColors } from '../theme';
 import {
   jampackAppBarSx,
@@ -12,7 +15,6 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
-import { LOGO_PUBLIC_URL } from '../config/branding';
 import {
   clearSession,
   getDashboardPathForAccountType,
@@ -30,6 +32,7 @@ import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 
 export function MainLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
@@ -54,6 +57,24 @@ export function MainLayout() {
 
   const isCustomer = isCustomerOrWalkInAccount(user);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
+
+  const desktopHeaderNavItems: BottomNavItem[] = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
+    if (isCustomer) return customerBottomNavItems;
+    return [
+      { id: 'home', label: 'Home', icon: <HomeIcon />, path: '/' },
+      {
+        id: 'stations',
+        label: 'Find Stations',
+        icon: <LocationOnIcon />,
+        path: CUSTOMER_ROUTES.stations,
+        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
+      },
+      { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
+    ];
+  }, [isAuthenticated, user, isCustomer]);
+
+  const showDesktopHeaderNav = !showBottomNav && isAuthenticated && desktopHeaderNavItems.length > 0;
 
   return (
     <Box
@@ -101,50 +122,76 @@ export function MainLayout() {
               <MenuIcon />
             </IconButton>
           )}
+          {usePremiumCustomerHeader && (
+            <Typography
+              component="div"
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: 'common.white',
+                letterSpacing: '-0.02em',
+                fontSize: '0.95rem',
+                mr: 0.5,
+                flexShrink: 0,
+              }}
+            >
+              CleanMotion
+            </Typography>
+          )}
+          {showDesktopHeaderNav && (
+            <Box
+              component="nav"
+              aria-label="Primary"
+              sx={{
+                flex: 1,
+                display: { xs: 'none', lg: 'flex' },
+                alignItems: 'center',
+                gap: 0.25,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                minWidth: 0,
+                py: 0.5,
+                mr: 1,
+                WebkitOverflowScrolling: 'touch',
+                '&::-webkit-scrollbar': { height: 4 },
+              }}
+            >
+              {desktopHeaderNavItems.map((item) => {
+                const active = isBottomNavItemActive(location.pathname, item);
+                return (
+                  <Button
+                    key={item.id}
+                    color="inherit"
+                    onClick={() => navigate(item.path)}
+                    startIcon={item.icon}
+                    aria-current={active ? 'page' : undefined}
+                    sx={{
+                      flexShrink: 0,
+                      minHeight: 44,
+                      px: { lg: 1.25, xl: 1.5 },
+                      py: 0.75,
+                      color: active ? 'primary.main' : 'text.secondary',
+                      fontWeight: active ? 600 : 500,
+                      fontSize: { lg: '0.8125rem', xl: '0.875rem' },
+                      borderRadius: 1,
+                      borderBottom: '2px solid',
+                      borderColor: active ? 'primary.main' : 'transparent',
+                      '& .MuiButton-startIcon': { mr: 0.75 },
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                );
+              })}
+            </Box>
+          )}
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: { xs: 1, sm: 2 },
               flexGrow: 1,
+              display: showDesktopHeaderNav ? { xs: 'flex', lg: 'none' } : 'flex',
               minWidth: 0,
             }}
-          >
-            {usePremiumCustomerHeader && (
-              <Typography
-                component="div"
-                variant="h6"
-                sx={{
-                  display: { xs: 'block', sm: 'none' },
-                  fontWeight: 700,
-                  color: 'common.white',
-                  letterSpacing: '-0.02em',
-                  fontSize: '0.95rem',
-                  mr: 0.5,
-                }}
-              >
-                CleanMotion
-              </Typography>
-            )}
-            <Box
-              component="img"
-              src={LOGO_PUBLIC_URL}
-              alt="Clean Motion Ghana"
-              draggable={false}
-              sx={{
-                height: { xs: 'clamp(40px, 12vw, 50px)', sm: 56, md: 60 },
-                width: 'auto',
-                maxWidth: { xs: 'min(220px, 58vw)', sm: 320 },
-                objectFit: 'contain',
-                display: 'block',
-                ...(usePremiumCustomerHeader
-                  ? {
-                      filter: 'brightness(0) invert(1)',
-                    }
-                  : {}),
-              }}
-            />
-          </Box>
+          />
           {isAuthenticated && user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
               <Typography

@@ -20,10 +20,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DirectionsIcon from '@mui/icons-material/Directions';
@@ -59,14 +55,11 @@ import {
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 import { formatApiOrNetworkError } from '../utils/apiErrors';
 
-type SortBy = 'distance' | 'price' | 'name';
-
 /** Server-side search radius (km) when loading by GPS; not shown in the UI. */
 const NEARBY_LOAD_RADIUS_KM = 50;
 
 export function StationsPage() {
   const navigate = useNavigate();
-  const [sortBy, setSortBy] = useState<SortBy>('distance');
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
   const [mapFitToken, setMapFitToken] = useState(0);
@@ -113,25 +106,12 @@ export function StationsPage() {
     setIgnoreViewportBoundsMoveEndsBefore(Date.now() + 1500);
   }, []);
 
+  /** Nearest-first (same as former default “Distance” sort). */
   const sortedStations = useMemo(() => {
     const list = [...stations];
-    list.sort((a, b) => {
-      if (sortBy === 'price') {
-        const pa = a.pricePerKwh != null ? Number(a.pricePerKwh) : Number.POSITIVE_INFINITY;
-        const pb = b.pricePerKwh != null ? Number(b.pricePerKwh) : Number.POSITIVE_INFINITY;
-        if (Number.isFinite(pa) && Number.isFinite(pb) && pa !== pb) {
-          return pa - pb;
-        }
-      }
-      if (sortBy === 'name') {
-        const na = (a.locationName || a.chargePointId).toLowerCase();
-        const nb = (b.locationName || b.chargePointId).toLowerCase();
-        return na.localeCompare(nb);
-      }
-      return a.distanceKm - b.distanceKm;
-    });
+    list.sort((a, b) => a.distanceKm - b.distanceKm);
     return list;
-  }, [stations, sortBy]);
+  }, [stations]);
 
   // WebSocket listener for real-time status updates
   useEffect(() => {
@@ -460,7 +440,7 @@ export function StationsPage() {
               />
             )}
             <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch" sx={{ mb: 2 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   size="small"
@@ -481,21 +461,6 @@ export function StationsPage() {
                   }}
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
-                  <InputLabel id="stations-sort-label-map">Sort</InputLabel>
-                  <Select
-                    labelId="stations-sort-label-map"
-                    label="Sort"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  >
-                    <MenuItem value="distance">Distance</MenuItem>
-                    <MenuItem value="price">Price</MenuItem>
-                    <MenuItem value="name">Name</MenuItem>
-                  </Select>
-                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <Button

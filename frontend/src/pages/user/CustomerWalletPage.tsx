@@ -30,7 +30,6 @@ import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 
 export function CustomerWalletPage() {
@@ -100,8 +99,6 @@ export function CustomerWalletPage() {
           Top Up Wallet
         </Button>
       </Box>
-
-      <CustomerQuickActions preset="wallet" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
