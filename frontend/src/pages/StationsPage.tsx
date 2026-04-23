@@ -57,22 +57,12 @@ import {
   openGoogleMapsDirections,
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
+import { formatApiOrNetworkError } from '../utils/apiErrors';
 
 type SortBy = 'distance' | 'price' | 'name';
 
 /** Server-side search radius (km) when loading by GPS; not shown in the UI. */
 const NEARBY_LOAD_RADIUS_KM = 50;
-
-function formatStationsLoadError(err: unknown): string {
-  const e = err as { message?: string; code?: string; response?: { data?: { message?: string } } };
-  if (e.response?.data?.message && typeof e.response.data.message === 'string') {
-    return e.response.data.message;
-  }
-  if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
-    return 'Cannot reach the server. Check your connection, VPN, or try again shortly. If this persists, the API may be unavailable.';
-  }
-  return e.message || 'Request failed';
-}
 
 export function StationsPage() {
   const navigate = useNavigate();
@@ -180,7 +170,7 @@ export function StationsPage() {
         setStations(nearbyStations);
         bumpMapFit();
       } catch (err: unknown) {
-        setError(formatStationsLoadError(err));
+        setError(formatApiOrNetworkError(err));
         console.error('Error loading nearby stations:', err);
       } finally {
         setLoading(false);
@@ -208,7 +198,7 @@ export function StationsPage() {
         setStations(list);
       }
     } catch (err: unknown) {
-      setError(formatStationsLoadError(err));
+      setError(formatApiOrNetworkError(err));
     } finally {
       setViewportStationsLoading(false);
     }
@@ -265,7 +255,7 @@ export function StationsPage() {
       setStations(results);
       bumpMapFit();
     } catch (err: unknown) {
-      setError(formatStationsLoadError(err));
+      setError(formatApiOrNetworkError(err));
     } finally {
       setLoading(false);
     }
