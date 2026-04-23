@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import type { Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
 import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from './common/cors-origins';
@@ -13,7 +15,25 @@ function isSwaggerEnabled(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
+function enforceRequiredEnvInProduction() {
+  if (process.env.NODE_ENV !== 'production') return;
+  const required = ['JWT_SECRET', 'SERVICE_TOKEN'];
+  const missing = required.filter((k) => !process.env[k] || !String(process.env[k]).trim());
+  if (missing.length > 0) {
+    throw new Error(`Missing required production environment variables: ${missing.join(', ')}`);
+  }
+  const jwtSecret = String(process.env.JWT_SECRET || '');
+  const serviceToken = String(process.env.SERVICE_TOKEN || '');
+  if (jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production');
+  }
+  if (serviceToken.length < 32) {
+    throw new Error('SERVICE_TOKEN must be at least 32 characters in production');
+  }
+}
+
 async function bootstrap() {
+  enforceRequiredEnvInProduction();
   const port = Number(process.env.PORT || 3000);
   const swaggerEnabled = isSwaggerEnabled();
   // OCPP handlers call the CSMS REST API; same process → loopback (avoids hairpin TLS to public URL).
@@ -23,6 +43,25 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   setupMergedOcppGateway(app);
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.use(helmet());
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 1200,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
+  app.use(
+    '/api/auth',
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 60,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
 
   // Optional HTTP logging for Render/debug: set LOG_HTTP_REQUESTS=all to log every request;
   // otherwise only 4xx/5xx are logged (low noise).

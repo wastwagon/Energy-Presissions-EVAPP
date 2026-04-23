@@ -4,7 +4,7 @@ import { CancelReservationPayload, CancelReservationResponse } from '../types/oc
 import axios from 'axios';
 
 const CSMS_API_URL = process.env.CSMS_API_URL || 'http://csms-api:3000';
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'your-service-token-change-in-production';
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || '';
 
 export class CancelReservationHandler {
   constructor(private connectionManager: ConnectionManager) {}

@@ -21,6 +21,16 @@ export type MergedOcppHandle = {
   shutdown: () => Promise<void>;
 };
 
+function hasValidServiceToken(req: Request): boolean {
+  const configuredToken = (process.env.SERVICE_TOKEN || '').trim();
+  if (!configuredToken) return false;
+  const authHeader = String(req.headers.authorization || '').trim();
+  const serviceHeader = String(req.headers['x-service-token'] || '').trim();
+  const bearer = authHeader.replace(/^Bearer\s+/i, '').trim();
+  const token = bearer || serviceHeader;
+  return token === configuredToken;
+}
+
 function extractChargePointId(pathname: string): string | null {
   const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   const parts = normalizedPath.split('/').filter((p) => p);
@@ -65,7 +75,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Service-Token');
 
     if (req.method === 'OPTIONS' && (pathname.startsWith('/command') || pathname.startsWith('/health/connection'))) {
       res.status(200).end();
@@ -73,6 +83,10 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     }
 
     if (req.method === 'GET' && pathname.startsWith('/health/connection/')) {
+      if (!hasValidServiceToken(req)) {
+        res.status(401).json({ error: 'Service token required' });
+        return;
+      }
       const parts = pathname.split('/').filter(Boolean);
       const chargePointId = parts[2];
       if (!chargePointId) {
@@ -85,6 +99,10 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     }
 
     if (req.method === 'POST' && pathname.startsWith('/command/')) {
+      if (!hasValidServiceToken(req)) {
+        res.status(401).json({ error: 'Service token required' });
+        return;
+      }
       const chargePointId = pathname.split('/').filter(Boolean)[1];
       if (!chargePointId) {
         res.status(400).json({ error: 'Charge point ID required' });
@@ -275,7 +293,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
               `${csmsBase}/api/internal/vendors/${vendorId}/status`,
               {
                 headers: {
-                  Authorization: `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
+                  Authorization: `Bearer ${process.env.SERVICE_TOKEN || ''}`,
                 },
                 timeout: 5000,
               },

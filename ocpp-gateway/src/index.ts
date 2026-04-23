@@ -246,7 +246,7 @@ wss.on('connection', async (ws, req) => {
             `${process.env.CSMS_API_URL || 'http://csms-api:3000'}/api/internal/vendors/${vendorId}/status`,
             {
               headers: {
-                Authorization: `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
+                Authorization: `Bearer ${process.env.SERVICE_TOKEN || ''}`,
               },
               timeout: 5000,
             },

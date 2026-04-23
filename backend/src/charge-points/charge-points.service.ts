@@ -546,7 +546,7 @@ export class ChargePointsService {
                 },
                 {
                   headers: {
-                    'Authorization': `Bearer ${process.env.SERVICE_TOKEN || 'your-service-token-change-in-production'}`,
+                    'Authorization': `Bearer ${process.env.SERVICE_TOKEN || ''}`,
                     'Content-Type': 'application/json',
                   },
                 }

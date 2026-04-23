@@ -17,8 +17,10 @@ export class ServiceTokenGuard implements CanActivate {
       throw new UnauthorizedException('Service token required');
     }
 
-    const expectedToken =
-      this.configService.get<string>('SERVICE_TOKEN') || 'your-service-token-change-in-production';
+    const expectedToken = this.configService.get<string>('SERVICE_TOKEN');
+    if (!expectedToken) {
+      throw new UnauthorizedException('Service token is not configured');
+    }
 
     if (token !== expectedToken) {
       throw new UnauthorizedException('Invalid service token');
