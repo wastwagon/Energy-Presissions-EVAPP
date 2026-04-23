@@ -4,6 +4,8 @@
  */
 import { INestApplication } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import type { IncomingMessage } from 'http';
+import type { Duplex } from 'stream';
 import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
 import Redis from 'ioredis';
@@ -239,7 +241,21 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
   }
 
   const httpServer = app.getHttpServer();
-  const wss = new WebSocketServer({ server: httpServer });
+  // Do not use `{ server }` here: without `path`, `ws` accepts every upgrade and steals Socket.IO on `/ws`.
+  const wss = new WebSocketServer({ noServer: true });
+
+  const onHttpUpgrade = (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    const pathname = (req.url || '').split('?')[0] || '';
+    const isOcppPath = pathname === '/ocpp' || pathname.startsWith('/ocpp/');
+    if (!isOcppPath) {
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
+  };
+
+  httpServer.on('upgrade', onHttpUpgrade);
 
   wss.on('connection', async (ws, req) => {
     const urlString = req.url || '';
@@ -449,6 +465,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
   logger.info('Merged OCPP gateway: WebSocket /ocpp and HTTP /command mounted on CSMS API server');
 
   const shutdown = async () => {
+    httpServer.off('upgrade', onHttpUpgrade);
     await new Promise<void>((resolve) => {
       wss.close(() => resolve());
     });
