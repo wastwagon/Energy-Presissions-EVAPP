@@ -93,10 +93,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Client uses /api and /ws same-origin; nginx in this service proxies to API_ORIGIN
       - key: VITE_API_URL
-        value: https://api.cleanmotion.energyprecisions.com/api
-      - key: VITE_WS_URL
-        value: wss://api.cleanmotion.energyprecisions.com/ws
+        value: /api
+      - key: API_ORIGIN
+        value: https://api.cleanmotion.energyprecisions.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
       - key: VITE_PRIVACY_POLICY_URL

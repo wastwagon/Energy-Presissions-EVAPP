@@ -108,11 +108,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_URL: http://localhost:8080/api
-        VITE_WS_URL: ws://localhost:8080/ws
+        VITE_API_URL: /api
     container_name: ev-billing-frontend
     environment:
       NODE_ENV: production
+      # Nginx in this image proxies to the API (see EnergyPresissionsEVAP/frontend/default.conf.template)
+      API_ORIGIN: http://csms-api:3000
     depends_on:
       - csms-api
     networks:

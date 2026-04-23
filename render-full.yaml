@@ -77,9 +77,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_URL
-        value: https://ev-billing-api.onrender.com/api
-      - key: VITE_WS_URL
-        value: wss://ev-billing-api.onrender.com/ws
+        value: /api
+      - key: API_ORIGIN
+        value: https://ev-billing-api.onrender.com
 
   # MinIO Object Storage
   - type: web
