@@ -1,6 +1,6 @@
 # Frontend production: nginx serves static + proxies /api and /ws to API_ORIGIN (set at runtime).
 # Build with VITE_API_URL=/api so the browser uses same origin (no CORS to a second host).
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
