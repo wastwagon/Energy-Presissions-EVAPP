@@ -24,8 +24,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   setupMergedOcppGateway(app);
 
-  const allowedOrigins = collectAllowedOrigins();
-
   // Optional HTTP logging for Render/debug: set LOG_HTTP_REQUESTS=all to log every request;
   // otherwise only 4xx/5xx are logged (low noise).
   const httpLogger = new Logger('HTTP');
@@ -45,8 +43,10 @@ async function bootstrap() {
   });
 
   app.enableCors({
+    // Recompute on each request so .env and CORS_* are current (same idea as WebSocket CORS).
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
+      const allowedOrigins = collectAllowedOrigins();
       if (isBrowserOriginAllowed(origin, allowedOrigins)) {
         return callback(null, true);
       }
@@ -58,16 +58,10 @@ async function bootstrap() {
       return callback(null, false);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Vendor-Id',
-      'Accept',
-      'Accept-Language',
-      'Origin',
-      'X-Requested-With',
-    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+    // Omit allowedHeaders: let the `cors` package echo Access-Control-Request-Headers on preflight
+    // so browsers are not blocked when axios sends Cache-Control, Pragma, or custom keys.
+    maxAge: 86400,
   });
 
   // Global validation pipe
