@@ -8,6 +8,12 @@ import './stationsMap.css';
 
 const ACCRA: L.LatLngTuple = [5.6037, -0.187];
 
+/** Ghana (WGS84) — panning is restricted so the map cannot be dragged to center outside the country. */
+const GHANA_BOUNDS = L.latLngBounds(
+  [4.72, -3.29] as L.LatLngTuple,
+  [11.19, 1.29] as L.LatLngTuple,
+);
+
 function evDivHtml(selected: boolean): string {
   const size = selected ? 34 : 28;
   const ring = selected ? '0 0 0 3px rgba(25, 118, 210, 0.55)' : 'none';
@@ -77,11 +83,21 @@ function MapFitView({ mapFitToken, dataRef }: { mapFitToken: number; dataRef: Mu
       return;
     }
     if (latlngs.length === 1) {
-      map.setView(latlngs[0]!, 12);
+      const p = latlngs[0]!;
+      const ll = L.latLng(p[0], p[1]);
+      map.setView(GHANA_BOUNDS.contains(ll) ? p : ACCRA, 12);
       return;
     }
     const bounds = L.latLngBounds(latlngs);
-    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+    const south = Math.max(bounds.getSouth(), GHANA_BOUNDS.getSouth());
+    const north = Math.min(bounds.getNorth(), GHANA_BOUNDS.getNorth());
+    const west = Math.max(bounds.getWest(), GHANA_BOUNDS.getWest());
+    const east = Math.min(bounds.getEast(), GHANA_BOUNDS.getEast());
+    if (south <= north && west <= east) {
+      map.fitBounds(L.latLngBounds([south, west], [north, east]), { padding: [36, 36], maxZoom: 15 });
+    } else {
+      map.fitBounds(GHANA_BOUNDS, { padding: [28, 28], maxZoom: 12 });
+    }
   }, [map, mapFitToken, dataRef]);
 
   return null;
@@ -270,8 +286,12 @@ export function StationsMapView({
     <MapContainer
       center={ACCRA}
       zoom={10}
+      minZoom={6}
+      maxBounds={GHANA_BOUNDS}
+      maxBoundsViscosity={1}
       style={{ height: '100%', width: '100%', zIndex: 0 }}
       scrollWheelZoom
+      worldCopyJump={false}
       data-testid="stations-map"
     >
       <TileLayer

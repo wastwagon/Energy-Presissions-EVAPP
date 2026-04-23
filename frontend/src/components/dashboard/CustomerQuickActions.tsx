@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Grid, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { SvgIconComponent } from '@mui/icons-material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
@@ -36,7 +35,6 @@ export type CustomerQuickActionsPreset =
   | 'charging';
 
 type ActionKey =
-  | 'dashboard'
   | 'stations'
   | 'favorites'
   | 'live'
@@ -65,13 +63,6 @@ const ACTION_DEFS: Record<ActionKey, ActionDef> = {
     shortLabel: 'Charging',
     ariaLabel: 'Charging hub',
     Icon: EvStationIcon,
-  },
-  dashboard: {
-    path: CUSTOMER_ROUTES.dashboard,
-    label: 'Dashboard',
-    shortLabel: 'Home',
-    ariaLabel: 'Go to my dashboard',
-    Icon: DashboardIcon,
   },
   stations: {
     path: CUSTOMER_ROUTES.stations,
@@ -153,21 +144,21 @@ const ACTION_DEFS: Record<ActionKey, ActionDef> = {
 };
 
 const PRESET_KEYS: Record<CustomerQuickActionsPreset, ActionKey[]> = {
-  charging: ['dashboard', 'stations', 'favorites', 'live', 'history', 'wallet', 'help'],
+  charging: ['stations', 'favorites', 'live', 'history', 'wallet', 'help'],
   dashboard: ['charging', 'stations', 'favorites', 'live', 'history', 'payments', 'help'],
-  wallet: ['dashboard', 'top_up', 'payment_methods', 'stations', 'live', 'history'],
-  top_up: ['dashboard', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
-  stations: ['charging', 'dashboard', 'favorites', 'live', 'wallet', 'history', 'help'],
-  sessions_active: ['charging', 'dashboard', 'stations', 'history', 'wallet', 'payments', 'help'],
-  sessions_history: ['charging', 'dashboard', 'live', 'stations', 'wallet', 'payments', 'help'],
-  favorites: ['dashboard', 'stations', 'live', 'wallet', 'payments', 'help'],
-  payments: ['dashboard', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
-  help: ['dashboard', 'stations', 'wallet', 'live', 'profile', 'payments'],
-  profile: ['dashboard', 'wallet', 'stations', 'live', 'preferences', 'help'],
-  payment_methods: ['dashboard', 'wallet', 'top_up', 'stations', 'live', 'payments'],
-  preferences: ['dashboard', 'profile', 'wallet', 'stations', 'live', 'help'],
-  transaction_detail: ['dashboard', 'history', 'live', 'stations', 'wallet', 'payments'],
-  station_detail: ['dashboard', 'stations', 'favorites', 'live', 'wallet', 'history'],
+  wallet: ['charging', 'top_up', 'payment_methods', 'stations', 'live', 'history'],
+  top_up: ['charging', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
+  stations: ['charging', 'favorites', 'live', 'wallet', 'history', 'help'],
+  sessions_active: ['charging', 'stations', 'history', 'wallet', 'payments', 'help'],
+  sessions_history: ['charging', 'live', 'stations', 'wallet', 'payments', 'help'],
+  favorites: ['charging', 'stations', 'live', 'wallet', 'payments', 'help'],
+  payments: ['charging', 'wallet', 'payment_methods', 'stations', 'live', 'history'],
+  help: ['charging', 'stations', 'wallet', 'live', 'profile', 'payments'],
+  profile: ['charging', 'wallet', 'stations', 'live', 'preferences', 'help'],
+  payment_methods: ['charging', 'wallet', 'top_up', 'stations', 'live', 'payments'],
+  preferences: ['charging', 'profile', 'wallet', 'stations', 'live', 'help'],
+  transaction_detail: ['charging', 'history', 'live', 'stations', 'wallet', 'payments'],
+  station_detail: ['charging', 'stations', 'favorites', 'live', 'wallet', 'history'],
 };
 
 export interface CustomerQuickActionsProps {

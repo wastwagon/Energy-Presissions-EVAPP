@@ -5,6 +5,11 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../entities/user.entity';
 
+/** Default bcrypt password for bootstrap accounts when first created only (never rotated on restart). */
+const BOOTSTRAP_ADMIN_PASSWORD = 'admin123';
+const BOOTSTRAP_WALKIN_PASSWORD = 'walkin123';
+const DEMO_CUSTOMER_PASSWORD = 'customer123';
+
 @Injectable()
 export class SeedService implements OnModuleInit {
   private readonly logger = new Logger(SeedService.name);
@@ -26,148 +31,154 @@ export class SeedService implements OnModuleInit {
     return 1;
   }
 
-  async onModuleInit() {
-    const isProd = this.config.get<string>('NODE_ENV') === 'production';
-    const forceSeed = this.config.get<string>('ENABLE_DEV_SEED') === 'true';
-    if (isProd && !forceSeed) {
-      this.logger.log('Skipping default user seed in production (set ENABLE_DEV_SEED=true to allow).');
-      return;
-    }
-    await this.seedDefaultUsers();
+  private bootstrapSeedDisabled(): boolean {
+    const v = String(this.config.get<string>('SEED_BOOTSTRAP_USERS') ?? '').toLowerCase();
+    return v === 'false' || v === '0' || v === 'no';
   }
 
-  async seedDefaultUsers() {
+  async onModuleInit() {
+    const isProd = this.config.get<string>('NODE_ENV') === 'production';
+
+    if (isProd && this.bootstrapSeedDisabled()) {
+      this.logger.log(
+        'SEED_BOOTSTRAP_USERS disables default SuperAdmin/vendor Admin bootstrap (production).',
+      );
+    } else {
+      if (isProd) {
+        this.logger.warn(
+          'Ensuring bootstrap staff users (SuperAdmin + vendor admins + walk-in). Set SEED_BOOTSTRAP_USERS=false after onboarding real accounts; change passwords in the app.',
+        );
+      }
+      await this.seedBootstrapStaffUsers();
+    }
+
+    const forceDevSeed = this.config.get<string>('ENABLE_DEV_SEED') === 'true';
+    const seedDemoCustomers = !isProd || forceDevSeed;
+
+    if (seedDemoCustomers) {
+      await this.seedDemoCustomerUsers();
+    }
+  }
+
+  /** SuperAdmin, walk-in, vendor-scoped admins — runs in production unless SEED_BOOTSTRAP_USERS=false. Idempotent (create-if-missing only). */
+  async seedBootstrapStaffUsers() {
     try {
-      // Check if default admin user exists
-      let adminUser = await this.userRepository.findOne({
-        where: { email: 'admin@evcharging.com' },
-      });
+      const vid = this.seedVendorId();
 
-      if (!adminUser) {
-        const adminPasswordHash = await bcrypt.hash('admin123', 10);
-        adminUser = this.userRepository.create({
-          email: 'admin@evcharging.com',
-          passwordHash: adminPasswordHash,
-          firstName: 'System',
-          lastName: 'Administrator',
-          phone: '+233000000000',
-          accountType: 'SuperAdmin',
-          balance: 0,
-          currency: 'GHS',
-          status: 'Active',
-          emailVerified: true,
-          vendorId: this.seedVendorId(),
-        });
-        await this.userRepository.save(adminUser);
-        this.logger.log('✅ Default admin user created: admin@evcharging.com / admin123');
-      } else {
-        this.logger.log('ℹ️  Default admin user already exists');
-      }
-
-      // Check if walk-in customer user exists
-      let walkInUser = await this.userRepository.findOne({
-        where: { email: 'walkin@evcharging.com' },
-      });
-
-      if (!walkInUser) {
-        const walkInPasswordHash = await bcrypt.hash('walkin123', 10);
-        walkInUser = this.userRepository.create({
-          email: 'walkin@evcharging.com',
-          passwordHash: walkInPasswordHash,
-          firstName: 'Walk-In',
-          lastName: 'Customer',
-          accountType: 'WalkIn',
-          balance: 0,
-          currency: 'GHS',
-          status: 'Active',
-          emailVerified: false,
-          vendorId: this.seedVendorId(),
-        });
-        await this.userRepository.save(walkInUser);
-        this.logger.log('✅ Walk-in customer user created');
-      } else {
-        this.logger.log('ℹ️  Walk-in customer user already exists');
-      }
-
-      // Create admin users for vendor 1
-      const adminUsers = [
-        { email: 'admin1@vendor1.com', firstName: 'Vendor', lastName: 'Admin One' },
-        { email: 'admin2@vendor1.com', firstName: 'Vendor', lastName: 'Admin Two' },
-      ];
-
-      for (const adminData of adminUsers) {
-        let adminUser = await this.userRepository.findOne({
-          where: { email: adminData.email },
-        });
-
-        if (!adminUser) {
-          const adminPasswordHash = await bcrypt.hash('admin123', 10);
-          adminUser = this.userRepository.create({
-            email: adminData.email,
-            passwordHash: adminPasswordHash,
-            firstName: adminData.firstName,
-            lastName: adminData.lastName,
-            accountType: 'Admin',
+      await this.ensureUser({
+        email: 'admin@evcharging.com',
+        create: async () =>
+          this.userRepository.create({
+            email: 'admin@evcharging.com',
+            passwordHash: await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10),
+            firstName: 'System',
+            lastName: 'Administrator',
+            phone: '+233000000000',
+            accountType: 'SuperAdmin',
             balance: 0,
             currency: 'GHS',
             status: 'Active',
             emailVerified: true,
-            vendorId: this.seedVendorId(),
-          });
-          await this.userRepository.save(adminUser);
-          this.logger.log(`✅ Admin user created: ${adminData.email} / admin123`);
-        } else {
-          // Update password hash if user exists (in case it was wrong)
-          const adminPasswordHash = await bcrypt.hash('admin123', 10);
-          adminUser.passwordHash = adminPasswordHash;
-          adminUser.accountType = 'Admin';
-          adminUser.status = 'Active';
-          await this.userRepository.save(adminUser);
-          this.logger.log(`✅ Admin user updated: ${adminData.email} / admin123`);
-        }
+            vendorId: vid,
+          }),
+      });
+
+      await this.ensureUser({
+        email: 'walkin@evcharging.com',
+        create: async () =>
+          this.userRepository.create({
+            email: 'walkin@evcharging.com',
+            passwordHash: await bcrypt.hash(BOOTSTRAP_WALKIN_PASSWORD, 10),
+            firstName: 'Walk-In',
+            lastName: 'Customer',
+            accountType: 'WalkIn',
+            balance: 0,
+            currency: 'GHS',
+            status: 'Active',
+            emailVerified: false,
+            vendorId: vid,
+          }),
+      });
+
+      const admins = [
+        { email: 'admin1@vendor1.com', firstName: 'Vendor', lastName: 'Admin One' },
+        { email: 'admin2@vendor1.com', firstName: 'Vendor', lastName: 'Admin Two' },
+      ];
+
+      for (const adminData of admins) {
+        await this.ensureUser({
+          email: adminData.email,
+          create: async () =>
+            this.userRepository.create({
+              email: adminData.email,
+              passwordHash: await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10),
+              firstName: adminData.firstName,
+              lastName: adminData.lastName,
+              accountType: 'Admin',
+              balance: 0,
+              currency: 'GHS',
+              status: 'Active',
+              emailVerified: true,
+              vendorId: vid,
+            }),
+        });
       }
 
-      // Create customer users for vendor 1
+      this.logger.log(
+        `Bootstrap staff ready (vendor_id=${vid}). SuperAdmin: admin@evcharging.com; vendor admins: admin1@vendor1.com, admin2@vendor1.com — initial password "${BOOTSTRAP_ADMIN_PASSWORD}" on first create only.`,
+      );
+    } catch (error) {
+      this.logger.error('Error seeding bootstrap staff users:', error);
+    }
+  }
+
+  private async ensureUser(opts: {
+    email: string;
+    create: () => Promise<User>;
+  }): Promise<void> {
+    const existing = await this.userRepository.findOne({ where: { email: opts.email } });
+    if (existing) {
+      this.logger.debug(`User already exists: ${opts.email}`);
+      return;
+    }
+    const entity = await opts.create();
+    await this.userRepository.save(entity);
+    this.logger.log(`Created bootstrap user: ${opts.email}`);
+  }
+
+  /** Demo customer accounts — dev by default; production only if ENABLE_DEV_SEED=true */
+  async seedDemoCustomerUsers() {
+    try {
+      const vid = this.seedVendorId();
+
       const customerUsers = [
-        { email: 'customer1@vendor1.com', firstName: 'John', lastName: 'Doe', balance: 100.00 },
-        { email: 'customer2@vendor1.com', firstName: 'Jane', lastName: 'Smith', balance: 50.00 },
-        { email: 'customer3@vendor1.com', firstName: 'Bob', lastName: 'Johnson', balance: 0.00 },
+        { email: 'customer1@vendor1.com', firstName: 'John', lastName: 'Doe', balance: 100.0 },
+        { email: 'customer2@vendor1.com', firstName: 'Jane', lastName: 'Smith', balance: 50.0 },
+        { email: 'customer3@vendor1.com', firstName: 'Bob', lastName: 'Johnson', balance: 0.0 },
       ];
 
       for (const customerData of customerUsers) {
-        let customerUser = await this.userRepository.findOne({
-          where: { email: customerData.email },
+        await this.ensureUser({
+          email: customerData.email,
+          create: async () =>
+            this.userRepository.create({
+              email: customerData.email,
+              passwordHash: await bcrypt.hash(DEMO_CUSTOMER_PASSWORD, 10),
+              firstName: customerData.firstName,
+              lastName: customerData.lastName,
+              accountType: 'Customer',
+              balance: customerData.balance,
+              currency: 'GHS',
+              status: 'Active',
+              emailVerified: true,
+              vendorId: vid,
+            }),
         });
-
-        if (!customerUser) {
-          const customerPasswordHash = await bcrypt.hash('customer123', 10);
-          customerUser = this.userRepository.create({
-            email: customerData.email,
-            passwordHash: customerPasswordHash,
-            firstName: customerData.firstName,
-            lastName: customerData.lastName,
-            accountType: 'Customer',
-            balance: customerData.balance,
-            currency: 'GHS',
-            status: 'Active',
-            emailVerified: true,
-            vendorId: this.seedVendorId(),
-          });
-          await this.userRepository.save(customerUser);
-          this.logger.log(`✅ Customer user created: ${customerData.email} / customer123`);
-        } else {
-          // Update password hash if user exists
-          const customerPasswordHash = await bcrypt.hash('customer123', 10);
-          customerUser.passwordHash = customerPasswordHash;
-          customerUser.accountType = 'Customer';
-          customerUser.status = 'Active';
-          await this.userRepository.save(customerUser);
-          this.logger.log(`✅ Customer user updated: ${customerData.email} / customer123`);
-        }
       }
+
+      this.logger.log(`Demo customer seed checked (password ${DEMO_CUSTOMER_PASSWORD} on first create only).`);
     } catch (error) {
-      this.logger.error('Error seeding default users:', error);
+      this.logger.error('Error seeding demo customer users:', error);
     }
   }
 }
-

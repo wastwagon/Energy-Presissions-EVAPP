@@ -79,6 +79,8 @@ services:
       SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
       MIGRATIONS_AUTO_RUN: "true"
       INCLUDE_SAMPLE_DATA: "false"
+      # Create SuperAdmin + vendor admins + walk-in on first API start if absent (set false after onboarding)
+      SEED_BOOTSTRAP_USERS: "true"
       CORS_STRICT_ORIGINS: "true"
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}

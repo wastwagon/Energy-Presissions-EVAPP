@@ -66,9 +66,6 @@ const TermsOfServicePage = lazy(() =>
 const SupportPage = lazy(() =>
   import('./pages/legal/SupportPage').then((m) => ({ default: m.SupportPage })),
 );
-const CustomerDashboardPage = lazy(() =>
-  import('./pages/user/CustomerDashboardPage').then((m) => ({ default: m.CustomerDashboardPage })),
-);
 const CustomerActiveSessionsPage = lazy(() =>
   import('./pages/user/CustomerActiveSessionsPage').then((m) => ({ default: m.CustomerActiveSessionsPage })),
 );
@@ -411,8 +408,8 @@ function App() {
                 </RouteSuspense>
               }
             >
-              <Route index element={<Navigate to={CUSTOMER_ROUTES.dashboard} replace />} />
-              <Route path="dashboard" element={<CustomerDashboardPage />} />
+              <Route index element={<Navigate to={CUSTOMER_ROUTES.stations} replace />} />
+              <Route path="dashboard" element={<Navigate to={CUSTOMER_ROUTES.stations} replace />} />
               <Route path="charging" element={<CustomerChargingPage />} />
               <Route path="sessions/active" element={<CustomerActiveSessionsPage />} />
               <Route path="sessions/history" element={<CustomerSessionHistoryPage />} />

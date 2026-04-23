@@ -2,6 +2,7 @@
  * Canonical customer-facing route strings (bottom nav, quick actions, deep links).
  */
 export const CUSTOMER_ROUTES = {
+  /** Legacy path; router redirects to `charging`. */
   dashboard: '/user/dashboard',
   /** Premium hub: find chargers, sessions, wallet (Tesla-style entry). */
   charging: '/user/charging',

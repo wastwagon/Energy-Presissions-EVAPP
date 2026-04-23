@@ -430,7 +430,6 @@ export const adminMenuConfig: MenuSection[] = [
  * Bottom navigation items for mobile/tablet (native app feel)
  */
 export const customerBottomNavItems = [
-  { id: 'dashboard', label: 'Home', icon: <DashboardIcon />, path: CUSTOMER_ROUTES.dashboard },
   {
     id: 'stations',
     label: 'Stations',

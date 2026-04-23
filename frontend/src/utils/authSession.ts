@@ -39,7 +39,8 @@ export function clearSession(): void {
 export function getDashboardPathForAccountType(accountType?: string): string {
   if (accountType === 'SuperAdmin') return SUPERADMIN_ROUTES.dashboard;
   if (accountType === 'Admin') return ADMIN_ROUTES.dashboard;
-  return CUSTOMER_ROUTES.dashboard;
+  /** Customer/Walk-In: map & search first (Find stations). */
+  return CUSTOMER_ROUTES.stations;
 }
 
 export function getStoredAccountType(): string | undefined {

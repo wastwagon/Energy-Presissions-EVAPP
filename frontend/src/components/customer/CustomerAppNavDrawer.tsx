@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import EvStationIcon from '@mui/icons-material/EvStation';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HistoryIcon from '@mui/icons-material/History';
@@ -29,7 +28,6 @@ export type NavRow = { label: string; to: string; Icon: SvgIconComponent };
 const PRIMARY: NavRow[] = [
   { label: 'Find stations', to: CUSTOMER_ROUTES.stations, Icon: LocationOnIcon },
   { label: 'Charging', to: CUSTOMER_ROUTES.charging, Icon: EvStationIcon },
-  { label: 'Home', to: CUSTOMER_ROUTES.dashboard, Icon: DashboardIcon },
   { label: 'Wallet', to: CUSTOMER_ROUTES.wallet, Icon: AccountBalanceWalletIcon },
   { label: 'Payments', to: CUSTOMER_ROUTES.payments, Icon: PaymentIcon },
   { label: 'Session history', to: CUSTOMER_ROUTES.sessionsHistory, Icon: HistoryIcon },

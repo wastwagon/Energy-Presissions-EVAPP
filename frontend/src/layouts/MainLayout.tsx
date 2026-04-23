@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import EvStationIcon from '@mui/icons-material/EvStation';
 import { BottomNav, isBottomNavItemActive, type BottomNavItem } from '../components/BottomNav';
 import { customerBottomNavItems, mainLayoutBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from '../config/customerNav.paths';
@@ -57,6 +58,26 @@ export function MainLayout() {
 
   const isCustomer = isCustomerOrWalkInAccount(user);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
+
+  const mainLayoutCustomerBottomItems: BottomNavItem[] = useMemo(
+    () => [
+      {
+        id: 'stations',
+        label: 'Find Stations',
+        icon: <LocationOnIcon />,
+        path: CUSTOMER_ROUTES.stations,
+        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
+      },
+      {
+        id: 'charging',
+        label: 'Charging',
+        icon: <EvStationIcon />,
+        path: CUSTOMER_ROUTES.charging,
+        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.sessions],
+      },
+    ],
+    [],
+  );
 
   const desktopHeaderNavItems: BottomNavItem[] = useMemo(() => {
     if (!isAuthenticated || !user) return [];
@@ -264,10 +285,12 @@ export function MainLayout() {
           <BottomNav
             items={
               isAuthenticated
-                ? [
-                    ...mainLayoutBottomNavItems.slice(0, 2),
-                    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
-                  ]
+                ? isCustomer
+                  ? mainLayoutCustomerBottomItems
+                  : [
+                      ...mainLayoutBottomNavItems.slice(0, 2),
+                      { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
+                    ]
                 : mainLayoutBottomNavItems
             }
             accentColor={brandColors.primary}

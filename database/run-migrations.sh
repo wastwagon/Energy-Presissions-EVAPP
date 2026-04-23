@@ -94,7 +94,8 @@ if [ "$INCLUDE_SAMPLE_DATA" = "true" ]; then
     echo "  - Admin: admin1@vendor1.com / admin123"
     echo "  - Customer: customer1@vendor1.com / customer123"
 else
-    echo "Sample user/station seed skipped (INCLUDE_SAMPLE_DATA=false)."
+    echo "SQL sample stations/customers skipped (INCLUDE_SAMPLE_DATA=false)."
+    echo "Bootstrap staff (SuperAdmin, vendor admins, walk-in) is handled by the API on startup unless SEED_BOOTSTRAP_USERS=false."
 fi
 echo ""
 
