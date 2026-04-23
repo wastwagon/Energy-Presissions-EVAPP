@@ -6,6 +6,41 @@ export function normalizeOrigin(origin: string): string {
   return origin.trim().replace(/\/+$/, '');
 }
 
+/** Comma-separated extra origins (both names supported — .env.example historically used CORS_ORIGIN). */
+function extraOriginsFromEnv(): string[] {
+  const a = process.env.CORS_ORIGINS?.split(',') ?? [];
+  const b = process.env.CORS_ORIGIN?.split(',') ?? [];
+  return [...a, ...b];
+}
+
+/**
+ * HTTPS browser origins under this root host are allowed when not in strict mode
+ * (exact list still checked first). Covers app + API misconfig and missing env on early module load.
+ */
+const TRUSTED_HTTPS_ROOT_DOMAINS = ['energyprecisions.com'] as const;
+
+function isStrictCorsMode(): boolean {
+  const v = (process.env.CORS_STRICT_ORIGINS || '').toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+function isTrustedHttpsBrandedHost(normalizedOrigin: string): boolean {
+  if (isStrictCorsMode()) return false;
+  if (!normalizedOrigin.startsWith('https://')) return false;
+  let hostname: string;
+  try {
+    hostname = new URL(normalizedOrigin).hostname;
+  } catch {
+    return false;
+  }
+  for (const root of TRUSTED_HTTPS_ROOT_DOMAINS) {
+    if (hostname === root || hostname.endsWith(`.${root}`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function collectAllowedOrigins(): string[] {
   const raw: (string | undefined)[] = [
     process.env.FRONTEND_URL,
@@ -18,8 +53,7 @@ export function collectAllowedOrigins(): string[] {
     'http://localhost:5173',
   ];
 
-  const extra = process.env.CORS_ORIGINS?.split(',') ?? [];
-  for (const s of extra) {
+  for (const s of extraOriginsFromEnv()) {
     raw.push(s);
   }
 
@@ -33,5 +67,8 @@ export function collectAllowedOrigins(): string[] {
 
 export function isBrowserOriginAllowed(origin: string | undefined, allowed: string[]): boolean {
   if (!origin) return true;
-  return allowed.includes(normalizeOrigin(origin));
+  const n = normalizeOrigin(origin);
+  if (allowed.includes(n)) return true;
+  if (isTrustedHttpsBrandedHost(n)) return true;
+  return false;
 }

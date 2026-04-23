@@ -9,16 +9,17 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from '../common/cors-origins';
 
-const socketCorsOrigins = collectAllowedOrigins();
-
 @NestWebSocketGateway({
   cors: {
+    // Recompute allowed origins on each handshake so this matches `main.ts` CORS after ConfigModule loads .env
+    // (module-level `collectAllowedOrigins()` can run before dotenv is applied).
     origin: (origin, callback) => {
       if (!origin) {
         callback(null, true);
         return;
       }
-      if (isBrowserOriginAllowed(origin, socketCorsOrigins)) {
+      const allowed = collectAllowedOrigins();
+      if (isBrowserOriginAllowed(origin, allowed)) {
         callback(null, true);
         return;
       }
