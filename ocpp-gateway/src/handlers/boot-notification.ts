@@ -91,14 +91,37 @@ export class BootNotificationHandler {
     logger.info(`Sending BootNotification data to CSMS API:`, dataToSend);
     
     try {
-      await axios.post(`${csmsApiUrl}/api/internal/charge-points`, dataToSend, {
+      const res = await axios.post(`${csmsApiUrl}/api/internal/charge-points`, dataToSend, {
         headers: {
           'Authorization': `Bearer ${process.env.SERVICE_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        validateStatus: () => true,
       });
-    } catch (error) {
-      logger.error(`Failed to notify CSMS API about charge point ${chargePointId}:`, error);
+      if (res.status >= 200 && res.status < 300) {
+        logger.info(
+          `BootNotification CSMS upsert OK: chargePointId=${chargePointId} httpStatus=${res.status}`,
+        );
+      } else {
+        const detail =
+          typeof res.data === 'object' && res.data !== null
+            ? JSON.stringify(res.data)
+            : String(res.data);
+        const msg = `BootNotification CSMS upsert FAILED: chargePointId=${chargePointId} httpStatus=${res.status} body=${detail.slice(0, 500)}`;
+        logger.error(msg);
+        throw new Error(msg);
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        const d = error.response.data;
+        const body =
+          typeof d === 'object' && d !== null ? JSON.stringify(d) : String(d);
+        logger.error(
+          `BootNotification CSMS upsert FAILED: chargePointId=${chargePointId} httpStatus=${error.response.status} (check SERVICE_TOKEN / CSMS_API_URL) body=${String(body).slice(0, 500)}`,
+        );
+      } else {
+        logger.error(`Failed to notify CSMS API about charge point ${chargePointId}:`, error);
+      }
       throw error;
     }
   }

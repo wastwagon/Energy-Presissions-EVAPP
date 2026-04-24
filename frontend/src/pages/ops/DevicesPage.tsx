@@ -102,7 +102,7 @@ export function DevicesPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
-  const [showOnlyRealDevices, setShowOnlyRealDevices] = useState(false);
+  const [showOnlyFieldProvisioned, setShowOnlyFieldProvisioned] = useState(false);
   
   // Connection logs state
   const [selectedChargePoint, setSelectedChargePoint] = useState<ChargePoint | null>(null);
@@ -203,10 +203,10 @@ export function DevicesPage() {
     loadRecentErrors();
   }, []);
 
-  // Helper: exclude seeded sample rows; include hardware/OCPP IDs even before serial is populated.
+  // Excludes known catalog import ID patterns; treats vendor + serial (or OCPP id shape) as field-provisioned.
   const isRealDevice = (cp: ChargePoint): boolean => {
-    const dummyIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
-    if (dummyIdPattern.test(cp.chargePointId)) {
+    const catalogImportIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
+    if (catalogImportIdPattern.test(cp.chargePointId)) {
       return false;
     }
 
@@ -226,27 +226,27 @@ export function DevicesPage() {
   };
 
   const inventoryTypeTooltip = (cp: ChargePoint): string => {
-    const dummyIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
-    if (dummyIdPattern.test(cp.chargePointId)) {
-      return 'Sample / seed device (dummy ID pattern)';
+    const catalogImportPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
+    if (catalogImportPattern.test(cp.chargePointId)) {
+      return 'Catalog-style import ID. Hide these with the field-devices filter in production';
     }
     if (isRealDevice(cp)) {
       return chargePointHasMapCoords(cp)
-        ? 'Registered device with map coordinates'
-        : 'Registered device — set GPS on the device detail page to show on the customer map';
+        ? 'Field device with map coordinates'
+        : 'Field device — set coordinates on the device page for the public map';
     }
     if (!cp.vendorName && !cp.vendor) {
-      return 'Incomplete row (no vendor)';
+      return 'Incomplete: assign a vendor';
     }
-    return 'Test or manual registration — add serial from BootNotification or use a numeric charge point ID';
+    return 'Pending provisioning: vendor and serial, or 14–20 digit charge point id from the station (BootNotification)';
   };
 
   useEffect(() => {
-    // Filter charge points based on search term and real device filter
+    // Filter by search term and optional field-provisioned filter
     let filtered = chargePoints;
 
-    // Apply real device filter first
-    if (showOnlyRealDevices) {
+    // Apply field-provisioned filter first
+    if (showOnlyFieldProvisioned) {
       filtered = filtered.filter(isRealDevice);
     }
 
@@ -262,7 +262,7 @@ export function DevicesPage() {
     }
 
     setFilteredChargePoints(filtered);
-  }, [searchTerm, chargePoints, showOnlyRealDevices]);
+  }, [searchTerm, chargePoints, showOnlyFieldProvisioned]);
 
   const loadChargePoints = async () => {
     try {
@@ -362,8 +362,8 @@ export function DevicesPage() {
             Device Inventory
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Track real devices, monitor connection health, and inspect recent errors. Customer map only lists
-            chargers with latitude and longitude set here (Operations → device detail).
+            Monitor field inventory, connection health, and recent errors. The public map only lists
+            stations with coordinates set (Operations → device detail).
           </Typography>
         </Box>
         <Box
@@ -376,13 +376,13 @@ export function DevicesPage() {
           }}
         >
           <Button
-            variant={showOnlyRealDevices ? 'contained' : 'outlined'}
+            variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
             startIcon={<FilterListIcon />}
-            onClick={() => setShowOnlyRealDevices(!showOnlyRealDevices)}
-            color={showOnlyRealDevices ? 'primary' : 'inherit'}
+            onClick={() => setShowOnlyFieldProvisioned(!showOnlyFieldProvisioned)}
+            color={showOnlyFieldProvisioned ? 'primary' : 'inherit'}
             sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
           >
-            {showOnlyRealDevices ? 'Show All Devices' : 'Real Devices Only'}
+            {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
           </Button>
           <TextField
             placeholder="Search devices..."
@@ -472,34 +472,34 @@ export function DevicesPage() {
           ) : filteredChargePoints.length === 0 ? (
             <Paper elevation={0} sx={{ ...premiumPanelCardSx, m: { xs: 2, sm: 2 } }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                {showOnlyRealDevices
-                  ? 'No real devices found'
+                {showOnlyFieldProvisioned
+                  ? 'No field devices in this list'
                   : searchTerm
                     ? 'No devices match your search'
                     : 'No charge points yet'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {showOnlyRealDevices
-                  ? 'Real devices: vendor set, and either a serial from the charger or a long numeric charge point ID. Excludes sample IDs (CP-ACC-*, CP-ASH-*, CP-WES-*).'
+                {showOnlyFieldProvisioned
+                  ? 'Field-provisioned rows: vendor set, and either a serial from the station or a long numeric charge point id. The filter hides catalog import ids (CP-ACC-*, CP-ASH-*, CP-WES-*).'
                   : searchTerm
                     ? 'Try another term or clear search to see all devices.'
-                    : 'Charge points appear here after BootNotification (or internal registration). Set GPS coordinates so they also appear on the customer Stations map.'}
+                    : 'Devices appear after BootNotification or registration. Set coordinates so they also show on the public Stations map.'}
               </Typography>
             </Paper>
           ) : (
             <>
-              {showOnlyRealDevices && (
+              {showOnlyFieldProvisioned && (
                 <Alert
                   severity="info"
                   sx={{ mt: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center', gap: 1, '& .MuiAlert-message': { width: { xs: '100%', sm: 'auto' } } }}
                 >
-                  Showing only real devices (vendor + serial or numeric OCPP-style ID). Map listing still requires GPS on each device.
+                  Showing only field-provisioned devices (vendor + serial or numeric OCPP-style id). The public map still needs coordinates on each device.
                   <Button 
                     size="small" 
-                    onClick={() => setShowOnlyRealDevices(false)}
+                    onClick={() => setShowOnlyFieldProvisioned(false)}
                     sx={{ ml: { xs: 0, sm: 2 }, width: { xs: '100%', sm: 'auto' } }}
                   >
-                    Show All Devices
+                    Show all
                   </Button>
                 </Alert>
               )}

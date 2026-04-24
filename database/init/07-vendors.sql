@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_vendor_disablements_vendor_id ON vendor_disableme
 CREATE INDEX IF NOT EXISTS idx_vendor_disablements_effective_at ON vendor_disablements(effective_at);
 
 -- Trigger to update updated_at column
+DROP TRIGGER IF EXISTS update_vendors_updated_at ON vendors;
 CREATE TRIGGER update_vendors_updated_at BEFORE UPDATE ON vendors
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

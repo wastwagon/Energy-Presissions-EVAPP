@@ -142,6 +142,24 @@ export class ChargePointsService {
   }
 
   /**
+   * Backfill `vendorName` from the vendors table (fixes rows updated only via early vendorId changes).
+   */
+  async reconcileVendorNamesFromVendorsTable(): Promise<{ updated: number }> {
+    const cps = await this.chargePointRepository.find();
+    let updated = 0;
+    for (const cp of cps) {
+      if (cp.vendorId == null) continue;
+      const v = await this.vendorRepository.findOne({ where: { id: cp.vendorId } });
+      if (v && cp.vendorName !== v.name) {
+        cp.vendorName = v.name;
+        await this.chargePointRepository.save(cp);
+        updated++;
+      }
+    }
+    return { updated };
+  }
+
+  /**
    * Remove a charge point and dependent rows (FK-safe). Blocks if an OCPP session is still Active.
    */
   async delete(chargePointId: string): Promise<void> {

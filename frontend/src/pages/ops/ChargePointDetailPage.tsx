@@ -420,6 +420,17 @@ export function ChargePointDetailPage() {
         </Alert>
       )}
 
+      <Alert severity="info" sx={{ mb: 2 }} variant="outlined">
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+          Production operations
+        </Typography>
+        <Typography variant="body2" color="text.secondary" component="div">
+          Connectors appear in this list when the charger reports them over OCPP (e.g. StatusNotification).
+          Set latitude and longitude in Settings for the public Stations map. Last heartbeat reflects OCPP
+          Heartbeat; last seen is updated when the server last stored registration or status from the device.
+        </Typography>
+      </Alert>
+
       <Grid container spacing={3}>
         {/* Charge Point Info */}
         <Grid item xs={12} md={6}>
@@ -553,7 +564,7 @@ export function ChargePointDetailPage() {
                   </span>
                 </Tooltip>
                 {clearStaleOperationalAvailable && (
-                  <Tooltip title="No active billing session in the database: resets connector/charge-point operational status when the UI is stuck after disconnect or simulator issues.">
+                  <Tooltip title="No active billing session: resets connector and charge point operational state when the UI is stuck after disconnect or a failed remote flow.">
                     <span style={{ width: '100%', display: 'block' }}>
                       <Button
                         variant="outlined"

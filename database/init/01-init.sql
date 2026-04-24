@@ -223,28 +223,36 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Add updated_at triggers
+-- Add updated_at triggers (DROP first so re-apply of init is safe on existing DBs)
+DROP TRIGGER IF EXISTS update_charge_points_updated_at ON charge_points;
 CREATE TRIGGER update_charge_points_updated_at BEFORE UPDATE ON charge_points
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_connectors_updated_at ON connectors;
 CREATE TRIGGER update_connectors_updated_at BEFORE UPDATE ON connectors
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_id_tags_updated_at ON id_tags;
 CREATE TRIGGER update_id_tags_updated_at BEFORE UPDATE ON id_tags
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_transactions_updated_at ON transactions;
 CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_tariffs_updated_at ON tariffs;
 CREATE TRIGGER update_tariffs_updated_at BEFORE UPDATE ON tariffs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_payments_updated_at ON payments;
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
 CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

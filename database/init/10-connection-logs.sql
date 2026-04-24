@@ -81,6 +81,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_connection_statistics ON connection_logs;
 CREATE TRIGGER trigger_update_connection_statistics
     AFTER INSERT ON connection_logs
     FOR EACH ROW

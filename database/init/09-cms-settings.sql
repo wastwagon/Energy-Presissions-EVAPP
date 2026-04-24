@@ -54,12 +54,15 @@ CREATE INDEX IF NOT EXISTS idx_branding_assets_type ON branding_assets(asset_typ
 CREATE INDEX IF NOT EXISTS idx_branding_assets_vendor ON branding_assets(vendor_id);
 
 -- Triggers
+DROP TRIGGER IF EXISTS update_system_settings_updated_at ON system_settings;
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_cms_content_updated_at ON cms_content;
 CREATE TRIGGER update_cms_content_updated_at BEFORE UPDATE ON cms_content
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_branding_assets_updated_at ON branding_assets;
 CREATE TRIGGER update_branding_assets_updated_at BEFORE UPDATE ON branding_assets
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

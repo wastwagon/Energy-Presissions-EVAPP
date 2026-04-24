@@ -149,18 +149,23 @@ CREATE INDEX IF NOT EXISTS idx_connection_states_charge_point ON connection_stat
 CREATE INDEX IF NOT EXISTS idx_connection_states_connected ON connection_states(is_connected);
 
 -- Add updated_at triggers for new tables
+DROP TRIGGER IF EXISTS update_config_keys_updated_at ON config_keys;
 CREATE TRIGGER update_config_keys_updated_at BEFORE UPDATE ON config_keys
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_charging_profiles_updated_at ON charging_profiles;
 CREATE TRIGGER update_charging_profiles_updated_at BEFORE UPDATE ON charging_profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_firmware_jobs_updated_at ON firmware_jobs;
 CREATE TRIGGER update_firmware_jobs_updated_at BEFORE UPDATE ON firmware_jobs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_diagnostics_jobs_updated_at ON diagnostics_jobs;
 CREATE TRIGGER update_diagnostics_jobs_updated_at BEFORE UPDATE ON diagnostics_jobs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_connection_states_updated_at ON connection_states;
 CREATE TRIGGER update_connection_states_updated_at BEFORE UPDATE ON connection_states
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

@@ -47,9 +47,11 @@ CREATE INDEX IF NOT EXISTS idx_local_auth_list_id_tag ON local_auth_list(id_tag)
 CREATE INDEX IF NOT EXISTS idx_local_auth_list_version ON local_auth_list(list_version);
 
 -- Add updated_at triggers
+DROP TRIGGER IF EXISTS update_reservations_updated_at ON reservations;
 CREATE TRIGGER update_reservations_updated_at BEFORE UPDATE ON reservations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_local_auth_list_updated_at ON local_auth_list;
 CREATE TRIGGER update_local_auth_list_updated_at BEFORE UPDATE ON local_auth_list
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

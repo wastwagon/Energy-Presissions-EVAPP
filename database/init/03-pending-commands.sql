@@ -22,6 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_pending_commands_charge_point_status ON pending_c
 CREATE INDEX IF NOT EXISTS idx_pending_commands_expires_at ON pending_commands(expires_at);
 
 -- Add updated_at trigger
+DROP TRIGGER IF EXISTS update_pending_commands_updated_at ON pending_commands;
 CREATE TRIGGER update_pending_commands_updated_at BEFORE UPDATE ON pending_commands
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

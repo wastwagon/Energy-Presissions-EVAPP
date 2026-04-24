@@ -44,6 +44,17 @@ export class ChargePointsController {
     return this.chargePointsService.findAll(search, finalVendorId);
   }
 
+  @Post('reconcile-vendor-names')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Set vendorName from vendors table for all charge points (data repair)' })
+  @ApiResponse({ status: 200, description: 'Count of rows updated' })
+  async reconcileVendorNames(): Promise<{ updated: number }> {
+    return this.chargePointsService.reconcileVendorNamesFromVendorsTable();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get charge point by ID' })
   @ApiResponse({ status: 200, description: 'Charge point details' })
