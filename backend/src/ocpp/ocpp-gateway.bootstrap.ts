@@ -84,6 +84,20 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
       return;
     }
 
+    // Plain HTTP GET on /ocpp (no WebSocket) returns 200 so health checks and curl are not 404. OCPP uses WS upgrade, not GET body.
+    const ocppGetPath =
+      pathname === '/ocpp' || pathname === '/ocpp/' || /^\/ocpp\/[^/]+\/?$/.test(pathname);
+    if (req.method === 'GET' && ocppGetPath) {
+      const isWs = String(req.headers.upgrade || '').toLowerCase() === 'websocket';
+      if (!isWs) {
+        res.status(200).json({
+          service: 'ocpp',
+          protocol: 'OCPP 1.6J (use wss:// WebSocket to this path, not a browser GET).',
+        });
+        return;
+      }
+    }
+
     if (req.method === 'GET' && pathname.startsWith('/health/connection/')) {
       if (!hasValidServiceToken(req)) {
         res.status(401).json({ error: 'Service token required' });
