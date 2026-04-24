@@ -115,21 +115,20 @@ else
 fi
 echo ""
 
-# Step 7: OCPP Gateway Connection Test
-echo -e "${BLUE}7. OCPP Gateway Status${NC}"
+# Step 7: OCPP Connection Test
+echo -e "${BLUE}7. OCPP API Status${NC}"
 echo "----------------------"
-OCPP_GATEWAY=$(docker ps --format "{{.Names}}" | grep ocpp-gateway)
-if [ -n "$OCPP_GATEWAY" ]; then
-    echo -e "${GREEN}✅ OCPP Gateway is running${NC}"
-    echo "   Container: $OCPP_GATEWAY"
-    echo "   Gateway URL: ws://localhost:9000"
+CSMS_API=$(docker ps --format "{{.Names}}" | grep csms-api)
+if [ -n "$CSMS_API" ]; then
+    echo -e "${GREEN}✅ CSMS API (embedded OCPP) is running${NC}"
+    echo "   Container: $CSMS_API"
+    echo "   OCPP URL: ws://localhost:3000/ocpp/{chargePointId}"
     echo ""
     echo "   To connect your device, configure it with:"
-    echo "   - OCPP Central System URL: ws://$(hostname -I | awk '{print $1}'):9000"
-    echo "   - Or use your computer's local IP: ws://$LOCAL_IP:9000"
+    echo "   - OCPP Central System URL: ws://$LOCAL_IP:3000/ocpp/{chargePointId}"
 else
-    echo -e "${RED}❌ OCPP Gateway is not running${NC}"
-    echo "   Start it with: docker-compose up -d ocpp-gateway"
+    echo -e "${RED}❌ CSMS API is not running${NC}"
+    echo "   Start it with: docker-compose up -d csms-api"
 fi
 echo ""
 
@@ -152,8 +151,7 @@ if [ ${#OPEN_PORTS[@]} -gt 0 ]; then
     echo ""
     echo "2. Configure OCPP connection:"
     echo "   - Charge Point ID: (check device manual or web interface)"
-    echo "   - Central System URL: ws://$LOCAL_IP:9000"
-    echo "   - Or use: ws://$(hostname -I | awk '{print $1}'):9000"
+    echo "   - Central System URL: ws://$LOCAL_IP:3000/ocpp/{chargePointId}"
 else
     echo -e "${YELLOW}⚠️  No open ports detected${NC}"
     echo ""

@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Device Connection Test Script
-# Tests connectivity and OCPP Gateway accessibility
+# Tests connectivity and embedded OCPP accessibility (via csms-api)
 
 DEVICE_IP="192.168.9.106"
 SYSTEM_IP="192.168.9.101"
 CHARGE_POINT_ID="0900330710111935"
-OCPP_PORT="9000"
+OCPP_PORT="3000"
 
 echo "=========================================="
 echo "Device Connection Diagnostic Test"
@@ -42,39 +42,39 @@ else
 fi
 echo ""
 
-# Test 2: OCPP Gateway Health
-echo -e "${BLUE}2. Testing OCPP Gateway Health${NC}"
+# Test 2: API Health (embedded OCPP)
+echo -e "${BLUE}2. Testing API Health (embedded OCPP)${NC}"
 echo "--------------------------------"
 if curl -s http://localhost:$OCPP_PORT/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ OCPP Gateway is running${NC}"
+    echo -e "${GREEN}✅ CSMS API is running${NC}"
     echo "   Health check: $(curl -s http://localhost:$OCPP_PORT/health)"
 else
-    echo -e "${RED}❌ OCPP Gateway is not responding${NC}"
+    echo -e "${RED}❌ CSMS API is not responding${NC}"
 fi
 echo ""
 
-# Test 3: OCPP Gateway Network Binding
-echo -e "${BLUE}3. Testing OCPP Gateway Network Binding${NC}"
+# Test 3: OCPP Network Binding
+echo -e "${BLUE}3. Testing OCPP Network Binding${NC}"
 echo "--------------------------------"
 if nc -zv -w 2 $SYSTEM_IP $OCPP_PORT > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ OCPP Gateway port is accessible from network${NC}"
+    echo -e "${GREEN}✅ OCPP port is accessible from network${NC}"
     echo "   Port $OCPP_PORT is open on $SYSTEM_IP"
 else
-    echo -e "${RED}❌ OCPP Gateway port is NOT accessible from network${NC}"
+    echo -e "${RED}❌ OCPP port is NOT accessible from network${NC}"
     echo "   Port $OCPP_PORT is not accessible on $SYSTEM_IP"
     echo "   This is a CRITICAL issue - device cannot connect!"
     echo ""
     echo "   Checking Docker port mapping..."
-    docker port ev-billing-ocpp-gateway 2>&1 | grep $OCPP_PORT || echo "   Port mapping issue"
+    docker port ev-billing-csms-api 2>&1 | grep $OCPP_PORT || echo "   Port mapping issue"
 fi
 echo ""
 
 # Test 4: Check Recent Connection Attempts
 echo -e "${BLUE}4. Checking Connection Logs${NC}"
 echo "--------------------------------"
-echo "Recent OCPP Gateway logs (last 30 lines):"
+echo "Recent OCPP logs (last 80 lines):"
 echo ""
-RECENT_LOGS=$(docker logs ev-billing-ocpp-gateway --tail 30 2>&1 | grep -iE "connection|$CHARGE_POINT_ID|$DEVICE_IP|websocket|boot" | tail -10)
+RECENT_LOGS=$(docker logs ev-billing-csms-api --tail 80 2>&1 | grep -iE "connection|$CHARGE_POINT_ID|$DEVICE_IP|websocket|boot|ocpp" | tail -12)
 if [ -n "$RECENT_LOGS" ]; then
     echo -e "${GREEN}Found connection-related logs:${NC}"
     echo "$RECENT_LOGS"
@@ -148,13 +148,13 @@ else
     echo ""
 fi
 
-# Check OCPP Gateway accessibility
+# Check OCPP accessibility
 if nc -zv -w 1 $SYSTEM_IP $OCPP_PORT > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ OCPP Gateway is accessible${NC}"
+    echo -e "${GREEN}✅ OCPP endpoint is accessible${NC}"
 else
-    echo -e "${RED}❌ OCPP Gateway is NOT accessible from network${NC}"
-    echo "   Action: Restart OCPP Gateway:"
-    echo "   docker restart ev-billing-ocpp-gateway"
+    echo -e "${RED}❌ OCPP endpoint is NOT accessible from network${NC}"
+    echo "   Action: Restart API container:"
+    echo "   docker restart ev-billing-csms-api"
     echo ""
 fi
 
@@ -170,7 +170,7 @@ echo "Next Steps:"
 echo "1. Verify device configuration includes full URL with Charge Point ID"
 echo "2. Ensure device has rebooted (wait 2-3 minutes)"
 echo "3. Monitor connection logs:"
-echo "   ${BLUE}docker logs -f ev-billing-ocpp-gateway${NC}"
+echo "   ${BLUE}docker logs -f ev-billing-csms-api | grep -i ocpp${NC}"
 echo "4. Check dashboard: http://localhost:8080"
 echo ""
 

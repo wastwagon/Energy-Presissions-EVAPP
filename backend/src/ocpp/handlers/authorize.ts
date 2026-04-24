@@ -6,6 +6,23 @@ import axios from 'axios';
 export class AuthorizeHandler {
   constructor(private connectionManager: ConnectionManager) {}
 
+  private toOcppIdTagStatus(rawStatus: unknown): IdTagInfo['status'] {
+    switch (String(rawStatus || '').toLowerCase()) {
+      case 'accepted':
+      case 'active':
+        return 'Accepted';
+      case 'blocked':
+        return 'Blocked';
+      case 'expired':
+        return 'Expired';
+      case 'concurrenttx':
+        return 'ConcurrentTx';
+      case 'invalid':
+      default:
+        return 'Invalid';
+    }
+  }
+
   async handle(chargePointId: string, messageId: string, payload: AuthorizePayload): Promise<void> {
     logger.info(`Processing Authorize from ${chargePointId} for IdTag: ${payload.idTag}`);
 
@@ -59,7 +76,17 @@ export class AuthorizeHandler {
         },
       });
 
-      return response.data as IdTagInfo;
+      const data = (response.data || {}) as {
+        status?: unknown;
+        expiryDate?: unknown;
+        parentIdTag?: unknown;
+      };
+
+      return {
+        status: this.toOcppIdTagStatus(data.status),
+        expiryDate: typeof data.expiryDate === 'string' ? data.expiryDate : undefined,
+        parentIdTag: typeof data.parentIdTag === 'string' ? data.parentIdTag : undefined,
+      };
     } catch (error) {
       logger.error(`Failed to validate IdTag ${idTag}:`, error);
       // Return Invalid status on error

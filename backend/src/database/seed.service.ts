@@ -36,19 +36,30 @@ export class SeedService implements OnModuleInit {
     return v === 'false' || v === '0' || v === 'no';
   }
 
+  private bootstrapSeedEnabledInProd(): boolean {
+    const raw = this.config.get<string>('SEED_BOOTSTRAP_USERS');
+    if (raw == null || String(raw).trim() === '') {
+      return false;
+    }
+    const v = String(raw).toLowerCase();
+    return v === 'true' || v === '1' || v === 'yes';
+  }
+
   async onModuleInit() {
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
 
-    if (isProd && this.bootstrapSeedDisabled()) {
-      this.logger.log(
-        'SEED_BOOTSTRAP_USERS disables default SuperAdmin/vendor Admin bootstrap (production).',
-      );
-    } else {
-      if (isProd) {
-        this.logger.warn(
-          'Ensuring bootstrap staff users (SuperAdmin + vendor admins + walk-in). Set SEED_BOOTSTRAP_USERS=false after onboarding real accounts; change passwords in the app.',
+    if (isProd) {
+      if (!this.bootstrapSeedEnabledInProd()) {
+        this.logger.log(
+          'Skipping bootstrap staff seed in production (set SEED_BOOTSTRAP_USERS=true only for first-time onboarding).',
         );
+      } else {
+        this.logger.warn(
+          'SEED_BOOTSTRAP_USERS=true in production: ensuring bootstrap staff users. Rotate bootstrap passwords immediately after onboarding.',
+        );
+        await this.seedBootstrapStaffUsers();
       }
+    } else if (!this.bootstrapSeedDisabled()) {
       await this.seedBootstrapStaffUsers();
     }
 

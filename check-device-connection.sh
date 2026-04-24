@@ -5,20 +5,20 @@ echo "EV Charging Device Connection Diagnostic"
 echo "=========================================="
 echo ""
 
-echo "1. Checking OCPP Gateway Status..."
+echo "1. Checking CSMS API (embedded OCPP) Status..."
 echo "-----------------------------------"
-docker ps | grep ocpp-gateway
+docker ps | grep csms-api
 echo ""
 
-echo "2. Checking OCPP Gateway Health..."
+echo "2. Checking API Health..."
 echo "-----------------------------------"
-curl -s http://localhost:9000/health
+curl -s http://localhost:3000/health
 echo ""
 echo ""
 
-echo "3. Checking Recent OCPP Gateway Logs..."
+echo "3. Checking Recent OCPP Logs..."
 echo "-----------------------------------"
-docker logs --tail 30 ev-billing-ocpp-gateway 2>&1 | grep -E "(listening|connection|BootNotification|temp_|mapping)" | tail -20
+docker logs --tail 80 ev-billing-csms-api 2>&1 | grep -E "(OCPP|/ocpp|BootNotification|connection|WebSocket)" | tail -20
 echo ""
 
 echo "4. Checking Database - Charge Points..."
@@ -33,19 +33,19 @@ echo ""
 
 echo "6. Checking Network Connectivity..."
 echo "-----------------------------------"
-echo "Port 9000 listening on:"
-netstat -an | grep 9000 | grep LISTEN
+echo "Port 3000 listening on:"
+netstat -an | grep 3000 | grep LISTEN
 echo ""
 
-echo "7. Checking Active WebSocket Connections..."
+echo "7. Checking Active OCPP WebSocket Connections..."
 echo "-----------------------------------"
-netstat -an | grep 9000 | grep ESTABLISHED
+netstat -an | grep 3000 | grep ESTABLISHED
 echo ""
 
-echo "8. Testing OCPP Gateway API..."
+echo "8. Testing Embedded OCPP/API endpoint..."
 echo "-----------------------------------"
 echo "Health endpoint:"
-curl -s http://localhost:9000/health
+curl -s http://localhost:3000/health
 echo ""
 echo ""
 

@@ -89,7 +89,7 @@ services:
       SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
       MIGRATIONS_AUTO_RUN: "true"
       INCLUDE_SAMPLE_DATA: "false"
-      SEED_BOOTSTRAP_USERS: "true"
+      SEED_BOOTSTRAP_USERS: "false"
       CORS_STRICT_ORIGINS: "true"
       CSMS_API_URL: http://127.0.0.1:3000
       OCPP_GATEWAY_URL: http://127.0.0.1:3000

@@ -31,7 +31,7 @@ fi
 # Stop and remove existing containers
 echo "Stopping existing containers..."
 docker-compose down --remove-orphans 2>/dev/null || true
-for c in ev-billing-postgres ev-billing-redis ev-billing-minio ev-billing-csms-api ev-billing-ocpp-gateway ev-billing-frontend ev-billing-nginx; do
+for c in ev-billing-postgres ev-billing-redis ev-billing-minio ev-billing-csms-api ev-billing-frontend ev-billing-nginx; do
   docker rm -f $c 2>/dev/null || true
 done
 

@@ -2,7 +2,7 @@
 # Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 services:
-  api:
+  csms-api:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -12,7 +12,7 @@ services:
     environment:
       NODE_ENV: development
       LOG_LEVEL: debug
-    command: npm run dev
+    command: npm run start:dev
 
   frontend:
     volumes:

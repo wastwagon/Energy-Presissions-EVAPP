@@ -79,9 +79,11 @@ class WebSocketService {
       }
 
       console.log(`Connecting to WebSocket: ${wsUrl}${path}`);
+      const token = localStorage.getItem('token');
 
       this.socket = io(wsUrl, {
         path,
+        auth: token ? { token: `Bearer ${token}` } : undefined,
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 10,

@@ -96,6 +96,8 @@ export function ChargePointDetailPage() {
     { type: 'reset'; resetType: 'Hard' | 'Soft' } | { type: 'clearCache' } | null
   >(null);
   const [clearStaleSubmitting, setClearStaleSubmitting] = useState(false);
+  const [configurationDialogOpen, setConfigurationDialogOpen] = useState(false);
+  const [configurationPayload, setConfigurationPayload] = useState<unknown>(null);
 
   useEffect(() => {
     if (id) {
@@ -347,8 +349,9 @@ export function ChargePointDetailPage() {
     if (!id) return;
     try {
       const config = await chargePointsApi.getConfiguration(id);
-      console.log('Configuration:', config);
-      // TODO: Display configuration in a dialog or table
+      setConfigurationPayload(config);
+      setConfigurationDialogOpen(true);
+      setSuccess('Configuration loaded');
     } catch (err: any) {
       setError(err.message || 'Failed to get configuration');
     }
@@ -962,6 +965,46 @@ export function ChargePointDetailPage() {
         chargePoint={chargePoint}
         onSave={loadData}
       />
+
+      <Dialog
+        open={configurationDialogOpen}
+        onClose={() => setConfigurationDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          Charge point configuration
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box
+            component="pre"
+            sx={(theme) => ({
+              margin: 0,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              fontSize: '0.75rem',
+              lineHeight: 1.5,
+              color: theme.palette.text.primary,
+              backgroundColor: alpha(theme.palette.action.hover, 0.5),
+              borderRadius: 1,
+              p: 1.5,
+            })}
+          >
+            {configurationPayload
+              ? JSON.stringify(configurationPayload, null, 2)
+              : 'No configuration returned.'}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={() => setConfigurationDialogOpen(false)}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={Boolean(confirmAction)}

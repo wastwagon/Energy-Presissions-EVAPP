@@ -7,7 +7,17 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as jwt from 'jsonwebtoken';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from '../common/cors-origins';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
+
+type SocketUser = {
+  userId: number;
+  email?: string;
+  accountType?: string;
+  vendorId?: number;
+};
 
 @NestWebSocketGateway({
   cors: {
@@ -41,13 +51,103 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   private readonly logger = new Logger(WebSocketGateway.name);
   private clients: Map<string, Socket> = new Map();
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     WebSocketGateway.instance = this;
   }
 
+  private parseToken(client: Socket): string | null {
+    const authToken = client.handshake.auth?.token;
+    if (typeof authToken === 'string' && authToken.trim()) {
+      return authToken.trim().replace(/^Bearer\s+/i, '');
+    }
+
+    const header = client.handshake.headers?.authorization;
+    if (typeof header === 'string' && header.trim()) {
+      return header.trim().replace(/^Bearer\s+/i, '');
+    }
+
+    const queryToken = client.handshake.query?.token;
+    if (typeof queryToken === 'string' && queryToken.trim()) {
+      return queryToken.trim().replace(/^Bearer\s+/i, '');
+    }
+
+    return null;
+  }
+
+  private authenticateClient(client: Socket): SocketUser | null {
+    const token = this.parseToken(client);
+    if (!token) {
+      return null;
+    }
+
+    const secret = resolveJwtSecret(this.configService);
+    const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+    const decodedRecord = decoded as jwt.JwtPayload & Record<string, unknown>;
+    const subRaw = decodedRecord.sub;
+    const userId = typeof subRaw === 'string' ? parseInt(subRaw, 10) : Number(subRaw);
+    if (!Number.isFinite(userId)) {
+      return null;
+    }
+
+    const vendorRaw = decodedRecord.vendorId ?? decodedRecord.tenantId;
+    const vendorId =
+      vendorRaw == null
+        ? undefined
+        : typeof vendorRaw === 'string'
+          ? parseInt(vendorRaw, 10)
+          : Number(vendorRaw);
+
+    return {
+      userId,
+      email: typeof decodedRecord.email === 'string' ? decodedRecord.email : undefined,
+      accountType:
+        typeof decodedRecord.accountType === 'string' ? decodedRecord.accountType : undefined,
+      vendorId: Number.isFinite(vendorId) ? vendorId : undefined,
+    };
+  }
+
+  private roomForUser(userId: number): string {
+    return `user:${userId}`;
+  }
+
+  private roomForVendor(vendorId: number): string {
+    return `vendor:${vendorId}`;
+  }
+
+  private roomForRole(role: string): string {
+    return `role:${role}`;
+  }
+
+  private emitToAuthenticated(event: string, payload: unknown): void {
+    this.server.to('authenticated').emit(event, payload);
+  }
+
   handleConnection(client: Socket) {
+    let user: SocketUser | null = null;
+    try {
+      user = this.authenticateClient(client);
+    } catch {
+      user = null;
+    }
+
+    if (!user) {
+      this.logger.warn(`Rejected unauthenticated WebSocket client: ${client.id}`);
+      client.emit('connectionStatus', { connected: false, reason: 'Unauthorized' });
+      client.disconnect(true);
+      return;
+    }
+
+    (client.data as Record<string, unknown>).user = user;
     this.clients.set(client.id, client);
-    this.logger.log(`Client connected: ${client.id}`);
+    client.join('authenticated');
+    client.join(this.roomForUser(user.userId));
+    if (user.vendorId) {
+      client.join(this.roomForVendor(user.vendorId));
+    }
+    if (user.accountType) {
+      client.join(this.roomForRole(user.accountType));
+    }
+    this.logger.log(`Client connected: ${client.id} (user ${user.userId})`);
     client.emit('connectionStatus', { connected: true });
   }
 
@@ -63,7 +163,7 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     lastSeen?: Date;
     lastHeartbeat?: Date;
   }) {
-    this.server.emit('chargePointStatus', {
+    this.emitToAuthenticated('chargePointStatus', {
       type: 'chargePointStatus',
       data,
       timestamp: new Date().toISOString(),
@@ -77,7 +177,7 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     status: string;
     errorCode?: string;
   }) {
-    this.server.emit('connectorStatus', {
+    this.emitToAuthenticated('connectorStatus', {
       type: 'connectorStatus',
       data,
       timestamp: new Date().toISOString(),
@@ -94,11 +194,18 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     vendorId?: number;
     startTime: Date;
   }) {
-    this.server.emit('transactionStarted', {
+    const payload = {
       type: 'transactionStarted',
       data,
       timestamp: new Date().toISOString(),
-    });
+    };
+    if (data.userId) {
+      this.server.to(this.roomForUser(data.userId)).emit('transactionStarted', payload);
+    }
+    if (data.vendorId) {
+      this.server.to(this.roomForVendor(data.vendorId)).emit('transactionStarted', payload);
+    }
+    this.server.to(this.roomForRole('SuperAdmin')).emit('transactionStarted', payload);
   }
 
   // Broadcast transaction stopped
@@ -112,11 +219,18 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     vendorId?: number;
   }) {
     this.logger.log(`Broadcasting transaction stopped: ${data.transactionId}`);
-    this.server.emit('transactionStopped', {
+    const payload = {
       type: 'transactionStopped',
       data,
       timestamp: new Date().toISOString(),
-    });
+    };
+    if (data.userId) {
+      this.server.to(this.roomForUser(data.userId)).emit('transactionStopped', payload);
+    }
+    if (data.vendorId) {
+      this.server.to(this.roomForVendor(data.vendorId)).emit('transactionStopped', payload);
+    }
+    this.server.to(this.roomForRole('SuperAdmin')).emit('transactionStopped', payload);
   }
 
   // Broadcast wallet balance update
@@ -126,11 +240,12 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     currency: string;
     transactionId?: number;
   }) {
-    this.server.emit('walletBalanceUpdate', {
+    const payload = {
       type: 'walletBalanceUpdate',
       data,
       timestamp: new Date().toISOString(),
-    });
+    };
+    this.server.to(this.roomForUser(data.userId)).emit('walletBalanceUpdate', payload);
   }
 
   // Broadcast dashboard stats update
@@ -139,11 +254,15 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     stats: any;
   }) {
     this.logger.log(`Broadcasting dashboard stats update for vendor ${data.vendorId || 'all'}`);
-    this.server.emit('dashboardStatsUpdate', {
+    const payload = {
       type: 'dashboardStatsUpdate',
       data,
       timestamp: new Date().toISOString(),
-    });
+    };
+    if (data.vendorId) {
+      this.server.to(this.roomForVendor(data.vendorId)).emit('dashboardStatsUpdate', payload);
+    }
+    this.server.to(this.roomForRole('SuperAdmin')).emit('dashboardStatsUpdate', payload);
   }
 
   // Broadcast meter value
@@ -155,7 +274,7 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     measurand?: string;
     unit?: string;
   }) {
-    this.server.emit('meterValue', {
+    this.emitToAuthenticated('meterValue', {
       type: 'meterValue',
       data,
       timestamp: new Date().toISOString(),
