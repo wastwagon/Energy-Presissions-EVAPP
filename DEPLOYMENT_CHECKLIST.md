@@ -55,11 +55,6 @@ PAYSTACK_SECRET_KEY=<from-paystack-dashboard>
 PAYSTACK_PUBLIC_KEY=<from-paystack-dashboard>
 ```
 
-**OCPP Gateway (`ev-billing-ocpp-gateway`):**
-```bash
-SERVICE_TOKEN=<same-as-backend-api>
-```
-
 **MinIO (`ev-billing-minio`):**
 ```bash
 MINIO_ROOT_USER=minioadmin
@@ -99,11 +94,11 @@ MINIO_ROOT_PASSWORD=<strong-password>
    ```
    Should load the login page
 
-3. **Check OCPP Gateway:**
+3. **Check OCPP endpoint (embedded in API):**
    ```
-   https://ev-billing-ocpp-gateway.onrender.com/health
+   wss://ev-billing-api.onrender.com/ocpp/{chargePointId}
    ```
-   Should return: `{"status":"ok"}`
+   Should complete websocket handshake from charger/simulator.
 
 4. **Test Login:**
    - Email: `admin@evcharging.com`
@@ -172,10 +167,10 @@ Use a standalone OCPP service only if you still deploy `ocpp-gateway/` separatel
 ## 📝 Important Notes
 
 1. **Migrations:** Run automatically in Docker, or manually for Render
-2. **Default Users:** Created automatically via seed service
+2. **Default Users:** Seed intentionally; disable bootstrap defaults after onboarding
 3. **Passwords:** All default passwords use bcrypt (cost 10)
 4. **Tenant Isolation:** All data is tenant-scoped
-5. **WebSocket:** OCPP Gateway must be web service (not worker) for WebSocket support
+5. **WebSocket:** OCPP is served by backend API `/ocpp` (no separate gateway service required)
 
 ---
 

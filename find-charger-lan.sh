@@ -64,7 +64,7 @@ if [ -n "$CHARGER_ENTRY" ]; then
     echo "----------------------------------------"
     if [ -n "$MY_IP" ]; then
         echo -e "${GREEN}OCPP Central System URL:${NC}"
-        echo "   ws://$MY_IP:9000"
+        echo "   ws://$MY_IP:3000/ocpp/{chargePointId}"
         echo ""
         echo -e "${GREEN}Charge Point ID:${NC}"
         echo "   $CHARGER_VIRTUAL_ID"
@@ -134,14 +134,14 @@ if [ -n "$CHARGER_IP" ]; then
     echo ""
     echo "1. Configure charger with:"
     if [ -n "$MY_IP" ]; then
-        echo "   OCPP URL: ws://$MY_IP:9000"
+        echo "   OCPP URL: ws://$MY_IP:3000/ocpp/{chargePointId}"
     else
-        echo "   OCPP URL: ws://YOUR_IP:9000 (check your IP on charger's network)"
+        echo "   OCPP URL: ws://YOUR_IP:3000/ocpp/{chargePointId} (check your IP on charger's network)"
     fi
     echo "   Charge Point ID: $CHARGER_VIRTUAL_ID"
     echo ""
     echo "2. Monitor connection:"
-    echo "   docker logs -f ev-billing-ocpp-gateway"
+    echo "   docker logs -f ev-billing-csms-api | grep -i ocpp"
     echo ""
     echo "3. Check device registration:"
     echo "   Login to http://localhost:8080"

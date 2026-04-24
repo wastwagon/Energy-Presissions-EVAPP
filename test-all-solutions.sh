@@ -10,7 +10,7 @@ echo ""
 
 MAC_IP="192.168.0.166"
 CHARGER_IP="192.168.0.199"
-OCPP_PORT="9000"
+OCPP_PORT="3000"
 
 echo "Configuration:"
 echo "  Mac IP: $MAC_IP"
@@ -33,21 +33,21 @@ else
 fi
 echo ""
 
-echo "1.2 Testing OCPP Gateway from Mac..."
+echo "1.2 Testing API health from Mac..."
 OCPP_HEALTH=$(curl -s --connect-timeout 2 http://localhost:$OCPP_PORT/health)
-if [ "$OCPP_HEALTH" = "OK" ]; then
-    echo "   ✅ OCPP Gateway is running"
+if echo "$OCPP_HEALTH" | grep -qi "ok"; then
+    echo "   ✅ API is running"
 else
-    echo "   ❌ OCPP Gateway not responding"
+    echo "   ❌ API not responding"
 fi
 echo ""
 
-echo "1.3 Testing OCPP Gateway from network perspective..."
+echo "1.3 Testing API from network perspective..."
 OCPP_NETWORK=$(curl -s --connect-timeout 2 http://$MAC_IP:$OCPP_PORT/health)
-if [ "$OCPP_NETWORK" = "OK" ]; then
-    echo "   ✅ OCPP Gateway accessible from network"
+if echo "$OCPP_NETWORK" | grep -qi "ok"; then
+    echo "   ✅ API accessible from network"
 else
-    echo "   ❌ OCPP Gateway not accessible from network"
+    echo "   ❌ API not accessible from network"
     echo "   ⚠️  May be firewall issue"
 fi
 echo ""
@@ -120,18 +120,18 @@ for endpoint in "" "/" "/ocpp" "/api" "/config"; do
 done
 echo ""
 
-# Test 5: OCPP Gateway Logs
+# Test 5: OCPP Logs
 echo "=========================================="
 echo "Test 5: Connection Attempt History"
 echo "=========================================="
 echo ""
 
 echo "5.1 Checking for recent connection attempts..."
-RECENT_CONNECTIONS=$(docker-compose logs --since 10m ocpp-gateway 2>/dev/null | grep -E "connection|WebSocket|charge point" | wc -l)
+RECENT_CONNECTIONS=$(docker-compose logs --since 10m csms-api 2>/dev/null | grep -Ei "connection|WebSocket|charge point|ocpp|bootnotification" | wc -l)
 if [ "$RECENT_CONNECTIONS" -gt 0 ]; then
     echo "   ✅ Found $RECENT_CONNECTIONS connection-related log entries"
     echo "   Recent entries:"
-    docker-compose logs --since 10m ocpp-gateway 2>/dev/null | grep -E "connection|WebSocket|charge point" | tail -5
+    docker-compose logs --since 10m csms-api 2>/dev/null | grep -Ei "connection|WebSocket|charge point|ocpp|bootnotification" | tail -8
 else
     echo "   ⚠️  No recent connection attempts found"
     echo "   This means charger hasn't tried to connect yet"
@@ -160,10 +160,10 @@ echo "Test 7: Active OCPP Connections"
 echo "=========================================="
 echo ""
 
-ACTIVE_CONNECTIONS=$(docker-compose logs --tail=100 ocpp-gateway 2>/dev/null | grep -E "New WebSocket connection|Connection registered" | wc -l)
+ACTIVE_CONNECTIONS=$(docker-compose logs --tail=150 csms-api 2>/dev/null | grep -Ei "New WebSocket connection|Connection registered|BootNotification|/ocpp" | wc -l)
 if [ "$ACTIVE_CONNECTIONS" -gt 0 ]; then
     echo "   ✅ Found active connections in logs"
-    docker-compose logs --tail=100 ocpp-gateway 2>/dev/null | grep -E "New WebSocket connection|Connection registered" | tail -3
+    docker-compose logs --tail=150 csms-api 2>/dev/null | grep -Ei "New WebSocket connection|Connection registered|BootNotification|/ocpp" | tail -6
 else
     echo "   ⚠️  No active connections found"
 fi

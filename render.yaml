@@ -44,9 +44,9 @@ services:
       - key: MINIO_EXTERNAL_PORT
         value: 443
       - key: MINIO_ACCESS_KEY
-        value: minioadmin
+        sync: false
       - key: MINIO_SECRET_KEY
-        value: minioadmin123
+        sync: false
       - key: MINIO_BUCKET
         value: ev-billing
       - key: MINIO_USE_SSL

@@ -8,7 +8,7 @@ NestJS-based REST API for managing EV charging operations, transactions, billing
 - ✅ NestJS framework with TypeScript
 - ✅ TypeORM for database access
 - ✅ Entity models for all database tables
-- ✅ Internal API for OCPP Gateway communication
+- ✅ Internal API for embedded OCPP communication
 - ✅ Service token authentication
 - ✅ Swagger documentation
 - ✅ Health check endpoint
@@ -25,7 +25,7 @@ backend/
 │   │   ├── charge-points/
 │   │   ├── transactions/
 │   │   ├── billing/
-│   │   └── internal/      # Internal API for OCPP Gateway
+│   │   └── internal/      # Internal API used by embedded OCPP handlers
 │   ├── database/          # Database configuration
 │   ├── common/            # Shared utilities
 │   │   ├── guards/
@@ -80,12 +80,12 @@ npm run start:prod
 - `POST /api/internal/transactions/:id/stop` - Stop transaction
 - `POST /api/internal/meter-values` - Store meter values
 
-### Public API (TODO)
+### Public API
 - Authentication endpoints
-- User management
-- Charge point management
-- Transaction management
-- Billing endpoints
+- User and profile endpoints
+- Charge point and operations endpoints
+- Transaction and billing endpoints
+- Dashboard and reporting endpoints
 
 ## Swagger Documentation
 
@@ -97,15 +97,11 @@ When running in development mode:
 - Endpoint: `http://localhost:3000/health`
 - Response: `{ status: 'ok', timestamp: '...' }`
 
-## Next Steps
+## Testing
 
-- [ ] Implement authentication (JWT)
-- [ ] Implement user management endpoints
-- [ ] Implement charge point management endpoints
-- [ ] Implement transaction management endpoints
-- [ ] Implement billing logic
-- [ ] Add unit tests
-- [ ] Add integration tests
+- Run unit tests: `npm test`
+- Run lint checks: `npm run lint`
+- Build for production: `npm run build`
 
 
 

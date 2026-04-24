@@ -20,22 +20,19 @@ docker-compose logs -f
 - Frontend: http://localhost/
 - API: http://localhost/api
 - Swagger Docs: http://localhost/api/docs
-- OCPP WebSocket: ws://localhost/ocpp/{chargePointId}
+- OCPP WebSocket (embedded in API): ws://localhost/ocpp/{chargePointId}
 
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
 ## 📋 Project Status
 
-**Phase 1: Infrastructure Setup - ✅ COMPLETE (90%)**
+Current architecture uses a single backend service for both REST API and OCPP (`/ocpp`), with frontend real-time updates via Socket.IO (`/ws`).
 
-- ✅ Docker infrastructure with all services
-- ✅ OCPP Gateway (WebSocket server)
+- ✅ Embedded OCPP 1.6 handlers in backend
 - ✅ CSMS API (NestJS REST API)
-- ✅ Frontend (React dashboards)
-- ✅ Database schema
+- ✅ Frontend role dashboards
+- ✅ Database schema + migrations
 - ✅ NGINX reverse proxy
-
-See [PHASE1_COMPLETE.md](./PHASE1_COMPLETE.md) for details.
 
 ---
 

@@ -51,9 +51,9 @@ while true; do
         echo "   No wallet transactions yet"
     fi
     
-    # Check OCPP Gateway logs
+    # Check embedded OCPP logs
     echo "5. Recent OCPP Activity:"
-    RECENT=$(docker logs --tail 10 ev-billing-ocpp-gateway 2>&1 | grep -i "StartTransaction\|StatusNotification.*Charging\|StopTransaction" | tail -1)
+    RECENT=$(docker logs --tail 40 ev-billing-csms-api 2>&1 | grep -i "StartTransaction\|StatusNotification.*Charging\|StopTransaction\|OCPP" | tail -1)
     if [ -n "$RECENT" ]; then
         echo "   $RECENT"
     else

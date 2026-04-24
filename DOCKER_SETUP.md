@@ -60,7 +60,7 @@ make logs-api
 
 3. **Backend API** (Port 3000)
    - REST API: `http://localhost:3000`
-   - OCPP WebSocket: `ws://localhost:9000`
+   - OCPP WebSocket: `ws://localhost:3000/ocpp/{chargePointId}`
 
 4. **Frontend Dashboard** (Port 3001)
    - Web UI: `http://localhost:3001`
@@ -131,7 +131,7 @@ docker-compose down
 docker-compose logs -f
 
 # Execute commands in containers
-docker-compose exec api npm install
+docker-compose exec csms-api npm install
 docker-compose exec postgres psql -U evbilling -d ev_billing_db
 ```
 
@@ -371,7 +371,7 @@ docker run --rm -v ev-billing_postgres_data:/data -v $(pwd):/backup alpine tar c
 ### Access from Containers
 - Database: `postgres:5432`
 - Redis: `redis:6379`
-- API: `api:3000`
+- API: `csms-api:3000`
 
 ---
 

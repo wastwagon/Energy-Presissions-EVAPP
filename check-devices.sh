@@ -51,6 +51,6 @@ echo ""
 echo "1. Open the IP addresses above in your browser"
 echo "2. Look for OCPP or device configuration pages"
 echo "3. Find the Charge Point ID in the settings"
-echo "4. Configure device with: ws://192.168.0.166:9000/ocpp/YOUR_ID"
+echo "4. Configure device with: ws://192.168.0.166:3000/ocpp/YOUR_ID"
 echo ""
 

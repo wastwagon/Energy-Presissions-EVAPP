@@ -122,20 +122,20 @@ for IP in "${KNOWN_IPS[@]}"; do
     echo ""
 done
 
-# Check OCPP Gateway
-echo -e "${BLUE}4. OCPP Gateway Status${NC}"
+# Check embedded OCPP in CSMS API
+echo -e "${BLUE}4. OCPP API Status${NC}"
 echo "----------------------"
-OCPP_CONTAINER=$(docker ps --format "{{.Names}}" | grep ocpp-gateway)
+OCPP_CONTAINER=$(docker ps --format "{{.Names}}" | grep csms-api)
 if [ -n "$OCPP_CONTAINER" ]; then
-    echo -e "${GREEN}✅ OCPP Gateway is running${NC}"
+    echo -e "${GREEN}✅ CSMS API is running${NC}"
     echo "   Container: $OCPP_CONTAINER"
-    echo "   Local URL: ws://localhost:9000"
-    echo "   Network URL: ws://$PRIMARY_IP:9000"
+    echo "   Local URL: ws://localhost:3000/ocpp/{chargePointId}"
+    echo "   Network URL: ws://$PRIMARY_IP:3000/ocpp/{chargePointId}"
     echo ""
     echo "   Recent connection attempts:"
-    docker logs ev-billing-ocpp-gateway --tail 10 2>&1 | grep -iE "connection|connect" | tail -3 || echo "   No recent connections"
+    docker logs ev-billing-csms-api --tail 40 2>&1 | grep -iE "ocpp|connection|connect|bootnotification" | tail -8 || echo "   No recent connections"
 else
-    echo -e "${RED}❌ OCPP Gateway is not running${NC}"
+    echo -e "${RED}❌ CSMS API is not running${NC}"
 fi
 echo ""
 
@@ -149,9 +149,9 @@ echo "Your IP: $PRIMARY_IP"
 echo ""
 echo "Next Steps:"
 echo "1. Identify charger IP from above"
-echo "2. Configure charger with OCPP URL: ws://$PRIMARY_IP:9000"
+echo "2. Configure charger with OCPP URL: ws://$PRIMARY_IP:3000/ocpp/{chargePointId}"
 echo "3. Use Charge Point ID: bfe72084fec9521707y1c"
-echo "4. Monitor connection: docker logs -f ev-billing-ocpp-gateway"
+echo "4. Monitor connection: docker logs -f ev-billing-csms-api | grep -i ocpp"
 echo ""
 
 

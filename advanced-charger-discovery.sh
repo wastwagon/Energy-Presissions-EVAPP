@@ -5,7 +5,7 @@
 
 MAC_IP="192.168.0.166"
 CHARGER_IP="192.168.0.199"
-OCPP_PORT="9000"
+OCPP_PORT="3000"
 CHARGE_POINT_ID="CP001"
 
 echo "=========================================="
@@ -143,11 +143,11 @@ echo ""
 echo "Method 10: Active OCPP Connection Check"
 echo "======================================="
 echo "   Checking if charger is trying to connect..."
-RECENT_ATTEMPTS=$(docker-compose logs --since 5m ocpp-gateway 2>/dev/null | grep -i "$CHARGER_IP\|connection\|websocket" | wc -l)
+RECENT_ATTEMPTS=$(docker-compose logs --since 5m csms-api 2>/dev/null | grep -i "$CHARGER_IP\|connection\|websocket\|ocpp\|bootnotification" | wc -l)
 if [ "$RECENT_ATTEMPTS" -gt 0 ]; then
     echo "   ✅ Found $RECENT_ATTEMPTS connection-related log entries"
     echo "   Recent activity:"
-    docker-compose logs --since 5m ocpp-gateway 2>/dev/null | grep -i "$CHARGER_IP\|connection\|websocket" | tail -3 | sed 's/^/      /'
+    docker-compose logs --since 5m csms-api 2>/dev/null | grep -i "$CHARGER_IP\|connection\|websocket\|ocpp\|bootnotification" | tail -5 | sed 's/^/      /'
 else
     echo "   ⚠️  No connection attempts detected"
     echo "   Charger is not trying to connect yet"

@@ -1,7 +1,7 @@
 # EV Charging Billing - Frontend
 ## React + TypeScript Dashboard
 
-Frontend application for the EV Charging Billing System with multiple dashboards.
+Frontend application for the EV Charging Billing System with role-based dashboards.
 
 ## Features
 
@@ -11,11 +11,10 @@ Frontend application for the EV Charging Billing System with multiple dashboards
 - ✅ React Router for navigation
 - ✅ Redux Toolkit for state management
 - ✅ Axios for API calls
-- ✅ Multiple dashboards:
-  - Operations Dashboard (`/ops`)
-  - Admin Dashboard (`/admin`)
-  - Customer Portal (`/`)
-  - Public Station Finder (`/stations`)
+- ✅ Multiple role dashboards and customer flows:
+  - Customer experience (`/user/*`, station finder at `/stations`)
+  - Admin dashboard (`/admin/*`)
+  - Super Admin dashboard (`/superadmin/*`)
 
 ## Project Structure
 
@@ -42,8 +41,8 @@ frontend/
 
 ## Environment Variables
 
-- `VITE_API_URL` - API base URL (default: http://localhost/api)
-- `VITE_WS_URL` - WebSocket URL (default: ws://localhost/ocpp)
+- `VITE_API_URL` - API base URL (default: same-origin `/api`)
+- `VITE_WS_URL` - Optional Socket.IO URL override (default: same-origin `/ws`)
 - `VITE_GOOGLE_CLIENT_ID` - Google OAuth Client ID for "Login with Google" (optional)
 
 ## Development
@@ -64,22 +63,11 @@ npm run preview
 
 ## Available Routes
 
-- `/` - Home page / Customer portal
+- `/` - Home page
 - `/stations` - Public station finder
-- `/ops` - Operations dashboard
-- `/ops/sessions` - Charging sessions list
-- `/ops/devices` - Device inventory
-- `/admin` - Admin dashboard
-
-## Next Steps
-
-- [ ] Implement authentication
-- [ ] Connect to API endpoints
-- [ ] Add real-time WebSocket updates
-- [ ] Implement charge point list with live status
-- [ ] Implement sessions table
-- [ ] Add charts and analytics
-- [ ] Implement station finder with map
+- `/user/*` - Customer dashboard and charging flows
+- `/admin/*` - Admin operations
+- `/superadmin/*` - Super Admin operations
 
 
 

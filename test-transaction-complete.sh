@@ -107,7 +107,7 @@ TRANSACTION_FOUND=false
 
 while [ $ELAPSED -lt $MAX_WAIT ]; do
     # Check for StartTransaction in logs
-    START_TX=$(docker logs --tail 100 ev-billing-ocpp-gateway 2>&1 | grep -i "StartTransaction.*$CHARGE_POINT_ID\|USER_15" | tail -1)
+    START_TX=$(docker logs --tail 120 ev-billing-csms-api 2>&1 | grep -i "StartTransaction.*$CHARGE_POINT_ID\|USER_15\|OCPP" | tail -1)
     
     # Check database for transaction
     DB_TX=$(docker exec ev-billing-postgres psql -U evbilling -d ev_billing_db -t -c \
@@ -163,7 +163,7 @@ if [ "$TRANSACTION_FOUND" = true ]; then
     
     # Monitor for StopTransaction
     while [ $ELAPSED -lt $((MAX_WAIT + 120)) ]; do
-        STOP_TX=$(docker logs --tail 50 ev-billing-ocpp-gateway 2>&1 | grep -i "StopTransaction.*$DB_TX" | tail -1)
+        STOP_TX=$(docker logs --tail 120 ev-billing-csms-api 2>&1 | grep -i "StopTransaction.*$DB_TX\|OCPP" | tail -1)
         
         TX_STATUS=$(docker exec ev-billing-postgres psql -U evbilling -d ev_billing_db -t -c \
           "SELECT status FROM transactions WHERE transaction_id = $DB_TX;" 2>/dev/null | xargs)

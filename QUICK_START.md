@@ -41,8 +41,7 @@ This will start:
 - PostgreSQL database
 - Redis cache
 - MinIO object storage
-- OCPP Gateway (WebSocket server)
-- CSMS API (NestJS REST API)
+- CSMS API (NestJS REST API + embedded OCPP WebSocket)
 - Frontend (React app)
 - NGINX reverse proxy
 
@@ -90,7 +89,7 @@ All services should show "Up" status.
 
 ### OCPP WebSocket
 
-- **Direct Access**: `ws://localhost:9000/ocpp/{chargePointId}`
+- **Direct Access**: `ws://localhost:3000/ocpp/{chargePointId}`
 - **Via NGINX**: `ws://localhost:8080/ocpp/{chargePointId}`
 
 ### Development Tools
@@ -112,7 +111,7 @@ All services should show "Up" status.
 docker-compose logs -f
 
 # Specific service
-docker-compose logs -f ocpp-gateway
+docker-compose logs -f csms-api | grep -i ocpp
 docker-compose logs -f csms-api
 docker-compose logs -f frontend
 docker-compose logs -f postgres
@@ -170,7 +169,7 @@ STRIPE_PUBLISHABLE_KEY=
    ```
 
 2. **Check port conflicts**:
-   - Port 80, 3000, 3001, 5432, 6379, 9000, 9001, 5050, 8081 should be available
+   - Port 80, 3000, 3001, 5432, 6379, 9001, 5050, 8081 should be available
 
 3. **View error logs**:
    ```bash
@@ -204,17 +203,17 @@ STRIPE_PUBLISHABLE_KEY=
 3. **Access frontend directly** (bypass NGINX):
    - http://localhost:3001
 
-### OCPP Gateway Not Accepting Connections
+### OCPP Endpoint Not Accepting Connections
 
-1. **Check OCPP Gateway logs**:
+1. **Check OCPP logs**:
    ```bash
-   docker-compose logs ocpp-gateway
+   docker-compose logs csms-api | grep -i ocpp
    ```
 
 2. **Test WebSocket connection**:
    ```bash
    # Using wscat (install: npm install -g wscat)
-   wscat -c ws://localhost:9000/ocpp/CP001
+   wscat -c ws://localhost:3000/ocpp/CP001
    ```
 
 ---
@@ -224,8 +223,7 @@ STRIPE_PUBLISHABLE_KEY=
 ### Hot Reload
 
 All services support hot reload in development mode:
-- **OCPP Gateway**: Changes in `ocpp-gateway/src/` are automatically reloaded
-- **CSMS API**: Changes in `backend/src/` are automatically reloaded
+- **CSMS API + OCPP**: Changes in `backend/src/` are automatically reloaded
 - **Frontend**: Changes in `frontend/src/` are automatically reloaded
 
 ### Making Changes

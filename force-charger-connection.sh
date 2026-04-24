@@ -4,7 +4,7 @@
 
 MAC_IP="192.168.0.166"
 CHARGER_IP="192.168.0.199"
-OCPP_PORT="9000"
+OCPP_PORT="3000"
 CHARGE_POINT_ID="CP001"
 
 echo "=========================================="
@@ -82,7 +82,7 @@ echo ""
 # Method 4: Monitor and wait for connection
 echo "Method 4: Starting connection monitor..."
 echo ""
-echo "   Monitoring OCPP Gateway for incoming connections..."
+echo "   Monitoring embedded OCPP logs for incoming connections..."
 echo "   Configure your charger with:"
 echo "   OCPP URL: ws://$MAC_IP:$OCPP_PORT/ocpp/$CHARGE_POINT_ID"
 echo ""
@@ -90,7 +90,7 @@ echo "   Press Ctrl+C to stop monitoring"
 echo ""
 
 # Monitor for 30 seconds
-timeout 30 docker-compose logs -f ocpp-gateway 2>/dev/null | while IFS= read -r line; do
+timeout 30 docker-compose logs -f csms-api 2>/dev/null | while IFS= read -r line; do
     if echo "$line" | grep -qE "New WebSocket connection|BootNotification|charge point"; then
         echo "🔔 CONNECTION DETECTED:"
         echo "   $line"

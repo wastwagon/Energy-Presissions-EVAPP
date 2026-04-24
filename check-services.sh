@@ -74,13 +74,13 @@ else
     echo -e "${RED}❌ Not responding (HTTP $FRONTEND_STATUS)${NC}"
 fi
 
-# Check OCPP Gateway
-echo -n "OCPP Gateway (http://localhost:9000): "
-OCPP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 2>&1)
+# Check OCPP endpoint on backend API
+echo -n "OCPP endpoint via API (http://localhost:3000/ocpp): "
+OCPP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ocpp 2>&1)
 if [ "$OCPP_STATUS" = "200" ] || [ "$OCPP_STATUS" = "400" ] || [ "$OCPP_STATUS" = "426" ]; then
     echo -e "${GREEN}✅ Running (HTTP $OCPP_STATUS)${NC}"
 else
-    echo -e "${YELLOW}⚠️  Not responding (HTTP $OCPP_STATUS) - May be WebSocket only${NC}"
+    echo -e "${YELLOW}⚠️  Not responding (HTTP $OCPP_STATUS) - endpoint may reject plain HTTP${NC}"
 fi
 
 # Check PostgreSQL

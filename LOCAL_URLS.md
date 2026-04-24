@@ -42,11 +42,9 @@
 - **Swagger Docs**: http://localhost:3000/api/docs
 - **Health Check**: http://localhost:3000/health
 
-**OCPP Gateway:**
-- **WebSocket Server**: ws://localhost:9000/ocpp/{chargePointId}
-  - Example: `ws://localhost:9000/ocpp/CP001`
-- **Health Check**: http://localhost:9000/health
-- **Command API**: http://localhost:9000/command/{chargePointId}
+**OCPP (Embedded in API):**
+- **WebSocket Server**: ws://localhost:3000/ocpp/{chargePointId}
+  - Example: `ws://localhost:3000/ocpp/CP001`
 
 ---
 
@@ -176,7 +174,7 @@
   - `meterValue` - Meter value updates
 
 ### OCPP WebSocket
-- **Connection**: `ws://localhost:8080/ocpp/{chargePointId}` or `ws://localhost:9000/ocpp/{chargePointId}`
+- **Connection**: `ws://localhost:8080/ocpp/{chargePointId}` or `ws://localhost:3000/ocpp/{chargePointId}`
 - **Protocol**: OCPP 1.6J (JSON over WebSocket)
 - **Format**: JSON-RPC 2.0
 
@@ -202,7 +200,7 @@
 | NGINX (HTTPS) | 8443 | HTTPS (optional) |
 | Frontend | 3001 | React dev server |
 | CSMS API | 3000 | NestJS backend |
-| OCPP Gateway | 9000 | WebSocket server |
+| OCPP (embedded) | 3000 | Backend API + OCPP WebSocket |
 | PostgreSQL | 5432 | Database |
 | Redis | 6379 | Cache/Queue |
 | MinIO API | 9002 | S3 API |

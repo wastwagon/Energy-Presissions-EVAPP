@@ -7,7 +7,7 @@ set -e
 
 API_URL="http://localhost:3000/api"
 FRONTEND_URL="http://localhost:5173"
-GATEWAY_URL="ws://localhost:9000"
+GATEWAY_URL="ws://localhost:3000/ocpp/{chargePointId}"
 
 echo "=========================================="
 echo "EV Charging System - Feature Test Suite"

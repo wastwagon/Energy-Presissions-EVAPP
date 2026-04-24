@@ -122,28 +122,28 @@ else
 fi
 echo ""
 
-# Step 7: OCPP Gateway Status
-echo -e "${BLUE}7. OCPP Gateway Status${NC}"
+# Step 7: OCPP API Status
+echo -e "${BLUE}7. OCPP API Status${NC}"
 echo "----------------------"
-OCPP_GATEWAY=$(docker ps --format "{{.Names}}" | grep ocpp-gateway)
+OCPP_GATEWAY=$(docker ps --format "{{.Names}}" | grep csms-api)
 if [ -n "$OCPP_GATEWAY" ]; then
-    echo -e "${GREEN}✅ OCPP Gateway is running${NC}"
+    echo -e "${GREEN}✅ CSMS API is running${NC}"
     echo "   Container: $OCPP_GATEWAY"
-    echo "   Gateway URL: ws://$LOCAL_IP:9000/ocpp/{chargePointId}"
+    echo "   OCPP URL: ws://$LOCAL_IP:3000/ocpp/{chargePointId}"
     echo ""
     echo "   To connect your device, configure it with:"
-    echo "   - OCPP Central System URL: ws://$LOCAL_IP:9000/ocpp/"
+    echo "   - OCPP Central System URL: ws://$LOCAL_IP:3000/ocpp/"
     echo "   - Charge Point ID: 0900330710111935 (from database)"
 else
-    echo -e "${RED}❌ OCPP Gateway is not running${NC}"
-    echo "   Start it with: docker-compose up -d ocpp-gateway"
+    echo -e "${RED}❌ CSMS API is not running${NC}"
+    echo "   Start it with: docker-compose up -d csms-api"
 fi
 echo ""
 
-# Step 8: Check Recent OCPP Gateway Logs
-echo -e "${BLUE}8. Recent OCPP Gateway Activity${NC}"
+# Step 8: Check Recent OCPP Logs
+echo -e "${BLUE}8. Recent OCPP Activity${NC}"
 echo "----------------------"
-RECENT_LOGS=$(docker logs --tail 20 ev-billing-ocpp-gateway 2>&1 | grep -i "0900330710111935\|192.168.0.100\|connection\|boot" | tail -5)
+RECENT_LOGS=$(docker logs --tail 80 ev-billing-csms-api 2>&1 | grep -i "0900330710111935\|192.168.0.100\|connection\|boot\|ocpp" | tail -8)
 if [ -n "$RECENT_LOGS" ]; then
     echo "$RECENT_LOGS"
 else
@@ -170,7 +170,7 @@ if [ ${#OPEN_PORTS[@]} -gt 0 ]; then
     echo ""
     echo "2. Configure OCPP connection:"
     echo "   - Charge Point ID: 0900330710111935"
-    echo "   - Central System URL: ws://$LOCAL_IP:9000/ocpp/"
+    echo "   - Central System URL: ws://$LOCAL_IP:3000/ocpp/"
 else
     echo -e "${RED}❌ Device is NOT currently discoverable${NC}"
     echo ""
