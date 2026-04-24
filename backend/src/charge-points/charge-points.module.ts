@@ -6,6 +6,7 @@ import { ChargePointsService } from './charge-points.service';
 import { ChargePointsController } from './charge-points.controller';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
+import { Vendor } from '../entities/vendor.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
@@ -16,7 +17,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User, BlockedChargePointId]),
+    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User, BlockedChargePointId, Vendor]),
     ConfigModule,
     WalletModule,
     JwtModule.registerAsync({

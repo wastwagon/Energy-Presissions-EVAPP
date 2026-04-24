@@ -10,6 +10,7 @@ import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
+import { Vendor } from '../entities/vendor.entity';
 import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
 
 @Injectable()
@@ -28,6 +29,8 @@ export class ChargePointsService {
     private userRepository: Repository<User>,
     @InjectRepository(BlockedChargePointId)
     private blockedChargePointIdRepository: Repository<BlockedChargePointId>,
+    @InjectRepository(Vendor)
+    private vendorRepository: Repository<Vendor>,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
     private configService: ConfigService,
@@ -128,6 +131,12 @@ export class ChargePointsService {
 
   async update(chargePointId: string, data: Partial<ChargePoint>): Promise<ChargePoint> {
     const chargePoint = await this.findOne(chargePointId);
+    if (data.vendorId != null && data.vendorName === undefined) {
+      const v = await this.vendorRepository.findOne({ where: { id: data.vendorId } });
+      if (v) {
+        (data as Partial<ChargePoint>).vendorName = v.name;
+      }
+    }
     Object.assign(chargePoint, data);
     return this.chargePointRepository.save(chargePoint);
   }

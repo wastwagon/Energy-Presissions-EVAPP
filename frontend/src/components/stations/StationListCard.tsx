@@ -66,20 +66,23 @@ export function StationListCard({
   const canStart =
     station.status === 'Available' && station.availableConnectors > 0;
 
+  const ac = station.availableConnectors ?? 0;
+  const tc = station.totalConnectors ?? 0;
+
   const metaRows: { label: string; value: string; icon?: React.ReactNode }[] = [
     {
       label: 'Distance',
       value:
         typeof station.distanceKm === 'number' &&
         Number.isFinite(station.distanceKm) &&
-        station.distanceKm >= 0
+        station.distanceKm > 0.0001
           ? `${station.distanceKm.toFixed(1)} km`
           : '—',
       icon: <StraightenIcon sx={{ fontSize: 16, opacity: 0.75 }} />,
     },
     {
       label: 'Connectors',
-      value: `${station.availableConnectors} free · ${station.totalConnectors} total`,
+      value: `${ac} free · ${tc} total`,
       icon: <BoltIcon sx={{ fontSize: 16, opacity: 0.75 }} />,
     },
   ];

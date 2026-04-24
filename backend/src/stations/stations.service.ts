@@ -149,6 +149,7 @@ export class StationsService {
 
   /**
    * Find stations in a map bounds (for map view)
+   * Returns the same enriched shape as /nearby (connectors, counts) so the customer app never shows undefined metadata.
    */
   async findInBounds(
     north: number,
@@ -156,7 +157,7 @@ export class StationsService {
     east: number,
     west: number,
     status?: string[],
-  ): Promise<ChargePoint[]> {
+  ): Promise<StationWithDistance[]> {
     let queryBuilder = this.chargePointRepository
       .createQueryBuilder('cp')
       .where('cp.location_latitude BETWEEN :south AND :north', { south, north })
@@ -168,7 +169,45 @@ export class StationsService {
       queryBuilder = queryBuilder.andWhere('cp.status IN (:...status)', { status });
     }
 
-    return queryBuilder.getMany();
+    const stations = await queryBuilder.getMany();
+    if (stations.length === 0) {
+      return [];
+    }
+
+    const candidateIds = stations.map((s) => s.chargePointId);
+    const [allConnectors, activeCountRows] = await Promise.all([
+      this.connectorRepository.find({
+        where: { chargePointId: In(candidateIds) },
+      }),
+      this.transactionRepository
+        .createQueryBuilder('t')
+        .select('t.chargePointId', 'cpId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('t.status = :st', { st: 'Active' })
+        .andWhere('t.chargePointId IN (:...ids)', { ids: candidateIds })
+        .groupBy('t.chargePointId')
+        .getRawMany<{ cpId: string; cnt: string }>(),
+    ]);
+
+    const connectorsByCp = new Map<string, Connector[]>();
+    for (const c of allConnectors) {
+      const list = connectorsByCp.get(c.chargePointId) ?? [];
+      list.push(c);
+      connectorsByCp.set(c.chargePointId, list);
+    }
+
+    const activeByCp = new Map<string, number>();
+    for (const row of activeCountRows) {
+      const id = String(row.cpId ?? '');
+      if (id) activeByCp.set(id, parseInt(String(row.cnt), 10) || 0);
+    }
+
+    return stations.map((station) => {
+      const conns = connectorsByCp.get(station.chargePointId) ?? [];
+      const act = activeByCp.get(station.chargePointId) ?? 0;
+      // No user reference point in viewport; distance is 0 and UI may hide as "—" when 0
+      return this.buildStationWithDistance(station, conns, act, 0);
+    });
   }
 
   /**
