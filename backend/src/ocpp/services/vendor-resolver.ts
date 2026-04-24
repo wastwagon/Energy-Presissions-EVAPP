@@ -54,9 +54,18 @@ export class VendorResolver {
       this.cacheTTL.set(chargePointId, Date.now());
 
       return vendorId;
-    } catch (error: any) {
-      logger.error(`Failed to resolve vendor for charge point ${chargePointId}:`, error.message);
-      // Return default vendor (1) for backward compatibility
+    } catch (error: unknown) {
+      // Do not pass a second `string` to winston — it is merged into `meta` and is JSON-stringified by character index.
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        logger.info(
+          `No charge point row for ${chargePointId} (internal /vendor 404) — using default vendor 1`,
+        );
+        return 1;
+      }
+      const detail = axios.isAxiosError(error)
+        ? `${error.message} status=${error.response?.status ?? 'n/a'}`
+        : (error as Error)?.message ?? String(error);
+      logger.warn(`Failed to resolve vendor for ${chargePointId}: ${detail}`);
       return 1;
     }
   }

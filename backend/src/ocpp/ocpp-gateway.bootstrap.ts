@@ -58,8 +58,9 @@ function sendError(ws: WebSocket, errorCode: string, errorDescription: string) {
 /**
  * When the URL is /ocpp/{chargePointId}, upsert a row so Device Inventory is not empty
  * if BootNotification is late or never persisted. Full Boot overwrites vendor/model/serial.
+ * Must run before vendor resolution so GET /internal/.../vendor is not 404 on first connect.
  */
-function scheduleChargePointStubOnConnect(chargePointId: string): void {
+async function upsertChargePointOnConnect(chargePointId: string): Promise<void> {
   if (!chargePointId || chargePointId.startsWith('temp_')) {
     return;
   }
@@ -70,8 +71,8 @@ function scheduleChargePointStubOnConnect(chargePointId: string): void {
     logger.warn('SERVICE_TOKEN not set; cannot register charge point on OCPP connect');
     return;
   }
-  void axios
-    .post(
+  try {
+    const res = await axios.post(
       `${base}/api/internal/charge-points`,
       {
         chargePointId,
@@ -83,18 +84,19 @@ function scheduleChargePointStubOnConnect(chargePointId: string): void {
         timeout: 10000,
         validateStatus: () => true,
       },
-    )
-    .then((res) => {
-      if (res.status >= 200 && res.status < 300) {
-        logger.info(
-          `Charge point ${chargePointId} in database (connect stub); BootNotification may replace vendor/model. http=${res.status}`,
-        );
-        return;
-      }
-      const d = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-      logger.warn(`Connect stub upsert http ${res.status} for ${chargePointId}: ${String(d).slice(0, 400)}`);
-    })
-    .catch((e: Error) => logger.warn(`Connect stub upsert error for ${chargePointId}: ${e.message}`));
+    );
+    if (res.status >= 200 && res.status < 300) {
+      logger.info(
+        `Charge point ${chargePointId} in database (connect upsert); Boot may replace vendor/model. http=${res.status}`,
+      );
+      return;
+    }
+    const d = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+    logger.warn(`Connect upsert http ${res.status} for ${chargePointId}: ${String(d).slice(0, 400)}`);
+  } catch (e) {
+    const err = e as Error;
+    logger.warn(`Connect upsert error for ${chargePointId}: ${err.message}`);
+  }
 }
 
 /**
@@ -355,6 +357,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     }
 
     if (chargePointId) {
+      await upsertChargePointOnConnect(chargePointId);
       try {
         const vendorId = await vendorResolver.resolveVendorId(chargePointId);
 
@@ -399,7 +402,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
               userAgent,
             });
           } catch (error: any) {
-            logger.error(`Error checking vendor status for ${chargePointId}:`, error.message);
+            logger.error(`Error checking vendor status for ${chargePointId}: ${error?.message ?? String(error)}`);
             await ConnectionLogger.logError(
               chargePointId,
               'VENDOR_STATUS_CHECK_FAILED',
@@ -428,7 +431,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
           });
         }
       } catch (error: any) {
-        logger.error(`Error resolving vendor for ${chargePointId}:`, error.message);
+        logger.error(`Error resolving vendor for ${chargePointId}: ${error?.message ?? String(error)}`);
         await ConnectionLogger.logError(
           chargePointId,
           'VENDOR_RESOLUTION_FAILED',
@@ -443,10 +446,6 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
           warning: 'Vendor resolution failed',
         });
       }
-    }
-
-    if (chargePointId) {
-      scheduleChargePointStubOnConnect(chargePointId);
     }
 
     ws.on('message', async (data: Buffer) => {
