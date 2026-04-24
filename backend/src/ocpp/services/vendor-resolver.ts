@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
 
-const CSMS_API_URL = process.env.CSMS_API_URL || 'http://csms-api:3000';
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || '';
+
+function getCsmsBaseUrl(): string {
+  const p = String(process.env.PORT || '3000');
+  return (process.env.CSMS_API_URL || `http://127.0.0.1:${p}`).replace(/\/$/, '');
+}
 
 interface ChargePointInfo {
   id: number;
@@ -34,7 +38,7 @@ export class VendorResolver {
     try {
       // Query CSMS API for charge point info
       const response = await axios.get<ChargePointInfo>(
-        `${CSMS_API_URL}/api/internal/charge-points/${chargePointId}/vendor`,
+        `${getCsmsBaseUrl()}/api/internal/charge-points/${encodeURIComponent(chargePointId)}/vendor`,
         {
           headers: {
             Authorization: `Bearer ${SERVICE_TOKEN}`,

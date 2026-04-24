@@ -79,13 +79,16 @@ services:
       SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
       MIGRATIONS_AUTO_RUN: "true"
       INCLUDE_SAMPLE_DATA: "false"
-      # Create SuperAdmin + vendor admins + walk-in on first API start if absent (set false after onboarding)
-      SEED_BOOTSTRAP_USERS: "true"
+      # SuperAdmin + vendor admins + walk-in on first start if absent. Set in Coolify: true only for first-time onboarding, then false.
+      SEED_BOOTSTRAP_USERS: ${SEED_BOOTSTRAP_USERS:-false}
       CORS_STRICT_ORIGINS: "true"
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      # Loopback: BootNotification and commands call the same Nest process (avoids hairpin to public URL).
       CSMS_API_URL: http://127.0.0.1:3000
       OCPP_GATEWAY_URL: http://127.0.0.1:3000
+      # Optional. Logged at startup for operators (e.g. wss://app.yourdomain.com/ocpp) — not used for routing.
+      OCPP_WSS_URL: ${OCPP_WSS_URL:-}
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
       PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
       PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-}

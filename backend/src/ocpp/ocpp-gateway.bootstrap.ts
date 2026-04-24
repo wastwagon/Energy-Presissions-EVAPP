@@ -462,6 +462,14 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     });
   });
 
+  const publicOcppWss = (process.env.OCPP_WSS_URL || process.env.OCPP_WSS_BASE || '').trim();
+  if (publicOcppWss) {
+    logger.info(`OCPP: configure chargers to connect to: ${publicOcppWss}`);
+  } else {
+    logger.info(
+      'OCPP: public URL not set. Set OCPP_WSS_URL (e.g. wss://app.yourdomain.com/ocpp). Chargers must use wss:// to this stack; path /ocpp or /ocpp/{chargePointId}.',
+    );
+  }
   logger.info('Merged OCPP gateway: WebSocket /ocpp and HTTP /command mounted on CSMS API server');
 
   const shutdown = async () => {

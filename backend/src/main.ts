@@ -121,6 +121,7 @@ async function bootstrap() {
         health: '/health',
         api: '/api',
         docs: swaggerEnabled ? '/api/docs' : 'Swagger docs disabled (set ENABLE_SWAGGER=true to enable in production)',
+        ocpp: 'OCPP 1.6J WebSocket on /ocpp (or /ocpp/{chargePointId}); production: wss://<public host>/ocpp (same host as the web app if nginx proxies, or the API host if exposed directly with WS upgrade).',
       },
       timestamp: new Date().toISOString(),
     });

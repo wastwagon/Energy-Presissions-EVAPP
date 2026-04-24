@@ -6,21 +6,58 @@ import axios from 'axios';
 export class BootNotificationHandler {
   constructor(private connectionManager: ConnectionManager) {}
 
+  /** OCPP 1.6J uses chargePointSerialNumber; some firmware uses alternate keys or path-only /ocpp without a serial. */
+  private resolveActualChargePointId(
+    connectionLabel: string,
+    payload: BootNotificationPayload,
+  ): { id: string; fromPayload: string | null } {
+    if (!connectionLabel.startsWith('temp_')) {
+      return { id: connectionLabel, fromPayload: null };
+    }
+    const p = payload as unknown as Record<string, unknown>;
+    const trim = (s: unknown) => (typeof s === 'string' ? s.trim() : '');
+
+    let candidate =
+      trim(payload.chargePointSerialNumber) ||
+      (typeof p['chargePointSerial'] === 'string' ? trim(p['chargePointSerial']) : '') ||
+      (typeof p['cpSerial'] === 'string' ? trim(p['cpSerial']) : '');
+
+    if (!candidate) {
+      const m = trim(payload.chargePointModel);
+      if (m && /^\d{10,24}$/.test(m)) {
+        candidate = m;
+        logger.info(`Using numeric chargePointModel as identity for ${connectionLabel}`);
+      }
+    }
+
+    if (candidate) {
+      return { id: candidate, fromPayload: 'BootNotification' };
+    }
+    return { id: connectionLabel, fromPayload: null };
+  }
+
   async handle(chargePointId: string, messageId: string, payload: BootNotificationPayload, ws?: any): Promise<void> {
-    // If chargePointId is temporary (starts with "temp_"), extract actual ID from BootNotification
-    let actualChargePointId = chargePointId;
-    
-    if (chargePointId.startsWith('temp_') && payload.chargePointSerialNumber) {
-      // Use serial number as charge point ID (this matches the Charge ID from device config)
-      actualChargePointId = payload.chargePointSerialNumber;
-      logger.info(`Mapping temporary connection ${chargePointId} to charge point ID: ${actualChargePointId}`);
-      
-      // Map the WebSocket connection to the actual charge point ID
+    let { id: actualChargePointId, fromPayload } = this.resolveActualChargePointId(chargePointId, payload);
+
+    if (chargePointId.startsWith('temp_')) {
+      if (!fromPayload) {
+        logger.error(
+          `BootNotification: cannot determine charge point id. Use wss://…/ocpp/{yourChargePointId} on the device, or ensure Boot includes chargePointSerialNumber (OCPP 1.6J). temp=${chargePointId}`,
+        );
+        const ocppErr: OCPPMessage = [3, messageId, { status: 'Rejected', currentTime: new Date().toISOString() } as any];
+        if (ws) {
+          this.connectionManager.sendMessage(chargePointId, ocppErr);
+        }
+        return;
+      }
+      logger.info(`Mapping temporary connection ${chargePointId} to charge point id: ${actualChargePointId}`);
       if (ws) {
         const mapped = this.connectionManager.mapConnectionToChargePointId(ws, actualChargePointId);
         if (!mapped) {
           logger.error(`Failed to map connection from ${chargePointId} to ${actualChargePointId}`);
-          // Continue with original ID but log warning
+          const ocppErr: OCPPMessage = [3, messageId, { status: 'Rejected', currentTime: new Date().toISOString() } as any];
+          this.connectionManager.sendMessage(chargePointId, ocppErr);
+          return;
         }
       }
     }
@@ -76,7 +113,8 @@ export class BootNotificationHandler {
   }
 
   private async notifyCSMS(chargePointId: string, payload: BootNotificationPayload): Promise<void> {
-    const csmsApiUrl = process.env.CSMS_API_URL || 'http://csms-api:3000';
+    const port = process.env.PORT || '3000';
+    const csmsApiUrl = (process.env.CSMS_API_URL || `http://127.0.0.1:${port}`).replace(/\/$/, '');
     
     const dataToSend = {
       chargePointId,
