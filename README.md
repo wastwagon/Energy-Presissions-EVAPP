@@ -25,6 +25,7 @@ docker-compose logs -f
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
 For the authoritative, up-to-date docs list (and what is archival), see [CURRENT_DOCS.md](./CURRENT_DOCS.md).
+For historical-note handling rules, see [ARCHIVE.md](./ARCHIVE.md).
 
 ## 📋 Project Status
 

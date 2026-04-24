@@ -1,6 +1,7 @@
 # Current Documentation Index
 
 This file defines which docs describe the current architecture and operations.
+Archival governance rules are defined in `ARCHIVE.md`.
 
 ## Canonical (Current) Docs
 
