@@ -83,6 +83,15 @@ function formatLatLngPair(lat: unknown, lng: unknown): string | null {
   return `${a.toFixed(6)}, ${b.toFixed(6)}`;
 }
 
+function chargePointHasMapCoords(cp: ChargePoint): boolean {
+  return formatLatLngPair(cp.locationLatitude, cp.locationLongitude) !== null;
+}
+
+/** OCPP-style numeric charge point identity (serial often omitted until BootNotification fills it). */
+function looksLikeNumericChargePointIdentity(id: string): boolean {
+  return /^\d{14,20}$/.test(id);
+}
+
 export function DevicesPage() {
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
@@ -194,29 +203,42 @@ export function DevicesPage() {
     loadRecentErrors();
   }, []);
 
-  // Helper function to determine if a device is real (not dummy data)
+  // Helper: exclude seeded sample rows; include hardware/OCPP IDs even before serial is populated.
   const isRealDevice = (cp: ChargePoint): boolean => {
-    // Dummy devices typically have:
-    // 1. Generic IDs like CP-ACC-001, CP-ASH-001, CP-WES-001
     const dummyIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
     if (dummyIdPattern.test(cp.chargePointId)) {
       return false;
     }
 
-    // 2. No vendor name
     if (!cp.vendorName && !cp.vendor) {
       return false;
     }
 
-    // 3. No serial number
-    if (!cp.serialNumber) {
-      return false;
+    if (cp.serialNumber) {
+      return true;
     }
 
-    // 4. Never had a heartbeat (and no connection logs would indicate dummy)
-    // But we'll be lenient - if it has vendor and serial, consider it real
-    
-    return true;
+    if (looksLikeNumericChargePointIdentity(cp.chargePointId)) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const inventoryTypeTooltip = (cp: ChargePoint): string => {
+    const dummyIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
+    if (dummyIdPattern.test(cp.chargePointId)) {
+      return 'Sample / seed device (dummy ID pattern)';
+    }
+    if (isRealDevice(cp)) {
+      return chargePointHasMapCoords(cp)
+        ? 'Registered device with map coordinates'
+        : 'Registered device — set GPS on the device detail page to show on the customer map';
+    }
+    if (!cp.vendorName && !cp.vendor) {
+      return 'Incomplete row (no vendor)';
+    }
+    return 'Test or manual registration — add serial from BootNotification or use a numeric charge point ID';
   };
 
   useEffect(() => {
@@ -340,7 +362,8 @@ export function DevicesPage() {
             Device Inventory
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Track real devices, monitor connection health, and inspect recent errors.
+            Track real devices, monitor connection health, and inspect recent errors. Customer map only lists
+            chargers with latitude and longitude set here (Operations → device detail).
           </Typography>
         </Box>
         <Box
@@ -457,10 +480,10 @@ export function DevicesPage() {
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {showOnlyRealDevices
-                  ? 'Real devices have vendor name, serial number, and do not match dummy ID patterns (CP-ACC-*, CP-ASH-*, CP-WES-*).'
+                  ? 'Real devices: vendor set, and either a serial from the charger or a long numeric charge point ID. Excludes sample IDs (CP-ACC-*, CP-ASH-*, CP-WES-*).'
                   : searchTerm
                     ? 'Try another term or clear search to see all devices.'
-                    : 'Charge points appear here after they connect and send BootNotification.'}
+                    : 'Charge points appear here after BootNotification (or internal registration). Set GPS coordinates so they also appear on the customer Stations map.'}
               </Typography>
             </Paper>
           ) : (
@@ -470,7 +493,7 @@ export function DevicesPage() {
                   severity="info"
                   sx={{ mt: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center', gap: 1, '& .MuiAlert-message': { width: { xs: '100%', sm: 'auto' } } }}
                 >
-                  Showing only real devices. Real devices have vendor name, serial number, and don't match dummy ID patterns.
+                  Showing only real devices (vendor + serial or numeric OCPP-style ID). Map listing still requires GPS on each device.
                   <Button 
                     size="small" 
                     onClick={() => setShowOnlyRealDevices(false)}
@@ -492,7 +515,7 @@ export function DevicesPage() {
                     <TableCell>Firmware</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Last Heartbeat</TableCell>
-                    <TableCell>Location</TableCell>
+                    <TableCell>Location / map</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -500,6 +523,7 @@ export function DevicesPage() {
                   {filteredChargePoints.map((cp) => {
                     const errorCount = getErrorCount(cp.chargePointId);
                     const isReal = isRealDevice(cp);
+                    const onCustomerMap = chargePointHasMapCoords(cp);
                     const hasRecentActivity = cp.lastHeartbeat && 
                       (new Date().getTime() - new Date(cp.lastHeartbeat).getTime()) < 24 * 60 * 60 * 1000; // Within 24 hours
                     
@@ -514,11 +538,11 @@ export function DevicesPage() {
                         }}
                       >
                         <TableCell>
-                          <Tooltip title={isReal ? 'Real Device' : 'Dummy/Test Data'}>
+                          <Tooltip title={inventoryTypeTooltip(cp)}>
                             {isReal ? (
                               <CheckCircleIcon color="success" fontSize="small" />
                             ) : (
-                              <WarningIcon color="disabled" fontSize="small" />
+                              <WarningIcon color="warning" fontSize="small" />
                             )}
                           </Tooltip>
                         </TableCell>
@@ -574,9 +598,20 @@ export function DevicesPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {cp.locationAddress ||
-                            formatLatLngPair(cp.locationLatitude, cp.locationLongitude) ||
-                            '-'}
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
+                            <Typography variant="body2">
+                              {cp.locationAddress ||
+                                formatLatLngPair(cp.locationLatitude, cp.locationLongitude) ||
+                                '—'}
+                            </Typography>
+                            <Chip
+                              size="small"
+                              label={onCustomerMap ? 'On customer map' : 'Not on map (no GPS)'}
+                              color={onCustomerMap ? 'success' : 'default'}
+                              variant={onCustomerMap ? 'filled' : 'outlined'}
+                              sx={{ height: 22, fontSize: '0.7rem', maxWidth: '100%' }}
+                            />
+                          </Box>
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>

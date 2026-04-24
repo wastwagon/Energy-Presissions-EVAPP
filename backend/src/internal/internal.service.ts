@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChargePoint } from '../entities/charge-point.entity';
@@ -97,19 +97,22 @@ export class InternalService {
         status: 'Available',
       });
     } else {
-      // Create new
+      // Create new — vendor_id is required; align with DB default (see database/init/08-vendor-migration.sql)
+      const defaultVendorId = Number.parseInt(process.env.DEFAULT_VENDOR_ID || '1', 10);
       chargePoint = this.chargePointRepository.create({
         chargePointId: data.chargePointId,
+        vendorId: defaultVendorId,
         vendorName: data.vendor,
         model: data.model,
         serialNumber: data.serialNumber,
         firmwareVersion: data.firmwareVersion,
         iccid: data.iccid,
         imsi: data.imsi,
-      lastSeen: new Date(),
-      status: 'Available',
-    });
-  }
+        lastSeen: new Date(),
+        // Until OCPP heartbeat / StatusNotification, treat as offline (avoids "Available" + never heartbeat).
+        status: 'Offline',
+      });
+    }
 
   await this.chargePointRepository.save(chargePoint);
 
@@ -149,7 +152,7 @@ export class InternalService {
     });
 
     if (!chargePoint) {
-      throw new Error(`Charge point ${chargePointId} not found`);
+      throw new NotFoundException(`Charge point ${chargePointId} not found`);
     }
 
     const vendorId = chargePoint.vendorId;
@@ -177,7 +180,7 @@ export class InternalService {
     });
 
     if (!chargePoint) {
-      throw new Error(`Charge point ${chargePointId} not found`);
+      throw new NotFoundException(`Charge point ${chargePointId} not found`);
     }
 
     const connectors = await this.connectorRepository.find({

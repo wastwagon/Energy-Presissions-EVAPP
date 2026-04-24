@@ -483,11 +483,23 @@ export function StationsPage() {
             )}
             {!loading && stations.length === 0 && !error && (
               <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2 }}>
-                <Typography variant="body2" color="text.secondary" align="center">
+                <Typography variant="body2" color="text.secondary" align="center" component="div">
                   {userLocation
-                    ? 'No stations found for this area. Try a different search.'
+                    ? 'No stations found for this area. Try a different search or zoom the map.'
                     : 'Enable location or search by area or station ID.'}
                 </Typography>
+                {userLocation && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    align="center"
+                    component="div"
+                    sx={{ display: 'block', mt: 1.5, lineHeight: 1.5 }}
+                  >
+                    Operators: chargers only appear here when they have GPS coordinates, are in an active status
+                    (Available, Charging, Preparing, or Finishing), and are within range.
+                  </Typography>
+                )}
               </Paper>
             )}
             {!loading && sortedStations.length > 0 && (
