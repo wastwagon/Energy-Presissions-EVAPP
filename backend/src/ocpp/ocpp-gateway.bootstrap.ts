@@ -4,6 +4,7 @@
  */
 import { INestApplication } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { InternalService } from '../internal/internal.service';
 import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
 import { WebSocketServer } from 'ws';
@@ -55,39 +56,53 @@ function sendError(ws: WebSocket, errorCode: string, errorDescription: string) {
   }
 }
 
+const CONNECT_STUB_MODEL = 'OCPP connected; Boot will update this when received';
+
 /**
  * When the URL is /ocpp/{chargePointId}, upsert a row so Device Inventory is not empty
  * if BootNotification is late or never persisted. Full Boot overwrites vendor/model/serial.
- * Must run before vendor resolution so GET /internal/.../vendor is not 404 on first connect.
+ * In-process first (no HTTP, no SERVICE_TOKEN) so a row is always created in the same Node app.
+ * HTTP fallback for split deployments. Must run before vendor resolution.
  */
-async function upsertChargePointOnConnect(chargePointId: string): Promise<void> {
+async function upsertChargePointOnConnect(
+  app: INestApplication,
+  chargePointId: string,
+): Promise<void> {
   if (!chargePointId || chargePointId.startsWith('temp_')) {
     return;
+  }
+  const data = {
+    chargePointId,
+    vendor: 'Unknown',
+    model: CONNECT_STUB_MODEL,
+  };
+  try {
+    const internal = app.get(InternalService, { strict: false });
+    await internal.upsertChargePoint(data);
+    logger.info(
+      `Charge point ${chargePointId} in database (connect upsert, in-process); Boot may replace vendor/model.`,
+    );
+    return;
+  } catch (e) {
+    const err = e as Error;
+    logger.warn(`Connect upsert in-process for ${chargePointId}: ${err.message} — trying HTTP /api/internal/charge-points`);
   }
   const port = process.env.PORT || '3000';
   const base = (process.env.CSMS_API_URL || `http://127.0.0.1:${port}`).replace(/\/$/, '');
   const token = (process.env.SERVICE_TOKEN || '').trim();
   if (!token) {
-    logger.warn('SERVICE_TOKEN not set; cannot register charge point on OCPP connect');
+    logger.warn('SERVICE_TOKEN not set; cannot fall back to HTTP for connect upsert');
     return;
   }
   try {
-    const res = await axios.post(
-      `${base}/api/internal/charge-points`,
-      {
-        chargePointId,
-        vendor: 'Unknown',
-        model: 'OCPP connected; Boot will update this when received',
-      },
-      {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        timeout: 10000,
-        validateStatus: () => true,
-      },
-    );
+    const res = await axios.post(`${base}/api/internal/charge-points`, data, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      timeout: 10000,
+      validateStatus: () => true,
+    });
     if (res.status >= 200 && res.status < 300) {
       logger.info(
-        `Charge point ${chargePointId} in database (connect upsert); Boot may replace vendor/model. http=${res.status}`,
+        `Charge point ${chargePointId} in database (connect upsert HTTP); Boot may replace vendor/model. http=${res.status}`,
       );
       return;
     }
@@ -95,7 +110,7 @@ async function upsertChargePointOnConnect(chargePointId: string): Promise<void> 
     logger.warn(`Connect upsert http ${res.status} for ${chargePointId}: ${String(d).slice(0, 400)}`);
   } catch (e) {
     const err = e as Error;
-    logger.warn(`Connect upsert error for ${chargePointId}: ${err.message}`);
+    logger.warn(`Connect upsert HTTP error for ${chargePointId}: ${err.message}`);
   }
 }
 
@@ -357,7 +372,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     }
 
     if (chargePointId) {
-      await upsertChargePointOnConnect(chargePointId);
+      await upsertChargePointOnConnect(app, chargePointId);
       try {
         const vendorId = await vendorResolver.resolveVendorId(chargePointId);
 
