@@ -203,11 +203,20 @@ export function DevicesPage() {
     loadRecentErrors();
   }, []);
 
-  // Excludes known catalog import ID patterns; treats vendor + serial (or OCPP id shape) as field-provisioned.
+  // Excludes known catalog import ID patterns; field-provisioned = vendor/serial, numeric OCPP id (14–20 digits), or assigned vendorId.
   const isRealDevice = (cp: ChargePoint): boolean => {
     const catalogImportIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
     if (catalogImportIdPattern.test(cp.chargePointId)) {
       return false;
+    }
+
+    // OCPP-style numeric id (e.g. station serial) counts as a field device even if Boot left vendorName empty.
+    if (looksLikeNumericChargePointIdentity(cp.chargePointId)) {
+      return true;
+    }
+
+    if (typeof cp.vendorId === 'number' && cp.vendorId > 0) {
+      return true;
     }
 
     if (!cp.vendorName && !cp.vendor) {
@@ -215,10 +224,6 @@ export function DevicesPage() {
     }
 
     if (cp.serialNumber) {
-      return true;
-    }
-
-    if (looksLikeNumericChargePointIdentity(cp.chargePointId)) {
       return true;
     }
 
