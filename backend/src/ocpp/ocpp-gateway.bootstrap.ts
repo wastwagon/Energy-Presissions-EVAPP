@@ -56,6 +56,48 @@ function sendError(ws: WebSocket, errorCode: string, errorDescription: string) {
 }
 
 /**
+ * When the URL is /ocpp/{chargePointId}, upsert a row so Device Inventory is not empty
+ * if BootNotification is late or never persisted. Full Boot overwrites vendor/model/serial.
+ */
+function scheduleChargePointStubOnConnect(chargePointId: string): void {
+  if (!chargePointId || chargePointId.startsWith('temp_')) {
+    return;
+  }
+  const port = process.env.PORT || '3000';
+  const base = (process.env.CSMS_API_URL || `http://127.0.0.1:${port}`).replace(/\/$/, '');
+  const token = (process.env.SERVICE_TOKEN || '').trim();
+  if (!token) {
+    logger.warn('SERVICE_TOKEN not set; cannot register charge point on OCPP connect');
+    return;
+  }
+  void axios
+    .post(
+      `${base}/api/internal/charge-points`,
+      {
+        chargePointId,
+        vendor: 'Unknown',
+        model: 'OCPP connected; Boot will update this when received',
+      },
+      {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        timeout: 10000,
+        validateStatus: () => true,
+      },
+    )
+    .then((res) => {
+      if (res.status >= 200 && res.status < 300) {
+        logger.info(
+          `Charge point ${chargePointId} in database (connect stub); BootNotification may replace vendor/model. http=${res.status}`,
+        );
+        return;
+      }
+      const d = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      logger.warn(`Connect stub upsert http ${res.status} for ${chargePointId}: ${String(d).slice(0, 400)}`);
+    })
+    .catch((e: Error) => logger.warn(`Connect stub upsert error for ${chargePointId}: ${e.message}`));
+}
+
+/**
  * Register OCPP HTTP + WS on the Nest application. Call immediately after NestFactory.create,
  * before app.init(), so /command and /health/connection run before Nest body parsers where needed.
  */
@@ -401,6 +443,10 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
           warning: 'Vendor resolution failed',
         });
       }
+    }
+
+    if (chargePointId) {
+      scheduleChargePointStubOnConnect(chargePointId);
     }
 
     ws.on('message', async (data: Buffer) => {
