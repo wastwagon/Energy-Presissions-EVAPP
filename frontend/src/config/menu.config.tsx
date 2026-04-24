@@ -406,22 +406,6 @@ export const adminMenuConfig: MenuSection[] = [
         path: ADMIN_ROUTES.users,
         roles: ['Admin'],
       },
-      {
-        id: 'access-control',
-        text: 'Access Control',
-        icon: <SecurityIcon />,
-        path: ADMIN_ROUTES.access,
-        disabled: true, // TODO: Create access control page
-        roles: ['Admin'],
-      },
-      {
-        id: 'team-members',
-        text: 'Team Members',
-        icon: <PeopleIcon />,
-        path: ADMIN_ROUTES.team,
-        disabled: true, // TODO: Create team members page
-        roles: ['Admin'],
-      },
     ],
   },
 ];

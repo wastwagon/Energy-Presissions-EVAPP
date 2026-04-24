@@ -24,6 +24,8 @@ docker-compose logs -f
 
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
+For the authoritative, up-to-date docs list (and what is archival), see [CURRENT_DOCS.md](./CURRENT_DOCS.md).
+
 ## 📋 Project Status
 
 Current architecture uses a single backend service for both REST API and OCPP (`/ocpp`), with frontend real-time updates via Socket.IO (`/ws`).
@@ -39,6 +41,8 @@ Current architecture uses a single backend service for both REST API and OCPP (`
 ## 📚 Documentation Overview
 
 This package contains comprehensive documentation for developing an EV charging billing software system based on OCPP 1.6 protocol. All documents are designed to guide you from initial planning through development and deployment.
+
+> Note: Many root-level `*_SUMMARY.md`, `*_REPORT.md`, and `PHASE*.md` files are historical migration/troubleshooting notes. Use `CURRENT_DOCS.md` as the source of truth for current setup and operations.
 
 ---
 

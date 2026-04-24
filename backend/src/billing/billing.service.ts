@@ -5,6 +5,8 @@ import { Transaction } from '../entities/transaction.entity';
 import { Tariff } from '../entities/tariff.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
+import { Vendor } from '../entities/vendor.entity';
+import { SystemSetting } from '../entities/system-setting.entity';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -18,6 +20,10 @@ export class BillingService {
     private invoiceRepository: Repository<Invoice>,
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
+    @InjectRepository(Vendor)
+    private vendorRepository: Repository<Vendor>,
+    @InjectRepository(SystemSetting)
+    private systemSettingRepository: Repository<SystemSetting>,
   ) {}
 
   /**
@@ -129,7 +135,7 @@ export class BillingService {
   async generateInvoice(transactionId: number): Promise<Invoice> {
     const transaction = await this.transactionRepository.findOne({
       where: { transactionId },
-      relations: ['user', 'chargePoint'],
+      relations: ['user', 'chargePoint', 'chargePoint.vendor'],
     });
 
     if (!transaction) {
@@ -171,13 +177,20 @@ export class BillingService {
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${transaction.transactionId}`;
 
+    const subtotal = new Decimal(transaction.totalCost || 0);
+    const taxPercent = await this.resolveTaxPercent(
+      (transaction.chargePoint as any)?.vendorId ?? (transaction.user as any)?.vendorId,
+    );
+    const tax = subtotal.times(taxPercent).dividedBy(100);
+    const total = subtotal.plus(tax);
+
     const invoice = this.invoiceRepository.create({
       invoiceNumber,
       transactionId: transaction.transactionId,
       userId: transaction.userId,
-      subtotal: transaction.totalCost || 0,
-      tax: 0, // TODO: Calculate tax based on vendor settings
-      total: transaction.totalCost || 0,
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      tax: parseFloat(tax.toFixed(2)),
+      total: parseFloat(total.toFixed(2)),
       currency: transaction.currency,
       status: 'Generated',
     });
@@ -258,6 +271,43 @@ export class BillingService {
     }
 
     return invoice;
+  }
+
+  private parseTaxPercent(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  private async resolveTaxPercent(vendorId?: number): Promise<number> {
+    if (vendorId) {
+      const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
+      const metadata = (vendor?.metadata || {}) as Record<string, unknown>;
+      const vendorRate = this.parseTaxPercent(
+        metadata.taxRatePercent ?? metadata.taxRate ?? metadata.vatRatePercent ?? metadata.vatRate,
+      );
+      if (vendorRate !== null) {
+        return vendorRate;
+      }
+    }
+
+    const keys = ['billing.taxRatePercent', 'billing.vatRatePercent', 'tax.ratePercent'];
+    for (const key of keys) {
+      const setting = await this.systemSettingRepository.findOne({ where: { key } });
+      const rate = this.parseTaxPercent(setting?.value);
+      if (rate !== null) {
+        return rate;
+      }
+    }
+
+    return 0;
   }
 }
 
