@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -52,7 +53,10 @@ import {
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { getStoredUser } from '../../utils/authSession';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
 
@@ -77,8 +81,10 @@ export function ChargePointDetailPage() {
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [remoteStartDialogOpen, setRemoteStartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [remoteStartConnector, setRemoteStartConnector] = useState<number | null>(null);
@@ -185,9 +191,11 @@ export function ChargePointDetailPage() {
     !remoteStartIdTag ||
     !!(remoteStartSelectedConnector && !connectorAllowsRemoteStart(remoteStartSelectedConnector.status));
 
-  const loadData = async () => {
+  const loadData = async (silent?: boolean) => {
     if (!id) return;
+    const isQuiet = silent === true;
     try {
+      if (isQuiet) setRefreshing(true);
       setError(null);
       const [cp, conns, activeTx, fwJobs, diagJobs] = await Promise.all([
         chargePointsApi.getById(id),
@@ -201,11 +209,13 @@ export function ChargePointDetailPage() {
       setActiveTransactions(activeTx.filter((tx: any) => tx.chargePointId === id));
       setFirmwareJobs(Array.isArray(fwJobs) ? fwJobs : []);
       setDiagnosticsJobs(Array.isArray(diagJobs) ? diagJobs : []);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to load charge point details');
       console.error('Error loading charge point details:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -383,6 +393,9 @@ export function ChargePointDetailPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating device details" />
+      )}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -398,11 +411,17 @@ export function ChargePointDetailPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Device details, connectors, active transactions, and remote actions.
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.device} showSeconds />
         </Box>
         <Chip
           label={chargePoint.status}
           color={getChargePointStatusColor(chargePoint.status)}
           sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+        />
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadData(true)}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         />
       </Box>
 

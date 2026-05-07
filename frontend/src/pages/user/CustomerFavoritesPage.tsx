@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -10,6 +10,7 @@ import {
   Button,
   IconButton,
   useTheme,
+  LinearProgress,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -30,55 +31,60 @@ import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerFavoritesPage() {
   const theme = useTheme();
   const navigate = useNavigate();
   const [stations, setStations] = useState<StationWithDistance[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [startChargingDialogOpen, setStartChargingDialogOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<StationWithDistance | null>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const getCurrentUserId = () => {
     const user = getStoredUser();
     return typeof user?.id === 'number' ? user.id : null;
   };
 
-  const loadData = async () => {
-    try {
-      setError(null);
-      const userId = getCurrentUserId();
-      if (!userId) {
-        setError('Please log in to view favorites');
-        setLoading(false);
-        return;
-      }
-      const ids = await usersApi.getFavorites(userId);
+  const loadData = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const userId = getCurrentUserId();
+        if (!userId) {
+          setError('Please log in to view favorites');
+          return false;
+        }
+        const ids = await usersApi.getFavorites(userId);
 
-      if (ids.length === 0) {
-        setStations([]);
-      } else {
-        const favoriteStations = await stationsApi.getByIds(ids);
-        setStations(favoriteStations);
+        if (ids.length === 0) {
+          setStations([]);
+        } else {
+          const favoriteStations = await stationsApi.getByIds(ids);
+          setStations(favoriteStations);
+        }
+        return true;
+      } catch (err: unknown) {
+        const ax = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+        const status = ax.response?.status;
+        const serverMsg = ax.response?.data?.message;
+        if (status === 500) {
+          setError(serverMsg || 'Server error loading favorites. Please try again or contact support.');
+        } else {
+          setError(ax.message || serverMsg || 'Failed to load favorites');
+        }
+        return false;
       }
-    } catch (err: unknown) {
-      const ax = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
-      const status = ax.response?.status;
-      const serverMsg = ax.response?.data?.message;
-      if (status === 500) {
-        setError(serverMsg || 'Server error loading favorites. Please try again or contact support.');
-      } else {
-        setError(ax.message || serverMsg || 'Failed to load favorites');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const handleRemoveFavorite = async (chargePointId: string) => {
     try {
@@ -116,13 +122,24 @@ export function CustomerFavoritesPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Favorite Stations
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Your saved charging stations for quick access
-        </Typography>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating favorite stations" />
+      )}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+            Favorite Stations
+          </Typography>
+          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+            Your saved charging stations for quick access
+          </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.favorites} />
+        </Box>
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadData(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        />
       </Box>
 
       <CustomerQuickActions preset="favorites" />
@@ -251,7 +268,7 @@ export function CustomerFavoritesPage() {
             setSelectedStation(null);
           }}
           station={selectedStation}
-          onSuccess={() => loadData()}
+          onSuccess={() => void loadData(true)}
         />
       )}
     </Box>

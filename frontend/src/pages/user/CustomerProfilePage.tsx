@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -37,11 +38,15 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -55,14 +60,15 @@ export function CustomerProfilePage() {
     phone: '',
   });
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = () => {
-    try {
-      const userData = getStoredUser();
-      if (userData) {
+  const loadUserData = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const userData = getStoredUser();
+        if (!userData) {
+          setUser(null);
+          return false;
+        }
         setUser(userData);
         setFormData({
           firstName: userData.firstName || '',
@@ -70,13 +76,17 @@ export function CustomerProfilePage() {
           email: userData.email || '',
           phone: userData.phone || '',
         });
+        return true;
+      } catch {
+        setError('Failed to load user data');
+        return false;
       }
-    } catch (e) {
-      setError('Failed to load user data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadUserData();
+  }, [loadUserData]);
 
   const handleSave = async () => {
     try {
@@ -146,6 +156,9 @@ export function CustomerProfilePage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating profile data" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -154,19 +167,27 @@ export function CustomerProfilePage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your account information and preferences
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.profile} />
         </Box>
-        <Button
-          variant={editing ? 'contained' : 'outlined'}
-          disableElevation
-          startIcon={editing ? <SaveIcon /> : <EditIcon />}
-          onClick={editing ? handleSave : () => setEditing(true)}
-          sx={(th) => ({
-            ...sxObject(th, editing ? compactContainedCtaSx : compactOutlinedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          {editing ? 'Save changes' : 'Edit profile'}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadUserData(true)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          />
+          <Button
+            variant={editing ? 'contained' : 'outlined'}
+            disableElevation
+            startIcon={editing ? <SaveIcon /> : <EditIcon />}
+            onClick={editing ? handleSave : () => setEditing(true)}
+            sx={(th) => ({
+              ...sxObject(th, editing ? compactContainedCtaSx : compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            {editing ? 'Save changes' : 'Edit profile'}
+          </Button>
+        </Box>
       </Box>
 
       {error && (

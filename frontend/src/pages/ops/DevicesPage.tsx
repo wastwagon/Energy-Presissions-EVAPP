@@ -26,6 +26,7 @@ import {
   Tabs,
   Tab,
   Badge,
+  LinearProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -52,7 +53,10 @@ import {
   getConnectionStatusColor,
 } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { getStoredUser } from '../../utils/authSession';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -98,8 +102,10 @@ export function DevicesPage() {
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [filteredChargePoints, setFilteredChargePoints] = useState<ChargePoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [showOnlyFieldProvisioned, setShowOnlyFieldProvisioned] = useState(false);
@@ -269,17 +275,21 @@ export function DevicesPage() {
     setFilteredChargePoints(filtered);
   }, [searchTerm, chargePoints, showOnlyFieldProvisioned]);
 
-  const loadChargePoints = async () => {
+  const loadChargePoints = async (silent?: boolean) => {
+    const isQuiet = silent === true;
     try {
+      if (isQuiet) setRefreshing(true);
       setError(null);
       const data = await chargePointsApi.getAll(searchTerm || undefined);
       setChargePoints(data);
       setFilteredChargePoints(data);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to load charge points');
       console.error('Error loading charge points:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -311,20 +321,21 @@ export function DevicesPage() {
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      loadChargePoints();
+      loadChargePoints(true);
       return;
     }
 
-    setLoading(true);
+    setRefreshing(true);
     try {
       setError(null);
       const data = await chargePointsApi.getAll(searchTerm);
       setChargePoints(data);
       setFilteredChargePoints(data);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to search charge points');
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -361,6 +372,9 @@ export function DevicesPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating devices data" />
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -370,6 +384,7 @@ export function DevicesPage() {
             Monitor field inventory, connection health, and recent errors. The public map only lists
             stations with coordinates set (Operations → device detail).
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.devices} showSeconds />
         </Box>
         <Box
           sx={{
@@ -380,6 +395,15 @@ export function DevicesPage() {
             width: { xs: '100%', sm: 'auto' },
           }}
         >
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadChargePoints(true)}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              whiteSpace: { sm: 'nowrap' },
+            })}
+          />
           <Button
             variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
             startIcon={<FilterListIcon />}
@@ -452,6 +476,7 @@ export function DevicesPage() {
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
+          aria-label="Device inventory sections"
           sx={{
             px: { xs: 1, sm: 2 },
             borderBottom: '1px solid',
@@ -459,13 +484,15 @@ export function DevicesPage() {
             '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
           }}
         >
-          <Tab label="All devices" />
+          <Tab label="All devices" id="devices-tab-0" aria-controls="devices-tabpanel-0" />
           <Tab 
             label={
               <Badge badgeContent={recentErrors.length} color="error">
                 Recent errors
               </Badge>
             }
+            id="devices-tab-1"
+            aria-controls="devices-tabpanel-1"
           />
         </Tabs>
 

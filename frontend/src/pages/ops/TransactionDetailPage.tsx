@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  LinearProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -38,6 +39,9 @@ import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,7 +50,9 @@ export function TransactionDetailPage() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [meterValues, setMeterValues] = useState<MeterSample[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [cashPaymentDialogOpen, setCashPaymentDialogOpen] = useState(false);
   const [cashAmount, setCashAmount] = useState<number>(0);
@@ -59,9 +65,11 @@ export function TransactionDetailPage() {
     }
   }, [id]);
 
-  const loadData = async () => {
+  const loadData = async (silent?: boolean) => {
     if (!id) return;
+    const isQuiet = silent === true;
     try {
+      if (isQuiet) setRefreshing(true);
       setError(null);
       const [tx, meterVals] = await Promise.all([
         transactionsApi.getById(parseInt(id)),
@@ -69,11 +77,13 @@ export function TransactionDetailPage() {
       ]);
       setTransaction(tx);
       setMeterValues(meterVals);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to load transaction details');
       console.error('Error loading transaction details:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -99,6 +109,9 @@ export function TransactionDetailPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating transaction details" />
+      )}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -114,11 +127,17 @@ export function TransactionDetailPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Session timeline, meter samples, and payment handling.
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.transaction} showSeconds />
         </Box>
         <Chip
           label={transaction.status}
           color={getTransactionStatusColor(transaction.status)}
           sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+        />
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadData(true)}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         />
       </Box>
 
@@ -347,7 +366,7 @@ export function TransactionDetailPage() {
         userId={transaction.userId || undefined}
         onSuccess={() => {
           setPaymentDialogOpen(false);
-          loadData(); // Reload to show updated payment status
+          loadData(true); // Reload to show updated payment status
         }}
         onError={(error) => {
           setError(error);
@@ -417,7 +436,7 @@ export function TransactionDetailPage() {
                 setCashPaymentDialogOpen(false);
                 setCashAmount(0);
                 setCashNotes('');
-                loadData(); // Reload to show updated payment status
+                loadData(true); // Reload to show updated payment status
               } catch (err: any) {
                 setError(err.response?.data?.message || err.message || 'Failed to process cash payment');
               } finally {

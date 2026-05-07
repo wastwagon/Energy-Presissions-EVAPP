@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -7,10 +7,10 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Button,
+  LinearProgress,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import axios from 'axios';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
   dashboardPageTitleSx,
@@ -21,49 +21,89 @@ import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminAnalyticsPage() {
   const [searchParams] = useSearchParams();
   const vendorScope = searchParams.get('scope') === 'vendor';
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  const statsRef = useRef<DashboardStats | null>(null);
 
   useEffect(() => {
-    loadAnalytics();
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const loadAnalytics = useCallback(async (silent?: boolean) => {
+    const isQuiet = silent === true;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      if (!mountedRef.current) return;
+
+      if (isQuiet) {
+        setRefreshing(true);
+      } else if (statsRef.current == null) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      setError(null);
+
+      const data = await dashboardApi.getStats({ signal: controller.signal });
+      if (mountedRef.current) {
+        statsRef.current = data;
+        setStats(data);
+        setUpdatedAt(Date.now());
+      }
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      console.error('Error loading analytics:', err);
+      if (mountedRef.current) {
+        const message = err instanceof Error ? err.message : 'Failed to load analytics';
+        setError(message);
+      }
+    } finally {
+      if (!mountedRef.current) return;
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAnalytics(false);
 
     const unsubscribeTransactionStarted = websocketService.on('transactionStarted', () => {
-      loadAnalytics();
+      void loadAnalytics(true);
     });
 
     const unsubscribeTransactionStopped = websocketService.on('transactionStopped', () => {
-      loadAnalytics();
+      void loadAnalytics(true);
     });
 
     const unsubscribeDashboardStats = websocketService.on('dashboardStatsUpdate', () => {
-      loadAnalytics();
+      void loadAnalytics(true);
     });
 
     return () => {
       unsubscribeTransactionStarted();
       unsubscribeTransactionStopped();
       unsubscribeDashboardStats();
+      abortRef.current?.abort();
     };
-  }, []);
-
-  const loadAnalytics = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await dashboardApi.getStats();
-      setStats(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load analytics');
-      console.error('Error loading analytics:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadAnalytics]);
 
   if (loading) {
     return (
@@ -75,6 +115,9 @@ export function SuperAdminAnalyticsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating analytics data" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
@@ -85,19 +128,17 @@ export function SuperAdminAnalyticsPage() {
               ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon).'
               : 'Comprehensive analytics and insights across all vendors'}
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.analytics} />
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadAnalytics}
+        <RefreshButton
+          refreshing={refreshing}
           disabled={loading}
+          onClick={() => void loadAnalytics(false)}
           sx={(th) => ({
             ...sxObject(th, compactOutlinedCtaSx),
             width: { xs: '100%', sm: 'auto' },
           })}
-        >
-          Refresh
-        </Button>
+        />
       </Box>
 
       <OpsQuickActions />

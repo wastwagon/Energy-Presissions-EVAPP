@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, List } from '@mui/material';
 import { MenuSectionComponent } from './MenuSection';
 import { superAdminMenuConfig } from '../../config/menu.config';
+import { brandColors } from '../../theme';
 import { jampackMenuListSx } from '../../theme/jampackShell';
 
 interface SuperAdminMenuProps {
@@ -33,7 +34,12 @@ export function SuperAdminMenu({ onItemClick }: SuperAdminMenuProps) {
     >
       <List sx={jampackMenuListSx}>
         {superAdminMenuConfig.map((section) => (
-          <MenuSectionComponent key={section.id} section={section} onItemClick={onItemClick} />
+          <MenuSectionComponent
+            key={section.id}
+            section={section}
+            onItemClick={onItemClick}
+            themeColor={brandColors.primary}
+          />
         ))}
       </List>
     </Box>

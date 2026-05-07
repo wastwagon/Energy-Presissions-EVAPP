@@ -6,8 +6,6 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import HistoryIcon from '@mui/icons-material/History';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import PeopleIcon from '@mui/icons-material/People';
 import { getOpsNavPaths } from '../../config/opsNav.paths';
 import { QuickActionTile } from './QuickActionTile';
 
@@ -19,7 +17,11 @@ interface OpsAction {
   Icon: SvgIconComponent;
 }
 
-function buildOpsActions(paths: ReturnType<typeof getOpsNavPaths>): OpsAction[] {
+function buildOpsActions(pathname: string, paths: ReturnType<typeof getOpsNavPaths>): OpsAction[] {
+  const isSuper = pathname.startsWith('/superadmin');
+  const homeLabel = isSuper ? 'Super Admin home' : 'Admin home';
+  const homeAria = isSuper ? 'Open Super Admin dashboard' : 'Open Admin dashboard';
+
   return [
     {
       path: paths.opsBase,
@@ -44,24 +46,10 @@ function buildOpsActions(paths: ReturnType<typeof getOpsNavPaths>): OpsAction[] 
     },
     {
       path: paths.mainDashboard,
-      label: 'Admin home',
+      label: homeLabel,
       shortLabel: 'Home',
-      ariaLabel: 'Main admin dashboard',
+      ariaLabel: homeAria,
       Icon: SpaceDashboardIcon,
-    },
-    {
-      path: paths.wallets,
-      label: 'Wallets',
-      shortLabel: 'Wallets',
-      ariaLabel: 'Wallet management',
-      Icon: AccountBalanceWalletIcon,
-    },
-    {
-      path: paths.users,
-      label: 'Users',
-      shortLabel: 'Users',
-      ariaLabel: 'User management',
-      Icon: PeopleIcon,
     },
   ];
 }
@@ -75,7 +63,7 @@ export function OpsQuickActions({ sectionLabel = 'Shortcuts' }: OpsQuickActionsP
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isMobileNav = useMediaQuery(theme.breakpoints.down('sm'));
-  const actions = buildOpsActions(getOpsNavPaths(pathname));
+  const actions = buildOpsActions(pathname, getOpsNavPaths(pathname));
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%' }}>
@@ -88,7 +76,7 @@ export function OpsQuickActions({ sectionLabel = 'Shortcuts' }: OpsQuickActionsP
       </Typography>
       <Grid container spacing={{ xs: 1.25, sm: 1.5 }} sx={{ mb: 2 }}>
         {actions.map((action) => (
-          <Grid item xs={6} sm={4} md={2} key={action.path}>
+          <Grid item xs={6} sm={3} key={action.path}>
             <QuickActionTile
               Icon={action.Icon}
               displayLabel={isMobileNav ? action.shortLabel : action.label}

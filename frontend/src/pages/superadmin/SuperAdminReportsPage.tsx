@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -9,8 +9,10 @@ import {
   Button,
   Tabs,
   Tab,
+  LinearProgress,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import axios from 'axios';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
   dashboardPageTitleSx,
@@ -21,35 +23,81 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminReportsPage() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  const statsRef = useRef<DashboardStats | null>(null);
 
   useEffect(() => {
-    loadStats();
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async (silent?: boolean) => {
+    const isQuiet = silent === true;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      setLoading(true);
+      if (!mountedRef.current) return;
+
+      if (isQuiet) {
+        setRefreshing(true);
+      } else if (statsRef.current == null) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
       setError(null);
-      const data = await dashboardApi.getStats();
-      setStats(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load reports');
+
+      const data = await dashboardApi.getStats({ signal: controller.signal });
+      if (mountedRef.current) {
+        statsRef.current = data;
+        setStats(data);
+        setUpdatedAt(Date.now());
+      }
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
       console.error('Error loading reports:', err);
+      if (mountedRef.current) {
+        const message = err instanceof Error ? err.message : 'Failed to load reports';
+        setError(message);
+      }
     } finally {
+      if (!mountedRef.current) return;
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadStats(false);
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [loadStats]);
 
   const handleExport = (type: string) => {
     setExportNotice(`Export ${type} report - feature coming soon.`);
   };
+  const tabA11yProps = (index: number) => ({
+    id: `superadmin-reports-tab-${index}`,
+    'aria-controls': `superadmin-reports-panel-${index}`,
+  });
 
   if (loading) {
     return (
@@ -61,6 +109,9 @@ export function SuperAdminReportsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating reports data" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -69,19 +120,40 @@ export function SuperAdminReportsPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Comprehensive reports and analytics across all vendors
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.reports} />
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={() => handleExport('all')}
-          sx={(th) => ({
-            ...sxObject(th, compactOutlinedCtaSx),
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1.5,
             width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-          })}
+            justifyContent: { xs: 'stretch', sm: 'flex-end' },
+          }}
         >
-          Export Report
-        </Button>
+          <RefreshButton
+            refreshing={refreshing}
+            disabled={loading}
+            onClick={() => void loadStats(false)}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              flex: { xs: '1 1 auto', sm: '0 0 auto' },
+              minWidth: { xs: 0, sm: 'auto' },
+            })}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => handleExport('all')}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              flex: { xs: '1 1 auto', sm: '0 0 auto' },
+              minWidth: { xs: 0, sm: 'auto' },
+            })}
+          >
+            Export Report
+          </Button>
+        </Box>
       </Box>
 
       <OpsQuickActions />
@@ -144,14 +216,14 @@ export function SuperAdminReportsPage() {
           </Grid>
 
           <Paper sx={premiumTableSurfaceSx}>
-            <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
-              <Tab label="Overview" />
-              <Tab label="Revenue" />
-              <Tab label="Vendors" />
-              <Tab label="Sessions" />
+            <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile aria-label="Super Admin report sections">
+              <Tab label="Overview" {...tabA11yProps(0)} />
+              <Tab label="Revenue" {...tabA11yProps(1)} />
+              <Tab label="Vendors" {...tabA11yProps(2)} />
+              <Tab label="Sessions" {...tabA11yProps(3)} />
             </Tabs>
 
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }} role="tabpanel" id={`superadmin-reports-panel-${activeTab}`} aria-labelledby={`superadmin-reports-tab-${activeTab}`}>
               {activeTab === 0 && (
                 <Box>
                   <Typography variant="h6" gutterBottom>

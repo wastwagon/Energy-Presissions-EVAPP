@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -10,11 +10,14 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
+  LinearProgress,
 } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -26,37 +29,41 @@ import { alpha } from '@mui/material/styles';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerTopUpPage() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [amount, setAmount] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [quickAmount, setQuickAmount] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadBalance();
-  }, []);
-
-  const loadBalance = async () => {
-    try {
-      setLoading(true);
-      const user = getStoredUser();
-      if (typeof user?.id !== 'number') {
-        setError('User not logged in');
-        return;
+  const loadBalance = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const user = getStoredUser();
+        if (typeof user?.id !== 'number') {
+          setError('User not logged in');
+          return false;
+        }
+        const balanceData = await walletApi.getBalance(user.id);
+        setBalance(balanceData);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load wallet balance');
+        console.error('Error loading balance:', err);
+        return false;
       }
-      const balanceData = await walletApi.getBalance(user.id);
-      setBalance(balanceData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load wallet balance');
-      console.error('Error loading balance:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadBalance();
+  }, [loadBalance]);
 
   const handleQuickAmount = (value: number) => {
     setQuickAmount(value);
@@ -93,6 +100,9 @@ export function CustomerTopUpPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating wallet balance" />
+      )}
       <Box
         sx={{
           mb: 3,
@@ -111,7 +121,13 @@ export function CustomerTopUpPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Add funds to your wallet for seamless charging
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.wallet} />
         </Box>
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadBalance(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        />
       </Box>
 
       <CustomerQuickActions preset="top_up" />

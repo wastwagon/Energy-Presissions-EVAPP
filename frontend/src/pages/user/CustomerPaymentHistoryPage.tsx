@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,8 @@ import {
   CircularProgress,
   Alert,
   Pagination,
+  Button,
+  LinearProgress,
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -25,35 +27,41 @@ import {
 } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerPaymentHistoryPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPayments, setTotalPayments] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    loadPayments();
-  }, [page]);
+  const loadPayments = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const response = await paymentsApi.getUserPayments(limit, (page - 1) * limit);
+        const paymentsList = Array.isArray(response) ? response : response.payments || [];
+        const total = Array.isArray(response) ? paymentsList.length : response.total || paymentsList.length;
+        setPayments(paymentsList);
+        setTotalPayments(total);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load payment history');
+        console.error('Error loading payments:', err);
+        return false;
+      }
+    }, silent);
+  }, [page, runWithRefresh]);
 
-  const loadPayments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await paymentsApi.getUserPayments(limit, (page - 1) * limit);
-      const paymentsList = Array.isArray(response) ? response : response.payments || [];
-      const total = Array.isArray(response) ? paymentsList.length : response.total || paymentsList.length;
-      setPayments(paymentsList);
-      setTotalPayments(total);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load payment history');
-      console.error('Error loading payments:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    void loadPayments();
+  }, [loadPayments]);
 
   if (loading) {
     return (
@@ -65,13 +73,26 @@ export function CustomerPaymentHistoryPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating payment history" />
+      )}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Payment History
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          View all your payment transactions
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+            <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+              Payment History
+            </Typography>
+            <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+              View all your payment transactions
+            </Typography>
+            <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.payments} />
+          </Box>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadPayments(true)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          />
+        </Box>
       </Box>
 
       <CustomerQuickActions preset="payments" />

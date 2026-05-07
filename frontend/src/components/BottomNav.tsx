@@ -9,15 +9,33 @@ import {
 import type { ReactNode } from 'react';
 import { brandColors } from '../theme';
 
-export interface BottomNavItem {
+/** Tab that navigates to a route */
+export type BottomNavRouteItem = {
   id: string;
   label: string;
   icon: ReactNode;
   path: string;
-  matchPaths?: string[]; // Additional paths that should highlight this tab
+  matchPaths?: string[];
+};
+
+/** Tab that runs a handler (e.g. “More” opening the drawer) */
+export type BottomNavActionItem = {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  onSelect: () => void;
+  /** Defaults to `label` */
+  ariaLabel?: string;
+};
+
+export type BottomNavItem = BottomNavRouteItem | BottomNavActionItem;
+
+export function isBottomNavRouteItem(item: BottomNavItem): item is BottomNavRouteItem {
+  return 'path' in item;
 }
 
 export function isBottomNavItemActive(pathname: string, item: BottomNavItem): boolean {
+  if (!isBottomNavRouteItem(item)) return false;
   if (pathname === item.path) return true;
   return item.matchPaths?.some((p) => pathname.startsWith(p)) ?? false;
 }
@@ -34,10 +52,7 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const getActiveIndex = () => {
-    const idx = items.findIndex((item) => isBottomNavItemActive(location.pathname, item));
-    return idx >= 0 ? idx : 0;
-  };
+  const activeIndex = items.findIndex((item) => isBottomNavItemActive(location.pathname, item));
 
   return (
     <Paper
@@ -65,10 +80,15 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
       }}
     >
       <BottomNavigation
-        value={getActiveIndex()}
+        value={activeIndex >= 0 ? activeIndex : false}
         onChange={(_, newValue) => {
-          const item = items[newValue];
-          if (item) navigate(item.path);
+          const item = items[newValue as number];
+          if (!item) return;
+          if (isBottomNavRouteItem(item)) {
+            navigate(item.path);
+            return;
+          }
+          item.onSelect();
         }}
         showLabels
         sx={{
@@ -107,7 +127,7 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
             key={item.id}
             label={item.label}
             icon={item.icon}
-            aria-label={item.label}
+            aria-label={isBottomNavRouteItem(item) ? item.label : item.ariaLabel ?? item.label}
             sx={{
               transition: 'color 0.2s, transform 0.2s',
             }}

@@ -1,0 +1,16 @@
+export const LIVE_DATA_LABELS = {
+  analytics: 'Analytics sync',
+  charging: 'Charging sync',
+  device: 'Device sync',
+  devices: 'Devices sync',
+  favorites: 'Favorites sync',
+  history: 'History sync',
+  operations: 'Operations sync',
+  payments: 'Payments sync',
+  profile: 'Profile sync',
+  reports: 'Reports sync',
+  session: 'Session sync',
+  sessions: 'Sessions sync',
+  transaction: 'Transaction sync',
+  wallet: 'Wallet sync',
+} as const;

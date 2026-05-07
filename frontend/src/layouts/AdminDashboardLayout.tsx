@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Drawer,
@@ -14,12 +14,13 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminMenu } from '../components/menus/AdminMenu';
-import { BottomNav } from '../components/BottomNav';
+import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
-import { adminBottomNavItems } from '../config/menu.config';
+import { adminBottomNavItems, vendorBottomNavItems } from '../config/menu.config';
 import { ADMIN_ROUTES } from '../config/staffNav.paths';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
@@ -33,18 +34,35 @@ import {
   jampackDrawerPaper,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
+import { SkipToMain } from '../components/SkipToMain';
+import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
 export function AdminDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const portalSubtitle = location.pathname.startsWith('/vendor') ? 'Vendor Portal' : 'Admin Portal';
   const theme = useTheme();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  const staffMobileNavItems = useMemo((): BottomNavItem[] => {
+    const base = location.pathname.startsWith('/vendor') ? vendorBottomNavItems : adminBottomNavItems;
+    return [
+      ...base,
+      {
+        id: 'more-menu',
+        label: 'More',
+        icon: <MoreHorizIcon />,
+        onSelect: () => setMobileOpen(true),
+        ariaLabel: 'Open full navigation menu',
+      },
+    ];
+  }, [location.pathname]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -81,9 +99,9 @@ export function AdminDashboardLayout() {
         bgcolor: 'background.paper',
       }}
     >
-      <DrawerBrandHeader subtitle="Admin Portal" />
+      <DrawerBrandHeader subtitle={portalSubtitle} />
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <AdminMenu />
+        <AdminMenu onItemClick={() => setMobileOpen(false)} />
       </Box>
     </Box>
   );
@@ -100,6 +118,7 @@ export function AdminDashboardLayout() {
         bgcolor: JAMPACK_PAGE_BG,
       }}
     >
+      <SkipToMain />
       <AppBar
         position="fixed"
         elevation={0}
@@ -252,6 +271,8 @@ export function AdminDashboardLayout() {
         >
           <Box
             component="main"
+            id={APP_MAIN_CONTENT_ID}
+            tabIndex={-1}
             sx={{
               flex: 1,
               minHeight: 0,
@@ -269,7 +290,7 @@ export function AdminDashboardLayout() {
             <Outlet />
           </Box>
           {showBottomNav && (
-            <BottomNav items={adminBottomNavItems} accentColor={brandColors.secondary} />
+            <BottomNav items={staffMobileNavItems} accentColor={brandColors.secondary} />
           )}
         </Box>
       </Box>

@@ -15,6 +15,8 @@ import {
   Alert,
   Tabs,
   Tab,
+  Button,
+  LinearProgress,
 } from '@mui/material';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
@@ -23,6 +25,9 @@ import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } 
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -31,7 +36,9 @@ export function SessionsPage() {
   const [activeTransactions, setActiveTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
   useEffect(() => {
     loadTransactions();
@@ -59,8 +66,10 @@ export function SessionsPage() {
     };
   }, [activeTab]);
 
-  const loadTransactions = async () => {
+  const loadTransactions = async (silent?: boolean) => {
+    const isQuiet = silent === true;
     try {
+      if (isQuiet) setRefreshing(true);
       setError(null);
       const [active, all] = await Promise.all([
         transactionsApi.getActive(),
@@ -68,11 +77,13 @@ export function SessionsPage() {
       ]);
       setActiveTransactions(active);
       setAllTransactions(all.transactions);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to load transactions');
       console.error('Error loading transactions:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -80,6 +91,7 @@ export function SessionsPage() {
     try {
       const active = await transactionsApi.getActive();
       setActiveTransactions(active);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       console.error('Error loading active transactions:', err);
     }
@@ -97,13 +109,26 @@ export function SessionsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating sessions data" />
+      )}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Charging Sessions
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          View active sessions and transaction history across your network.
-        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+            <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
+              Charging Sessions
+            </Typography>
+            <Typography variant="body2" sx={dashboardPageSubtitleSx}>
+              View active sessions and transaction history across your network.
+            </Typography>
+            <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.sessions} showSeconds />
+          </Box>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadTransactions(true)}
+            sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          />
+        </Box>
       </Box>
 
       <OpsQuickActions />
@@ -127,11 +152,13 @@ export function SessionsPage() {
             borderColor: 'divider',
             '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
           }}
+          aria-label="Charging session sections"
         >
-          <Tab label={`Active (${activeTransactions.length})`} />
-          <Tab label={`All sessions (${allTransactions.length})`} />
+          <Tab label={`Active (${activeTransactions.length})`} id="ops-sessions-tab-0" aria-controls="ops-sessions-panel-0" />
+          <Tab label={`All sessions (${allTransactions.length})`} id="ops-sessions-tab-1" aria-controls="ops-sessions-panel-1" />
         </Tabs>
 
+        <Box role="tabpanel" id={`ops-sessions-panel-${activeTab}`} aria-labelledby={`ops-sessions-tab-${activeTab}`}>
         {transactions.length === 0 ? (
           <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
             <Typography variant="body2" color="text.secondary">
@@ -216,6 +243,7 @@ export function SessionsPage() {
             </Table>
           </TableContainer>
         )}
+        </Box>
       </Paper>
     </Box>
   );

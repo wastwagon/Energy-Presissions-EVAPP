@@ -38,6 +38,8 @@ import {
   jampackFixedAppBarZIndexSx,
 } from '../theme/jampackShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
+import { SkipToMain } from '../components/SkipToMain';
+import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
 export function CustomerDashboardLayout() {
   const navigate = useNavigate();
@@ -93,6 +95,7 @@ export function CustomerDashboardLayout() {
         bgcolor: JAMPACK_PAGE_BG,
       }}
     >
+      <SkipToMain />
       <AppBar
         position="fixed"
         elevation={0}
@@ -330,6 +333,8 @@ export function CustomerDashboardLayout() {
       >
         <Box
           component="main"
+          id={APP_MAIN_CONTENT_ID}
+          tabIndex={-1}
           sx={{
             flex: 1,
             minHeight: 0,

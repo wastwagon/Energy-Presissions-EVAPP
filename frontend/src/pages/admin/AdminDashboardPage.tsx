@@ -1,18 +1,12 @@
-import { Box, Typography, Grid, Paper, Alert, CircularProgress, Button } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import { Box, Typography, Grid, Paper, Alert, CircularProgress, Button, LinearProgress } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
-import HistoryIcon from '@mui/icons-material/History';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import BusinessIcon from '@mui/icons-material/Business';
-import PeopleIcon from '@mui/icons-material/People';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
-import { DashboardNavIcon, premiumNavCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { useDashboardStats } from '../../hooks/useDashboardStats';
 import {
   jampackKpiCardBaseSx,
   jampackKpiCardHoverSx,
@@ -22,33 +16,14 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
 import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stats, loading, refreshing, error, updatedAt, loadStats, setError } = useDashboardStats();
 
-  const loadStats = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await dashboardApi.getStats();
-      setStats(data);
-    } catch (err: any) {
-      console.error('Error loading dashboard stats:', err);
-      setError(err.message || 'Failed to load dashboard statistics');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
-  useDashboardRealtime(loadStats, 'admin');
+  useDashboardRealtime(useCallback(() => void loadStats(true), [loadStats]), 'admin');
 
   const createKeyboardNavHandler =
     (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -68,6 +43,12 @@ export function AdminDashboardPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress
+          sx={{ mb: 2, borderRadius: 1 }}
+          aria-label="Updating dashboard statistics"
+        />
+      )}
       <Box
         sx={{
           mb: 3,
@@ -83,14 +64,17 @@ export function AdminDashboardPage() {
             Admin Dashboard
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage your vendor's charging operations and settings.
+            Manage your vendor&apos;s charging operations and settings.
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} showSeconds />
         </Box>
         <Button
           variant="outlined"
-          onClick={loadStats}
-          disabled={loading}
-          startIcon={loading ? <CircularProgress sx={{ width: 16, height: 16 }} /> : <RefreshIcon />}
+          onClick={() => void loadStats(false)}
+          disabled={loading || refreshing}
+          startIcon={
+            loading || refreshing ? <CircularProgress sx={{ width: 16, height: 16 }} /> : <RefreshIcon />
+          }
           sx={(th) => ({
             ...sxObject(th, compactOutlinedCtaSx),
             width: { xs: '100%', sm: 'auto' },
@@ -109,10 +93,9 @@ export function AdminDashboardPage() {
         </Alert>
       )}
 
-      {/* Statistics Cards */}
       {stats && (
-        <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 1 }}>
+          <Grid item xs={12} sm={4}>
             <Paper
               elevation={0}
               sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx, { cursor: 'pointer' }]}
@@ -129,7 +112,7 @@ export function AdminDashboardPage() {
                       {stats.overview.totalChargePoints || 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Charge Points
+                      Charge points
                     </Typography>
                   </Box>
                   <EvStationIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />
@@ -138,7 +121,7 @@ export function AdminDashboardPage() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={4}>
             <Paper
               elevation={0}
               sx={[
@@ -151,7 +134,7 @@ export function AdminDashboardPage() {
                   },
                 },
               ]}
-              onClick={() => navigate('${ADMIN_ROUTES.opsSessions}')}
+              onClick={() => navigate(ADMIN_ROUTES.opsSessions)}
               role="button"
               tabIndex={0}
               aria-label="Open sessions"
@@ -164,7 +147,7 @@ export function AdminDashboardPage() {
                       {stats.overview.activeSessions || 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Active Sessions
+                      Active sessions
                     </Typography>
                   </Box>
                   <BatteryChargingFullIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />
@@ -173,26 +156,25 @@ export function AdminDashboardPage() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
-              <Box sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      {stats.overview.totalUsers || 0}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Users
-                    </Typography>
-                  </Box>
-                  <PeopleIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.7 }} />
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={[jampackKpiCardBaseSx, jampackKpiCardHoverSx]}>
+          <Grid item xs={12} sm={4}>
+            <Paper
+              elevation={0}
+              sx={[
+                jampackKpiCardBaseSx,
+                jampackKpiCardHoverSx,
+                {
+                  cursor: 'pointer',
+                  '@media (hover: hover) and (pointer: fine)': {
+                    '&:hover': { borderColor: 'secondary.main' },
+                  },
+                },
+              ]}
+              onClick={() => navigate(ADMIN_ROUTES.reports)}
+              role="button"
+              tabIndex={0}
+              aria-label="Open revenue reports"
+              onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.reports)}
+            >
               <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -209,7 +191,7 @@ export function AdminDashboardPage() {
                       {formatCurrency(stats.overview.totalRevenue ?? 0, 'GHS')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Total Revenue
+                      Total revenue
                     </Typography>
                   </Box>
                   <AttachMoneyIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
@@ -219,149 +201,6 @@ export function AdminDashboardPage() {
           </Grid>
         </Grid>
       )}
-
-      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
-        <Grid item xs={12} sm={6} lg={4}>
-          <Paper
-            elevation={0}
-            sx={premiumNavCardSx('primary')}
-            onClick={() => navigate(ADMIN_ROUTES.ops)}
-            role="button"
-            tabIndex={0}
-            aria-label="Open operations"
-            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.ops)}
-          >
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
-                <DashboardNavIcon accent="primary">
-                  <DashboardIcon sx={{ color: 'primary.main', fontSize: 26 }} />
-                </DashboardNavIcon>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Operations
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Monitor charging operations
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} lg={4}>
-          <Paper
-            elevation={0}
-            sx={premiumNavCardSx('info')}
-            onClick={() => navigate('${ADMIN_ROUTES.opsSessions}')}
-            role="button"
-            tabIndex={0}
-            aria-label="Open sessions"
-            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsSessions)}
-          >
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
-                <DashboardNavIcon accent="info">
-                  <HistoryIcon sx={{ color: 'info.main', fontSize: 26 }} />
-                </DashboardNavIcon>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Sessions
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    View charging sessions
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} lg={4}>
-          <Paper
-            elevation={0}
-            sx={premiumNavCardSx('success')}
-            onClick={() => navigate(ADMIN_ROUTES.opsDevices)}
-            role="button"
-            tabIndex={0}
-            aria-label="Open devices"
-            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.opsDevices)}
-          >
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
-                <DashboardNavIcon accent="success">
-                  <EvStationIcon sx={{ color: 'success.main', fontSize: 26 }} />
-                </DashboardNavIcon>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Devices
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Manage charge points
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} lg={4}>
-          <Paper
-            elevation={0}
-            sx={premiumNavCardSx('secondary')}
-            onClick={() => navigate(ADMIN_ROUTES.vendorPortal)}
-            role="button"
-            tabIndex={0}
-            aria-label="Open vendor settings"
-            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.vendorPortal)}
-          >
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
-                <DashboardNavIcon accent="secondary">
-                  <BusinessIcon sx={{ color: 'secondary.main', fontSize: 26 }} />
-                </DashboardNavIcon>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Vendor Settings
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Configure vendor details
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} lg={4}>
-          <Paper
-            elevation={0}
-            sx={premiumNavCardSx('info')}
-            onClick={() => navigate(ADMIN_ROUTES.wallets)}
-            role="button"
-            tabIndex={0}
-            aria-label="Open wallets"
-            onKeyDown={createKeyboardNavHandler(ADMIN_ROUTES.wallets)}
-          >
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: { xs: 1, sm: 0 } }}>
-                <DashboardNavIcon accent="info">
-                  <AccountBalanceWalletIcon sx={{ color: 'info.main', fontSize: 26 }} />
-                </DashboardNavIcon>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    Wallets
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Manage user wallets
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
     </Box>
   );
 }
-

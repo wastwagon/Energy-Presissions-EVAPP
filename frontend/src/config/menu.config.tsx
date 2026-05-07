@@ -22,8 +22,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import MemoryIcon from '@mui/icons-material/Memory';
 import CableIcon from '@mui/icons-material/Cable';
@@ -66,9 +64,10 @@ export interface MenuSection {
  */
 export const superAdminMenuConfig: MenuSection[] = [
   {
-    id: 'overview',
-    title: 'Overview',
-    collapsible: false,
+    id: 'dashboard-operations',
+    title: 'Dashboard & operations',
+    icon: <CableIcon />,
+    collapsible: true,
     defaultExpanded: true,
     items: [
       {
@@ -86,19 +85,10 @@ export const superAdminMenuConfig: MenuSection[] = [
         activeOnlyWithoutSearch: true,
         roles: ['SuperAdmin'],
       },
-    ],
-  },
-  {
-    id: 'operations',
-    title: 'Operations',
-    icon: <CableIcon />,
-    collapsible: true,
-    defaultExpanded: true,
-    items: [
       {
         id: 'ops-dashboard',
         text: 'Operations Dashboard',
-        icon: <DashboardIcon />,
+        icon: <SpeedIcon />,
         path: SUPERADMIN_ROUTES.ops,
         roles: ['SuperAdmin'],
       },
@@ -127,7 +117,7 @@ export const superAdminMenuConfig: MenuSection[] = [
   },
   {
     id: 'vendor-management',
-    title: 'Vendor Management',
+    title: 'Vendors',
     icon: <BusinessIcon />,
     collapsible: true,
     defaultExpanded: false,
@@ -146,13 +136,6 @@ export const superAdminMenuConfig: MenuSection[] = [
         path: SUPERADMIN_ROUTES.vendor,
         roles: ['SuperAdmin'],
       },
-      {
-        id: 'vendor-analytics',
-        text: 'Vendor Analytics',
-        icon: <BarChartIcon />,
-        path: `${SUPERADMIN_ROUTES.analytics}?scope=vendor`,
-        roles: ['SuperAdmin'],
-      },
     ],
   },
   {
@@ -160,7 +143,7 @@ export const superAdminMenuConfig: MenuSection[] = [
     title: 'Financial',
     icon: <AttachMoneyIcon />,
     collapsible: true,
-    defaultExpanded: true,
+    defaultExpanded: false,
     items: [
       {
         id: 'wallet-management',
@@ -188,13 +171,6 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Billing & Invoices',
         icon: <ReceiptIcon />,
         path: SUPERADMIN_ROUTES.billing,
-        roles: ['SuperAdmin'],
-      },
-      {
-        id: 'billing-settings',
-        text: 'Billing Settings',
-        icon: <CreditCardIcon />,
-        path: SUPERADMIN_ROUTES.settings,
         roles: ['SuperAdmin'],
       },
     ],
@@ -295,9 +271,10 @@ export const superAdminMenuConfig: MenuSection[] = [
  */
 export const adminMenuConfig: MenuSection[] = [
   {
-    id: 'dashboard',
-    title: 'Dashboard',
-    collapsible: false,
+    id: 'operations',
+    title: 'Operations',
+    icon: <CableIcon />,
+    collapsible: true,
     defaultExpanded: true,
     items: [
       {
@@ -307,19 +284,10 @@ export const adminMenuConfig: MenuSection[] = [
         path: ADMIN_ROUTES.dashboard,
         roles: ['Admin'],
       },
-    ],
-  },
-  {
-    id: 'operations',
-    title: 'Operations',
-    icon: <CableIcon />,
-    collapsible: true,
-    defaultExpanded: true,
-    items: [
       {
         id: 'ops-dashboard',
         text: 'Operations Dashboard',
-        icon: <DashboardIcon />,
+        icon: <SpeedIcon />,
         path: ADMIN_ROUTES.ops,
         roles: ['Admin'],
       },
@@ -340,8 +308,8 @@ export const adminMenuConfig: MenuSection[] = [
     ],
   },
   {
-    id: 'vendor-settings',
-    title: 'Vendor Settings',
+    id: 'business',
+    title: 'Business',
     icon: <BusinessIcon />,
     collapsible: true,
     defaultExpanded: false,
@@ -363,9 +331,9 @@ export const adminMenuConfig: MenuSection[] = [
     ],
   },
   {
-    id: 'financial',
-    title: 'Financial',
-    icon: <AttachMoneyIcon />,
+    id: 'finance-users',
+    title: 'Finance & users',
+    icon: <AccountBalanceWalletIcon />,
     collapsible: true,
     defaultExpanded: false,
     items: [
@@ -390,15 +358,6 @@ export const adminMenuConfig: MenuSection[] = [
         path: ADMIN_ROUTES.reports,
         roles: ['Admin'],
       },
-    ],
-  },
-  {
-    id: 'users-access',
-    title: 'Users & Access',
-    icon: <PeopleIcon />,
-    collapsible: true,
-    defaultExpanded: false,
-    items: [
       {
         id: 'user-management',
         text: 'User Management',
@@ -447,11 +406,11 @@ export const customerBottomNavItems = [
 export const adminBottomNavItems = [
   { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: ADMIN_ROUTES.dashboard },
   {
-    id: 'devices',
-    label: 'Devices',
-    icon: <EvStationIcon />,
-    path: ADMIN_ROUTES.opsDevices,
-    matchPaths: [ADMIN_ROUTES.opsDevices, `${ADMIN_ROUTES.opsDevices}/`],
+    id: 'ops',
+    label: 'Operations',
+    icon: <CableIcon />,
+    path: ADMIN_ROUTES.ops,
+    matchPaths: [ADMIN_ROUTES.ops],
   },
   {
     id: 'sessions',
@@ -460,8 +419,32 @@ export const adminBottomNavItems = [
     path: ADMIN_ROUTES.opsSessions,
     matchPaths: [ADMIN_ROUTES.opsSessions],
   },
-  { id: 'wallets', label: 'Wallets', icon: <AccountBalanceWalletIcon />, path: ADMIN_ROUTES.wallets },
-  { id: 'reports', label: 'Reports', icon: <AssessmentIcon />, path: ADMIN_ROUTES.reports },
+  {
+    id: 'devices',
+    label: 'Devices',
+    icon: <EvStationIcon />,
+    path: ADMIN_ROUTES.opsDevices,
+    matchPaths: [ADMIN_ROUTES.opsDevices, `${ADMIN_ROUTES.opsDevices}/`],
+  },
+];
+
+/** Mobile nav when focused on vendor settings (`/vendor`). */
+export const vendorBottomNavItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: ADMIN_ROUTES.dashboard },
+  {
+    id: 'ops',
+    label: 'Operations',
+    icon: <CableIcon />,
+    path: ADMIN_ROUTES.ops,
+    matchPaths: [ADMIN_ROUTES.ops],
+  },
+  {
+    id: 'vendor',
+    label: 'Vendor',
+    icon: <BusinessIcon />,
+    path: ADMIN_ROUTES.vendorPortal,
+    matchPaths: [ADMIN_ROUTES.vendorPortal, `${ADMIN_ROUTES.vendorPortal}/`],
+  },
 ];
 
 export const superAdminBottomNavItems = [
@@ -474,14 +457,19 @@ export const superAdminBottomNavItems = [
     matchPaths: [SUPERADMIN_ROUTES.ops],
   },
   {
+    id: 'sessions',
+    label: 'Sessions',
+    icon: <HistoryIcon />,
+    path: SUPERADMIN_ROUTES.opsSessions,
+    matchPaths: [SUPERADMIN_ROUTES.opsSessions],
+  },
+  {
     id: 'devices',
     label: 'Devices',
     icon: <EvStationIcon />,
     path: SUPERADMIN_ROUTES.opsDevices,
-    matchPaths: [SUPERADMIN_ROUTES.opsDevices],
+    matchPaths: [SUPERADMIN_ROUTES.opsDevices, `${SUPERADMIN_ROUTES.opsDevices}/`],
   },
-  { id: 'reports', label: 'Reports', icon: <AssessmentIcon />, path: SUPERADMIN_ROUTES.reports },
-  { id: 'settings', label: 'Settings', icon: <SettingsIcon />, path: SUPERADMIN_ROUTES.settings },
 ];
 
 export const mainLayoutBottomNavItems = [

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -15,6 +15,7 @@ import {
   TableHead,
   TableRow,
   Chip,
+  LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -31,40 +32,45 @@ import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadWalletData();
-  }, []);
-
-  const loadWalletData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const user = getStoredUser();
-      if (typeof user?.id !== 'number') {
-        setError('User not logged in');
-        return;
+  const loadWalletData = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const user = getStoredUser();
+        if (typeof user?.id !== 'number') {
+          setError('User not logged in');
+          return false;
+        }
+        const [balanceData, transactionsData] = await Promise.all([
+          walletApi.getBalance(user.id),
+          walletApi.getTransactions(user.id, 20, 0),
+        ]);
+        setBalance(balanceData);
+        setTransactions(transactionsData.transactions);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load wallet data');
+        console.error('Error loading wallet data:', err);
+        return false;
       }
-      const [balanceData, transactionsData] = await Promise.all([
-        walletApi.getBalance(user.id),
-        walletApi.getTransactions(user.id, 20, 0),
-      ]);
-      setBalance(balanceData);
-      setTransactions(transactionsData.transactions);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load wallet data');
-      console.error('Error loading wallet data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadWalletData();
+  }, [loadWalletData]);
 
   if (loading) {
     return (
@@ -76,6 +82,9 @@ export function CustomerWalletPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating wallet data" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -84,20 +93,28 @@ export function CustomerWalletPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your wallet balance and view transaction history
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.wallet} />
         </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'auto' },
-          })}
-        >
-          Top Up Wallet
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadWalletData(true)}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          />
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              alignSelf: { xs: 'stretch', sm: 'auto' },
+            })}
+          >
+            Top Up Wallet
+          </Button>
+        </Box>
       </Box>
 
       {error && (

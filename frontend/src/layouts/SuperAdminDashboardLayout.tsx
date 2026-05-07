@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Drawer,
@@ -22,11 +22,12 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
-import { BottomNav } from '../components/BottomNav';
+import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { superAdminBottomNavItems } from '../config/menu.config';
 import { SUPERADMIN_ROUTES } from '../config/staffNav.paths';
@@ -49,6 +50,8 @@ import {
   premiumMenuPaperSx,
   sxObject,
 } from '../styles/authShell';
+import { SkipToMain } from '../components/SkipToMain';
+import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -64,6 +67,19 @@ export function SuperAdminDashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  const superAdminMobileNavItems = useMemo((): BottomNavItem[] => {
+    return [
+      ...superAdminBottomNavItems,
+      {
+        id: 'more-menu',
+        label: 'More',
+        icon: <MoreHorizIcon />,
+        onSelect: () => setMobileOpen(true),
+        ariaLabel: 'Open full navigation menu',
+      },
+    ];
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -120,7 +136,7 @@ export function SuperAdminDashboardLayout() {
     >
       <DrawerBrandHeader subtitle="Super Admin Portal" />
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <SuperAdminMenu />
+        <SuperAdminMenu onItemClick={() => setMobileOpen(false)} />
       </Box>
     </Box>
   );
@@ -137,6 +153,7 @@ export function SuperAdminDashboardLayout() {
         bgcolor: JAMPACK_PAGE_BG,
       }}
     >
+      <SkipToMain />
       <AppBar
         position="fixed"
         elevation={0}
@@ -325,6 +342,8 @@ export function SuperAdminDashboardLayout() {
         >
           <Box
             component="main"
+            id={APP_MAIN_CONTENT_ID}
+            tabIndex={-1}
             sx={{
               flex: 1,
               minHeight: 0,
@@ -342,7 +361,7 @@ export function SuperAdminDashboardLayout() {
             <Outlet />
           </Box>
           {showBottomNav && (
-            <BottomNav items={superAdminBottomNavItems} accentColor={brandColors.primary} />
+            <BottomNav items={superAdminMobileNavItems} accentColor={brandColors.primary} />
           )}
         </Box>
       </Box>

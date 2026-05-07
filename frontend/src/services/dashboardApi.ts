@@ -39,8 +39,8 @@ export const dashboardApi = {
   /**
    * Get dashboard statistics (auto-detects SuperAdmin vs Admin)
    */
-  getStats: async (): Promise<DashboardStats> => {
-    const response = await api.get('/dashboard/stats');
+  getStats: async (opts?: { signal?: AbortSignal }): Promise<DashboardStats> => {
+    const response = await api.get('/dashboard/stats', { signal: opts?.signal });
     return response.data;
   },
 
@@ -48,9 +48,8 @@ export const dashboardApi = {
    * Get vendor dashboard statistics (for Admin users)
    * Note: Backend automatically returns vendor-scoped stats for Admin users
    */
-  getVendorStats: async (): Promise<DashboardStats> => {
-    // Use the same endpoint - backend handles vendor scoping automatically
-    const response = await api.get('/dashboard/stats');
+  getVendorStats: async (opts?: { signal?: AbortSignal }): Promise<DashboardStats> => {
+    const response = await api.get('/dashboard/stats', { signal: opts?.signal });
     return response.data;
   },
 };

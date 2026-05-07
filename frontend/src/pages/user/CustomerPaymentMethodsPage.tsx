@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,7 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
+  LinearProgress,
 } from '@mui/material';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -41,10 +42,14 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerPaymentMethodsPage() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newType, setNewType] = useState<'card' | 'mobile_money'>('mobile_money');
@@ -54,28 +59,30 @@ export function CustomerPaymentMethodsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadMethods();
-  }, []);
-
   const getCurrentUserId = () => {
     const user = getStoredUser();
     return typeof user?.id === 'number' ? user.id : null;
   };
 
-  const loadMethods = async () => {
-    try {
-      setError(null);
-      const userId = getCurrentUserId();
-      if (!userId) return;
-      const data = await paymentMethodsApi.getByUser(userId);
-      setMethods(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load payment methods');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadMethods = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const userId = getCurrentUserId();
+        if (!userId) return false;
+        const data = await paymentMethodsApi.getByUser(userId);
+        setMethods(data);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load payment methods');
+        return false;
+      }
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadMethods();
+  }, [loadMethods]);
 
   const handleAdd = async () => {
     try {
@@ -93,7 +100,7 @@ export function CustomerPaymentMethodsPage() {
       setDialogOpen(false);
       setNewPhone('');
       setNewLastFour('');
-      loadMethods();
+      void loadMethods(true);
     } catch (err: any) {
       setError(err.message || 'Failed to add payment method');
     } finally {
@@ -106,7 +113,7 @@ export function CustomerPaymentMethodsPage() {
       const userId = getCurrentUserId();
       if (!userId) return;
       await paymentMethodsApi.setDefault(userId, id);
-      loadMethods();
+      void loadMethods(true);
     } catch (err: any) {
       setError(err.message || 'Failed to set default');
     }
@@ -125,7 +132,7 @@ export function CustomerPaymentMethodsPage() {
       await paymentMethodsApi.delete(userId, pendingDeleteId);
       setDeleteDialogOpen(false);
       setPendingDeleteId(null);
-      loadMethods();
+      void loadMethods(true);
     } catch (err: any) {
       setError(err.message || 'Failed to remove');
     }
@@ -147,6 +154,9 @@ export function CustomerPaymentMethodsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating payment methods" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -155,19 +165,27 @@ export function CustomerPaymentMethodsPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Manage your saved payment methods for quick top-ups
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.payments} />
         </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          Add method
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadMethods(true)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          />
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={() => setDialogOpen(true)}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Add method
+          </Button>
+        </Box>
       </Box>
 
       <CustomerQuickActions preset="payment_methods" />

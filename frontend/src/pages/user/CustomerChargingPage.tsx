@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  LinearProgress,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -34,6 +35,10 @@ import {
   chargingTitleSx,
 } from '../../theme/chargingPremiumShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 type NavItem = {
   id: string;
@@ -82,20 +87,21 @@ const NAV: NavItem[] = [
 
 export function CustomerChargingPage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [lastSession, setLastSession] = useState<Transaction | null>(null);
   const [activeCount, setActiveCount] = useState(0);
 
-  useEffect(() => {
-    const user = getStoredUser();
-    const userId = typeof user?.id === 'number' ? user.id : null;
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  const loadChargingData = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      const user = getStoredUser();
+      const userId = typeof user?.id === 'number' ? user.id : null;
+      if (!userId) {
+        setLastSession(null);
+        setActiveCount(0);
+        return false;
+      }
 
-    (async () => {
       try {
         setError(null);
         const [listRes, active] = await Promise.all([
@@ -105,13 +111,17 @@ export function CustomerChargingPage() {
         const txs = listRes?.transactions && Array.isArray(listRes.transactions) ? listRes.transactions : [];
         setLastSession(pickLastEndedChargingSession(txs));
         setActiveCount(active?.length ?? 0);
+        return true;
       } catch (e: unknown) {
         setError((e as Error)?.message || 'Could not load charging data');
-      } finally {
-        setLoading(false);
+        return false;
       }
-    })();
-  }, []);
+    }, silent);
+  }, [runWithRefresh]);
+
+  useEffect(() => {
+    void loadChargingData();
+  }, [loadChargingData]);
 
   const lastLine = useMemo(() => {
     if (!lastSession?.stopTime) return null;
@@ -129,6 +139,9 @@ export function CustomerChargingPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', ...mobileMainLayoutBottomMarginSx }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating charging overview" />
+      )}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
@@ -144,6 +157,14 @@ export function CustomerChargingPage() {
             ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — tap below to view or stop.`
             : 'Find stations, track energy, and manage payments in one place.'}
         </Typography>
+        <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.charging} />
+        <Box sx={{ mt: 1.5 }}>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadChargingData(true)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          />
+        </Box>
       </Paper>
 
       <Paper elevation={0} sx={chargingNavListPaperSx}>

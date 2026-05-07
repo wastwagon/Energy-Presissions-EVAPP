@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -9,6 +9,7 @@ import {
   Alert,
   Button,
   Grid,
+  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,6 +25,8 @@ import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -41,11 +44,13 @@ import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerActiveSessionsPage() {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [completedTransactionId, setCompletedTransactionId] = useState<number | null>(null);
@@ -58,10 +63,33 @@ export function CustomerActiveSessionsPage() {
     return typeof user?.id === 'number' ? user.id : null;
   };
 
+  const loadActiveSessions = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const currentUserId = getCurrentUserId();
+        if (!currentUserId) {
+          setTransactions([]);
+          return false;
+        }
+
+        const active = await transactionsApi.getActive(undefined, currentUserId);
+        setTransactions(active);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load active sessions');
+        console.error('Error loading active sessions:', err);
+        return false;
+      }
+    }, silent);
+  }, [runWithRefresh]);
+
   useEffect(() => {
-    loadActiveSessions();
+    void loadActiveSessions();
     // Refresh every 10 seconds
-    const interval = setInterval(loadActiveSessions, 10000);
+    const interval = setInterval(() => {
+      void loadActiveSessions(true);
+    }, 10000);
     
     // Listen for transaction stopped events
     const unsubscribeTransactionStopped = websocketService.on('transactionStopped', (event) => {
@@ -74,7 +102,7 @@ export function CustomerActiveSessionsPage() {
         return;
       }
 
-      loadActiveSessions().then(() => {
+      void loadActiveSessions(true).then(() => {
         // Show summary dialog for completed transaction belonging to current user.
         setCompletedTransactionId(event.data.transactionId);
         setSummaryDialogOpen(true);
@@ -85,26 +113,7 @@ export function CustomerActiveSessionsPage() {
       clearInterval(interval);
       unsubscribeTransactionStopped();
     };
-  }, []);
-
-  const loadActiveSessions = async () => {
-    try {
-      setError(null);
-      const currentUserId = getCurrentUserId();
-      if (!currentUserId) {
-        setTransactions([]);
-        return;
-      }
-
-      const active = await transactionsApi.getActive(undefined, currentUserId);
-      setTransactions(active);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load active sessions');
-      console.error('Error loading active sessions:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadActiveSessions]);
 
   const handleStopTransaction = (transaction: Transaction) => {
     setPendingStopTransaction(transaction);
@@ -124,7 +133,7 @@ export function CustomerActiveSessionsPage() {
       setPendingStopTransaction(null);
       // Reload active sessions after a short delay to allow backend to process
       setTimeout(() => {
-        loadActiveSessions();
+        void loadActiveSessions(true);
         setStoppingTransactionId(null);
       }, 2000);
     } catch (err: any) {
@@ -144,6 +153,9 @@ export function CustomerActiveSessionsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating active sessions" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
@@ -152,7 +164,13 @@ export function CustomerActiveSessionsPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Monitor your current charging sessions in real time
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.session} showSeconds />
         </Box>
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadActiveSessions(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        />
       </Box>
 
       <CustomerQuickActions preset="sessions_active" />

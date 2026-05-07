@@ -6,7 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EvStationIcon from '@mui/icons-material/EvStation';
-import { BottomNav, isBottomNavItemActive, type BottomNavItem } from '../components/BottomNav';
+import { BottomNav, isBottomNavItemActive, type BottomNavRouteItem } from '../components/BottomNav';
 import { customerBottomNavItems, mainLayoutBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { brandColors } from '../theme';
@@ -30,6 +30,8 @@ import {
   customerPremiumMobileAppBarSx,
 } from '../theme/chargingPremiumShell';
 import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
+import { SkipToMain } from '../components/SkipToMain';
+import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
 export function MainLayout() {
   const navigate = useNavigate();
@@ -59,7 +61,7 @@ export function MainLayout() {
   const isCustomer = isCustomerOrWalkInAccount(user);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
 
-  const mainLayoutCustomerBottomItems: BottomNavItem[] = useMemo(
+  const mainLayoutCustomerBottomItems: BottomNavRouteItem[] = useMemo(
     () => [
       {
         id: 'stations',
@@ -79,7 +81,7 @@ export function MainLayout() {
     [],
   );
 
-  const desktopHeaderNavItems: BottomNavItem[] = useMemo(() => {
+  const desktopHeaderNavItems: BottomNavRouteItem[] = useMemo(() => {
     if (!isAuthenticated || !user) return [];
     if (isCustomer) return customerBottomNavItems;
     return [
@@ -108,6 +110,7 @@ export function MainLayout() {
         overflow: 'hidden',
       }}
     >
+      <SkipToMain />
       <AppBar
         position="fixed"
         elevation={0}
@@ -266,6 +269,9 @@ export function MainLayout() {
         }}
       >
         <Container
+          component="main"
+          id={APP_MAIN_CONTENT_ID}
+          tabIndex={-1}
           maxWidth="lg"
           sx={{
             flex: 1,

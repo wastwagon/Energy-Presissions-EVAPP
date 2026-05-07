@@ -14,6 +14,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -40,7 +41,10 @@ import {
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -48,7 +52,9 @@ export function OperationsDashboard() {
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [activeSessions, setActiveSessions] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
@@ -111,8 +117,10 @@ export function OperationsDashboard() {
     };
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (silent?: boolean) => {
+    const isQuiet = silent === true;
     try {
+      if (isQuiet) setRefreshing(true);
       setError(null);
       const [cpData, activeTx] = await Promise.all([
         chargePointsApi.getAll().catch((err) => {
@@ -126,6 +134,7 @@ export function OperationsDashboard() {
       ]);
       setChargePoints(cpData || []);
       setActiveSessions((activeTx || []).length);
+      setUpdatedAt(Date.now());
     } catch (err: any) {
       // Only show error if it's a critical error, not just empty data
       if (err.response?.status >= 500) {
@@ -138,6 +147,7 @@ export function OperationsDashboard() {
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -154,6 +164,9 @@ export function OperationsDashboard() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating operations data" />
+      )}
       <Box sx={{ mb: 3 }}>
         <Box
           sx={{
@@ -194,6 +207,15 @@ export function OperationsDashboard() {
               Exit vendor view
             </Button>
           )}
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadData(true)}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              alignSelf: { xs: 'stretch', sm: 'auto' },
+            })}
+          />
         </Box>
         {isImpersonating && vendorName && (
           <Chip
@@ -206,6 +228,7 @@ export function OperationsDashboard() {
         <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mt: 1 }}>
           Real-time monitoring of charging operations and device status.
         </Typography>
+        <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.operations} showSeconds />
       </Box>
 
       <OpsQuickActions />

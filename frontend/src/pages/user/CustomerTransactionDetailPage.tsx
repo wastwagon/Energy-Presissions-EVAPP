@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -10,6 +10,7 @@ import {
   Alert,
   Button,
   Divider,
+  LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -17,46 +18,55 @@ import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
+import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerTransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadTransaction();
-    }
-  }, [id]);
-
-  const loadTransaction = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const tx = await transactionsApi.getById(parseInt(id!));
-      // Verify this transaction belongs to the current user
-      const user = getStoredUser();
-      if (typeof user?.id !== 'number' || tx.userId !== user.id) {
-        setError('Transaction not found');
-        return;
+  const loadTransaction = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const txId = Number(id);
+        if (!Number.isFinite(txId)) {
+          setError('Transaction not found');
+          return false;
+        }
+        const tx = await transactionsApi.getById(txId);
+        // Verify this transaction belongs to the current user
+        const user = getStoredUser();
+        if (typeof user?.id !== 'number' || tx.userId !== user.id) {
+          setError('Transaction not found');
+          return false;
+        }
+        setTransaction(tx);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load transaction');
+        console.error('Error loading transaction:', err);
+        return false;
       }
-      setTransaction(tx);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load transaction');
-      console.error('Error loading transaction:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, silent);
+  }, [id, runWithRefresh]);
+
+  useEffect(() => {
+    if (!id) return;
+    void loadTransaction();
+  }, [id, loadTransaction]);
 
   if (loading) {
     return (
@@ -69,16 +79,26 @@ export function CustomerTransactionDetailPage() {
   if (error || !transaction) {
     return (
       <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+        {refreshing && (
+          <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating transaction details" />
+        )}
         <Alert severity="error" sx={{ mb: 3 }}>
           {error || 'Transaction not found'}
         </Alert>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' }, mb: 2 })}
-        >
-          Back to history
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
+          <RefreshButton
+            refreshing={refreshing}
+            onClick={() => void loadTransaction(true)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          />
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            Back to history
+          </Button>
+        </Box>
         <CustomerQuickActions preset="transaction_detail" />
       </Box>
     );
@@ -86,6 +106,9 @@ export function CustomerTransactionDetailPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {refreshing && (
+        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating transaction details" />
+      )}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -101,7 +124,13 @@ export function CustomerTransactionDetailPage() {
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
             Transaction ID: {transaction.transactionId}
           </Typography>
+          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.transaction} />
         </Box>
+        <RefreshButton
+          refreshing={refreshing}
+          onClick={() => void loadTransaction(true)}
+          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        />
       </Box>
 
       <CustomerQuickActions preset="transaction_detail" />
@@ -253,7 +282,7 @@ export function CustomerTransactionDetailPage() {
           currency={transaction.currency}
           onSuccess={() => {
             setPaymentDialogOpen(false);
-            loadTransaction();
+            void loadTransaction(true);
           }}
           onError={(err) => setError(err)}
         />
