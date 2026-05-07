@@ -13,8 +13,6 @@ import {
   CircularProgress,
   Alert,
   Pagination,
-  Button,
-  LinearProgress,
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -27,9 +25,7 @@ import {
 } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -73,27 +69,16 @@ export function CustomerPaymentHistoryPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating payment history" />
-      )}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-            <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-              Payment History
-            </Typography>
-            <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-              View all your payment transactions
-            </Typography>
-            <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.payments} />
-          </Box>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadPayments(true)}
-            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          />
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Payment History"
+        subtitle="View all your payment transactions"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.payments}
+        refreshing={refreshing}
+        onRefresh={() => void loadPayments(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <CustomerQuickActions preset="payments" />
 

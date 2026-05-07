@@ -9,7 +9,6 @@ import {
   Button,
   Tabs,
   Tab,
-  LinearProgress,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios';
@@ -23,8 +22,7 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function AdminReportsPage() {
@@ -110,38 +108,22 @@ export function AdminReportsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating reports data" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Reports & Analytics
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            View detailed reports and analytics for your operations
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.reports} />
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 1.5,
-            width: { xs: '100%', sm: 'auto' },
-            justifyContent: { xs: 'stretch', sm: 'flex-end' },
-          }}
-        >
-          <RefreshButton
-            refreshing={refreshing}
-            disabled={loading}
-            onClick={() => void loadStats(false)}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              flex: { xs: '1 1 auto', sm: '0 0 auto' },
-              minWidth: { xs: 0, sm: 'auto' },
-            })}
-          />
+      <LivePageHeader
+        title="Reports & Analytics"
+        subtitle="View detailed reports and analytics for your operations"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.reports}
+        refreshing={refreshing}
+        refreshDisabled={loading}
+        onRefresh={() => void loadStats(false)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          flex: { xs: '1 1 auto', sm: '0 0 auto' },
+          minWidth: { xs: 0, sm: 'auto' },
+        })}
+        actions={
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
@@ -154,8 +136,8 @@ export function AdminReportsPage() {
           >
             Export Report
           </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       <OpsQuickActions />
 

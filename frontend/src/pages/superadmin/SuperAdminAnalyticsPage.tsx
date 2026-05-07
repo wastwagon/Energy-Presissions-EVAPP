@@ -7,7 +7,6 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  LinearProgress,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import axios from 'axios';
@@ -21,8 +20,7 @@ import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminAnalyticsPage() {
@@ -115,31 +113,25 @@ export function SuperAdminAnalyticsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating analytics data" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
-            {vendorScope ? 'Vendor analytics' : 'System Analytics'}
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            {vendorScope
-              ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon).'
-              : 'Comprehensive analytics and insights across all vendors'}
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.analytics} />
-        </Box>
-        <RefreshButton
-          refreshing={refreshing}
-          disabled={loading}
-          onClick={() => void loadAnalytics(false)}
-          sx={(th) => ({
-            ...sxObject(th, compactOutlinedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        />
-      </Box>
+      <LivePageHeader
+        title={vendorScope ? 'Vendor Analytics' : 'System Analytics'}
+        subtitle={
+          vendorScope
+            ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon)'
+            : 'Comprehensive analytics and insights across all vendors'
+        }
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.analytics}
+        refreshing={refreshing}
+        refreshDisabled={loading}
+        onRefresh={() => void loadAnalytics(false)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+        })}
+      />
 
       <OpsQuickActions />
 

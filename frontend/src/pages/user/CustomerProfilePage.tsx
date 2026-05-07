@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -38,8 +37,7 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -156,25 +154,17 @@ export function CustomerProfilePage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating profile data" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            My Profile
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage your account information and preferences
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.profile} />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadUserData(true)}
-            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          />
+      <LivePageHeader
+        title="Profile"
+        subtitle="Manage your account information and preferences"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.profile}
+        refreshing={refreshing}
+        onRefresh={() => void loadUserData(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        actions={
           <Button
             variant={editing ? 'contained' : 'outlined'}
             disableElevation
@@ -187,8 +177,8 @@ export function CustomerProfilePage() {
           >
             {editing ? 'Save changes' : 'Edit profile'}
           </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

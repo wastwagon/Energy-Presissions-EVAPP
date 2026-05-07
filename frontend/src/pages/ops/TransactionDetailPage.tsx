@@ -15,7 +15,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  LinearProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -39,8 +38,7 @@ import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function TransactionDetailPage() {
@@ -109,37 +107,35 @@ export function TransactionDetailPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating transaction details" />
-      )}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`${opsBase}/sessions`)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
-          Back
-        </Button>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Transaction #{transaction.transactionId}
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Session timeline, meter samples, and payment handling.
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.transaction} showSeconds />
-        </Box>
-        <Chip
-          label={transaction.status}
-          color={getTransactionStatusColor(transaction.status)}
-          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
-        />
-        <RefreshButton
-          refreshing={refreshing}
-          onClick={() => void loadData(true)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-        />
-      </Box>
+      <LivePageHeader
+        title={`Transaction #${transaction.transactionId}`}
+        subtitle="Session timeline, meter samples, and payment handling"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.transaction}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadData(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        containerSx={{ mb: 2 }}
+        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        actions={
+          <>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(`${opsBase}/sessions`)}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
+              Back
+            </Button>
+            <Chip
+              label={transaction.status}
+              color={getTransactionStatusColor(transaction.status)}
+              sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+            />
+          </>
+        }
+      />
 
       <OpsQuickActions />
 

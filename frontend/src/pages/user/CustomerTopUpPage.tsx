@@ -10,14 +10,12 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  LinearProgress,
 } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -100,35 +98,16 @@ export function CustomerTopUpPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating wallet balance" />
-      )}
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { sm: 'center' },
-          justifyContent: 'space-between',
-          gap: { xs: 1, sm: 2 },
-          flexWrap: 'wrap',
-        }}
-      >
-        <Box>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Top Up Wallet
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Add funds to your wallet for seamless charging
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.wallet} />
-        </Box>
-        <RefreshButton
-          refreshing={refreshing}
-          onClick={() => void loadBalance(true)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        />
-      </Box>
+      <LivePageHeader
+        title="Top Up Wallet"
+        subtitle="Add funds to your wallet for seamless charging"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.wallet}
+        refreshing={refreshing}
+        onRefresh={() => void loadBalance(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <CustomerQuickActions preset="top_up" />
 

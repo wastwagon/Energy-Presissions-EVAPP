@@ -15,7 +15,6 @@ import {
   Alert,
   Button,
   Pagination,
-  LinearProgress,
 } from '@mui/material';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
@@ -32,8 +31,7 @@ import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -82,27 +80,16 @@ export function CustomerSessionHistoryPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating session history" />
-      )}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-            <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-              Session History
-            </Typography>
-            <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-              View all your past charging sessions
-            </Typography>
-            <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.history} />
-          </Box>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadHistory(true)}
-            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          />
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Session History"
+        subtitle="View all your past charging sessions"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.history}
+        refreshing={refreshing}
+        onRefresh={() => void loadHistory(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <CustomerQuickActions preset="sessions_history" />
 

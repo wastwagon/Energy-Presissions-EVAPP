@@ -16,7 +16,6 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
-  LinearProgress,
 } from '@mui/material';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -43,8 +42,7 @@ import {
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerPaymentMethodsPage() {
@@ -154,25 +152,17 @@ export function CustomerPaymentMethodsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating payment methods" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Payment Methods
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage your saved payment methods for quick top-ups
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.payments} />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadMethods(true)}
-            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          />
+      <LivePageHeader
+        title="Payment Methods"
+        subtitle="Manage your saved payment methods for quick top-ups"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.payments}
+        refreshing={refreshing}
+        onRefresh={() => void loadMethods(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        actions={
           <Button
             variant="contained"
             disableElevation
@@ -185,8 +175,8 @@ export function CustomerPaymentMethodsPage() {
           >
             Add method
           </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       <CustomerQuickActions preset="payment_methods" />
 

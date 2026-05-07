@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Typography,
   Paper,
   Table,
   TableBody,
@@ -11,14 +10,13 @@ import {
   TableRow,
   CircularProgress,
   Alert,
-  Button,
   TextField,
   InputAdornment,
   IconButton,
+  Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { reservationsApi, Reservation } from '../../services/reservationsApi';
 import {
   dashboardPageTitleSx,
@@ -33,31 +31,36 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [filterChargePoint, setFilterChargePoint] = useState('');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  const loadReservations = async () => {
-    try {
-      setError(null);
-      const data = await reservationsApi.getActive(filterChargePoint || undefined);
-      setReservations(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load reservations');
-      setReservations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadReservations = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const data = await reservationsApi.getActive(filterChargePoint || undefined);
+        setReservations(Array.isArray(data) ? data : []);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load reservations');
+        setReservations([]);
+        return false;
+      }
+    }, silent);
+  }, [filterChargePoint, runWithRefresh]);
 
   useEffect(() => {
-    loadReservations();
-  }, [filterChargePoint]);
+    void loadReservations();
+  }, [loadReservations]);
 
   const handleCancel = async (r: Reservation) => {
     const rid = (r as any).reservationId ?? r.id;
@@ -67,7 +70,7 @@ export function SuperAdminReservationsPage() {
       setError(null);
       await reservationsApi.cancel(rid, r.chargePointId);
       setSuccess('Reservation cancelled');
-      loadReservations();
+      void loadReservations(true);
     } catch (err: any) {
       setError(err.message || 'Failed to cancel');
     } finally {
@@ -85,16 +88,21 @@ export function SuperAdminReservationsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Active Reservations
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            View and manage connector reservations
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' }, flexDirection: { xs: 'column', sm: 'row' } }}>
+      <LivePageHeader
+        title="Active Reservations"
+        subtitle="View and manage connector reservations"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.reservations}
+        refreshing={refreshing}
+        refreshDisabled={loading}
+        onRefresh={() => void loadReservations(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+        })}
+        actions={
           <TextField
             size="small"
             placeholder="Filter by charge point"
@@ -112,19 +120,8 @@ export function SuperAdminReservationsPage() {
               width: { xs: '100%', sm: 260 },
             })}
           />
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={loadReservations}
-            variant="outlined"
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-            })}
-          >
-            Refresh
-          </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       <OpsQuickActions />
 

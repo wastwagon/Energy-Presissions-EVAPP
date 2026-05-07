@@ -15,7 +15,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -53,8 +52,7 @@ import {
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -393,37 +391,35 @@ export function ChargePointDetailPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating device details" />
-      )}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(opsBase)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-        >
-          Back
-        </Button>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            {chargePoint.chargePointId}
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Device details, connectors, active transactions, and remote actions.
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.device} showSeconds />
-        </Box>
-        <Chip
-          label={chargePoint.status}
-          color={getChargePointStatusColor(chargePoint.status)}
-          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
-        />
-        <RefreshButton
-          refreshing={refreshing}
-          onClick={() => void loadData(true)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-        />
-      </Box>
+      <LivePageHeader
+        title={chargePoint.chargePointId}
+        subtitle="Device details, connectors, active transactions, and remote actions"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.device}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadData(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        containerSx={{ mb: 2 }}
+        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        actions={
+          <>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(opsBase)}
+              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+            >
+              Back
+            </Button>
+            <Chip
+              label={chargePoint.status}
+              color={getChargePointStatusColor(chargePoint.status)}
+              sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+            />
+          </>
+        }
+      />
 
       <OpsQuickActions />
 

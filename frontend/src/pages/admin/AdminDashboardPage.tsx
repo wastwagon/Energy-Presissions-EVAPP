@@ -1,8 +1,7 @@
-import { Box, Typography, Grid, Paper, Alert, CircularProgress, Button, LinearProgress } from '@mui/material';
+import { Box, Typography, Grid, Paper, Alert, CircularProgress } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
@@ -16,7 +15,7 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function AdminDashboardPage() {
@@ -43,47 +42,22 @@ export function AdminDashboardPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress
-          sx={{ mb: 2, borderRadius: 1 }}
-          aria-label="Updating dashboard statistics"
-        />
-      )}
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 2,
-        }}
-      >
-        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-          <Typography component="h1" variant="h6" sx={dashboardPageTitleSx}>
-            Admin Dashboard
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage your vendor&apos;s charging operations and settings.
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} showSeconds />
-        </Box>
-        <Button
-          variant="outlined"
-          onClick={() => void loadStats(false)}
-          disabled={loading || refreshing}
-          startIcon={
-            loading || refreshing ? <CircularProgress sx={{ width: 16, height: 16 }} /> : <RefreshIcon />
-          }
-          sx={(th) => ({
-            ...sxObject(th, compactOutlinedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-          })}
-        >
-          Refresh
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="Admin Dashboard"
+        subtitle="Manage your vendor's charging operations and settings"
+        updatedAt={updatedAt}
+        showSeconds
+        refreshing={refreshing}
+        refreshDisabled={loading}
+        onRefresh={() => void loadStats(false)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+          alignSelf: { xs: 'stretch', sm: 'flex-start' },
+        })}
+      />
 
       <OpsQuickActions />
 

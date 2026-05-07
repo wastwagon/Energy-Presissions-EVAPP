@@ -10,7 +10,6 @@ import {
   Button,
   IconButton,
   useTheme,
-  LinearProgress,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -32,8 +31,7 @@ import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function CustomerFavoritesPage() {
@@ -122,25 +120,16 @@ export function CustomerFavoritesPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating favorite stations" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Favorite Stations
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Your saved charging stations for quick access
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.favorites} />
-        </Box>
-        <RefreshButton
-          refreshing={refreshing}
-          onClick={() => void loadData(true)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        />
-      </Box>
+      <LivePageHeader
+        title="Favorite Stations"
+        subtitle="Your saved charging stations for quick access"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.favorites}
+        refreshing={refreshing}
+        onRefresh={() => void loadData(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <CustomerQuickActions preset="favorites" />
 

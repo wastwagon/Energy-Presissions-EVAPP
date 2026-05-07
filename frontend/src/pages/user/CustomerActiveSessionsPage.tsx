@@ -9,7 +9,6 @@ import {
   Alert,
   Button,
   Grid,
-  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,8 +24,7 @@ import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
 import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -153,25 +151,17 @@ export function CustomerActiveSessionsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating active sessions" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Active charging sessions
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Monitor your current charging sessions in real time
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.session} showSeconds />
-        </Box>
-        <RefreshButton
-          refreshing={refreshing}
-          onClick={() => void loadActiveSessions(true)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        />
-      </Box>
+      <LivePageHeader
+        title="Active Charging Sessions"
+        subtitle="Monitor your current charging sessions in real-time"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.session}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadActiveSessions(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <CustomerQuickActions preset="sessions_active" />
 

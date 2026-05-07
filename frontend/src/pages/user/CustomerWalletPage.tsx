@@ -15,7 +15,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  LinearProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -32,8 +31,7 @@ import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -82,39 +80,29 @@ export function CustomerWalletPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating wallet data" />
-      )}
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            My Wallet
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage your wallet balance and view transaction history
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.wallet} />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadWalletData(true)}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          />
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={<AddIcon />}
-            onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
-            sx={(th) => ({
-              ...sxObject(th, compactContainedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-              alignSelf: { xs: 'stretch', sm: 'auto' },
-            })}
-          >
-            Top Up Wallet
-          </Button>
-        </Box>
+      <LivePageHeader
+        title="Wallet"
+        subtitle="Manage your wallet balance and view transaction history"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.wallet}
+        refreshing={refreshing}
+        onRefresh={() => void loadWalletData(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
+      <Box sx={{ mb: 3 }}>
+        <Button
+          variant="contained"
+          disableElevation
+          startIcon={<AddIcon />}
+          onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+          })}
+        >
+          Top Up Wallet
+        </Button>
       </Box>
 
       {error && (

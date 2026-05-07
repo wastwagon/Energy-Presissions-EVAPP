@@ -1,43 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Typography,
   Paper,
   CircularProgress,
   Alert,
   Chip,
-  Button,
+  Typography,
 } from '@mui/material';
 import MemoryIcon from '@mui/icons-material/Memory';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { healthApi } from '../../services/healthApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminHealthPage() {
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
 
-  const loadHealth = async () => {
-    try {
-      setError(null);
-      const data = await healthApi.getHealth();
-      setHealth(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reach API');
-      setHealth(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadHealth = useCallback(async (silent?: boolean) => {
+    await runWithRefresh(async () => {
+      try {
+        setError(null);
+        const data = await healthApi.getHealth();
+        setHealth(data);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to reach API');
+        setHealth(null);
+        return false;
+      }
+    }, silent);
+  }, [runWithRefresh]);
 
   useEffect(() => {
-    loadHealth();
-  }, []);
+    void loadHealth();
+  }, [loadHealth]);
 
   if (loading) {
     return (
@@ -49,27 +51,17 @@ export function SuperAdminHealthPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            System Health
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Monitor API and service status
-          </Typography>
-        </Box>
-        <Button
-          startIcon={<RefreshIcon />}
-          onClick={loadHealth}
-          variant="outlined"
-          sx={(th) => ({
-            ...sxObject(th, compactOutlinedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          Refresh
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="System Health"
+        subtitle="Monitor API and service status"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.health}
+        refreshing={refreshing}
+        refreshDisabled={loading}
+        onRefresh={() => void loadHealth(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+      />
 
       <OpsQuickActions />
 

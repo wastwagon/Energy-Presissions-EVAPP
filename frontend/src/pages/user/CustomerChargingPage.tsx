@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  LinearProgress,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -36,8 +35,7 @@ import {
 } from '../../theme/chargingPremiumShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 type NavItem = {
@@ -139,9 +137,6 @@ export function CustomerChargingPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', ...mobileMainLayoutBottomMarginSx }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating charging overview" />
-      )}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
@@ -149,22 +144,22 @@ export function CustomerChargingPage() {
       )}
 
       <Paper component="div" elevation={0} sx={chargingHeroShellSx}>
-        <Typography component="h1" sx={chargingTitleSx}>
-          Charging
-        </Typography>
-        <Typography sx={chargingSubtleTextSx} component="p">
-          {activeCount > 0
-            ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — tap below to view or stop.`
-            : 'Find stations, track energy, and manage payments in one place.'}
-        </Typography>
-        <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.charging} />
-        <Box sx={{ mt: 1.5 }}>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadChargingData(true)}
-            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          />
-        </Box>
+        <LivePageHeader
+          title="Charging"
+          subtitle={
+            activeCount > 0
+              ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — tap below to view or stop`
+              : 'Find stations, track energy, and manage payments in one place'
+          }
+          updatedAt={updatedAt}
+          liveLabel={LIVE_DATA_LABELS.charging}
+          refreshing={refreshing}
+          onRefresh={() => void loadChargingData(true)}
+          titleSx={chargingTitleSx}
+          subtitleSx={chargingSubtleTextSx}
+          containerSx={{ mb: 0 }}
+          refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        />
       </Paper>
 
       <Paper elevation={0} sx={chargingNavListPaperSx}>

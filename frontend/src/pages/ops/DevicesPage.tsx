@@ -26,7 +26,6 @@ import {
   Tabs,
   Tab,
   Badge,
-  LinearProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -53,8 +52,7 @@ import {
   getConnectionStatusColor,
 } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -372,88 +370,75 @@ export function DevicesPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating devices data" />
-      )}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Device Inventory
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Monitor field inventory, connection health, and recent errors. The public map only lists
-            stations with coordinates set (Operations → device detail).
-          </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.devices} showSeconds />
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2,
-            alignItems: 'stretch',
-            width: { xs: '100%', sm: 'auto' },
-          }}
-        >
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadChargePoints(true)}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-              whiteSpace: { sm: 'nowrap' },
-            })}
-          />
-          <Button
-            variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
-            startIcon={<FilterListIcon />}
-            onClick={() => setShowOnlyFieldProvisioned(!showOnlyFieldProvisioned)}
-            color={showOnlyFieldProvisioned ? 'primary' : 'inherit'}
-            sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
-          >
-            {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
-          </Button>
-          <TextField
-            placeholder="Search devices..."
-            size="small"
-            fullWidth
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSearch();
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: searchTerm && (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => {
-                      setSearchTerm('');
-                      loadChargePoints();
-                    }}
-                    aria-label="Clear device search"
-                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                  >
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
-              minWidth: { xs: 0, sm: 260 },
-              flex: { sm: 1 },
-              maxWidth: { sm: 400 },
-            })}
-          />
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Device Inventory"
+        subtitle="Monitor field inventory, connection health, and recent errors. The public map only lists stations with coordinates set (Operations -> Device Detail)"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.devices}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadChargePoints(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        containerSx={{ mb: 3 }}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+          whiteSpace: { sm: 'nowrap' },
+        })}
+        actions={
+          <>
+            <Button
+              variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
+              startIcon={<FilterListIcon />}
+              onClick={() => setShowOnlyFieldProvisioned(!showOnlyFieldProvisioned)}
+              color={showOnlyFieldProvisioned ? 'primary' : 'inherit'}
+              sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
+            >
+              {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
+            </Button>
+            <TextField
+              placeholder="Search devices..."
+              size="small"
+              fullWidth
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => {
+                        setSearchTerm('');
+                        loadChargePoints();
+                      }}
+                      aria-label="Clear device search"
+                      sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={(th) => ({
+                ...sxObject(th, authFormFieldSx),
+                minWidth: { xs: 0, sm: 260 },
+                flex: { sm: 1 },
+                maxWidth: { sm: 400 },
+              })}
+            />
+          </>
+        }
+      />
 
       <OpsQuickActions />
 

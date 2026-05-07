@@ -14,7 +14,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -41,8 +40,7 @@ import {
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -164,33 +162,29 @@ export function OperationsDashboard() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating operations data" />
-      )}
-      <Box sx={{ mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 2,
-            mb: 0.5,
-          }}
-        >
-          <Typography
-            component="h1"
-            variant="h6"
-            sx={{
-              ...dashboardPageTitleSx,
-              minWidth: 0,
-              flex: '1 1 200px',
-              mb: 0,
-            }}
-          >
-            Operations dashboard
-          </Typography>
-          {isImpersonating && (
+      <LivePageHeader
+        title="Operations Dashboard"
+        subtitle="Real-time monitoring of charging operations and device status"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.operations}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadData(true)}
+        titleSx={{
+          ...dashboardPageTitleSx,
+          minWidth: 0,
+          flex: '1 1 200px',
+          mb: 0,
+        }}
+        subtitleSx={dashboardPageSubtitleSx}
+        containerSx={{ mb: 0.5 }}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+          alignSelf: { xs: 'stretch', sm: 'auto' },
+        })}
+        actions={
+          isImpersonating ? (
             <Button
               variant="outlined"
               color="warning"
@@ -206,17 +200,10 @@ export function OperationsDashboard() {
             >
               Exit vendor view
             </Button>
-          )}
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadData(true)}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-              alignSelf: { xs: 'stretch', sm: 'auto' },
-            })}
-          />
-        </Box>
+          ) : null
+        }
+      />
+      <Box sx={{ mb: 3 }}>
         {isImpersonating && vendorName && (
           <Chip
             label={`Viewing as: ${vendorName}`}
@@ -225,10 +212,6 @@ export function OperationsDashboard() {
             sx={{ mt: 1 }}
           />
         )}
-        <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mt: 1 }}>
-          Real-time monitoring of charging operations and device status.
-        </Typography>
-        <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.operations} showSeconds />
       </Box>
 
       <OpsQuickActions />

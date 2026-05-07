@@ -16,7 +16,6 @@ import {
   Tabs,
   Tab,
   Button,
-  LinearProgress,
 } from '@mui/material';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
@@ -25,8 +24,7 @@ import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } 
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
-import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
-import { RefreshButton } from '../../components/dashboard/RefreshButton';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SessionsPage() {
@@ -109,27 +107,18 @@ export function SessionsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {refreshing && (
-        <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label="Updating sessions data" />
-      )}
-      <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-            <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-              Charging Sessions
-            </Typography>
-            <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-              View active sessions and transaction history across your network.
-            </Typography>
-            <LiveDataMeta updatedAt={updatedAt} liveLabel={LIVE_DATA_LABELS.sessions} showSeconds />
-          </Box>
-          <RefreshButton
-            refreshing={refreshing}
-            onClick={() => void loadTransactions(true)}
-            sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
-          />
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Charging Sessions"
+        subtitle="View active sessions and transaction history across your network"
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.sessions}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadTransactions(true)}
+        titleSx={dashboardPageTitleSx}
+        subtitleSx={dashboardPageSubtitleSx}
+        containerSx={{ mb: 2 }}
+      />
 
       <OpsQuickActions />
 
