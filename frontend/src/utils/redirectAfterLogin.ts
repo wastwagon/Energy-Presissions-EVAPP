@@ -18,7 +18,13 @@ export function redirectAfterLogin(
     return `/stations/${returnToStationId}`;
   }
 
-  if (fromPath && fromPath.startsWith('/') && !fromPath.startsWith('/login')) {
+  // `/` is the generic shell entry — send users to their role dashboard (stations for customers).
+  if (
+    fromPath &&
+    fromPath !== '/' &&
+    fromPath.startsWith('/') &&
+    !fromPath.startsWith('/login')
+  ) {
     return fromPath;
   }
 

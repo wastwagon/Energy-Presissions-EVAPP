@@ -7,6 +7,7 @@ import {
   resolveInAppSuspenseFallback,
 } from './components/routing/RouteSuspenseFallbacks';
 import { CUSTOMER_ROUTES } from './config/customerNav.paths';
+import { getDashboardPathForAccountType, getStoredUser } from './utils/authSession';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
 
@@ -21,9 +22,6 @@ const AdminDashboardLayout = lazy(() =>
 );
 const SuperAdminDashboardLayout = lazy(() =>
   import('./layouts/SuperAdminDashboardLayout').then((m) => ({ default: m.SuperAdminDashboardLayout })),
-);
-const HomePage = lazy(() =>
-  import('./pages/HomePage').then((m) => ({ default: m.HomePage })),
 );
 const StationsPage = lazy(() =>
   import('./pages/StationsPage').then((m) => ({ default: m.StationsPage })),
@@ -181,6 +179,12 @@ const AdminPaymentsPage = lazy(() =>
 const AdminReportsPage = lazy(() =>
   import('./pages/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })),
 );
+
+/** Authenticated `/` → role default (customers → Stations). */
+function AuthenticatedRootRedirect() {
+  const user = getStoredUser();
+  return <Navigate to={getDashboardPathForAccountType(user?.accountType)} replace />;
+}
 
 function RouteSuspense({
   children,
@@ -357,7 +361,7 @@ function App() {
         >
           <Route index element={
             <ProtectedRoute>
-              <HomePage />
+              <AuthenticatedRootRedirect />
             </ProtectedRoute>
           } />
           <Route path="stations" element={
