@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Grid, Button } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, Stack } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -12,11 +12,10 @@ import {
   getStoredUser,
   hasValidSession,
 } from '../utils/authSession';
-import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { ADMIN_ROUTES } from '../config/staffNav.paths';
 import { premiumFeatureCardSx, dashboardPageTitleSx, dashboardPageSubtitleSx } from '../theme/jampackShell';
-import { compactContainedCtaSx, sxObject } from '../styles/authShell';
+import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
 
 function FeatureIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -103,8 +102,6 @@ export function HomePage() {
     navigate(getDashboardPathForAccountType(accountType));
   };
 
-  const showCustomerQuickLinks = isAuthenticated && !isAdminLike;
-
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: { xs: 2.5, sm: 3 }, textAlign: 'left' }}>
@@ -143,42 +140,9 @@ export function HomePage() {
       )}
 
       {isAuthenticated && (
-        <Box
-          sx={{
-            mb: 3,
-            p: { xs: 2, sm: 2.25 },
-            borderRadius: 3,
-            bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
-            border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.22)}`,
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            justifyContent: 'space-between',
-            gap: 1.5,
-          }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.dark', lineHeight: 1.5 }}>
-            Welcome back{user?.email ? `, ${user.email}` : ''}.
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            size="medium"
-            disableElevation
-            onClick={() => navigate(getDashboardPathForAccountType(accountType))}
-            sx={(th) => ({
-              ...sxObject(th, compactContainedCtaSx),
-              minWidth: { sm: 200 },
-              width: { xs: '100%', sm: 'auto' },
-            })}
-          >
-            Open my dashboard
-          </Button>
-        </Box>
-      )}
-
-      {showCustomerQuickLinks && (
-        <CustomerQuickActions preset="dashboard" sectionLabel="Quick links" />
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 2 }}>
+          Welcome back{user?.email ? ` (${user.email})` : ''}.
+        </Typography>
       )}
 
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mt: { xs: 0.5, sm: 1 } }}>
@@ -257,6 +221,41 @@ export function HomePage() {
               </Paper>
             </Grid>
           </>
+        ) : isAuthenticated ? (
+          <Grid item xs={12} sm={10} md={8} lg={6}>
+            <Paper elevation={0} sx={{ ...premiumFeatureCardSx, p: { xs: 2.25, sm: 2.5 } }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 1 }}>
+                Start charging
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.55 }}>
+                Your tabs and menu already list stations, wallet, live sessions, and history—below is another way to open Find chargers or Wallet when you land on home.
+              </Typography>
+              <Stack spacing={1.5}>
+                <Button
+                  onClick={handleFindStations}
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  size="medium"
+                  disableElevation
+                  sx={(th) => sxObject(th, compactContainedCtaSx)}
+                >
+                  Find chargers
+                </Button>
+                <Button
+                  onClick={handleWallet}
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  size="medium"
+                  disableElevation
+                  sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+                >
+                  Wallet
+                </Button>
+              </Stack>
+            </Paper>
+          </Grid>
         ) : (
           <>
             <Grid item xs={12} md={4}>
@@ -279,7 +278,7 @@ export function HomePage() {
                   disableElevation
                   sx={(th) => sxObject(th, compactContainedCtaSx)}
                 >
-                  {isAuthenticated ? 'View stations' : 'Sign in to view stations'}
+                  Sign in to view stations
                 </Button>
               </Paper>
             </Grid>
@@ -303,7 +302,7 @@ export function HomePage() {
                   disableElevation
                   sx={(th) => sxObject(th, compactContainedCtaSx)}
                 >
-                  {isAuthenticated ? 'Open wallet' : 'Sign in for wallet'}
+                  Sign in for wallet
                 </Button>
               </Paper>
             </Grid>
@@ -327,7 +326,7 @@ export function HomePage() {
                   disableElevation
                   sx={(th) => sxObject(th, compactContainedCtaSx)}
                 >
-                  {isAuthenticated ? 'View favorites' : 'Sign in for favorites'}
+                  Sign in for favorites
                 </Button>
               </Paper>
             </Grid>

@@ -51,7 +51,6 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -380,7 +379,6 @@ export function ChargePointDetailPage() {
         >
           Back to dashboard
         </Button>
-        <OpsQuickActions />
         <Alert severity="error">Charge point not found</Alert>
       </Box>
     );
@@ -417,8 +415,6 @@ export function ChargePointDetailPage() {
           </>
         }
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

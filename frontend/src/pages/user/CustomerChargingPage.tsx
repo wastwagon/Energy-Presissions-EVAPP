@@ -11,6 +11,8 @@ import {
   Alert,
   Button,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -22,17 +24,15 @@ import { pickLastEndedChargingSession } from '../../utils/chargingSession';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
-import { mobileMainLayoutBottomMarginSx } from '../../theme/jampackShell';
 import {
-  chargingHeroShellSx,
-  chargingListIconBoxSx,
-  chargingListRowButtonSx,
-  chargingLastSessionCardSx,
-  chargingNavListPaperSx,
-  chargingSubtleTextSx,
-  chargingTitleSx,
-} from '../../theme/chargingPremiumShell';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+  dashboardPageSubtitleSx,
+  dashboardPageTitleSx,
+  mobileMainLayoutBottomMarginSx,
+  premiumPanelCardSx,
+  premiumTableSurfaceSx,
+} from '../../theme/jampackShell';
+import { IOS_TOUCH_TARGET_PX } from '../../theme/iosMobileTokens';
+import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -83,6 +83,28 @@ const NAV: NavItem[] = [
     Icon: CreditCardIcon,
   },
 ];
+
+const listIconSx = {
+  width: 40,
+  height: 40,
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  mr: 1.5,
+  bgcolor: (t: Theme) => alpha(t.palette.primary.main, 0.1),
+  color: 'primary.main',
+};
+
+const rowSx = {
+  py: 1.75,
+  px: 2,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  borderRadius: 0,
+  color: 'text.primary',
+  '&:hover': { bgcolor: 'action.hover' },
+};
 
 export function CustomerChargingPage() {
   const navigate = useNavigate();
@@ -146,26 +168,26 @@ export function CustomerChargingPage() {
         </Alert>
       )}
 
-      <Paper component="div" elevation={0} sx={chargingHeroShellSx}>
+      <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 }, mb: 2 }}>
         <LivePageHeader
           title="Charging"
           subtitle={
             activeCount > 0
-              ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — tap below to view or stop`
-              : 'Find stations, track energy, and manage payments in one place'
+              ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — open Live charging below to manage`
+              : 'Jump to charging tasks—same style as the rest of your dashboard'
           }
           updatedAt={updatedAt}
           liveLabel={LIVE_DATA_LABELS.charging}
           refreshing={refreshing}
           onRefresh={() => void loadChargingData(true)}
-          titleSx={chargingTitleSx}
-          subtitleSx={chargingSubtleTextSx}
+          titleSx={dashboardPageTitleSx}
+          subtitleSx={dashboardPageSubtitleSx}
           containerSx={{ mb: 0 }}
           refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         />
       </Paper>
 
-      <Paper elevation={0} sx={chargingNavListPaperSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, overflow: 'hidden', mb: 2 }}>
         <List disablePadding>
           {NAV.map((item) => {
             const Icon = item.Icon;
@@ -173,26 +195,24 @@ export function CustomerChargingPage() {
               <Box
                 key={item.id}
                 sx={{
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
                   '&:last-of-type': { borderBottom: 'none' },
                 }}
               >
-                <ListItemButton
-                  onClick={() => navigate(item.to)}
-                  sx={chargingListRowButtonSx}
-                >
-                  <Box sx={chargingListIconBoxSx} aria-hidden>
+                <ListItemButton onClick={() => navigate(item.to)} sx={rowSx}>
+                  <Box sx={listIconSx} aria-hidden>
                     <Icon sx={{ fontSize: 20 }} />
                   </Box>
                   <ListItemText
                     primary={item.primary}
                     secondary={item.secondary}
-                    primaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.9375rem' } }}
+                    primaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.9375rem', color: 'text.primary' } }}
                     secondaryTypographyProps={{
-                      sx: { color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' },
+                      sx: { color: 'text.secondary', fontSize: '0.8125rem' },
                     }}
                   />
-                  <ChevronRightIcon sx={{ color: 'rgba(255,255,255,0.35)', fontSize: 22, ml: 0.5 }} />
+                  <ChevronRightIcon sx={{ color: 'text.disabled', fontSize: 22, ml: 0.5 }} />
                 </ListItemButton>
               </Box>
             );
@@ -201,28 +221,29 @@ export function CustomerChargingPage() {
       </Paper>
 
       {lastSession && lastLine && (
-        <Paper elevation={0} sx={chargingLastSessionCardSx}>
-          <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
+        <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 } }}>
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.12em' }}>
             Last charge
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)', mb: 1.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
             {lastLine}
             {lastSession.chargePointId ? ` · ${lastSession.chargePointId}` : ''}
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 1, mb: 1.5 }}>
             {lastSession.totalCost != null && (
-              <Typography variant="h5" sx={{ fontWeight: 700, color: 'common.white' }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {formatCurrency(Number(lastSession.totalCost), lastSession.currency || 'GHS')}
               </Typography>
             )}
             {lastSession.totalEnergyKwh != null && (
-              <Typography variant="body2" component="span" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+              <Typography variant="body2" component="span" color="text.secondary">
                 {formatEnergyKwh(Number(lastSession.totalEnergyKwh))} kWh
                 {lastSession.totalCost != null &&
                   lastSession.totalEnergyKwh != null &&
                   Number(lastSession.totalEnergyKwh) > 0 && (
                     <Box component="span" sx={{ display: 'block', fontSize: '0.8rem', mt: 0.5 }}>
-                      @ {formatCurrency(
+                      @{' '}
+                      {formatCurrency(
                         Number(lastSession.totalCost) / Number(lastSession.totalEnergyKwh),
                         lastSession.currency || 'GHS',
                       )}{' '}
@@ -237,14 +258,9 @@ export function CustomerChargingPage() {
               component={RouterLink}
               to={`${CUSTOMER_ROUTES.sessionsRoot}/${lastSession.transactionId}`}
               variant="outlined"
-              size="small"
+              size="medium"
               fullWidth
-              sx={(th) => ({
-                borderColor: 'rgba(255,255,255,0.3)',
-                color: 'common.white',
-                textTransform: 'none',
-                ...sxObject(th, compactOutlinedCtaSx),
-              })}
+              sx={(th) => sxObject(th, compactOutlinedCtaSx)}
             >
               Details
             </Button>
@@ -252,10 +268,10 @@ export function CustomerChargingPage() {
               component={RouterLink}
               to={CUSTOMER_ROUTES.sessionsHistory}
               variant="contained"
-              size="small"
+              size="medium"
               fullWidth
               disableElevation
-              sx={{ textTransform: 'none' }}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
               History
             </Button>

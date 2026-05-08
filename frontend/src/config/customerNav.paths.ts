@@ -1,5 +1,5 @@
 /**
- * Canonical customer-facing route strings (bottom nav, quick actions, deep links).
+ * Canonical customer-facing route strings (bottom nav, deep links).
  */
 export const CUSTOMER_ROUTES = {
   /** Legacy path; router redirects to `charging`. */

@@ -38,7 +38,6 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -181,8 +180,6 @@ export function AdminTariffsPage() {
           New tariff
         </Button>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

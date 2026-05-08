@@ -51,7 +51,6 @@ import {
   getConnectionEventColor,
   getConnectionStatusColor,
 } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -440,8 +439,6 @@ export function DevicesPage() {
           </>
         }
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>

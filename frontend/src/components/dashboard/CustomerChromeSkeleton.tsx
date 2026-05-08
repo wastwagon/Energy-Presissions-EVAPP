@@ -1,10 +1,5 @@
 import { Box, Grid, Paper, Skeleton, Stack } from '@mui/material';
 import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import {
-  chargingHeroShellSx,
-  chargingLastSessionCardSx,
-  chargingNavListPaperSx,
-} from '../../theme/chargingPremiumShell';
 
 function StatusWrap({ ariaLabel, children }: { ariaLabel: string; children: React.ReactNode }) {
   return (
@@ -44,10 +39,6 @@ function HeaderBlock({ asideCount }: { asideCount: number }) {
       </Box>
     </Box>
   );
-}
-
-function QuickBar() {
-  return <Skeleton variant="rounded" height={96} sx={{ mb: 2, borderRadius: 2 }} />;
 }
 
 function TableBlock({ rows }: { rows: number }) {
@@ -108,17 +99,12 @@ const labels: Record<CustomerChromePreset, string> = {
 export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePreset }) {
   switch (preset) {
     case 'chargingHub': {
-      const sk = { bgcolor: 'rgba(255, 255, 255, 0.11)' };
       return (
         <StatusWrap ariaLabel={labels.chargingHub}>
-          <Paper component="div" elevation={0} sx={chargingHeroShellSx}>
-            <Box sx={{ position: 'relative', zIndex: 1 }}>
-              <Skeleton variant="rounded" height={34} sx={{ ...sk, maxWidth: 200, mb: 1 }} />
-              <Skeleton variant="rounded" height={22} sx={{ ...sk, maxWidth: '92%', mb: 1 }} />
-              <Skeleton variant="rounded" height={44} width={132} sx={sk} />
-            </Box>
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 }, mb: 2 }}>
+            <HeaderBlock asideCount={1} />
           </Paper>
-          <Paper elevation={0} sx={chargingNavListPaperSx}>
+          <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 2, overflow: 'hidden' }}>
             <Stack spacing={0}>
               {Array.from({ length: 5 }, (_, i) => (
                 <Box
@@ -129,27 +115,27 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
                     gap: 2,
                     px: 2,
                     py: 1.75,
-                    borderBottom:
-                      i < 4 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                    borderBottom: i < 4 ? '1px solid' : 'none',
+                    borderColor: 'divider',
                   }}
                 >
-                  <Skeleton variant="rounded" width={40} height={40} sx={sk} />
+                  <Skeleton variant="circular" width={40} height={40} sx={{ flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Skeleton variant="rounded" height={20} sx={{ ...sk, mb: 0.75 }} />
-                    <Skeleton variant="rounded" height={16} width="72%" sx={sk} />
+                    <Skeleton variant="rounded" height={20} sx={{ mb: 0.75 }} />
+                    <Skeleton variant="rounded" height={16} width="72%" />
                   </Box>
-                  <Skeleton variant="rounded" width={22} height={22} sx={sk} />
+                  <Skeleton variant="rounded" width={22} height={22} sx={{ flexShrink: 0 }} />
                 </Box>
               ))}
             </Stack>
           </Paper>
-          <Paper elevation={0} sx={chargingLastSessionCardSx}>
-            <Skeleton variant="rounded" width={76} height={14} sx={{ ...sk, mb: 1.5 }} />
-            <Skeleton variant="rounded" height={22} sx={{ ...sk, mb: 1.75, width: '88%', maxWidth: 340 }} />
-            <Skeleton variant="rounded" height={36} width="46%" sx={{ ...sk, mb: 2 }} />
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 } }}>
+            <Skeleton variant="rounded" width={90} height={14} sx={{ mb: 1.5 }} />
+            <Skeleton variant="rounded" height={22} sx={{ mb: 1.75, width: '88%', maxWidth: 340 }} />
+            <Skeleton variant="rounded" height={36} width="46%" sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Skeleton variant="rounded" height={44} sx={{ ...sk, flex: 1 }} />
-              <Skeleton variant="rounded" height={44} sx={{ ...sk, flex: 1 }} />
+              <Skeleton variant="rounded" height={44} sx={{ flex: 1 }} />
+              <Skeleton variant="rounded" height={44} sx={{ flex: 1 }} />
             </Box>
           </Paper>
         </StatusWrap>
@@ -160,7 +146,6 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
       return (
         <StatusWrap ariaLabel={labels[preset]}>
           <HeaderBlock asideCount={1} />
-          <QuickBar />
           <TableBlock rows={8} />
         </StatusWrap>
       );
@@ -168,7 +153,6 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
       return (
         <StatusWrap ariaLabel={labels[preset]}>
           <HeaderBlock asideCount={1} />
-          <QuickBar />
           <Stack spacing={2}>
             {Array.from({ length: 3 }, (_, i) => (
               <Paper key={i} elevation={0} sx={premiumPanelCardSx}>
@@ -193,7 +177,6 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
       return (
         <StatusWrap ariaLabel={labels[preset]}>
           <HeaderBlock asideCount={1} />
-          <QuickBar />
           <FavoriteRowSkeletons count={4} />
         </StatusWrap>
       );
@@ -257,7 +240,6 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
       return (
         <StatusWrap ariaLabel={labels[preset]}>
           <HeaderBlock asideCount={1} />
-          <QuickBar />
           <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid item xs={12} md={5}>
               <Paper sx={premiumPanelCardSx}>
@@ -292,7 +274,6 @@ export function CustomerTransactionDetailSkeleton() {
         </Box>
         <Skeleton variant="rounded" width={120} height={44} />
       </Box>
-      <QuickBar />
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
           <Paper elevation={0} sx={premiumPanelCardSx}>
@@ -313,7 +294,7 @@ export function CustomerTransactionDetailSkeleton() {
   );
 }
 
-/** Station detail hub — back row, title chip row, quick actions, stacked panels. */
+/** Station detail hub — back row, title chip row, stacked panels. */
 export function StationDetailPageSkeleton() {
   return (
     <StatusWrap ariaLabel="Loading station details">
@@ -326,7 +307,6 @@ export function StationDetailPageSkeleton() {
         </Box>
         <Skeleton variant="rounded" width={88} height={36} />
       </Stack>
-      <QuickBar />
       <Stack spacing={2}>
         {Array.from({ length: 4 }, (_, i) => (
           <Paper key={i} elevation={0} sx={premiumPanelCardSx}>

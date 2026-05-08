@@ -7,7 +7,7 @@ import { getOpsNavPaths } from '../config/opsNav.paths';
  * so links work correctly under /admin/ops/* or /superadmin/ops/*.
  *
  * Also resolves from any /admin/* or /superadmin/* path (e.g. main dashboard,
- * wallets, users) so shortcuts work outside the ops subtree.
+ * wallets, users) so links resolve correctly outside the ops subtree.
  */
 export function useOpsBasePath(): string {
   const { pathname } = useLocation();

@@ -18,7 +18,6 @@ import {
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -87,8 +86,6 @@ export function CustomerSessionHistoryPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
       />
-
-      <CustomerQuickActions preset="sessions_history" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

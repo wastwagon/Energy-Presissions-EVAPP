@@ -36,7 +36,6 @@ import {
 import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
@@ -95,7 +94,6 @@ export function TransactionDetailPage() {
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mb: 2 }}>
           Back to Sessions
         </Button>
-        <OpsQuickActions />
         <Alert severity="error">Transaction not found</Alert>
       </Box>
     );
@@ -132,8 +130,6 @@ export function TransactionDetailPage() {
           </>
         }
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

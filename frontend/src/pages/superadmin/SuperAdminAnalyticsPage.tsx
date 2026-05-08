@@ -18,7 +18,6 @@ import {
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -129,8 +128,6 @@ export function SuperAdminAnalyticsPage() {
           width: { xs: '100%', sm: 'auto' },
         })}
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

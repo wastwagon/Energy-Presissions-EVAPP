@@ -15,7 +15,7 @@ Create separate, reusable, premium menu components for each dashboard type to im
 - No menu grouping or sections
 - Limited visual hierarchy
 - No badges/notifications
-- No quick actions
+- No duplicate dashboard shortcut grids (navigation stays in drawers/menus)
 - No search functionality
 - Mobile drawer not optimized
 - Menu items not contextual
@@ -30,7 +30,6 @@ frontend/src/components/menus/
 ├── CustomerMenu.tsx             # Customer menu component
 ├── MenuSection.tsx              # Reusable section wrapper
 ├── MenuItem.tsx                 # Enhanced menu item component
-├── QuickActions.tsx             # Quick action buttons
 └── MenuSearch.tsx               # Search functionality
 ```
 

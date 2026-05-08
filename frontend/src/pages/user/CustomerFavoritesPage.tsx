@@ -17,7 +17,6 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { stationsApi, StationWithDistance } from '../../services/stationsApi';
 import { usersApi } from '../../services/usersApi';
 import { StartChargingDialog } from '../../components/StartChargingDialog';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -127,8 +126,6 @@ export function CustomerFavoritesPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
       />
-
-      <CustomerQuickActions preset="favorites" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

@@ -16,7 +16,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { LiveDataMeta } from '../../components/dashboard/LiveDataMeta';
 import { RefreshButton } from '../../components/dashboard/RefreshButton';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
@@ -95,7 +94,6 @@ export function CustomerTransactionDetailPage() {
             Back to history
           </Button>
         </Box>
-        <CustomerQuickActions preset="transaction_detail" />
       </Box>
     );
   }
@@ -128,8 +126,6 @@ export function CustomerTransactionDetailPage() {
           sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         />
       </Box>
-
-      <CustomerQuickActions preset="transaction_detail" />
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
@@ -245,7 +241,7 @@ export function CustomerTransactionDetailPage() {
         <Grid item xs={12} md={4}>
           <Paper elevation={0} sx={premiumPanelCardSx}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Quick actions
+              Related
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Button

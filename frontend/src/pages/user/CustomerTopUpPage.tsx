@@ -13,7 +13,6 @@ import {
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import {
@@ -104,8 +103,6 @@ export function CustomerTopUpPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
       />
-
-      <CustomerQuickActions preset="top_up" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

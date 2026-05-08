@@ -16,7 +16,6 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
 import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../legal/supportPageContent';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 
@@ -70,8 +69,6 @@ export function CustomerHelpPage() {
           Frequently asked questions and how to get in touch
         </Typography>
       </Box>
-
-      <CustomerQuickActions preset="help" />
 
       <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3 }}>
         <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>

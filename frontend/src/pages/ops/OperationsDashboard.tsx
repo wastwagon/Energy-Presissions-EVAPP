@@ -39,7 +39,6 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -209,8 +208,6 @@ export function OperationsDashboard() {
           />
         )}
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setError(null)}>

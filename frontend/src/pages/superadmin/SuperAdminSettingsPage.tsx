@@ -53,7 +53,6 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getStoredAccountType } from '../../utils/authSession';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { StaffChromeTabPanelSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { FormBrandingTwoColumnSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 
@@ -320,8 +319,6 @@ function SuperAdminSettingsPage() {
           </Typography>
         </Box>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

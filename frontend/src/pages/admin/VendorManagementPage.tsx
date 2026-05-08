@@ -43,7 +43,6 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
@@ -264,8 +263,6 @@ export function VendorManagementPage() {
           Create vendor
         </Button>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

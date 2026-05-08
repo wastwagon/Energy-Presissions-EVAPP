@@ -23,10 +23,8 @@ import {
   premiumPanelCardSx,
 } from '../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
-import { CustomerQuickActions } from '../components/dashboard/CustomerQuickActions';
 import { formatCurrency } from '../utils/formatters';
 import { getChargePointStatusColor } from '../utils/statusColors';
-import { hasValidSession } from '../utils/authSession';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import {
   buildGoogleMapsDrivingDirectionsUrl,
@@ -113,7 +111,6 @@ export function StationDetailPage() {
         <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
           {error || 'Station not found'}
         </Alert>
-        <CustomerQuickActions preset="station_detail" visible={hasValidSession()} />
       </Box>
     );
   }
@@ -165,8 +162,6 @@ export function StationDetailPage() {
           sx={{ fontWeight: 700, alignSelf: { xs: 'flex-start', sm: 'center' } }}
         />
       </Stack>
-
-      <CustomerQuickActions preset="station_detail" visible={hasValidSession()} />
 
       <Stack spacing={2}>
         <Paper elevation={0} sx={premiumPanelCardSx}>

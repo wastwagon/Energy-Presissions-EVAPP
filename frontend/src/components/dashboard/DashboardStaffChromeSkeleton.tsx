@@ -10,7 +10,6 @@ const presets = {
   operations: {
     ariaLabel: 'Loading operations dashboard',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 4,
     tabsInPaper: 0,
     tableRows: 5,
@@ -19,7 +18,6 @@ const presets = {
   sessions: {
     ariaLabel: 'Loading sessions',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 2,
     tableRows: 6,
@@ -28,7 +26,6 @@ const presets = {
   devices: {
     ariaLabel: 'Loading devices',
     asideButtons: 2,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 8,
@@ -37,7 +34,6 @@ const presets = {
   adminReports: {
     ariaLabel: 'Loading reports',
     asideButtons: 2,
-    quickActions: true,
     kpiCount: 4,
     tabsInPaper: 4,
     tableRows: 5,
@@ -46,7 +42,6 @@ const presets = {
   superReports: {
     ariaLabel: 'Loading reports',
     asideButtons: 2,
-    quickActions: true,
     kpiCount: 4,
     tabsInPaper: 4,
     tableRows: 5,
@@ -55,7 +50,6 @@ const presets = {
   analytics: {
     ariaLabel: 'Loading analytics',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 0,
@@ -64,7 +58,6 @@ const presets = {
   tariffs: {
     ariaLabel: 'Loading tariffs',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 3,
     tableRows: 8,
@@ -73,7 +66,6 @@ const presets = {
   userManagement: {
     ariaLabel: 'Loading users',
     asideButtons: 2,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 10,
@@ -82,7 +74,6 @@ const presets = {
   vendorManagement: {
     ariaLabel: 'Loading vendors',
     asideButtons: 2,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 10,
@@ -91,7 +82,6 @@ const presets = {
   walletManagement: {
     ariaLabel: 'Loading wallet management',
     asideButtons: 2,
-    quickActions: false,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 0,
@@ -101,7 +91,6 @@ const presets = {
   adminPayments: {
     ariaLabel: 'Loading payments',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 2,
     tabsInPaper: 0,
     tableRows: 10,
@@ -110,7 +99,6 @@ const presets = {
   systemHealth: {
     ariaLabel: 'Loading system health',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 3,
     tabsInPaper: 0,
     tableRows: 4,
@@ -119,7 +107,6 @@ const presets = {
   connectionLogs: {
     ariaLabel: 'Loading connection logs',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 4,
     tabsInPaper: 0,
     tableRows: 8,
@@ -128,7 +115,6 @@ const presets = {
   auditLogs: {
     ariaLabel: 'Loading security logs',
     asideButtons: 1,
-    quickActions: false,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 12,
@@ -137,7 +123,6 @@ const presets = {
   reservationsList: {
     ariaLabel: 'Loading reservations',
     asideButtons: 1,
-    quickActions: true,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 10,
@@ -146,7 +131,6 @@ const presets = {
   billingTabs: {
     ariaLabel: 'Loading billing',
     asideButtons: 1,
-    quickActions: false,
     kpiCount: 0,
     tabsInPaper: 2,
     tableRows: 8,
@@ -155,7 +139,6 @@ const presets = {
   vendorSettings: {
     ariaLabel: 'Loading vendor settings',
     asideButtons: 1,
-    quickActions: false,
     kpiCount: 0,
     tabsInPaper: 0,
     tableRows: 0,
@@ -320,7 +303,6 @@ function InnerSkeleton(p: InnerProps) {
   return (
     <>
       <SkeletonHeaderRow asideButtons={p.asideButtons} />
-      {p.quickActions ? <Skeleton variant="rounded" height={112} sx={{ mb: 2, borderRadius: 2 }} /> : null}
       {p.analyticsWideCard ? (
         <SkeletonAnalyticsGrid />
       ) : (

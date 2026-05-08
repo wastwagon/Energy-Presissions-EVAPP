@@ -4,6 +4,7 @@
  * Customer **drawer** (hamburger menu) routes/labels live in `customerDrawerNav.tsx`.
  * Bottom nav tabs here intentionally use shorter labels (e.g. “Stations” vs “Find stations”).
  * Touch sizing aligns with `theme/iosMobileTokens.ts` (44px targets) via layout & `BottomNav`.
+ * Destinations live in nav + drawers; no duplicate shortcut grids on dashboard pages.
  */
 
 import DashboardIcon from '@mui/icons-material/Dashboard';

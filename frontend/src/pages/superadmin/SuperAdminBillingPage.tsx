@@ -18,7 +18,6 @@ import { billingApi, Invoice } from '../../services/billingApi';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -76,8 +75,6 @@ export function SuperAdminBillingPage() {
           </Typography>
         </Box>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

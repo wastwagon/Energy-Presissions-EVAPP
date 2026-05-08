@@ -27,7 +27,6 @@ import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatis
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -109,8 +108,6 @@ export function SuperAdminConnectionLogsPage() {
           Monitor and debug charge point connections
         </Typography>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

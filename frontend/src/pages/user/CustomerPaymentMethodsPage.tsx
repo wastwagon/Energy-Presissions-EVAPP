@@ -23,7 +23,6 @@ import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { paymentMethodsApi, PaymentMethod } from '../../services/paymentMethodsApi';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -174,8 +173,6 @@ export function CustomerPaymentMethodsPage() {
           </Button>
         }
       />
-
-      <CustomerQuickActions preset="payment_methods" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

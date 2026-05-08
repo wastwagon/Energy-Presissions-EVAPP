@@ -226,3 +226,51 @@ export const customerNavDrawerCloseIconButtonSx: SystemStyleObject<Theme> = {
   transition: `background-color ${iosMotion.fast}ms ease`,
   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
 };
+
+/** Light drawer — matches Jampack / customer page shell so menu + pages share one vocabulary. */
+export const customerNavDrawerLightPaperSx: SystemStyleObject<Theme> = {
+  width: { xs: 'min(100%, 320px)', sm: 320 },
+  maxWidth: '100vw',
+  bgcolor: '#ffffff',
+  color: 'text.primary',
+  borderLeft: '1px solid rgba(47, 52, 58, 0.09)',
+  borderTopLeftRadius: `${iosRadii.md}px`,
+  borderBottomLeftRadius: `${iosRadii.md}px`,
+  boxShadow: '-8px 0 24px rgba(47, 52, 58, 0.08)',
+  pt: 'max(12px, env(safe-area-inset-top, 0px))',
+  pb: 'env(safe-area-inset-bottom, 0px)',
+};
+
+export const customerNavDrawerLightHeaderRowSx: SystemStyleObject<Theme> = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 1,
+  px: 2,
+  py: 1.5,
+  borderBottom: '1px solid rgba(47, 52, 58, 0.09)',
+};
+
+export const customerNavDrawerLightListRowSx: SystemStyleObject<Theme> = {
+  borderRadius: `${iosRadii.sm}px`,
+  mx: 0.5,
+  mb: 0.5,
+  py: 1.25,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  color: 'text.primary',
+  transition: `background-color ${iosMotion.fast}ms ease`,
+  '&:hover': { bgcolor: 'action.hover' },
+  '&:focus-visible': {
+    outline: '2px solid',
+    outlineColor: (t) => alpha(t.palette.primary.main, 0.45),
+    outlineOffset: 2,
+  },
+};
+
+export const customerNavDrawerLightCloseIconButtonSx: SystemStyleObject<Theme> = {
+  color: 'text.secondary',
+  minWidth: IOS_TOUCH_TARGET_PX,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  transition: `background-color ${iosMotion.fast}ms ease`,
+  '&:hover': { bgcolor: 'action.hover' },
+};

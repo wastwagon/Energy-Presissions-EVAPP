@@ -1,7 +1,7 @@
 import { Box, Paper, Skeleton } from '@mui/material';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 
-/** Ops pages using `LivePageHeader` + `OpsQuickActions` + stacked sections (sessions detail, charge point). */
+/** Ops pages using `LivePageHeader` + stacked sections (sessions detail, charge point). */
 export function OpsLiveDetailSkeleton({ ariaLabel }: { ariaLabel: string }) {
   return (
     <Box

@@ -18,10 +18,10 @@ import {
   type CustomerDrawerNavItem,
 } from '../../config/customerDrawerNav';
 import {
-  customerNavDrawerCloseIconButtonSx,
-  customerNavDrawerHeaderRowSx,
-  customerNavDrawerListRowSx,
-  customerNavDrawerPaperSx,
+  customerNavDrawerLightCloseIconButtonSx,
+  customerNavDrawerLightHeaderRowSx,
+  customerNavDrawerLightListRowSx,
+  customerNavDrawerLightPaperSx,
 } from '../../theme/chargingPremiumShell';
 
 export type CustomerAppNavDrawerProps = {
@@ -32,8 +32,7 @@ export type CustomerAppNavDrawerProps = {
 };
 
 /**
- * Unified dark nav drawer for signed-in **Customer** / **WalkIn** — premium AppBar pairing.
- * Item list lives in `config/customerDrawerNav.tsx` so routes stay canonical with the product.
+ * Signed-in **Customer** / **WalkIn** drawer — light shell matches dashboard pages and bottom nav.
  */
 export function CustomerAppNavDrawer({ open, onClose, id = 'customer-app-nav-drawer' }: CustomerAppNavDrawerProps) {
   const navigate = useNavigate();
@@ -46,8 +45,8 @@ export function CustomerAppNavDrawer({ open, onClose, id = 'customer-app-nav-dra
   const renderRow = (item: CustomerDrawerNavItem) => {
     const Icon: SvgIconComponent = item.Icon;
     return (
-      <ListItemButton key={`${item.to}-${item.label}`} onClick={() => go(item.to)} sx={customerNavDrawerListRowSx}>
-        <ListItemIcon sx={{ minWidth: 48, color: 'rgba(255, 255, 255, 0.9)' }}>
+      <ListItemButton key={`${item.to}-${item.label}`} onClick={() => go(item.to)} sx={customerNavDrawerLightListRowSx}>
+        <ListItemIcon sx={{ minWidth: 48, color: 'text.secondary' }}>
           <Icon fontSize="small" />
         </ListItemIcon>
         <ListItemText
@@ -66,32 +65,32 @@ export function CustomerAppNavDrawer({ open, onClose, id = 'customer-app-nav-dra
       PaperProps={{
         id,
         'aria-label': 'App navigation and account',
-        sx: customerNavDrawerPaperSx,
+        sx: customerNavDrawerLightPaperSx,
       }}
     >
-      <Box sx={customerNavDrawerHeaderRowSx}>
+      <Box sx={customerNavDrawerLightHeaderRowSx}>
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', color: 'text.primary' }}>
             Menu
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             CleanMotion · everywhere you drive
           </Typography>
         </Box>
-        <IconButton onClick={onClose} aria-label="Close menu" sx={customerNavDrawerCloseIconButtonSx}>
+        <IconButton onClick={onClose} aria-label="Close menu" sx={customerNavDrawerLightCloseIconButtonSx}>
           <CloseIcon />
         </IconButton>
       </Box>
       <List component="nav" disablePadding sx={{ py: 1, px: 0.5 }}>
         {customerDrawerPrimaryItems.map((item) => renderRow(item))}
-        <Divider sx={{ my: 1.5, borderColor: 'rgba(255, 255, 255, 0.12)' }} />
+        <Divider sx={{ my: 1.5 }} />
         <Typography
           component="p"
           variant="caption"
           sx={{
             px: 1.5,
             py: 0.5,
-            color: 'rgba(255, 255, 255, 0.45)',
+            color: 'text.secondary',
             textTransform: 'uppercase',
             letterSpacing: 0.08,
             fontWeight: 600,

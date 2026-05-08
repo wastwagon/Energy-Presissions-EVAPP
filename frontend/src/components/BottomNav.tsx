@@ -7,8 +7,9 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import type { ReactNode } from 'react';
+import { alpha } from '@mui/material/styles';
 import { brandColors } from '../theme';
-import { iosMotion, iosRadii } from '../theme/iosMobileTokens';
+import { IOS_PAGE_BACKGROUND, iosMotion, iosRadii } from '../theme/iosMobileTokens';
 
 /** Tab that navigates to a route */
 export type BottomNavRouteItem = {
@@ -43,11 +44,16 @@ export function isBottomNavItemActive(pathname: string, item: BottomNavItem): bo
 
 interface BottomNavProps {
   items: BottomNavItem[];
-  /** Accent color for active state */
+  /** Accent color for active state (default / staff shells) */
   accentColor?: string;
+  /**
+   * `customer`: light chrome aligned with `#f4f7f9` page shell — pill active chip, separators match Jampack.
+   * `default`: legacy frosted bar (staff / MainLayout).
+   */
+  variant?: 'default' | 'customer';
 }
 
-export function BottomNav({ items, accentColor = brandColors.primary }: BottomNavProps) {
+export function BottomNav({ items, accentColor = brandColors.primary, variant = 'default' }: BottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -71,14 +77,18 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         boxSizing: 'border-box',
         zIndex: theme.zIndex.appBar,
         borderTop: '1px solid',
-        borderColor: 'divider',
+        borderColor: variant === 'customer' ? 'rgba(47, 52, 58, 0.09)' : 'divider',
         borderRadius: iosRadii.flat,
         pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
-        pt: 0,
-        background: (t) =>
-          t.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(28, 28, 30, 0.94)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
+        pt: variant === 'customer' ? 0.5 : 0,
+        background:
+          variant === 'customer'
+            ? IOS_PAGE_BACKGROUND
+            : (_t) =>
+                _t.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(28, 28, 30, 0.94)',
+        backdropFilter: variant === 'customer' ? 'none' : 'blur(14px)',
+        WebkitBackdropFilter: variant === 'customer' ? 'none' : 'blur(14px)',
+        boxShadow: variant === 'customer' ? '0 -1px 0 rgba(47, 52, 58, 0.04)' : undefined,
       }}
     >
       <BottomNavigation
@@ -96,27 +106,34 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         sx={{
           height: 'auto',
           minHeight: 64,
-          py: 0.5,
+          py: variant === 'customer' ? 0.75 : 0.5,
+          px: variant === 'customer' ? { xs: 0.75, sm: 1 } : 0,
           boxSizing: 'border-box',
+          bgcolor: variant === 'customer' ? 'transparent' : undefined,
+          gap: variant === 'customer' ? { xs: 0.25, sm: 0.5 } : 0,
           '& .MuiBottomNavigationAction-root': {
             minWidth: isMobile ? 56 : 72,
             minHeight: isMobile ? 44 : undefined,
             maxWidth: 'none',
             flex: '1 1 0',
-            py: 0.5,
-            pt: 0.75,
-            pb: 0.25,
-            transition: `color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease`,
+            py: variant === 'customer' ? 0.75 : 0.5,
+            pt: variant === 'customer' ? 1 : 0.75,
+            pb: variant === 'customer' ? 0.5 : 0.25,
+            px: variant === 'customer' ? 0.35 : 0,
+            borderRadius: variant === 'customer' ? 999 : 0,
+            color: variant === 'customer' ? 'text.secondary' : undefined,
+            transition: `color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease, background-color ${iosMotion.standard}ms ease`,
           },
           '& .MuiBottomNavigationAction-root.Mui-selected': {
-            color: accentColor,
+            color: variant === 'customer' ? 'primary.main' : accentColor,
+            bgcolor: variant === 'customer' ? (t) => alpha(t.palette.primary.main, 0.12) : undefined,
             '& .MuiSvgIcon-root': {
               transform: 'scale(1.06)',
             },
           },
           '& .MuiBottomNavigationAction-label': {
             fontSize: isMobile ? '0.6875rem' : '0.8rem',
-            fontWeight: 500,
+            fontWeight: variant === 'customer' ? 600 : 500,
             lineHeight: 1.2,
             opacity: 1,
             whiteSpace: 'nowrap',

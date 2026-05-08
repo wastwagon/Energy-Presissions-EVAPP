@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
@@ -76,8 +75,6 @@ export function CustomerPaymentHistoryPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
       />
-
-      <CustomerQuickActions preset="payments" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

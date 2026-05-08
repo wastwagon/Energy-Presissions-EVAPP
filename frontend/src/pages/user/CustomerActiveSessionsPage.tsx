@@ -23,7 +23,6 @@ import { TransactionSummaryDialog } from '../../components/TransactionSummaryDia
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
-import { CustomerQuickActions } from '../../components/dashboard/CustomerQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import {
   dashboardPageTitleSx,
@@ -160,8 +159,6 @@ export function CustomerActiveSessionsPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
       />
-
-      <CustomerQuickActions preset="sessions_active" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

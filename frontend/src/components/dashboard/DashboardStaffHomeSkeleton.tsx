@@ -19,7 +19,6 @@ export function DashboardStaffHomeSkeleton({ variant }: { variant: Variant }) {
         <Skeleton variant="rounded" height={22} sx={{ maxWidth: 420 }} />
         <Skeleton variant="rounded" height={18} sx={{ width: 160, mt: 1.5 }} />
       </Box>
-      <Skeleton variant="rounded" height={112} sx={{ mb: 2, borderRadius: 2 }} />
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         {Array.from({ length: count }, (_, i) => (
           <Grid

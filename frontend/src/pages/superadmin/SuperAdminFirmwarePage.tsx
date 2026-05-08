@@ -4,7 +4,6 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminFirmwarePage() {
@@ -18,7 +17,6 @@ export function SuperAdminFirmwarePage() {
       <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
         Update firmware on charge points
       </Typography>
-      <OpsQuickActions />
       <Paper sx={premiumPanelCardSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <CloudUploadIcon color="action" sx={{ fontSize: 40 }} />

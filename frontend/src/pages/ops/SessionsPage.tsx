@@ -21,7 +21,6 @@ import { websocketService } from '../../services/websocket';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -114,8 +113,6 @@ export function SessionsPage() {
         subtitleSx={dashboardPageSubtitleSx}
         containerSx={{ mb: 2 }}
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>

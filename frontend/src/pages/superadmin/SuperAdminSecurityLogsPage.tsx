@@ -15,7 +15,6 @@ import {
 import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -57,8 +56,6 @@ export function SuperAdminSecurityLogsPage() {
           </Typography>
         </Box>
       </Box>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

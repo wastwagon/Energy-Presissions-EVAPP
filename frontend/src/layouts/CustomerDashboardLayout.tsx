@@ -22,14 +22,9 @@ import { BottomNav, isBottomNavItemActive } from '../components/BottomNav';
 import { customerBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
-import { brandColors } from '../theme';
 import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
 import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
-import {
-  customerPremiumAppBarActionIconSx,
-  customerPremiumMobileAppBarSx,
-} from '../theme/chargingPremiumShell';
 import { jampackAppBarSx, jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
@@ -89,9 +84,8 @@ export function CustomerDashboardLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...(showBottomNav && isCustomer
-            ? customerPremiumMobileAppBarSx
-            : { ...jampackAppBarSx, color: 'text.primary' }),
+          ...jampackAppBarSx,
+          color: 'text.primary',
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important', gap: 1 }}>
@@ -102,7 +96,7 @@ export function CustomerDashboardLayout() {
               aria-expanded={navDrawerOpen}
               aria-controls="customer-app-nav-drawer"
               edge="start"
-              sx={customerPremiumAppBarActionIconSx}
+              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx), color: 'text.primary' })}
             >
               <MenuIcon />
             </IconButton>
@@ -115,7 +109,7 @@ export function CustomerDashboardLayout() {
                 fontWeight: 700,
                 letterSpacing: '-0.02em',
                 fontSize: { xs: '1rem', sm: '1.0625rem' },
-                color: 'common.white',
+                color: 'primary.main',
                 minWidth: 0,
                 flex: '0 1 auto',
                 mr: 1,
@@ -182,7 +176,7 @@ export function CustomerDashboardLayout() {
                 variant="body2"
                 sx={{
                   fontWeight: 600,
-                  color: showBottomNav && isCustomer ? 'common.white' : 'text.primary',
+                  color: 'text.primary',
                 }}
               >
                 {user?.firstName} {user?.lastName}
@@ -190,7 +184,7 @@ export function CustomerDashboardLayout() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: showBottomNav && isCustomer ? 'rgba(255,255,255,0.65)' : 'text.secondary',
+                  color: 'text.secondary',
                 }}
               >
                 {user?.email}
@@ -328,7 +322,7 @@ export function CustomerDashboardLayout() {
           <Outlet />
         </Box>
         {showBottomNav && (
-          <BottomNav items={customerBottomNavItems} accentColor={brandColors.primary} />
+          <BottomNav items={customerBottomNavItems} variant="customer" />
         )}
       </Box>
     </Box>

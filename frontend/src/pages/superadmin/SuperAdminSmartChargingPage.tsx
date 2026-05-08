@@ -15,7 +15,6 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 
 export function SuperAdminSmartChargingPage() {
   const [chargePointId, setChargePointId] = useState('');
@@ -80,8 +79,6 @@ export function SuperAdminSmartChargingPage() {
       <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
         Inspect composite schedules and charging profiles via the CSMS API (OCPP smart charging).
       </Typography>
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

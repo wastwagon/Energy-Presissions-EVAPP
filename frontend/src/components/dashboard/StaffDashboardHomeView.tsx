@@ -10,7 +10,6 @@ import { useDashboardStats } from '../../hooks/useDashboardStats';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
-import { OpsQuickActions } from './OpsQuickActions';
 import { LivePageHeader } from './LivePageHeader';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { DashboardMetricCard } from './DashboardMetricCard';
@@ -69,8 +68,6 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
           alignSelf: { xs: 'stretch', sm: 'flex-start' },
         })}
       />
-
-      <OpsQuickActions />
 
       {error != null ? (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>

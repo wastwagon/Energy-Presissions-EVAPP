@@ -4,7 +4,6 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminDiagnosticsPage() {
@@ -18,7 +17,6 @@ export function SuperAdminDiagnosticsPage() {
       <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
         Request diagnostics from charge points
       </Typography>
-      <OpsQuickActions />
       <Paper sx={premiumPanelCardSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <BugReportIcon color="action" sx={{ fontSize: 40 }} />

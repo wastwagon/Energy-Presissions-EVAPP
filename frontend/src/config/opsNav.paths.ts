@@ -1,5 +1,5 @@
 /**
- * Admin / superadmin path helpers shared by useOpsBasePath and OpsQuickActions.
+ * Admin / superadmin path helpers shared by useOpsBasePath.
  */
 import { ADMIN_ROUTES, LEGACY_OPS_BASE, SUPERADMIN_ROUTES } from './staffNav.paths';
 

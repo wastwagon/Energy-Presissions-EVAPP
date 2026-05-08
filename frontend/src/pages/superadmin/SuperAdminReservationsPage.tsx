@@ -29,7 +29,6 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
-import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -119,8 +118,6 @@ export function SuperAdminReservationsPage() {
           />
         }
       />
-
-      <OpsQuickActions />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
