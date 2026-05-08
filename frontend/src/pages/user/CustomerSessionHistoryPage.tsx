@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   Pagination,
@@ -34,6 +33,8 @@ import { getTransactionStatusColor } from '../../utils/statusColors';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerSessionHistoryPage() {
   const navigate = useNavigate();
@@ -71,11 +72,7 @@ export function CustomerSessionHistoryPage() {
   }, [loadHistory]);
 
   if (loading && transactions.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <CustomerChromeSkeleton preset="sessionHistory" />;
   }
 
   return (
@@ -126,7 +123,8 @@ export function CustomerSessionHistoryPage() {
         </Paper>
       ) : (
         <>
-          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+          <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+            <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading session history" />
             <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 Past sessions

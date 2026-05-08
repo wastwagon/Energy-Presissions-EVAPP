@@ -9,7 +9,6 @@ import {
   Button,
   Avatar,
   Alert,
-  CircularProgress,
   Divider,
   Chip,
   Dialog,
@@ -40,6 +39,8 @@ import { getStoredUser } from '../../utils/authSession';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerProfilePage() {
   const navigate = useNavigate();
@@ -136,12 +137,8 @@ export function CustomerProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && !user) {
+    return <CustomerChromeSkeleton preset="profile" />;
   }
 
   if (!user) {
@@ -153,7 +150,8 @@ export function CustomerProfilePage() {
   }
 
   return (
-    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', position: 'relative' }}>
+      <TableSurfaceProgress active={Boolean(loading && user)} ariaLabel="Refreshing profile" />
       <LivePageHeader
         title="Profile"
         subtitle="Manage your account information and preferences"

@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   IconButton,
@@ -33,6 +32,8 @@ import { getChargePointStatusColor } from '../../utils/statusColors';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerFavoritesPage() {
   const theme = useTheme();
@@ -110,12 +111,8 @@ export function CustomerFavoritesPage() {
       }
     };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && stations.length === 0) {
+    return <CustomerChromeSkeleton preset="favorites" />;
   }
 
   return (
@@ -173,7 +170,8 @@ export function CustomerFavoritesPage() {
           </Button>
         </Paper>
       ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TableSurfaceProgress active={loading && stations.length > 0} ariaLabel="Loading favorites" />
           {stations.map((station) => (
             <Paper
               key={station.chargePointId}

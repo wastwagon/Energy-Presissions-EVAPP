@@ -56,9 +56,10 @@ export function useDashboardStats() {
         setError(message);
       }
     } finally {
-      if (!mountedRef.current) return;
-      setLoading(false);
-      setRefreshing(false);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 

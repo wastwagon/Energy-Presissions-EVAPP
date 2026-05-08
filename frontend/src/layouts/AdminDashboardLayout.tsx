@@ -29,10 +29,10 @@ import {
   JAMPACK_PAGE_BG,
   jampackAppBarSx,
   jampackAppBarSafeAreaTopSx,
-  jampackFixedAppBarMainGapSx,
   jampackFixedAppBarZIndexSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
+import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
@@ -107,17 +107,7 @@ export function AdminDashboardLayout() {
   );
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100dvh',
-        maxHeight: '100dvh',
-        minHeight: '100dvh',
-        overflow: 'hidden',
-        bgcolor: JAMPACK_PAGE_BG,
-      }}
-    >
+    <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
         position="fixed"
@@ -273,20 +263,9 @@ export function AdminDashboardLayout() {
             component="main"
             id={APP_MAIN_CONTENT_ID}
             tabIndex={-1}
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              overscrollBehaviorY: 'contain',
-              overflowX: 'hidden',
-              p: { xs: 2, sm: 3 },
-              pb: showBottomNav ? { xs: 2, sm: 2 } : 3,
-              width: '100%',
-              maxWidth: '100%',
-            }}
+            sx={dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showBottomNav })}
           >
-            <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+            <Box {...fixedHeaderSpacerProps} />
             <Outlet />
           </Box>
           {showBottomNav && (

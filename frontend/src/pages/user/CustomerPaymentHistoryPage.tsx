@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Pagination,
 } from '@mui/material';
@@ -28,6 +27,8 @@ import { getPaymentStatusColor } from '../../utils/statusColors';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerPaymentHistoryPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -59,12 +60,8 @@ export function CustomerPaymentHistoryPage() {
     void loadPayments();
   }, [loadPayments]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && payments.length === 0) {
+    return <CustomerChromeSkeleton preset="paymentHistory" />;
   }
 
   return (
@@ -115,7 +112,8 @@ export function CustomerPaymentHistoryPage() {
         </Paper>
       ) : (
         <>
-          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+          <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+            <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payment history" />
             <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 Your payments

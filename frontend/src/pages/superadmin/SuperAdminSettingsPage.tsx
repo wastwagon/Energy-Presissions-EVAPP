@@ -24,7 +24,6 @@ import {
   Switch,
   FormControlLabel,
   Alert,
-  CircularProgress,
   Divider,
   InputAdornment,
 } from '@mui/material';
@@ -55,6 +54,8 @@ import {
 } from '../../styles/authShell';
 import { getStoredAccountType } from '../../utils/authSession';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { StaffChromeTabPanelSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { FormBrandingTwoColumnSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -153,6 +154,9 @@ function SuperAdminSettingsPage() {
         } catch (err) {
           // Logo not found, ignore
         }
+      } else if (activeTab === 3) {
+        const settings = await settingsApi.getSystemSettings();
+        setSystemSettings(settings);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load data');
@@ -349,9 +353,7 @@ function SuperAdminSettingsPage() {
         {isSuperAdmin && (
           <TabPanel value={activeTab} index={0}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <StaffChromeTabPanelSkeleton rows={10} ariaLabel="Loading system settings" />
           ) : (
             <Box>
               {/* OCPP Settings */}
@@ -562,9 +564,7 @@ function SuperAdminSettingsPage() {
           </Box>
 
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <StaffChromeTabPanelSkeleton rows={8} ariaLabel="Loading tariffs" />
           ) : (
             <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table stickyHeader size="small">
@@ -811,6 +811,9 @@ function SuperAdminSettingsPage() {
         {/* CMS & Branding Tab - Only for SuperAdmin */}
         {isSuperAdmin && (
           <TabPanel value={activeTab} index={2}>
+          {loading ? (
+            <FormBrandingTwoColumnSkeleton />
+          ) : (
           <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid item xs={12} md={6}>
               <Paper sx={premiumPanelCardSx}>
@@ -888,6 +891,7 @@ function SuperAdminSettingsPage() {
               </Button>
             </Grid>
           </Grid>
+          )}
           </TabPanel>
         )}
 
@@ -895,9 +899,7 @@ function SuperAdminSettingsPage() {
         {isSuperAdmin && (
           <TabPanel value={activeTab} index={3}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <StaffChromeTabPanelSkeleton rows={10} ariaLabel="Loading payment settings" />
           ) : (
             <Box>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>

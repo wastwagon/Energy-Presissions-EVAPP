@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   TextField,
   InputAdornment,
@@ -29,6 +28,8 @@ import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, prem
 import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function SuperAdminConnectionLogsPage() {
   const [logs, setLogs] = useState<ConnectionLog[]>([]);
@@ -95,11 +96,7 @@ export function SuperAdminConnectionLogsPage() {
   };
 
   if (loading && logs.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardStaffChromeSkeleton preset="connectionLogs" />;
   }
 
   return (
@@ -140,7 +137,8 @@ export function SuperAdminConnectionLogsPage() {
         ))}
       </Grid>
 
-      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Updating connection logs" />
         <Box
           sx={{
             px: { xs: 2, sm: 2.5 },

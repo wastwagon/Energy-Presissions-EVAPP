@@ -42,6 +42,8 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import { getWalletTransactionTypeColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function WalletManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -72,6 +74,7 @@ export function WalletManagementPage() {
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
       setError(null);
       const data = await usersApi.getAll();
       setUsers(data);
@@ -210,12 +213,8 @@ export function WalletManagementPage() {
       }
     };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && users.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="walletManagement" />;
   }
 
   return (
@@ -260,7 +259,8 @@ export function WalletManagementPage() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+          <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+            <TableSurfaceProgress active={loading && users.length > 0} ariaLabel="Loading users" />
             <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 Users ({filteredUsers.length})

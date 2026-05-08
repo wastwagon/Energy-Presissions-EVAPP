@@ -55,6 +55,11 @@ import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import {
+  DashboardStaffChromeSkeleton,
+  StaffChromeTabPanelSkeleton,
+} from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -357,11 +362,7 @@ export function DevicesPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardStaffChromeSkeleton preset="devices" />;
   }
 
   const getErrorCount = (chargePointId: string) => {
@@ -483,9 +484,7 @@ export function DevicesPage() {
 
         <TabPanel value={activeTab} index={0}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <StaffChromeTabPanelSkeleton rows={8} ariaLabel="Loading devices" />
           ) : filteredChargePoints.length === 0 ? (
             <Paper elevation={0} sx={{ ...premiumPanelCardSx, m: { xs: 2, sm: 2 } }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
@@ -874,9 +873,7 @@ export function DevicesPage() {
         </DialogTitle>
         <DialogContent>
           {logsLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <DialogDenseRowsSkeleton rows={8} ariaLabel="Loading connection logs" showToolbar />
           ) : (
             <Box>
               {/* Connection Statistics */}

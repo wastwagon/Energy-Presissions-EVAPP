@@ -6,7 +6,6 @@ import {
   Paper,
   Grid,
   Button,
-  CircularProgress,
   Alert,
   Table,
   TableBody,
@@ -34,6 +33,8 @@ import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -70,12 +71,8 @@ export function CustomerWalletPage() {
     void loadWalletData();
   }, [loadWalletData]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && balance === null) {
+    return <CustomerChromeSkeleton preset="wallet" />;
   }
 
   return (
@@ -165,7 +162,8 @@ export function CustomerWalletPage() {
         </Grid>
       )}
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Transaction history

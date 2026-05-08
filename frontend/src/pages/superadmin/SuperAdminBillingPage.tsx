@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Tabs,
   Tab,
@@ -20,6 +19,8 @@ import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
   return (
@@ -59,6 +60,10 @@ export function SuperAdminBillingPage() {
     load();
   }, [load]);
 
+  if (loading && invoices.length === 0 && transactions.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="billingTabs" />;
+  }
+
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
@@ -80,7 +85,17 @@ export function SuperAdminBillingPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper
+        elevation={0}
+        sx={{
+          ...premiumTableSurfaceSx,
+          position: 'relative',
+        }}
+      >
+        <TableSurfaceProgress
+          active={loading && (invoices.length > 0 || transactions.length > 0)}
+          ariaLabel="Loading billing data"
+        />
         <Tabs
           value={tab}
           onChange={(_, v) => setTab(v)}
@@ -98,12 +113,7 @@ export function SuperAdminBillingPage() {
           <Tab label="Billing transactions" />
         </Tabs>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
+        <>
             <TabPanel value={tab} index={0}>
               <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small" stickyHeader>
@@ -190,8 +200,7 @@ export function SuperAdminBillingPage() {
                 </Table>
               </TableContainer>
             </TabPanel>
-          </>
-        )}
+        </>
       </Paper>
     </Box>
   );

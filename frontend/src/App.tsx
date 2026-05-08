@@ -1,7 +1,11 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import {
+  resolveFullPageSuspenseFallback,
+  resolveInAppSuspenseFallback,
+} from './components/routing/RouteSuspenseFallbacks';
 import { CUSTOMER_ROUTES } from './config/customerNav.paths';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
@@ -178,44 +182,6 @@ const AdminReportsPage = lazy(() =>
   import('./pages/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })),
 );
 
-function AppLoadingFallback() {
-  return (
-    <Box
-      sx={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 2,
-        bgcolor: 'background.default',
-      }}
-    >
-      <Box sx={{ textAlign: 'center' }}>
-        <CircularProgress size={32} />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Loading dashboard...
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
-function InAppLoadingFallback() {
-  return (
-    <Box
-      sx={{
-        minHeight: 320,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 2,
-      }}
-    >
-      <CircularProgress size={28} />
-    </Box>
-  );
-}
-
 function RouteSuspense({
   children,
   mode = 'in-app',
@@ -223,8 +189,17 @@ function RouteSuspense({
   children: React.ReactNode;
   mode?: 'full-page' | 'in-app';
 }) {
+  const location = useLocation();
+  const fallback = useMemo(
+    () =>
+      mode === 'full-page'
+        ? resolveFullPageSuspenseFallback(location.pathname)
+        : resolveInAppSuspenseFallback(location.pathname),
+    [mode, location.pathname],
+  );
+
   return (
-    <Suspense fallback={mode === 'full-page' ? <AppLoadingFallback /> : <InAppLoadingFallback />}>
+    <Suspense fallback={fallback}>
       {mode === 'full-page' ? (
         <Box
           sx={{

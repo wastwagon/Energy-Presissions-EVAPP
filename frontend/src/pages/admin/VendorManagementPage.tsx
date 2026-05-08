@@ -19,7 +19,6 @@ import {
   TextField,
   MenuItem,
   Alert,
-  CircularProgress,
   IconButton,
   Tooltip,
   Grid,
@@ -45,6 +44,9 @@ import {
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 import { getOpsNavPaths } from '../../config/opsNav.paths';
 
 export function VendorManagementPage() {
@@ -83,6 +85,7 @@ export function VendorManagementPage() {
 
   const loadVendors = async () => {
     try {
+      setLoading(true);
       setError(null);
       const data = await vendorApi.getAll();
       setVendors(data);
@@ -232,12 +235,8 @@ export function VendorManagementPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && vendors.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="vendorManagement" />;
   }
 
   return (
@@ -280,7 +279,8 @@ export function VendorManagementPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && vendors.length > 0} ariaLabel="Loading vendors" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Vendors ({vendors.length})
@@ -465,9 +465,7 @@ export function VendorManagementPage() {
         <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Status history — {selectedVendor?.name}</DialogTitle>
         <DialogContent>
           {historyLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress />
-            </Box>
+            <DialogDenseRowsSkeleton rows={6} ariaLabel="Loading status history" showToolbar={false} />
           ) : history.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
               No status history available

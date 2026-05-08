@@ -11,11 +11,9 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Tabs,
   Tab,
-  Button,
 } from '@mui/material';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
@@ -26,6 +24,7 @@ import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -98,11 +97,7 @@ export function SessionsPage() {
   const transactions = activeTab === 0 ? activeTransactions : allTransactions;
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardStaffChromeSkeleton preset="sessions" />;
   }
 
   return (

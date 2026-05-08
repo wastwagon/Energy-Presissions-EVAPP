@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   Alert,
   Chip,
 } from '@mui/material';
@@ -17,6 +16,8 @@ import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function SuperAdminSecurityLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -29,6 +30,7 @@ export function SuperAdminSecurityLogsPage() {
 
   const loadLogs = async () => {
     try {
+      setLoading(true);
       setError(null);
       const { logs: data } = await auditApi.getLogs(200, 0);
       setLogs(data);
@@ -39,12 +41,8 @@ export function SuperAdminSecurityLogsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && logs.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="auditLogs" />;
   }
 
   return (
@@ -68,7 +66,8 @@ export function SuperAdminSecurityLogsPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Loading audit logs" />
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>

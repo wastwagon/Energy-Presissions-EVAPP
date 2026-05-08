@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   TextField,
   InputAdornment,
@@ -25,6 +24,8 @@ import { getPaymentStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { authFormFieldSx, sxObject } from '../../styles/authShell';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -70,12 +71,8 @@ export function AdminPaymentsPage() {
       payment.status.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && payments.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="adminPayments" />;
   }
 
   return (
@@ -97,7 +94,8 @@ export function AdminPaymentsPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payments" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
             Payments

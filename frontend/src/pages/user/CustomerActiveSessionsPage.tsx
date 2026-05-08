@@ -44,6 +44,8 @@ import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from 
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerActiveSessionsPage() {
   const navigate = useNavigate();
@@ -141,12 +143,8 @@ export function CustomerActiveSessionsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && transactions.length === 0) {
+    return <CustomerChromeSkeleton preset="activeSessions" />;
   }
 
   return (
@@ -212,7 +210,9 @@ export function CustomerActiveSessionsPage() {
           </Button>
         </Paper>
       ) : (
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
+        <Box sx={{ position: 'relative' }}>
+          <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading active sessions" />
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
           {transactions.map((tx) => (
             <Grid
               item
@@ -330,6 +330,7 @@ export function CustomerActiveSessionsPage() {
             </Grid>
           ))}
         </Grid>
+        </Box>
       )}
 
       {/* Transaction Summary Dialog */}

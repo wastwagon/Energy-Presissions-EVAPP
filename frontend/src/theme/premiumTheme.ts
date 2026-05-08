@@ -1,4 +1,8 @@
-// Premium Theme Configuration
+/**
+ * @deprecated Legacy palette — not wired to the app theme. Use {@link ./iosMobileTokens.ts}
+ * and MUI `theme` from `theme.ts` instead. Kept only to avoid breaking deep links; remove
+ * after confirming no imports.
+ */
 export const premiumTheme = {
   colors: {
     primary: {

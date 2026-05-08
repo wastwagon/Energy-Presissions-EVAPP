@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   Stack,
@@ -34,6 +33,7 @@ import {
   openGoogleMapsDirections,
   parseLatLng,
 } from '../utils/googleMapsDirections';
+import { StationDetailPageSkeleton } from '../components/dashboard/CustomerChromeSkeleton';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -91,11 +91,7 @@ export function StationDetailPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 360 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <StationDetailPageSkeleton />;
   }
 
   if (!station || error) {

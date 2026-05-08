@@ -4,7 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  CircularProgress,
   Alert,
   Button,
   Tabs,
@@ -24,6 +23,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
 export function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
@@ -76,9 +76,10 @@ export function AdminReportsPage() {
         setError(message);
       }
     } finally {
-      if (!mountedRef.current) return;
-      setLoading(false);
-      setRefreshing(false);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -99,11 +100,7 @@ export function AdminReportsPage() {
   });
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardStaffChromeSkeleton preset="adminReports" />;
   }
 
   return (

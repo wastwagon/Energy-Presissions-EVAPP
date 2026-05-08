@@ -10,6 +10,7 @@ import {
   Box,
   Alert,
   CircularProgress,
+  Skeleton,
   Grid,
   Paper,
   Divider,
@@ -242,8 +243,17 @@ export function StartChargingDialog({
                     Wallet balance
                   </Typography>
                 </Box>
-                <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' }, letterSpacing: '-0.02em' }}>
-                  {loadingBalance ? <CircularProgress size={18} sx={{ color: 'primary.main' }} /> : formatCurrency(walletBalance, 'GHS')}
+                <Typography
+                  variant="h6"
+                  component="div"
+                  fontWeight={800}
+                  sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' }, letterSpacing: '-0.02em' }}
+                >
+                  {loadingBalance ? (
+                    <Skeleton variant="rounded" width={120} height={28} sx={{ borderRadius: 1 }} aria-label="Loading balance" />
+                  ) : (
+                    formatCurrency(walletBalance, 'GHS')
+                  )}
                 </Typography>
               </Box>
               {reservedBalance > 0 && (

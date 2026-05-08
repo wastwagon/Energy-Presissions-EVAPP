@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
+import { IOS_TOUCH_TARGET_PX, iosRadii } from '../theme/iosMobileTokens';
 
 /** Turn SxProps into a plain object for spreading (MUI SxProps can be an array; spreading that breaks TS). */
 export function sxObject(theme: Theme, sx: SxProps<Theme>): Record<string, unknown> {
@@ -29,7 +30,7 @@ export const authPageRootSx: SxProps<Theme> = {
 
 export const authPagePaperSx: SxProps<Theme> = {
   p: { xs: 1.75, sm: 2.75 },
-  borderRadius: 3,
+  borderRadius: `${iosRadii.lg}px`,
   width: '100%',
   maxWidth: { xs: 360, sm: 420 },
   mx: 'auto',
@@ -44,7 +45,7 @@ export const authPagePaperSx: SxProps<Theme> = {
 
 /** Modal / dialog shell — matches auth card elevation language. */
 export const premiumDialogPaperSx: SxProps<Theme> = (theme) => ({
-  borderRadius: 3,
+  borderRadius: `${iosRadii.lg}px`,
   border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
   boxShadow:
     theme.palette.mode === 'light'
@@ -57,7 +58,7 @@ export const premiumDialogPaperSx: SxProps<Theme> = (theme) => ({
 export const premiumMenuPaperSx: SxProps<Theme> = (theme) => ({
   mt: 1.5,
   minWidth: 200,
-  borderRadius: 2,
+  borderRadius: `${iosRadii.md}px`,
   border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
   boxShadow:
     theme.palette.mode === 'light'
@@ -66,10 +67,10 @@ export const premiumMenuPaperSx: SxProps<Theme> = (theme) => ({
   overflow: 'hidden',
 });
 
-/** Minimum 44×44 tap target for IconButtons (mobile-first). */
+/** Minimum HIG tap target for IconButtons (mobile-first). */
 export const premiumIconButtonTouchSx: SxProps<Theme> = {
-  minWidth: 44,
-  minHeight: 44,
+  minWidth: IOS_TOUCH_TARGET_PX,
+  minHeight: IOS_TOUCH_TARGET_PX,
 };
 
 export const authPageTitleSx: SxProps<Theme> = {
@@ -86,7 +87,7 @@ export const authPageTitleSx: SxProps<Theme> = {
 export const authFormFieldSx: SxProps<Theme> = (theme) => ({
   mt: 0.25,
   '& .MuiOutlinedInput-root': {
-    borderRadius: '10px',
+    borderRadius: `${iosRadii.sm}px`,
     transition: 'box-shadow 0.18s ease, background-color 0.18s ease',
     '& .MuiOutlinedInput-notchedOutline': {
       borderColor: alpha(theme.palette.text.primary, 0.11),
@@ -122,8 +123,8 @@ export const authFormFieldSx: SxProps<Theme> = (theme) => ({
 export const compactOutlinedCtaSx: SxProps<Theme> = (theme) => ({
   py: 1,
   px: 2,
-  minHeight: 44,
-  borderRadius: 2,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  borderRadius: `${iosRadii.sm}px`,
   fontWeight: 600,
   fontSize: '0.875rem',
   letterSpacing: '-0.01em',
@@ -154,8 +155,8 @@ export const compactOutlinedCtaSx: SxProps<Theme> = (theme) => ({
 export const compactContainedCtaSx: SxProps<Theme> = (theme) => ({
   py: 1,
   px: 2,
-  minHeight: 44,
-  borderRadius: 2,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  borderRadius: `${iosRadii.sm}px`,
   fontWeight: 600,
   fontSize: '0.875rem',
   letterSpacing: '-0.01em',

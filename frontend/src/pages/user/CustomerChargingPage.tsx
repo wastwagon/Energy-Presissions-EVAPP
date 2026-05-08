@@ -8,7 +8,6 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  CircularProgress,
   Alert,
   Button,
 } from '@mui/material';
@@ -37,6 +36,8 @@ import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { DashboardPageLoading } from '../../components/dashboard/DashboardPageLoading';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 type NavItem = {
   id: string;
@@ -86,33 +87,38 @@ const NAV: NavItem[] = [
 export function CustomerChargingPage() {
   const navigate = useNavigate();
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
+  const [chargingDataReady, setChargingDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSession, setLastSession] = useState<Transaction | null>(null);
   const [activeCount, setActiveCount] = useState(0);
 
   const loadChargingData = useCallback(async (silent?: boolean) => {
     await runWithRefresh(async () => {
-      const user = getStoredUser();
-      const userId = typeof user?.id === 'number' ? user.id : null;
-      if (!userId) {
-        setLastSession(null);
-        setActiveCount(0);
-        return false;
-      }
-
       try {
-        setError(null);
-        const [listRes, active] = await Promise.all([
-          transactionsApi.getAll(20, 0, undefined, undefined, userId),
-          transactionsApi.getActive(undefined, userId),
-        ]);
-        const txs = listRes?.transactions && Array.isArray(listRes.transactions) ? listRes.transactions : [];
-        setLastSession(pickLastEndedChargingSession(txs));
-        setActiveCount(active?.length ?? 0);
-        return true;
-      } catch (e: unknown) {
-        setError((e as Error)?.message || 'Could not load charging data');
-        return false;
+        const user = getStoredUser();
+        const userId = typeof user?.id === 'number' ? user.id : null;
+        if (!userId) {
+          setLastSession(null);
+          setActiveCount(0);
+          return false;
+        }
+
+        try {
+          setError(null);
+          const [listRes, active] = await Promise.all([
+            transactionsApi.getAll(20, 0, undefined, undefined, userId),
+            transactionsApi.getActive(undefined, userId),
+          ]);
+          const txs = listRes?.transactions && Array.isArray(listRes.transactions) ? listRes.transactions : [];
+          setLastSession(pickLastEndedChargingSession(txs));
+          setActiveCount(active?.length ?? 0);
+          return true;
+        } catch (e: unknown) {
+          setError((e as Error)?.message || 'Could not load charging data');
+          return false;
+        }
+      } finally {
+        setChargingDataReady(true);
       }
     }, silent);
   }, [runWithRefresh]);
@@ -127,16 +133,13 @@ export function CustomerChargingPage() {
     return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
   }, [lastSession]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && !chargingDataReady) {
+    return <DashboardPageLoading />;
   }
 
   return (
-    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', ...mobileMainLayoutBottomMarginSx }}>
+    <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', position: 'relative', ...mobileMainLayoutBottomMarginSx }}>
+      <TableSurfaceProgress active={loading && chargingDataReady} ariaLabel="Loading charging hub" />
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}

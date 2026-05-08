@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import type { ReactNode } from 'react';
 import { brandColors } from '../theme';
+import { iosMotion, iosRadii } from '../theme/iosMobileTokens';
 
 /** Tab that navigates to a route */
 export type BottomNavRouteItem = {
@@ -71,12 +72,13 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         zIndex: theme.zIndex.appBar,
         borderTop: '1px solid',
         borderColor: 'divider',
-        borderRadius: 0,
+        borderRadius: iosRadii.flat,
         pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
         pt: 0,
-        background: 'rgba(255, 255, 255, 0.97)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: (t) =>
+          t.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(28, 28, 30, 0.94)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
       }}
     >
       <BottomNavigation
@@ -97,17 +99,19 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
           py: 0.5,
           boxSizing: 'border-box',
           '& .MuiBottomNavigationAction-root': {
-            minWidth: isMobile ? 52 : 72,
+            minWidth: isMobile ? 56 : 72,
+            minHeight: isMobile ? 44 : undefined,
             maxWidth: 'none',
             flex: '1 1 0',
             py: 0.5,
             pt: 0.75,
             pb: 0.25,
+            transition: `color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease`,
           },
           '& .MuiBottomNavigationAction-root.Mui-selected': {
             color: accentColor,
             '& .MuiSvgIcon-root': {
-              transform: 'scale(1.08)',
+              transform: 'scale(1.06)',
             },
           },
           '& .MuiBottomNavigationAction-label': {

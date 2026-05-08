@@ -6,7 +6,7 @@ import {
   Paper,
   Grid,
   Chip,
-  CircularProgress,
+  Skeleton,
   LinearProgress,
   Alert,
   TextField,
@@ -398,10 +398,19 @@ export function StationsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  bgcolor: 'rgba(255,255,255,0.55)',
+                  p: 2,
+                  bgcolor: (t) =>
+                    t.palette.mode === 'dark' ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.6)',
                 }}
+                role="status"
+                aria-busy="true"
+                aria-label="Loading stations map"
               >
-                <CircularProgress />
+                <Skeleton
+                  variant="rounded"
+                  animation="wave"
+                  sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
+                />
               </Box>
             )}
             <StationsMapView

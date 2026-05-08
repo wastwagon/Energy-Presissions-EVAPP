@@ -30,13 +30,8 @@ import {
   customerPremiumAppBarActionIconSx,
   customerPremiumMobileAppBarSx,
 } from '../theme/chargingPremiumShell';
-import {
-  JAMPACK_PAGE_BG,
-  jampackAppBarSx,
-  jampackAppBarSafeAreaTopSx,
-  jampackFixedAppBarMainGapSx,
-  jampackFixedAppBarZIndexSx,
-} from '../theme/jampackShell';
+import { jampackAppBarSx, jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
+import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
@@ -84,17 +79,7 @@ export function CustomerDashboardLayout() {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100dvh',
-        maxHeight: '100dvh',
-        minHeight: '100dvh',
-        overflow: 'hidden',
-        bgcolor: JAMPACK_PAGE_BG,
-      }}
-    >
+    <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
         position="fixed"
@@ -328,7 +313,6 @@ export function CustomerDashboardLayout() {
           display: 'flex',
           flexDirection: 'column',
           width: '100%',
-          bgcolor: JAMPACK_PAGE_BG,
         }}
       >
         <Box
@@ -336,20 +320,11 @@ export function CustomerDashboardLayout() {
           id={APP_MAIN_CONTENT_ID}
           tabIndex={-1}
           sx={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            overscrollBehaviorY: 'contain',
-            overflowX: 'hidden',
-            p: { xs: 2, sm: 3 },
-            pb: showBottomNav ? { xs: 2, sm: 2 } : 3,
-            width: '100%',
-            maxWidth: '100%',
+            ...dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showBottomNav }),
             minWidth: 0,
           }}
         >
-          <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+          <Box {...fixedHeaderSpacerProps} />
           <Outlet />
         </Box>
         {showBottomNav && (

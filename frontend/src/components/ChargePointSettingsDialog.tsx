@@ -12,6 +12,7 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
+  Skeleton,
   IconButton,
   InputAdornment,
 } from '@mui/material';
@@ -428,7 +429,12 @@ export function ChargePointSettingsDialog({
           </Grid>
           <Grid item xs={12}>
             {loadingVendors ? (
-              <CircularProgress size={24} />
+              <Skeleton
+                variant="rounded"
+                height={56}
+                sx={{ borderRadius: 1.5 }}
+                aria-label="Loading vendors"
+              />
             ) : (
               <TextField
                 label="Assign to Vendor"

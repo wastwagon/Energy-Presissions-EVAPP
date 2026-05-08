@@ -16,6 +16,7 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
+import { dashboardViewportColumnSx } from '../theme/dashboardShell';
 import {
   clearSession,
   getDashboardPathForAccountType,
@@ -100,16 +101,7 @@ export function MainLayout() {
   const showDesktopHeaderNav = !showBottomNav && isAuthenticated && desktopHeaderNavItems.length > 0;
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100dvh',
-        maxHeight: '100dvh',
-        minHeight: '100dvh',
-        overflow: 'hidden',
-      }}
-    >
+    <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
         position="fixed"

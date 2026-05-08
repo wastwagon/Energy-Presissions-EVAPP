@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   Dialog,
@@ -40,6 +39,8 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function SuperAdminTariffsPage() {
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
@@ -151,12 +152,8 @@ export function SuperAdminTariffsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && tariffs.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="tariffs" />;
   }
 
   return (
@@ -193,7 +190,8 @@ export function SuperAdminTariffsPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && tariffs.length > 0} ariaLabel="Loading tariffs" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             System tariff plans

@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   Dialog,
@@ -30,7 +29,8 @@ import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
-import { DashboardNavIcon, premiumStatCardSx } from '../../components/dashboard/DashboardNavIcon';
+import { DashboardStatTile } from '../../components/dashboard/DashboardStatTile';
+import { DashboardOperationsSkeleton } from '../../components/dashboard/DashboardOperationsSkeleton';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   compactOutlinedCtaSx,
@@ -153,11 +153,7 @@ export function OperationsDashboard() {
   const offlineCount = chargePoints.filter((cp) => cp.status === 'Offline').length;
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardOperationsSkeleton />;
   }
 
   return (
@@ -222,87 +218,43 @@ export function OperationsDashboard() {
         </Alert>
       )}
 
-      {/* Stats Cards */}
+      {/* Stats — shared iOS-native-style tiles */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('primary') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <DashboardNavIcon accent="primary" compact noRightMargin>
-                  <EvStationIcon sx={{ color: 'primary.main', fontSize: 24 }} />
-                </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Stations
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
-                {chargePoints.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total charge points
-              </Typography>
-            </Box>
-          </Paper>
+          <DashboardStatTile
+            accent="primary"
+            kicker="Stations"
+            value={chargePoints.length}
+            caption="Total charge points"
+            icon={<EvStationIcon sx={{ color: 'primary.main', fontSize: 24 }} />}
+          />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('success') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <DashboardNavIcon accent="success" compact noRightMargin>
-                  <BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />
-                </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Active
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
-                {activeSessions}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Currently charging
-              </Typography>
-            </Box>
-          </Paper>
+          <DashboardStatTile
+            accent="success"
+            kicker="Active"
+            value={activeSessions}
+            caption="Currently charging"
+            icon={<BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />}
+          />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('info') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <DashboardNavIcon accent="info" compact noRightMargin>
-                  <CheckCircleIcon sx={{ color: 'info.main', fontSize: 24 }} />
-                </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Available
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
-                {availableCount}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Connectors available
-              </Typography>
-            </Box>
-          </Paper>
+          <DashboardStatTile
+            accent="info"
+            kicker="Available"
+            value={availableCount}
+            caption="Connectors available"
+            icon={<CheckCircleIcon sx={{ color: 'info.main', fontSize: 24 }} />}
+          />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Paper elevation={0} sx={{ bgcolor: 'background.paper', ...premiumStatCardSx('secondary') }}>
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <DashboardNavIcon accent="secondary" compact noRightMargin>
-                  <ErrorIcon sx={{ color: 'secondary.main', fontSize: 24 }} />
-                </DashboardNavIcon>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Offline
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
-                {offlineCount}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Stations offline
-              </Typography>
-            </Box>
-          </Paper>
+          <DashboardStatTile
+            accent="secondary"
+            kicker="Offline"
+            value={offlineCount}
+            caption="Stations offline"
+            icon={<ErrorIcon sx={{ color: 'secondary.main', fontSize: 24 }} />}
+          />
         </Grid>
       </Grid>
 

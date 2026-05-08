@@ -1,6 +1,7 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { alpha } from '@mui/material/styles';
+import { IOS_TOUCH_TARGET_PX, iosMotion, iosRadii } from './iosMobileTokens';
 
 /**
  * Tesla-style “charging” surface tokens: dark, high-contrast, mobile-first.
@@ -163,7 +164,7 @@ export const chargingHubPromoCardSx: SystemStyleObject<Theme> = {
   display: 'block',
   cursor: 'pointer',
   mb: 2.5,
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  transition: `transform ${iosMotion.standard}ms ease, box-shadow ${iosMotion.standard}ms ease`,
   '@media (hover: hover) and (pointer: fine)': {
     '&:hover': {
       boxShadow: '0 24px 56px rgba(0, 0, 0, 0.38)',
@@ -175,4 +176,53 @@ export const chargingHubPromoCardSx: SystemStyleObject<Theme> = {
     outlineColor: (t) => t.palette.primary.main,
     outlineOffset: 2,
   },
+};
+
+/** Right-edge app drawer (`CustomerAppNavDrawer`) — same ink language as premium app bar. */
+export const customerNavDrawerPaperSx: SystemStyleObject<Theme> = {
+  width: { xs: 'min(100%, 320px)', sm: 320 },
+  maxWidth: '100vw',
+  background: `linear-gradient(180deg, ${ink} 0%, ${ink2} 100%)`,
+  color: 'common.white',
+  borderLeft: '1px solid',
+  borderColor: stroke,
+  borderTopLeftRadius: `${iosRadii.md}px`,
+  borderBottomLeftRadius: `${iosRadii.md}px`,
+  boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.35)',
+  pt: 'max(12px, env(safe-area-inset-top, 0px))',
+  pb: 'env(safe-area-inset-bottom, 0px)',
+};
+
+export const customerNavDrawerHeaderRowSx: SystemStyleObject<Theme> = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 1,
+  px: 2,
+  py: 1.5,
+  borderBottom: '1px solid',
+  borderColor: stroke,
+};
+
+export const customerNavDrawerListRowSx: SystemStyleObject<Theme> = {
+  borderRadius: `${iosRadii.sm}px`,
+  mx: 0.5,
+  mb: 0.5,
+  py: 1.25,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  color: 'common.white',
+  transition: `background-color ${iosMotion.fast}ms ease`,
+  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+  '&:focus-visible': {
+    outline: '2px solid rgba(255, 255, 255, 0.45)',
+    outlineOffset: 2,
+  },
+};
+
+export const customerNavDrawerCloseIconButtonSx: SystemStyleObject<Theme> = {
+  color: 'rgba(255, 255, 255, 0.7)',
+  minWidth: IOS_TOUCH_TARGET_PX,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  transition: `background-color ${iosMotion.fast}ms ease`,
+  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
 };

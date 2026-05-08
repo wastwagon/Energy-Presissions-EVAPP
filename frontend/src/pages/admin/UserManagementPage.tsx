@@ -18,7 +18,6 @@ import {
   TextField,
   MenuItem,
   Alert,
-  CircularProgress,
   IconButton,
   Tooltip,
   Grid,
@@ -44,6 +43,8 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import { getUserAccountStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -227,12 +228,8 @@ export function UserManagementPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && users.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="userManagement" />;
   }
 
   return (
@@ -303,7 +300,8 @@ export function UserManagementPage() {
         />
       </Box>
 
-      <Paper elevation={0} sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && users.length > 0} ariaLabel="Loading users" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             All users ({filteredUsers.length})

@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Alert,
-  CircularProgress,
   Paper,
   Divider,
 } from '@mui/material';
@@ -28,10 +27,13 @@ import {
   getStoredUser,
   hasValidSession,
 } from '../../utils/authSession';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function VendorSettingsPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -122,6 +124,7 @@ export function VendorSettingsPage() {
       setError(err.message || 'Failed to load vendor information');
     } finally {
       setLoading(false);
+      setInitialLoadDone(true);
     }
   };
 
@@ -168,16 +171,13 @@ export function VendorSettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && !initialLoadDone) {
+    return <DashboardStaffChromeSkeleton preset="vendorSettings" />;
   }
 
   return (
-    <Box>
+    <Box sx={{ position: 'relative' }}>
+      <TableSurfaceProgress active={loading && initialLoadDone} ariaLabel="Loading vendor settings" />
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
           <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>

@@ -8,7 +8,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   Alert,
   TextField,
   InputAdornment,
@@ -34,6 +33,8 @@ import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function SuperAdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -78,12 +79,8 @@ export function SuperAdminReservationsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && reservations.length === 0) {
+    return <DashboardStaffChromeSkeleton preset="reservationsList" />;
   }
 
   return (
@@ -136,7 +133,8 @@ export function SuperAdminReservationsPage() {
         </Alert>
       )}
 
-      <Paper sx={premiumTableSurfaceSx}>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+        <TableSurfaceProgress active={loading && reservations.length > 0} ariaLabel="Loading reservations" />
         {reservations.length === 0 ? (
           <Box sx={premiumEmptyStatePaperSx}>
             <Typography color="text.secondary">No active reservations</Typography>

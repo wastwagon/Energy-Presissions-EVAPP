@@ -8,7 +8,6 @@ import {
   Button,
   Grid,
   Alert,
-  CircularProgress,
   InputAdornment,
 } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -29,6 +28,7 @@ import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 
 export function CustomerTopUpPage() {
   const navigate = useNavigate();
@@ -89,11 +89,7 @@ export function CustomerTopUpPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <CustomerChromeSkeleton preset="topUp" />;
   }
 
   return (

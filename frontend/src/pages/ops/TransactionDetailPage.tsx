@@ -12,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Alert,
   Button,
 } from '@mui/material';
@@ -40,6 +39,7 @@ import { getTransactionStatusColor } from '../../utils/statusColors';
 import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
 
 export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -86,11 +86,7 @@ export function TransactionDetailPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <OpsLiveDetailSkeleton ariaLabel="Loading transaction details" />;
   }
 
   if (!transaction) {

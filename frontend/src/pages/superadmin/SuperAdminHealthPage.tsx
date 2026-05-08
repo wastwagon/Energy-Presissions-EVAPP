@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
-  CircularProgress,
   Alert,
   Chip,
   Typography,
@@ -16,6 +15,7 @@ import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
 export function SuperAdminHealthPage() {
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
@@ -42,11 +42,7 @@ export function SuperAdminHealthPage() {
   }, [loadHealth]);
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <DashboardStaffChromeSkeleton preset="systemHealth" />;
   }
 
   return (

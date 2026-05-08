@@ -6,7 +6,6 @@ import {
   Paper,
   Grid,
   Chip,
-  CircularProgress,
   Alert,
   Button,
   Divider,
@@ -28,6 +27,7 @@ import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../ut
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerTransactionDetailSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 
 export function CustomerTransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -69,11 +69,7 @@ export function CustomerTransactionDetailPage() {
   }, [id, loadTransaction]);
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <CustomerTransactionDetailSkeleton />;
   }
 
   if (error || !transaction) {

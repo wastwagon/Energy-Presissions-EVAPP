@@ -55,6 +55,7 @@ import { OpsQuickActions } from '../../components/dashboard/OpsQuickActions';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
 
@@ -366,11 +367,7 @@ export function ChargePointDetailPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <OpsLiveDetailSkeleton ariaLabel="Loading charge point details" />;
   }
 
   if (!chargePoint) {

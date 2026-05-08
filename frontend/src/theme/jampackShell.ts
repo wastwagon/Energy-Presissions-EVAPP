@@ -1,16 +1,18 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { alpha } from '@mui/material/styles';
+import { IOS_PAGE_BACKGROUND, iosRadii, iosMotion } from './iosMobileTokens';
 
 /**
  * Layout tokens aligned with `next-jampack/classic` (vertical menu, light shell).
  * Keeps Clean Motion branding via theme.palette; shell = spacing, surfaces, borders.
+ * Page/surface colors resolve through `iosMobileTokens` for a single source of truth.
  */
 export const JAMPACK_DRAWER_WIDTH = 270;
 
 /** Shared KPI / widget card surface (Jampack-style white tiles). */
 export const jampackKpiCardBaseSx: SystemStyleObject<Theme> = {
-  borderRadius: '10px',
+  borderRadius: `${iosRadii.sm}px`,
   bgcolor: '#ffffff',
   border: '1px solid rgba(47, 52, 58, 0.09)',
   boxShadow: 'none',
@@ -18,7 +20,7 @@ export const jampackKpiCardBaseSx: SystemStyleObject<Theme> = {
 
 /** Optional hover lift for dashboard metric cards. */
 export const jampackKpiCardHoverSx: SystemStyleObject<Theme> = {
-  transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+  transition: `box-shadow ${iosMotion.standard}ms ease, border-color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease`,
   '@media (hover: hover) and (pointer: fine)': {
     '&:hover': {
       transform: 'translateY(-2px)',
@@ -29,7 +31,7 @@ export const jampackKpiCardHoverSx: SystemStyleObject<Theme> = {
 };
 
 /** hk-pg-wrapper style page background */
-export const JAMPACK_PAGE_BG = '#f4f7f9';
+export const JAMPACK_PAGE_BG = IOS_PAGE_BACKGROUND;
 
 /** Drawer paper shared by mobile + desktop */
 export const jampackDrawerPaper = {
@@ -138,7 +140,7 @@ export const premiumFeatureCardSx: SystemStyleObject<Theme> = {
 export const premiumPanelCardSx: SystemStyleObject<Theme> = {
   ...jampackKpiCardBaseSx,
   p: { xs: 2, sm: 2.5 },
-  borderRadius: '12px',
+  borderRadius: `${iosRadii.md}px`,
   boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
 };
 
@@ -152,7 +154,7 @@ export const premiumEmptyStatePaperSx: SystemStyleObject<Theme> = {
 /** Tables and dense list cards: elevated surface, no default padding (use header + body). */
 export const premiumTableSurfaceSx: SystemStyleObject<Theme> = {
   ...jampackKpiCardBaseSx,
-  borderRadius: '12px',
+  borderRadius: `${iosRadii.md}px`,
   boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
   overflow: 'hidden',
 };

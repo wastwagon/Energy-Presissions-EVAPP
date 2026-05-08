@@ -4,7 +4,6 @@ import {
   Typography,
   Paper,
   Button,
-  CircularProgress,
   Alert,
   IconButton,
   Dialog,
@@ -44,6 +43,8 @@ import { getStoredUser } from '../../utils/authSession';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerPaymentMethodsPage() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
@@ -142,12 +143,8 @@ export function CustomerPaymentMethodsPage() {
     return m[p.toLowerCase()] || p;
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading && methods.length === 0) {
+    return <CustomerChromeSkeleton preset="paymentMethods" />;
   }
 
   return (
@@ -221,7 +218,8 @@ export function CustomerPaymentMethodsPage() {
           </Button>
         </Paper>
       ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TableSurfaceProgress active={loading && methods.length > 0} ariaLabel="Loading payment methods" />
           {methods.map((pm) => (
             <Paper key={pm.id} elevation={0} sx={premiumTableSurfaceSx}>
               <Box

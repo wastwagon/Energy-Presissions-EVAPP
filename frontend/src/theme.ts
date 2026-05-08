@@ -1,15 +1,11 @@
 import { createTheme, alpha } from '@mui/material/styles';
+import { iosBrandColors, iosFontStacks, iosRadii, iosMotion } from './theme/iosMobileTokens';
 
-/** Brand accent — refined teal, nudged toward Jampack #007d88 for harmony with template shell */
-export const brandColors = {
-  primary: '#0a6570',
-  secondary: '#127a87',
-  background: '#f4f7f9',
-  paper: '#ffffff',
-  primaryDark: '#074854',
-} as const;
+/** Brand colors — canonical values live in `theme/iosMobileTokens.ts` */
+export const brandColors = iosBrandColors;
 
-const fontStack = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const fontStackDisplay = iosFontStacks.display;
+const fontStackBody = iosFontStacks.ui;
 
 export const theme = createTheme({
   palette: {
@@ -41,16 +37,18 @@ export const theme = createTheme({
     warning: { main: '#d97706', dark: '#b45309', contrastText: '#fff' },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: iosRadii.md,
   },
   typography: {
-    fontFamily: fontStack,
-    h1: { fontWeight: 700, letterSpacing: '-0.03em' },
-    h2: { fontWeight: 700, letterSpacing: '-0.03em' },
-    h3: { fontWeight: 700, letterSpacing: '-0.02em' },
-    h4: { fontWeight: 700, letterSpacing: '-0.02em' },
-    h5: { fontWeight: 600, letterSpacing: '-0.02em' },
-    h6: { fontWeight: 600, letterSpacing: '-0.01em' },
+    fontFamily: fontStackBody,
+    fontSize: 16,
+    htmlFontSize: 16,
+    h1: { fontFamily: fontStackDisplay, fontWeight: 700, letterSpacing: '-0.03em' },
+    h2: { fontFamily: fontStackDisplay, fontWeight: 700, letterSpacing: '-0.03em' },
+    h3: { fontFamily: fontStackDisplay, fontWeight: 700, letterSpacing: '-0.02em' },
+    h4: { fontFamily: fontStackDisplay, fontWeight: 700, letterSpacing: '-0.02em' },
+    h5: { fontFamily: fontStackDisplay, fontWeight: 600, letterSpacing: '-0.02em' },
+    h6: { fontFamily: fontStackDisplay, fontWeight: 600, letterSpacing: '-0.01em' },
     subtitle1: { fontWeight: 600, letterSpacing: '-0.01em' },
     subtitle2: { fontWeight: 600 },
     body1: { letterSpacing: '-0.01em' },
@@ -103,6 +101,13 @@ export const theme = createTheme({
           flexDirection: 'column',
           backgroundColor: brandColors.background,
         },
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.01ms !important',
+          },
+        },
       },
     },
     MuiPaper: {
@@ -118,7 +123,7 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: iosRadii.md,
           border: `1px solid ${alpha('#0f172a', 0.06)}`,
           boxShadow: 'none',
         },
@@ -127,7 +132,8 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: iosRadii.sm,
+          transitionDuration: `${iosMotion.fast}ms`,
           minHeight: 44,
           '@media (min-width:600px)': { minHeight: 40 },
           boxShadow: 'none',
@@ -149,6 +155,7 @@ export const theme = createTheme({
         root: {
           minWidth: 44,
           minHeight: 44,
+          transitionDuration: `${iosMotion.fast}ms`,
           padding: 10,
           borderRadius: 10,
           '&:focus-visible': {
@@ -173,7 +180,7 @@ export const theme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: iosRadii.sm,
         },
       },
     },

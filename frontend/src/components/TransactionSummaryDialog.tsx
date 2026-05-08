@@ -11,7 +11,6 @@ import {
   Paper,
   Divider,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -29,6 +28,7 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../styles/authShell';
+import { TransactionSummaryBodySkeleton } from './dashboard/BlockContentSkeletons';
 
 interface TransactionSummaryDialogProps {
   open: boolean;
@@ -140,9 +140,7 @@ export function TransactionSummaryDialog({
       </DialogTitle>
       <DialogContent>
         {loading || !transaction ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 220, py: 2 }}>
-            <CircularProgress />
-          </Box>
+          <TransactionSummaryBodySkeleton />
         ) : (
           <>
             <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
