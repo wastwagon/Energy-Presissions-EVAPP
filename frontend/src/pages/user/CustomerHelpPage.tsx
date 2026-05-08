@@ -37,10 +37,6 @@ const faqs = [
     a: 'Enable location services and use "Find Stations" to see nearby stations. You can also search by city or region.',
   },
   {
-    q: 'Can I save my favorite stations?',
-    a: 'Yes! Tap the heart icon on any station card to add it to your favorites. Access them quickly from the Favorite Stations menu.',
-  },
-  {
     q: 'What payment methods are accepted?',
     a: 'We accept mobile money (MTN, Vodafone, AirtelTigo) and card payments via Paystack. All prices are in Ghana Cedis (GHS).',
   },

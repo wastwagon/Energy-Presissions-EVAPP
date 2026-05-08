@@ -3,7 +3,6 @@ export const LIVE_DATA_LABELS = {
   charging: 'Charging sync',
   device: 'Device sync',
   devices: 'Devices sync',
-  favorites: 'Favorites sync',
   history: 'History sync',
   health: 'Health sync',
   operations: 'Operations sync',

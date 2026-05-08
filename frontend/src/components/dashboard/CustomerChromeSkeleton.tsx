@@ -54,30 +54,10 @@ function TableBlock({ rows }: { rows: number }) {
   );
 }
 
-function FavoriteRowSkeletons({ count }: { count: number }) {
-  return (
-    <Stack spacing={2}>
-      {Array.from({ length: count }, (_, i) => (
-        <Paper key={i} elevation={0} sx={premiumPanelCardSx}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Skeleton variant="rounded" width={48} height={48} sx={{ flexShrink: 0 }} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Skeleton variant="rounded" height={22} sx={{ mb: 1 }} />
-              <Skeleton variant="rounded" height={18} sx={{ width: '70%' }} />
-            </Box>
-            <Skeleton variant="rounded" width={44} height={44} sx={{ flexShrink: 0 }} />
-          </Box>
-        </Paper>
-      ))}
-    </Stack>
-  );
-}
-
 export type CustomerChromePreset =
   | 'sessionHistory'
   | 'paymentHistory'
   | 'activeSessions'
-  | 'favorites'
   | 'wallet'
   | 'profile'
   | 'paymentMethods'
@@ -88,7 +68,6 @@ const labels: Record<CustomerChromePreset, string> = {
   sessionHistory: 'Loading session history',
   paymentHistory: 'Loading payment history',
   activeSessions: 'Loading active sessions',
-  favorites: 'Loading favorites',
   wallet: 'Loading wallet',
   profile: 'Loading profile',
   paymentMethods: 'Loading payment methods',
@@ -171,13 +150,6 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
               </Paper>
             ))}
           </Stack>
-        </StatusWrap>
-      );
-    case 'favorites':
-      return (
-        <StatusWrap ariaLabel={labels[preset]}>
-          <HeaderBlock asideCount={1} />
-          <FavoriteRowSkeletons count={4} />
         </StatusWrap>
       );
     case 'wallet':

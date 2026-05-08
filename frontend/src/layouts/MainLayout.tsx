@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import EvStationIcon from '@mui/icons-material/EvStation';
 import { BottomNav, isBottomNavItemActive, type BottomNavRouteItem } from '../components/BottomNav';
 import { customerBottomNavItems, mainLayoutBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from '../config/customerNav.paths';
@@ -26,10 +25,6 @@ import {
 } from '../utils/authSession';
 import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
-import {
-  customerPremiumAppBarActionIconSx,
-  customerPremiumMobileAppBarSx,
-} from '../theme/chargingPremiumShell';
 import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
@@ -62,26 +57,6 @@ export function MainLayout() {
   const isCustomer = isCustomerOrWalkInAccount(user);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
 
-  const mainLayoutCustomerBottomItems: BottomNavRouteItem[] = useMemo(
-    () => [
-      {
-        id: 'stations',
-        label: 'Find Stations',
-        icon: <LocationOnIcon />,
-        path: CUSTOMER_ROUTES.stations,
-        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
-      },
-      {
-        id: 'charging',
-        label: 'Charging',
-        icon: <EvStationIcon />,
-        path: CUSTOMER_ROUTES.charging,
-        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.sessions],
-      },
-    ],
-    [],
-  );
-
   const desktopHeaderNavItems: BottomNavRouteItem[] = useMemo(() => {
     if (!isAuthenticated || !user) return [];
     if (isCustomer) return customerBottomNavItems;
@@ -111,9 +86,8 @@ export function MainLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...(usePremiumCustomerHeader
-            ? customerPremiumMobileAppBarSx
-            : { ...jampackAppBarSx, color: 'text.primary' }),
+          ...jampackAppBarSx,
+          color: 'text.primary',
         }}
       >
         <Toolbar
@@ -133,7 +107,7 @@ export function MainLayout() {
               aria-expanded={navDrawerOpen}
               aria-controls="customer-app-nav-drawer-main"
               edge="start"
-              sx={customerPremiumAppBarActionIconSx}
+              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx), color: 'text.primary' })}
             >
               <MenuIcon />
             </IconButton>
@@ -144,11 +118,12 @@ export function MainLayout() {
               variant="h6"
               sx={{
                 fontWeight: 700,
-                color: 'common.white',
                 letterSpacing: '-0.02em',
-                fontSize: '0.95rem',
+                fontSize: { xs: '1rem', sm: '1.0625rem' },
+                color: 'primary.main',
                 mr: 0.5,
                 flexShrink: 0,
+                minWidth: 0,
               }}
             >
               CleanMotion
@@ -217,7 +192,7 @@ export function MainLayout() {
                   maxWidth: { xs: 100, sm: 180 },
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  color: usePremiumCustomerHeader ? 'common.white' : 'text.primary',
+                  color: 'text.primary',
                 }}
               >
                 {user.name || user.email}
@@ -229,7 +204,7 @@ export function MainLayout() {
                 aria-label="Logout"
                 sx={{
                   ...sxObject(theme, premiumIconButtonTouchSx),
-                  color: usePremiumCustomerHeader ? 'common.white' : 'text.primary',
+                  color: 'text.primary',
                 }}
               >
                 <LogoutIcon />
@@ -284,7 +259,7 @@ export function MainLayout() {
             items={
               isAuthenticated
                 ? isCustomer
-                  ? mainLayoutCustomerBottomItems
+                  ? customerBottomNavItems
                   : [
                       ...mainLayoutBottomNavItems.slice(0, 2),
                       { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },

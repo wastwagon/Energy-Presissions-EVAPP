@@ -89,9 +89,6 @@ const CustomerProfilePage = lazy(() =>
 const CustomerTransactionDetailPage = lazy(() =>
   import('./pages/user/CustomerTransactionDetailPage').then((m) => ({ default: m.CustomerTransactionDetailPage })),
 );
-const CustomerFavoritesPage = lazy(() =>
-  import('./pages/user/CustomerFavoritesPage').then((m) => ({ default: m.CustomerFavoritesPage })),
-);
 const CustomerHelpPage = lazy(() =>
   import('./pages/user/CustomerHelpPage').then((m) => ({ default: m.CustomerHelpPage })),
 );
@@ -393,7 +390,7 @@ function App() {
               <Route path="sessions/active" element={<CustomerActiveSessionsPage />} />
               <Route path="sessions/history" element={<CustomerSessionHistoryPage />} />
               <Route path="sessions/:id" element={<CustomerTransactionDetailPage />} />
-              <Route path="favorites" element={<CustomerFavoritesPage />} />
+              <Route path="favorites" element={<Navigate to={CUSTOMER_ROUTES.stations} replace />} />
               <Route path="wallet" element={<CustomerWalletPage />} />
               <Route path="wallet/top-up" element={<CustomerTopUpPage />} />
               <Route path="payments" element={<CustomerPaymentHistoryPage />} />

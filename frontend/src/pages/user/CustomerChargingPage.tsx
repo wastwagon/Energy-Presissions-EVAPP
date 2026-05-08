@@ -51,7 +51,7 @@ const NAV: NavItem[] = [
   {
     id: 'find',
     primary: 'Find chargers',
-    secondary: 'Map, search, and saved favorites',
+    secondary: 'Map and search nearby chargers',
     to: CUSTOMER_ROUTES.stations,
     Icon: LocationOnIcon,
   },

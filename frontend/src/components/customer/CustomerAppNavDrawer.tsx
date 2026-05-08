@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Divider,
   Drawer,
   List,
   ListItemButton,
@@ -12,11 +11,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import type { SvgIconComponent } from '@mui/icons-material';
-import {
-  customerDrawerAccountItems,
-  customerDrawerPrimaryItems,
-  type CustomerDrawerNavItem,
-} from '../../config/customerDrawerNav';
+import { customerDrawerMoreItems, type CustomerDrawerNavItem } from '../../config/customerDrawerNav';
 import {
   customerNavDrawerLightCloseIconButtonSx,
   customerNavDrawerLightHeaderRowSx,
@@ -82,23 +77,7 @@ export function CustomerAppNavDrawer({ open, onClose, id = 'customer-app-nav-dra
         </IconButton>
       </Box>
       <List component="nav" disablePadding sx={{ py: 1, px: 0.5 }}>
-        {customerDrawerPrimaryItems.map((item) => renderRow(item))}
-        <Divider sx={{ my: 1.5 }} />
-        <Typography
-          component="p"
-          variant="caption"
-          sx={{
-            px: 1.5,
-            py: 0.5,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.08,
-            fontWeight: 600,
-          }}
-        >
-          Account
-        </Typography>
-        {customerDrawerAccountItems.map((item) => renderRow(item))}
+        {customerDrawerMoreItems.map((item) => renderRow(item))}
       </List>
     </Drawer>
   );

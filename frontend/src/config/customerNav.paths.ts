@@ -7,7 +7,6 @@ export const CUSTOMER_ROUTES = {
   /** Premium hub: find chargers, sessions, wallet (Tesla-style entry). */
   charging: '/user/charging',
   stations: '/stations',
-  favorites: '/user/favorites',
   /** Prefix for `/user/sessions/:transactionId` (detail under sessions tab). */
   sessionsRoot: '/user/sessions',
   sessionsActive: '/user/sessions/active',
