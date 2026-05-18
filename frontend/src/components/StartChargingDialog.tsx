@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Typography,
@@ -14,6 +10,7 @@ import {
   Grid,
   Paper,
   Divider,
+  InputAdornment,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { StationDetails, StationWithDistance } from '../services/stationsApi';
@@ -25,10 +22,12 @@ import {
   authFormFieldSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
-  premiumDialogPaperSx,
   sxObject,
 } from '../styles/authShell';
 import { premiumPanelCardSx } from '../theme/jampackShell';
+import { GroupedListSection } from './ios/GroupedListSection';
+import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { triggerHaptic } from '../utils/haptics';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -36,17 +35,11 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 interface StartChargingDialogProps {
   open: boolean;
   onClose: () => void;
-  /** Nearby list row or full station detail — both carry tariff + id fields the dialog needs. */
   station: StationWithDistance | StationDetails | null;
   onSuccess: () => void;
 }
 
-export function StartChargingDialog({
-  open,
-  onClose,
-  station,
-  onSuccess,
-}: StartChargingDialogProps) {
+export function StartChargingDialog({ open, onClose, station, onSuccess }: StartChargingDialogProps) {
   const theme = useTheme();
   const [amount, setAmount] = useState('');
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -55,24 +48,28 @@ export function StartChargingDialog({
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quickAmount, setQuickAmount] = useState<number | null>(null);
 
-  // Calculate capacity and hours based on amount
-  // Ensure pricePerKwh and capacityKw are numbers (may come as strings from API)
+  const QUICK_AMOUNTS = [25, 50, 100, 200] as const;
+
   const pricePerKwh = station?.pricePerKwh ? parseFloat(station.pricePerKwh.toString()) : 0;
   const capacityKw = station?.totalCapacityKw ? parseFloat(station.totalCapacityKw.toString()) : 0;
   const amountNum = parseFloat(amount) || 0;
   const capacityKwh = pricePerKwh > 0 ? amountNum / pricePerKwh : 0;
   const estimatedHours = capacityKw > 0 ? capacityKwh / capacityKw : 0;
 
-  // Ensure displayPricePerKwh is always a number for safe display
-  const displayPricePerKwh = typeof pricePerKwh === 'number' && !isNaN(pricePerKwh) 
-    ? pricePerKwh 
-    : (station?.pricePerKwh ? parseFloat(station.pricePerKwh.toString()) : 0);
+  const displayPricePerKwh =
+    typeof pricePerKwh === 'number' && !isNaN(pricePerKwh)
+      ? pricePerKwh
+      : station?.pricePerKwh
+        ? parseFloat(station.pricePerKwh.toString())
+        : 0;
 
   useEffect(() => {
     if (open && station) {
-      loadWalletBalance();
+      void loadWalletBalance();
       setAmount('');
+      setQuickAmount(null);
       setError(null);
     }
   }, [open, station]);
@@ -80,20 +77,17 @@ export function StartChargingDialog({
   const loadWalletBalance = async () => {
     try {
       setLoadingBalance(true);
-      // Get available balance (excludes pending reservations)
       const available = await walletApi.getAvailableBalance();
       setAvailableBalance(available.available);
       setReservedBalance(available.reserved);
       setWalletBalance(available.total);
-    } catch (err: any) {
-      console.error('Failed to load wallet balance:', err);
-      // Fallback to regular balance if available balance fails
+    } catch {
       try {
         const balance = await walletApi.getBalance();
         setWalletBalance(balance.balance);
         setAvailableBalance(balance.balance);
         setReservedBalance(0);
-      } catch (fallbackErr: any) {
+      } catch {
         setError('Failed to load wallet balance. Please try again.');
       }
     } finally {
@@ -109,12 +103,13 @@ export function StartChargingDialog({
       return;
     }
 
-    const amountNum = parseFloat(amount);
+    const parsed = parseFloat(amount);
     const balanceToCheck = availableBalance !== null ? availableBalance : walletBalance;
-    if (balanceToCheck !== null && amountNum > balanceToCheck) {
-      const balanceText = reservedBalance > 0 
-        ? `Available: ${formatCurrency(availableBalance, 'GHS')} (${formatCurrency(reservedBalance, 'GHS')} reserved)`
-        : `${formatCurrency(walletBalance, 'GHS')}`;
+    if (balanceToCheck !== null && parsed > balanceToCheck) {
+      const balanceText =
+        reservedBalance > 0
+          ? `Available: ${formatCurrency(availableBalance, 'GHS')} (${formatCurrency(reservedBalance, 'GHS')} reserved)`
+          : `${formatCurrency(walletBalance, 'GHS')}`;
       setError(`Insufficient available balance. Your ${balanceText}`);
       return;
     }
@@ -125,282 +120,251 @@ export function StartChargingDialog({
     }
 
     try {
+      triggerHaptic('light');
       setStarting(true);
       setError(null);
-
       const userId = requireStoredUserId();
-
-      // Use the first available connector (connectorId 1)
-      const connectorId = 1;
-
-      // Start wallet-based charging (reserves amount and starts session)
-      const result = await chargePointsApi.walletStart(
-        station.chargePointId,
-        connectorId,
-        userId,
-        amountNum,
-      );
+      const result = await chargePointsApi.walletStart(station.chargePointId, 1, userId, parsed);
 
       if (result.success) {
+        triggerHaptic('success');
         onClose();
         onSuccess();
       } else {
         throw new Error(result.message || 'Failed to start charging session');
       }
     } catch (err: any) {
-      console.error('Error starting charging session:', err);
       setError(err.response?.data?.message || err.message || 'Failed to start charging session');
       setStarting(false);
     }
   };
 
+  const sheetHeader = (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+      <Box
+        sx={{
+          width: 40,
+          height: 40,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        }}
+      >
+        <BoltIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+      </Box>
+      <Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}>
+          Start charging
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Wallet hold · session starts when confirmed
+        </Typography>
+      </Box>
+    </Box>
+  );
+
   return (
-    <Dialog
+    <AdaptiveSheet
       open={open}
       onClose={onClose}
+      title="Start charging"
+      header={sheetHeader}
+      tall
+      disableClose={starting}
       maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: (t) => ({
-          ...sxObject(t, premiumDialogPaperSx),
-          maxHeight: '90vh',
-          margin: { xs: 1, sm: 2 },
-        }),
-      }}
+      actions={
+        <>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            disabled={starting}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleStart}
+            variant="contained"
+            disableElevation
+            disabled={
+              starting ||
+              !amount ||
+              parseFloat(amount) <= 0 ||
+              (availableBalance !== null && parseFloat(amount) > availableBalance) ||
+              (walletBalance !== null && parseFloat(amount) > walletBalance)
+            }
+            startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            {starting ? 'Starting…' : 'Start session'}
+          </Button>
+        </>
+      }
     >
       <Box
         sx={{
           height: 3,
           width: '100%',
-          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${alpha(
-            theme.palette.primary.main,
-            0.35,
-          )} 100%)`,
+          mb: 1.5,
+          borderRadius: 1,
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.main, 0.35)} 100%)`,
         }}
       />
-      <DialogTitle sx={{ pb: 1, pt: 2, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box
+      {error && (
+        <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {station && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>{station.locationName || station.chargePointId}</strong>
+            </Typography>
+            <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
+              {station.currency || 'GHS'} {displayPricePerKwh.toFixed(2)}/kWh
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 1.5 }} />
+
+          <Paper
+            elevation={0}
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              p: 2,
+              mb: 1.5,
+              borderRadius: 2.5,
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
               border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
             }}
           >
-            <BoltIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}>
-              Start charging
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Wallet hold · session starts when confirmed
-            </Typography>
-          </Box>
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 1 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 1.5, fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 0.5, sm: 1 } }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {station && (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                <strong>{station.locationName || station.chargePointId}</strong>
-              </Typography>
-              <Typography variant="body2" color="primary" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                {station.currency || 'GHS'} {displayPricePerKwh.toFixed(2)}/kWh
-              </Typography>
-            </Box>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Wallet Balance - Compact */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 1.75, sm: 2 },
-                mb: 1.5,
-                borderRadius: 2.5,
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                color: 'text.primary',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AccountBalanceWalletIcon sx={{ fontSize: 22, color: 'primary.main' }} />
-                  <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.8125rem' }}>
-                    Wallet balance
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  fontWeight={800}
-                  sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' }, letterSpacing: '-0.02em' }}
-                >
-                  {loadingBalance ? (
-                    <Skeleton variant="rounded" width={120} height={28} sx={{ borderRadius: 1 }} aria-label="Loading balance" />
-                  ) : (
-                    formatCurrency(walletBalance, 'GHS')
-                  )}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccountBalanceWalletIcon sx={{ fontSize: 22, color: 'primary.main' }} />
+                <Typography variant="body2" fontWeight={700}>
+                  Wallet balance
                 </Typography>
               </Box>
-              {reservedBalance > 0 && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mt: 1,
-                    pt: 1,
-                    borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Available {formatCurrency(availableBalance, 'GHS')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Reserved {formatCurrency(reservedBalance, 'GHS')}
-                  </Typography>
-                </Box>
-              )}
-            </Paper>
-
-            {/* Amount Input */}
-            <TextField
-              label="Amount (GHS)"
-              type="number"
-              fullWidth
-              value={amount}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || (!isNaN(parseFloat(value)) && parseFloat(value) >= 0)) {
-                  setAmount(value);
-                  setError(null);
-                }
-              }}
-              inputProps={{ min: 0, step: 0.01 }}
-              helperText={amountNum > 0 ? undefined : 'Enter amount to reserve for this session'}
-              sx={(th) => ({
-                ...sxObject(th, authFormFieldSx),
-                mb: 1.5,
-              })}
-              size="small"
-              margin="none"
-              InputProps={{
-                startAdornment: (
-                  <Typography sx={{ mr: 1, fontSize: '0.8125rem', fontWeight: 600, color: 'text.secondary' }}>GHS</Typography>
-                ),
-              }}
-            />
-
-            {/* Calculations - Compact */}
-            {amountNum > 0 && pricePerKwh > 0 && (
-              <Paper
-                elevation={0}
+              <Typography variant="h6" fontWeight={800} sx={{ fontSize: '1.125rem' }}>
+                {loadingBalance ? (
+                  <Skeleton variant="rounded" width={100} height={28} />
+                ) : (
+                  formatCurrency(walletBalance, 'GHS')
+                )}
+              </Typography>
+            </Box>
+            {reservedBalance > 0 && (
+              <Box
                 sx={{
-                  ...premiumPanelCardSx,
-                  mb: 1,
-                  p: { xs: 1.75, sm: 2 },
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mt: 1,
+                  pt: 1,
+                  borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
                 }}
               >
-                <Grid container spacing={1.5} sx={{ mb: 1 }}>
-                  <Grid item xs={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <BoltIcon color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, display: 'block' }}>
-                          Capacity
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                          {typeof capacityKwh === 'number' && !isNaN(capacityKwh) ? capacityKwh.toFixed(2) : '0.00'} kWh
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <AccessTimeIcon color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, display: 'block' }}>
-                          Time
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                          {estimatedHours >= 1
-                            ? `${Math.floor(estimatedHours)}h ${Math.round((estimatedHours % 1) * 60)}m`
-                            : `${Math.round(estimatedHours * 60)}m`}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                </Grid>
-                <Alert severity="info" sx={{ mt: 1, py: 0.5, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                  Auto-stops when amount is exhausted
-                </Alert>
-              </Paper>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  Available {formatCurrency(availableBalance, 'GHS')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  Reserved {formatCurrency(reservedBalance, 'GHS')}
+                </Typography>
+              </Box>
             )}
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions
-        sx={{
-          px: { xs: 2, sm: 3 },
-          py: 2,
-          gap: 1,
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: { sm: 'flex-end' },
-        }}
-      >
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          color="primary"
-          disabled={starting}
-          size="medium"
-          fullWidth
-          sx={(th) => ({
-            ...sxObject(th, compactOutlinedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            minWidth: { sm: 120 },
-          })}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleStart}
-          variant="contained"
-          color="primary"
-          disableElevation
-          disabled={
-            starting ||
-            !amount ||
-            parseFloat(amount) <= 0 ||
-            (availableBalance !== null && parseFloat(amount) > availableBalance) ||
-            (walletBalance !== null && parseFloat(amount) > walletBalance)
-          }
-          startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
-          size="medium"
-          fullWidth
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            minWidth: { sm: 140 },
-          })}
-        >
-          {starting ? 'Starting…' : 'Start session'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          </Paper>
+
+          <GroupedListSection title="Session amount" sx={{ mb: 1.5 }}>
+            <Grid container spacing={1.25} sx={{ p: 2, pt: 1 }}>
+              {QUICK_AMOUNTS.map((value) => (
+                <Grid item xs={6} key={value}>
+                  <Button
+                    fullWidth
+                    disableElevation
+                    variant={quickAmount === value ? 'contained' : 'outlined'}
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setQuickAmount(value);
+                      setAmount(String(value));
+                      setError(null);
+                    }}
+                    sx={(th) =>
+                      quickAmount === value
+                        ? { ...sxObject(th, compactContainedCtaSx), minHeight: 48 }
+                        : { ...sxObject(th, compactOutlinedCtaSx), minHeight: 48 }
+                    }
+                  >
+                    {formatCurrency(value, 'GHS')}
+                  </Button>
+                </Grid>
+              ))}
+            </Grid>
+          </GroupedListSection>
+
+          <TextField
+            label="Custom amount (GHS)"
+            type="number"
+            fullWidth
+            value={amount}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === '' || (!isNaN(parseFloat(value)) && parseFloat(value) >= 0)) {
+                setAmount(value);
+                setQuickAmount(null);
+                setError(null);
+              }
+            }}
+            inputProps={{ min: 0, step: 0.01 }}
+            helperText={amountNum > 0 ? undefined : 'Enter amount to reserve for this session'}
+            sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 1.5 })}
+            size="small"
+            InputProps={{
+              startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
+            }}
+          />
+
+          {amountNum > 0 && pricePerKwh > 0 && (
+            <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 1, p: 2 }}>
+              <Grid container spacing={1.5} sx={{ mb: 1 }}>
+                <Grid item xs={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <BoltIcon color="primary" fontSize="small" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Capacity
+                      </Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {capacityKwh.toFixed(2)} kWh
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid item xs={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <AccessTimeIcon color="primary" fontSize="small" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Time
+                      </Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {estimatedHours >= 1
+                          ? `${Math.floor(estimatedHours)}h ${Math.round((estimatedHours % 1) * 60)}m`
+                          : `${Math.round(estimatedHours * 60)}m`}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+              <Alert severity="info" sx={{ py: 0.5 }}>
+                Auto-stops when amount is exhausted
+              </Alert>
+            </Paper>
+          )}
+        </Box>
+      )}
+    </AdaptiveSheet>
   );
 }

@@ -15,6 +15,9 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
+import { customerFrostedAppBarSx } from '../theme/customerChrome';
+import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
+import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
 import {
   clearSession,
@@ -29,10 +32,11 @@ import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
-export function MainLayout() {
+function MainLayoutChrome() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const pageChrome = useCustomerPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -56,6 +60,9 @@ export function MainLayout() {
 
   const isCustomer = isCustomerOrWalkInAccount(user);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
+  const showCompactNavTitle = Boolean(
+    usePremiumCustomerHeader && pageChrome?.showCompactNavTitle && pageChrome.pageTitle,
+  );
 
   const desktopHeaderNavItems: BottomNavRouteItem[] = useMemo(() => {
     if (!isAuthenticated || !user) return [];
@@ -86,7 +93,7 @@ export function MainLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...jampackAppBarSx,
+          ...(usePremiumCustomerHeader ? customerFrostedAppBarSx : jampackAppBarSx),
           color: 'text.primary',
         }}
       >
@@ -98,6 +105,7 @@ export function MainLayout() {
             px: { xs: 2, sm: 3 },
             minHeight: { xs: 60, sm: 68 },
             alignItems: 'center',
+            position: 'relative',
           }}
         >
           {usePremiumCustomerHeader && (
@@ -112,7 +120,7 @@ export function MainLayout() {
               <MenuIcon />
             </IconButton>
           )}
-          {usePremiumCustomerHeader && (
+          {usePremiumCustomerHeader && !showCompactNavTitle && (
             <Typography
               component="div"
               variant="h6"
@@ -127,6 +135,25 @@ export function MainLayout() {
               }}
             >
               CleanMotion
+            </Typography>
+          )}
+          {showCompactNavTitle && (
+            <Typography
+              variant="subtitle1"
+              component="h1"
+              noWrap
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                maxWidth: 'calc(100% - 160px)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'text.primary',
+                pointerEvents: 'none',
+              }}
+            >
+              {pageChrome?.pageTitle}
             </Typography>
           )}
           {showDesktopHeaderNav && (
@@ -252,7 +279,13 @@ export function MainLayout() {
             width: '100%',
           }}
         >
-          <Outlet />
+          {isCustomer && isAuthenticated ? (
+            <CustomerScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
+              <Outlet />
+            </CustomerScrollProviders>
+          ) : (
+            <Outlet />
+          )}
         </Container>
         {showBottomNav && (
           <BottomNav
@@ -267,10 +300,19 @@ export function MainLayout() {
                 : mainLayoutBottomNavItems
             }
             accentColor={brandColors.primary}
+            variant={isCustomer ? 'customer' : 'default'}
           />
         )}
       </Box>
     </Box>
+  );
+}
+
+export function MainLayout() {
+  return (
+    <CustomerPageChromeProvider>
+      <MainLayoutChrome />
+    </CustomerPageChromeProvider>
   );
 }
 

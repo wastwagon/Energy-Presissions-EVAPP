@@ -9,32 +9,29 @@ import {
   Alert,
   Button,
   Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import StopIcon from '@mui/icons-material/Stop';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { ActiveSessionListItem } from '../../components/ios/ActiveSessionListItem';
+import { AdaptiveSheet } from '../../components/ios/AdaptiveSheet';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
+import { triggerHaptic } from '../../utils/haptics';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { chargePointsApi } from '../../services/chargePointsApi';
 import { websocketService } from '../../services/websocket';
 import { TransactionSummaryDialog } from '../../components/TransactionSummaryDialog';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import StopIcon from '@mui/icons-material/Stop';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
-import {
+  authPageBodySx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
-  premiumDialogPaperSx,
   sxObject,
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
@@ -48,6 +45,8 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 
 export function CustomerActiveSessionsPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +113,8 @@ export function CustomerActiveSessionsPage() {
     };
   }, [loadActiveSessions]);
 
+  useCustomerPullRefresh(useCallback(() => void loadActiveSessions(true), [loadActiveSessions]));
+
   const handleStopTransaction = (transaction: Transaction) => {
     setPendingStopTransaction(transaction);
     setStopDialogOpen(true);
@@ -128,6 +129,7 @@ export function CustomerActiveSessionsPage() {
         pendingStopTransaction.chargePointId,
         pendingStopTransaction.transactionId,
       );
+      triggerHaptic('success');
       setStopDialogOpen(false);
       setPendingStopTransaction(null);
       // Reload active sessions after a short delay to allow backend to process
@@ -156,8 +158,7 @@ export function CustomerActiveSessionsPage() {
         showSeconds
         refreshing={refreshing}
         onRefresh={() => void loadActiveSessions(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
       />
 
       {error && (
@@ -206,6 +207,33 @@ export function CustomerActiveSessionsPage() {
             Find stations
           </Button>
         </Paper>
+      ) : useGroupedList ? (
+        <Box sx={{ position: 'relative' }}>
+          <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading active sessions" />
+          <GroupedListSection title="Live sessions">
+            {transactions.map((tx, index) => (
+              <ActiveSessionListItem
+                key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}`}
+                transaction={tx}
+                divider={index < transactions.length - 1}
+                stopping={stoppingTransactionId === tx.transactionId}
+                viewLabel={tx.recordPending ? 'Back to stations' : 'View details'}
+                stopDisabled={Boolean(tx.recordPending)}
+                stopTooltip={
+                  tx.recordPending
+                    ? 'Stop is available after the session is fully registered, or unplug the cable.'
+                    : 'Send a remote stop to the charger'
+                }
+                onView={() =>
+                  tx.recordPending
+                    ? navigate(CUSTOMER_ROUTES.stations)
+                    : navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)
+                }
+                onStop={() => handleStopTransaction(tx)}
+              />
+            ))}
+          </GroupedListSection>
+        </Box>
       ) : (
         <Box sx={{ position: 'relative' }}>
           <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading active sessions" />
@@ -343,35 +371,33 @@ export function CustomerActiveSessionsPage() {
         />
       )}
 
-      <Dialog
+      <AdaptiveSheet
         open={stopDialogOpen}
         onClose={() => setStopDialogOpen(false)}
-        fullWidth
+        title="Stop charging session?"
         maxWidth="xs"
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+        actions={
+          <>
+            <Button onClick={() => setStopDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmStopTransaction}
+              variant="contained"
+              disableElevation
+              sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+            >
+              Stop charging
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Stop charging session?</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            {pendingStopTransaction
-              ? `Stop charging at ${pendingStopTransaction.chargePointId}?`
-              : 'Stop this charging session?'}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button onClick={() => setStopDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmStopTransaction}
-            variant="contained"
-            disableElevation
-            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
-          >
-            Stop charging
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Typography component="p" sx={authPageBodySx}>
+          {pendingStopTransaction
+            ? `Stop charging at ${pendingStopTransaction.chargePointId}?`
+            : 'Stop this charging session?'}
+        </Typography>
+      </AdaptiveSheet>
     </Box>
   );
 }

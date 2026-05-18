@@ -6,35 +6,35 @@ import {
   Button,
   Alert,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
   TextField,
   FormControlLabel,
   Radio,
   RadioGroup,
+  useTheme,
+  useMediaQuery,
+  ListItem,
+  Divider,
 } from '@mui/material';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { SwipeableGroupedListRow } from '../../components/ios/SwipeableGroupedListRow';
+import { iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
+import { AdaptiveSheet } from '../../components/ios/AdaptiveSheet';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
+import { triggerHaptic } from '../../utils/haptics';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import PhoneIcon from '@mui/icons-material/Phone';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { paymentMethodsApi, PaymentMethod } from '../../services/paymentMethodsApi';
-import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
+import { premiumEmptyStatePaperSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
+  authPageBodySx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
-  premiumDialogPaperSx,
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
@@ -46,6 +46,8 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerPaymentMethodsPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +84,8 @@ export function CustomerPaymentMethodsPage() {
     void loadMethods();
   }, [loadMethods]);
 
+  useCustomerPullRefresh(useCallback(() => void loadMethods(true), [loadMethods]));
+
   const handleAdd = async () => {
     try {
       setSaving(true);
@@ -95,6 +99,7 @@ export function CustomerPaymentMethodsPage() {
         lastFour: newType === 'card' ? newLastFour : undefined,
         isDefault: methods.length === 0,
       });
+      triggerHaptic('success');
       setDialogOpen(false);
       setNewPhone('');
       setNewLastFour('');
@@ -111,6 +116,7 @@ export function CustomerPaymentMethodsPage() {
       const userId = getCurrentUserId();
       if (!userId) return;
       await paymentMethodsApi.setDefault(userId, id);
+      triggerHaptic('light');
       void loadMethods(true);
     } catch (err: any) {
       setError(err.message || 'Failed to set default');
@@ -128,6 +134,7 @@ export function CustomerPaymentMethodsPage() {
       const userId = getCurrentUserId();
       if (!userId) return;
       await paymentMethodsApi.delete(userId, pendingDeleteId);
+      triggerHaptic('success');
       setDeleteDialogOpen(false);
       setPendingDeleteId(null);
       void loadMethods(true);
@@ -155,8 +162,7 @@ export function CustomerPaymentMethodsPage() {
         liveLabel={LIVE_DATA_LABELS.payments}
         refreshing={refreshing}
         onRefresh={() => void loadMethods(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
         refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         actions={
           <Button
@@ -183,7 +189,7 @@ export function CustomerPaymentMethodsPage() {
       {methods.length === 0 ? (
         <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
           <Box
-            sx={(theme) => ({
+            sx={(t) => ({
               width: 72,
               height: 72,
               mx: 'auto',
@@ -192,7 +198,7 @@ export function CustomerPaymentMethodsPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: theme.palette.action.hover,
+              bgcolor: t.palette.action.hover,
               color: 'text.secondary',
             })}
           >
@@ -214,64 +220,60 @@ export function CustomerPaymentMethodsPage() {
             Add payment method
           </Button>
         </Paper>
+      ) : useGroupedList ? (
+        <Box sx={{ position: 'relative' }}>
+          <TableSurfaceProgress active={loading && methods.length > 0} ariaLabel="Loading payment methods" />
+          <GroupedListSection title="Saved methods">
+            {methods.map((pm, index) => (
+              <ListItem key={pm.id} disablePadding sx={{ display: 'block' }}>
+                <SwipeableGroupedListRow
+                  onDelete={() => handleDelete(pm.id)}
+                  deleteAriaLabel="Remove payment method"
+                >
+                  <GroupedListRow
+                    divider={false}
+                    showChevron={false}
+                    primary={
+                      <>
+                        {getProviderLabel(pm.provider)}{' '}
+                        {pm.type === 'card' && pm.lastFour ? `•••• ${pm.lastFour}` : ''}
+                        {pm.type === 'mobile_money' && pm.phone ? pm.phone : ''}
+                      </>
+                    }
+                    secondary={pm.isDefault ? 'Default' : pm.type === 'mobile_money' ? 'Mobile money' : 'Card'}
+                    end={
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleSetDefault(pm.id);
+                        }}
+                        aria-label={pm.isDefault ? 'Default payment method' : 'Set as default payment method'}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                      >
+                        {pm.isDefault ? <StarIcon color="primary" /> : <StarBorderIcon />}
+                      </IconButton>
+                    }
+                  />
+                </SwipeableGroupedListRow>
+                {index < methods.length - 1 ? <Divider sx={iosGroupedRowDividerSx} /> : null}
+              </ListItem>
+            ))}
+          </GroupedListSection>
+        </Box>
       ) : (
         <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TableSurfaceProgress active={loading && methods.length > 0} ariaLabel="Loading payment methods" />
           {methods.map((pm) => (
-            <Paper key={pm.id} elevation={0} sx={premiumTableSurfaceSx}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 2,
-                  flexWrap: 'wrap',
-                  p: 2,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-                  <Box
-                    sx={(theme) => ({
-                      width: 44,
-                      height: 44,
-                      borderRadius: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: theme.palette.action.hover,
-                      color: 'text.secondary',
-                      flexShrink: 0,
-                    })}
-                  >
-                    {pm.type === 'mobile_money' ? <PhoneIcon fontSize="small" /> : <CreditCardIcon fontSize="small" />}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {getProviderLabel(pm.provider)} {pm.type === 'card' && pm.lastFour && `•••• ${pm.lastFour}`}
-                      {pm.type === 'mobile_money' && pm.phone && ` ${pm.phone}`}
-                    </Typography>
-                    {pm.isDefault && (
-                      <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
-                        Default
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 'auto', sm: 0 } }}>
-                  <IconButton
-                    onClick={() => handleSetDefault(pm.id)}
-                    title={pm.isDefault ? 'Default' : 'Set as default'}
-                    aria-label={pm.isDefault ? 'Default payment method' : 'Set as default payment method'}
-                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                  >
+            <Paper key={pm.id} elevation={0} sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {getProviderLabel(pm.provider)}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton onClick={() => handleSetDefault(pm.id)} sx={(th) => sxObject(th, premiumIconButtonTouchSx)}>
                     {pm.isDefault ? <StarIcon color="primary" /> : <StarBorderIcon />}
                   </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(pm.id)}
-                    aria-label="Remove payment method"
-                    sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                  >
+                  <IconButton color="error" onClick={() => handleDelete(pm.id)} sx={(th) => sxObject(th, premiumIconButtonTouchSx)}>
                     <DeleteIcon />
                   </IconButton>
                 </Box>
@@ -281,82 +283,75 @@ export function CustomerPaymentMethodsPage() {
         </Box>
       )}
 
-      <Dialog
+      <AdaptiveSheet
         open={dialogOpen}
-        onClose={() => !saving && setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+        onClose={() => setDialogOpen(false)}
+        title="Add payment method"
+        disableClose={saving}
+        actions={
+          <>
+            <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={handleAdd}
+              disabled={saving || (newType === 'mobile_money' ? !newPhone.trim() : newLastFour.length !== 4)}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
+            >
+              {saving ? 'Adding…' : 'Add'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Add payment method</DialogTitle>
-        <DialogContent>
-          <RadioGroup value={newType} onChange={(e) => setNewType(e.target.value as 'card' | 'mobile_money')} sx={{ my: 2 }}>
-            <FormControlLabel value="mobile_money" control={<Radio />} label="Mobile money" />
-            <FormControlLabel value="card" control={<Radio />} label="Card (last 4 digits)" />
-          </RadioGroup>
-          {newType === 'mobile_money' && (
-            <TextField
-              fullWidth
-              label="Phone number"
-              placeholder="0244123456"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              sx={(th) => ({ ...sxObject(th, authFormFieldSx), mt: 2 })}
-            />
-          )}
-          {newType === 'card' && (
-            <TextField
-              fullWidth
-              label="Last 4 digits"
-              placeholder="4242"
-              value={newLastFour}
-              onChange={(e) => setNewLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              inputProps={{ maxLength: 4 }}
-              sx={(th) => ({ ...sxObject(th, authFormFieldSx), mt: 2 })}
-            />
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disableElevation
-            onClick={handleAdd}
-            disabled={saving || (newType === 'mobile_money' ? !newPhone.trim() : newLastFour.length !== 4)}
-            sx={(th) => sxObject(th, compactContainedCtaSx)}
-          >
-            {saving ? 'Adding…' : 'Add'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <RadioGroup value={newType} onChange={(e) => setNewType(e.target.value as 'card' | 'mobile_money')} sx={{ my: 1 }}>
+          <FormControlLabel value="mobile_money" control={<Radio />} label="Mobile money" />
+          <FormControlLabel value="card" control={<Radio />} label="Card (last 4 digits)" />
+        </RadioGroup>
+        {newType === 'mobile_money' && (
+          <TextField
+            fullWidth
+            label="Phone number"
+            placeholder="0244123456"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            sx={(th) => ({ ...sxObject(th, authFormFieldSx), mt: 2 })}
+          />
+        )}
+        {newType === 'card' && (
+          <TextField
+            fullWidth
+            label="Last 4 digits"
+            placeholder="4242"
+            value={newLastFour}
+            onChange={(e) => setNewLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            inputProps={{ maxLength: 4 }}
+            sx={(th) => ({ ...sxObject(th, authFormFieldSx), mt: 2 })}
+          />
+        )}
+      </AdaptiveSheet>
 
-      <Dialog
+      <AdaptiveSheet
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
-        fullWidth
+        title="Remove payment method?"
         maxWidth="xs"
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+        actions={
+          <>
+            <Button onClick={() => setDeleteDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDelete} variant="contained" disableElevation sx={(th) => sxObject(th, compactErrorContainedCtaSx)}>
+              Remove
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Remove payment method?</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">This saved payment method will be removed from your account.</DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            variant="contained"
-            disableElevation
-            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
-          >
-            Remove
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Typography component="p" sx={authPageBodySx}>
+          This saved payment method will be removed from your account.
+        </Typography>
+      </AdaptiveSheet>
     </Box>
   );
 }

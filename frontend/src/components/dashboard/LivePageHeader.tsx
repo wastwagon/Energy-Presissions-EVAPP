@@ -1,11 +1,16 @@
-import { ReactNode } from 'react';
-import { Box, LinearProgress, SxProps, Theme, Typography } from '@mui/material';
+import { ReactNode, useCallback, useEffect } from 'react';
+import { Box, LinearProgress, SxProps, Theme, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { LiveDataMeta } from './LiveDataMeta';
 import { RefreshButton } from './RefreshButton';
+import { customerLargeSubtitleSx, customerLargeTitleSx } from '../../theme/customerChrome';
+import { dashboardPageSubtitleSx, dashboardPageTitleSx } from '../../theme/jampackShell';
+import { useCustomerPageChrome } from '../../contexts/CustomerPageChromeContext';
 
 interface LivePageHeaderProps {
   title: string;
   subtitle: string;
+  /** `large` = iOS navigation title on mobile (compact on md+) */
+  titleVariant?: 'compact' | 'large';
   updatedAt: number | null;
   liveLabel?: string;
   showSeconds?: boolean;
@@ -28,12 +33,35 @@ export function LivePageHeader({
   refreshing,
   onRefresh,
   refreshDisabled = false,
+  titleVariant = 'compact',
   titleSx,
   subtitleSx,
   containerSx,
   refreshSx,
   actions,
 }: LivePageHeaderProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const chrome = useCustomerPageChrome();
+  const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
+
+  const titleSentinelRef = useCallback(
+    (node: HTMLElement | null) => {
+      chrome?.registerTitleSentinel(node);
+    },
+    [chrome],
+  );
+
+  useEffect(() => {
+    if (!registerLargeTitle || !chrome) return;
+    chrome.setPageTitle(title);
+    return () => chrome.setPageTitle(null);
+  }, [chrome, title, registerLargeTitle]);
+
+  const resolvedTitleSx = titleSx ?? (titleVariant === 'large' ? customerLargeTitleSx : dashboardPageTitleSx);
+  const resolvedSubtitleSx =
+    subtitleSx ?? (titleVariant === 'large' ? customerLargeSubtitleSx : dashboardPageSubtitleSx);
+
   return (
     <>
       {refreshing && (
@@ -51,10 +79,13 @@ export function LivePageHeader({
         }}
       >
         <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={titleSx}>
+          <Typography variant="h6" component="h1" sx={resolvedTitleSx}>
             {title}
           </Typography>
-          <Typography variant="body2" sx={subtitleSx}>
+          {registerLargeTitle && (
+            <Box ref={titleSentinelRef} sx={{ height: 1, width: '100%' }} aria-hidden />
+          )}
+          <Typography variant="body2" sx={resolvedSubtitleSx}>
             {subtitle}
           </Typography>
           <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />

@@ -80,9 +80,7 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
     case 'chargingHub': {
       return (
         <StatusWrap ariaLabel={labels.chargingHub}>
-          <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 }, mb: 2 }}>
-            <HeaderBlock asideCount={1} />
-          </Paper>
+          <HeaderBlock asideCount={1} />
           <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 2, overflow: 'hidden' }}>
             <Stack spacing={0}>
               {Array.from({ length: 5 }, (_, i) => (

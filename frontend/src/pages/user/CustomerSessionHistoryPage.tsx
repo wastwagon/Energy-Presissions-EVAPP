@@ -14,16 +14,16 @@ import {
   Alert,
   Button,
   Pagination,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
+import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
@@ -37,6 +37,8 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 
 export function CustomerSessionHistoryPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +72,8 @@ export function CustomerSessionHistoryPage() {
     void loadHistory();
   }, [loadHistory]);
 
+  useCustomerPullRefresh(useCallback(() => void loadHistory(true), [loadHistory]));
+
   if (loading && transactions.length === 0) {
     return <CustomerChromeSkeleton preset="sessionHistory" />;
   }
@@ -83,8 +87,7 @@ export function CustomerSessionHistoryPage() {
         liveLabel={LIVE_DATA_LABELS.history}
         refreshing={refreshing}
         onRefresh={() => void loadHistory(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
       />
 
       {error && (
@@ -118,6 +121,41 @@ export function CustomerSessionHistoryPage() {
             You have not completed any charging sessions yet.
           </Typography>
         </Paper>
+      ) : useGroupedList ? (
+        <>
+          <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading session history" />
+          <GroupedListSection title="Past sessions">
+            {transactions.map((tx, index) => (
+              <GroupedListRow
+                key={tx.id}
+                divider={index < transactions.length - 1}
+                primary={tx.chargePointId}
+                secondary={`${new Date(tx.startTime).toLocaleDateString()} · ${formatEnergyKwh(tx.totalEnergyKwh)} · ${formatDurationMinutes(tx.durationMinutes)}`}
+                end={
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {formatCurrency(tx.totalCost, 'GHS')}
+                    </Typography>
+                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" sx={{ mt: 0.5, height: 22 }} />
+                  </Box>
+                }
+                onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
+                aria-label={`View session ${tx.transactionId}`}
+              />
+            ))}
+          </GroupedListSection>
+          {total > limit && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Pagination
+                count={Math.ceil(total / limit)}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
+        </>
       ) : (
         <>
           <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>

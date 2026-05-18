@@ -4,31 +4,63 @@ Use when touching a screen after the design-system rollout.
 
 ## Tokens & theme
 
-- [ ] Colors/spacing/radius come from MUI `theme` or `theme/iosMobileTokens.ts` / `theme/jampackShell.ts` — no stray hex for page surfaces.
-- [ ] Primary actions and icon targets meet **44×44px** minimum on `xs`.
-- [ ] Layout uses **safe-area** where fixed bars exist (`env(safe-area-inset-*)`).
+- [x] Colors/spacing/radius come from MUI `theme` or `theme/iosMobileTokens.ts` / `theme/jampackShell.ts` — no stray hex for page surfaces.
+- [x] Primary actions and icon targets meet **44×44px** minimum on `xs` (`IOS_TOUCH_TARGET_PX`, `premiumIconButtonTouchSx`, compact CTAs).
+- [x] Layout uses **safe-area** where fixed bars exist (`env(safe-area-inset-*)`).
 
 ## Navigation
 
-- [ ] Primary nav matches role (bottom bar / drawer / header) and has an accessible name.
-- [ ] Current route is exposed (`aria-current="page"` where applicable).
+- [x] Primary nav matches role (bottom bar / drawer / header) and has an accessible name.
+- [x] Current route is exposed (`aria-current="page"` where applicable).
 
 ## Content
 
-- [ ] Page title is an `h1` (e.g. `LivePageHeader` or `Typography component="h1"`).
-- [ ] Loading / empty / error states are present and announced where needed (`role="status"` / `aria-live`).
+- [x] Page title is an `h1` (e.g. `LivePageHeader` or `Typography component="h1"`).
+- [x] Loading / empty / error states are present and announced where needed (`role="status"` / `aria-live`).
 
 ## Responsive
 
-- [ ] `xs` layout is the default; `sm`/`md` enhance without horizontal overflow.
-- [ ] Wide tables use `TableContainer` + horizontal scroll.
+- [x] `xs` layout is the default; `sm`/`md` enhance without horizontal overflow.
+- [x] Wide tables use `TableContainer` + horizontal scroll.
 
 ## Motion & a11y
 
-- [ ] Meaningful motion respects `prefers-reduced-motion` (global baseline in `theme.ts` `MuiCssBaseline`).
-- [ ] Focus visible outline is visible for keyboard users (`Button` / `IconButton` overrides).
+- [x] Meaningful motion respects `prefers-reduced-motion` (global baseline in `createAppTheme` `MuiCssBaseline`; sheets use non-swipe `Drawer` when reduced).
+- [x] Focus visible outline is visible for keyboard users (`Button` / `IconButton` overrides).
+
+## iOS-native patterns (customer)
+
+- [x] Lists use `GroupedListSection` / `GroupedListRow` on `xs`–`md`; tables at `lg+` where needed.
+- [x] Page headers use `LivePageHeader` with `titleVariant="large"` on primary customer screens (including `/stations`).
+- [x] Modals on mobile use `AdaptiveSheet` (bottom sheet) instead of centered `Dialog`.
+- [x] Destructive list actions: `SwipeableGroupedListRow` on mobile where appropriate.
+- [x] Pull-to-refresh: page registers `useCustomerPullRefresh` in customer layout scroll region.
+- [x] Dark mode: `ColorModeProvider` + Preferences toggle (`user_pref_dark_mode`).
+- [x] Large title scroll: `LivePageHeader` `titleVariant="large"` registers compact AppBar title on mobile.
+- [x] Detail screens use `GroupedDetailRow` on mobile (`CustomerTransactionDetailPage`, `StationDetailPage`, etc.).
+- [x] Shared surfaces (`premiumPanelCardSx`, `premiumEmptyStatePaperSx`, `premiumInteractiveCardSx`) respect dark mode via theme tokens.
+
+## Premium polish (Phase 12)
+
+- [x] `authPageBodySx`, `authPageLinkSx`, `authDividerSx`, `sheetTitleTypographySx` — SF system stack on auth/legal/sheet copy.
+- [x] `premiumInteractiveCardSx` — station list cards (theme borders, press feedback, reduced-motion safe).
+- [x] `AdaptiveSheet` — frosted sheet, `usePrefersReducedMotion` → static bottom `Drawer`; timed transitions otherwise.
+- [x] Sheet body copy uses `authPageBodySx` (not raw `DialogContentText`).
+- [x] Station card CTAs: haptics + theme-aware `premiumInteractiveCardSx`.
 
 ## Verification (manual)
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).
+- [ ] Frosted AppBar + tab bar visible over scroll content.
+- [ ] Pull down at top of wallet/history/stations to refresh.
+- [ ] Scroll a large-title page: AppBar shows compact page title after large title leaves view.
+- [ ] Toggle dark mode in Preferences; grouped lists and chrome update without reload.
+- [ ] Login / legal pages respect saved dark mode (no forced white chrome).
+- [ ] Stations map sheet + app menu drawer match light/dark palette.
+- [ ] List rows, toggles, refresh, and drawer nav give light haptic feedback on tap.
+- [ ] Auth titles and body use SF system stack (`authPageTitleSx` / `authPageBodySx`).
+- [ ] Stations detail sheet → “Full station details” opens `/stations/:id`.
+- [ ] `MainLayout` customer routes: frosted bar, compact title, pull-to-refresh, customer bottom nav.
+- [ ] Pull-to-refresh disabled when `prefers-reduced-motion: reduce`.
+- [ ] With reduced motion on: bottom sheets open without swipe; no card hover lift.

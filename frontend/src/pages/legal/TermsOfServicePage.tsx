@@ -2,7 +2,14 @@ import { Box, Container, Paper, Typography, Link } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import { TERMS_LAST_UPDATED, TERMS_SECTIONS } from '../../legal/termsOfServiceContent';
-import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+import {
+  authPageBodySx,
+  authPageLinkSx,
+  authPagePaperSx,
+  authPageRootSx,
+  authPageTitleSx,
+} from '../../styles/authShell';
+import { iosFontStacks } from '../../theme/iosMobileTokens';
 
 /**
  * In-app terms for web / WebViewGold. Canonical static HTML: /terms (terms.html).
@@ -17,17 +24,20 @@ export function TermsOfServicePage() {
           <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Terms of Service
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
+          <Typography component="p" sx={{ ...authPageBodySx, display: 'block', textAlign: 'center', mb: 2 }}>
             Last updated: {TERMS_LAST_UPDATED}
           </Typography>
 
           {TERMS_SECTIONS.map((section) => (
             <Box key={section.id}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 2, mb: 0.5 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontFamily: iosFontStacks.ui, fontWeight: 700, mt: 2, mb: 0.5, letterSpacing: '-0.02em' }}
+              >
                 {section.title}
               </Typography>
               {section.paragraphs.map((p, i) => (
-                <Typography key={`${section.id}-p-${i}`} variant="body2" sx={{ mb: 1, lineHeight: 1.6 }}>
+                <Typography key={`${section.id}-p-${i}`} component="p" sx={{ ...authPageBodySx, mb: 1 }}>
                   {p}
                 </Typography>
               ))}
@@ -35,7 +45,7 @@ export function TermsOfServicePage() {
           ))}
 
           <Box sx={{ mt: 2, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/login" sx={authPageLinkSx}>
               ← Back to sign in
             </Link>
             <Link component={RouterLink} to="/support" variant="caption" sx={{ textDecoration: 'none' }}>

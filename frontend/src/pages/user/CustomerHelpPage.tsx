@@ -1,23 +1,20 @@
 import {
   Box,
   Typography,
-  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Link,
-  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
-import GavelIcon from '@mui/icons-material/Gavel';
-import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../legal/supportPageContent';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
-import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 const faqs = [
   {
@@ -43,124 +40,112 @@ const faqs = [
 ];
 
 export function CustomerHelpPage() {
-  const theme = useTheme();
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
   const support = getSupportLink();
-  const legalLinkTouchSx = {
-    ...sxObject(theme, premiumIconButtonTouchSx),
-    py: 1,
-    display: 'inline-flex' as const,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-  };
-
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Help & Support
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Frequently asked questions and how to get in touch
-        </Typography>
-      </Box>
+      <LivePageHeader
+        title="Help & Support"
+        subtitle="Frequently asked questions and how to get in touch"
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => {}}
+        refreshDisabled
+        titleVariant="large"
+        containerSx={{ mb: 2 }}
+      />
 
-      <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3 }}>
-        <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>
-          <GavelIcon fontSize="small" aria-hidden />
-          Privacy &amp; terms
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Read our Privacy Policy and Terms of Service (same links used in the App Store and Google Play listings).
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-          <LegalDocLink
-            label="Privacy Policy"
-            href={privacy.href}
-            external={privacy.external}
-            variant="body2"
-            sx={legalLinkTouchSx}
-          />
-          <LegalDocLink
-            label="Terms of Service"
-            href={terms.href}
-            external={terms.external}
-            variant="body2"
-            sx={legalLinkTouchSx}
-          />
-          <LegalDocLink
-            label="Help & support (web)"
-            href={support.href}
-            external={support.external}
-            variant="body2"
-            sx={legalLinkTouchSx}
-          />
-        </Box>
-      </Paper>
+      <GroupedListSection title="Privacy & terms">
+        <GroupedListRow
+          primary="Privacy Policy"
+          showChevron={false}
+          divider
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (privacy.external) window.open(privacy.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = privacy.href;
+          }}
+        />
+        <GroupedListRow
+          primary="Terms of Service"
+          showChevron={false}
+          divider
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (terms.external) window.open(terms.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = terms.href;
+          }}
+        />
+        <GroupedListRow
+          primary="Help & support (web)"
+          showChevron={false}
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (support.external) window.open(support.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = support.href;
+          }}
+        />
+      </GroupedListSection>
 
-      <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 3, p: 0, overflow: 'hidden' }}>
-        <Typography variant="subtitle1" sx={{ px: { xs: 2, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: 1, fontWeight: 600 }}>
-          Frequently asked questions
-        </Typography>
+      <GroupedListSection title="FAQ" paperSx={{ p: 0, overflow: 'hidden' }}>
         {faqs.map((faq, idx) => (
           <Accordion
-            key={idx}
+            key={faq.q}
             disableGutters
             elevation={0}
-            sx={{ '&:before': { display: 'none' }, bgcolor: 'transparent' }}
+            sx={{
+              '&:before': { display: 'none' },
+              bgcolor: 'transparent',
+              borderBottom: idx < faqs.length - 1 ? '1px solid' : 'none',
+              borderColor: idx < faqs.length - 1 ? 'divider' : undefined,
+            }}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 48, '& .MuiAccordionSummary-content': { my: 1 } }}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{ minHeight: 48, px: 2, '& .MuiAccordionSummary-content': { my: 1 } }}
+            >
               <Typography fontWeight={500} variant="body2">
                 {faq.q}
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ px: 2, pt: 0, pb: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 {faq.a}
               </Typography>
             </AccordionDetails>
           </Accordion>
         ))}
-      </Paper>
+      </GroupedListSection>
 
-      <Paper elevation={0} sx={premiumPanelCardSx}>
-        <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1 }}>
-          <SupportAgentIcon fontSize="small" color="primary" />
-          Contact support
+      <GroupedListSection title="Contact">
+        <GroupedListRow
+          primary="Email"
+          secondary={SUPPORT_EMAIL}
+          showChevron={false}
+          divider
+          onClick={() => {
+            window.location.href = `mailto:${SUPPORT_EMAIL}`;
+          }}
+          end={<EmailIcon fontSize="small" color="action" />}
+        />
+        <GroupedListRow
+          primary="Phone"
+          secondary={SUPPORT_PHONE_DISPLAY}
+          showChevron={false}
+          onClick={() => {
+            window.location.href = SUPPORT_PHONE_TEL;
+          }}
+          end={<PhoneIcon fontSize="small" color="action" />}
+        />
+      </GroupedListSection>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5, pt: 1 }}>
+        <SupportAgentIcon fontSize="small" color="primary" />
+        <Typography variant="caption" color="text.secondary">
+          App Store and Play Store use the same legal links as above.
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Need more help? Reach out to our support team.
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Link
-            href={`mailto:${SUPPORT_EMAIL}`}
-            sx={{
-              ...sxObject(theme, premiumIconButtonTouchSx),
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              py: 0.5,
-            }}
-          >
-            <EmailIcon fontSize="small" />
-            {SUPPORT_EMAIL}
-          </Link>
-          <Link
-            href={SUPPORT_PHONE_TEL}
-            sx={{
-              ...sxObject(theme, premiumIconButtonTouchSx),
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              py: 0.5,
-            }}
-          >
-            <PhoneIcon fontSize="small" />
-            {SUPPORT_PHONE_DISPLAY}
-          </Link>
-        </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

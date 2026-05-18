@@ -24,6 +24,8 @@ import {
   authPagePaperSx,
   authPageRootSx,
   authPageTitleSx,
+  authPageBodySx,
+  authPageLinkSx,
   compactContainedCtaSx,
   premiumIconButtonTouchSx,
   sxObject,
@@ -228,7 +230,7 @@ export function RegisterPage() {
                   />
                 }
                 label={
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem', lineHeight: 1.45 }}>
+                  <Typography variant="body2" sx={authPageBodySx}>
                     I agree to the{' '}
                     <LegalDocLink
                       label="Terms of Service"
@@ -262,12 +264,7 @@ export function RegisterPage() {
           </form>
 
           <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left' }}>
-            <Link
-              component={RouterLink}
-              to="/login"
-              variant="caption"
-              sx={{ textDecoration: 'none', cursor: 'pointer' }}
-            >
+            <Link component={RouterLink} to="/login" sx={authPageLinkSx}>
               Sign in instead
             </Link>
           </Box>

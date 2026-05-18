@@ -5,26 +5,14 @@ import {
   Typography,
   Paper,
   Grid,
-  Chip,
   Skeleton,
   LinearProgress,
   Alert,
   TextField,
   InputAdornment,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import DirectionsIcon from '@mui/icons-material/Directions';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import LoginIcon from '@mui/icons-material/Login';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
 import { usersApi } from '../services/usersApi';
 import { websocketService } from '../services/websocket';
@@ -33,20 +21,19 @@ import {
   authFormFieldSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
-  premiumDialogPaperSx,
   sxObject,
 } from '../styles/authShell';
-import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-} from '../theme/jampackShell';
+import { premiumEmptyStatePaperSx } from '../theme/jampackShell';
+import { LivePageHeader } from '../components/dashboard/LivePageHeader';
+import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
+import { triggerHaptic } from '../utils/haptics';
 import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
+import { SheetDragHandle } from '../components/ios/SheetDragHandle';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
+import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
+import { LoginPromptSheet } from '../components/stations/LoginPromptSheet';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
-import { formatCurrency } from '../utils/formatters';
-import { getChargePointStatusColor } from '../utils/statusColors';
 import { getStoredUser, hasValidSession } from '../utils/authSession';
 import {
   buildGoogleMapsDrivingDirectionsUrl,
@@ -216,10 +203,11 @@ export function StationsPage() {
     }
   }, []);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
+    triggerHaptic('light');
     if (!searchTerm.trim()) {
       if (userLocation) {
-        loadNearbyStations(userLocation.lat, userLocation.lng);
+        await loadNearbyStations(userLocation.lat, userLocation.lng);
       }
       return;
     }
@@ -239,19 +227,40 @@ export function StationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, userLocation, loadNearbyStations, bumpMapFit]);
 
-  const handleStationClick = (station: StationWithDistance) => {
-    setMapSelectionId(station.chargePointId);
-    setSelectedStation(station);
-    setDialogOpen(true);
-  };
+  const refreshStations = useCallback(async () => {
+    if (searchTerm.trim()) {
+      await handleSearch();
+      return;
+    }
+    if (userLocation) {
+      await loadNearbyStations(userLocation.lat, userLocation.lng);
+    }
+  }, [searchTerm, userLocation, handleSearch, loadNearbyStations]);
+
+  useCustomerPullRefresh(refreshStations);
 
   const closeDetailsDialog = useCallback(() => {
     setDialogOpen(false);
     setMapSelectionId(null);
     setSelectedStation(null);
   }, []);
+
+  const handleViewFullStationDetails = useCallback(
+    (station: StationWithDistance) => {
+      closeDetailsDialog();
+      navigate(`${CUSTOMER_ROUTES.stations}/${station.chargePointId}`);
+    },
+    [closeDetailsDialog, navigate],
+  );
+
+  const handleStationClick = (station: StationWithDistance) => {
+    triggerHaptic('light');
+    setMapSelectionId(station.chargePointId);
+    setSelectedStation(station);
+    setDialogOpen(true);
+  };
 
   const handleGetDirections = (e: React.MouseEvent, station: StationWithDistance) => {
     e.stopPropagation(); // Prevent card click
@@ -310,6 +319,7 @@ export function StationsPage() {
     if (!user?.id) return;
     try {
       const isFavorite = favoriteIds.includes(chargePointId);
+      triggerHaptic('light');
       if (isFavorite) {
         await usersApi.removeFavorite(user.id, chargePointId);
         setFavoriteIds((prev) => prev.filter((id) => id !== chargePointId));
@@ -322,37 +332,40 @@ export function StationsPage() {
     }
   };
 
+  const listRefreshing = loading || viewportStationsLoading;
+  const stationsSubtitle = userAreaLabel
+    ? `Near ${userAreaLabel}`
+    : userLocation
+      ? 'Stations sorted by distance from you'
+      : 'Search or enable location to find chargers';
+
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h6"
-          component="h1"
-          sx={dashboardPageTitleSx}
-        >
-          Find Charging Stations
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Discover nearby EV charging stations in Ghana
-        </Typography>
-        {isAuthenticated && (
-          <Button
-            component={RouterLink}
-            to={CUSTOMER_ROUTES.charging}
-            size="small"
-            variant="outlined"
-            sx={{
-              mt: 1.25,
-              textTransform: 'none',
-              fontWeight: 600,
-              width: { xs: '100%', sm: 'auto' },
-              borderRadius: 1.5,
-            }}
-          >
-            Charging hub
-          </Button>
-        )}
-      </Box>
+      <LivePageHeader
+        title="Stations"
+        subtitle={stationsSubtitle}
+        updatedAt={null}
+        refreshing={listRefreshing}
+        onRefresh={() => void refreshStations()}
+        titleVariant="large"
+        containerSx={{ mb: 2 }}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
+        actions={
+          isAuthenticated ? (
+            <Button
+              component={RouterLink}
+              to={CUSTOMER_ROUTES.charging}
+              variant="outlined"
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                width: { xs: '100%', sm: 'auto' },
+              })}
+            >
+              Charging hub
+            </Button>
+          ) : undefined
+        }
+      />
 
       {locationError && (
         <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLocationError(null)}>
@@ -425,21 +438,31 @@ export function StationsPage() {
             />
           </Box>
           <Paper
-            elevation={3}
+            elevation={0}
+            role="region"
+            aria-label="Station search and list"
             sx={{
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               mt: { xs: -0.5, sm: 0 },
-              p: { xs: 2, sm: 2.25 },
+              pt: { xs: 0.5, sm: 0 },
+              px: { xs: 2, sm: 2.25 },
+              pb: { xs: 2, sm: 2.25 },
               flex: 1,
               minHeight: 180,
               maxHeight: { xs: 'min(48dvh, 480px)', sm: 'none' },
               overflow: 'auto',
+              WebkitOverflowScrolling: 'touch',
               ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-              Find stations
+            {isAuthenticated ? <SheetDragHandle /> : null}
+            <Typography
+              variant="caption"
+              component="h2"
+              sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mb: 1.5, px: 0.25 }}
+            >
+              Nearby & search
             </Typography>
             {viewportStationsLoading && (
               <LinearProgress
@@ -562,165 +585,21 @@ export function StationsPage() {
         onSuccess={handleChargingSuccess}
       />
 
-      {/* Station Details Dialog */}
-      <Dialog
+      <StationDetailsSheet
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        scroll="paper"
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
-      >
-        {selectedStation && (
-          <>
-            <DialogTitle sx={{ fontWeight: 600, pb: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap',
-                  gap: 1,
-                }}
-              >
-                <Typography variant="subtitle1" sx={{ minWidth: 0, pr: 1, fontWeight: 600 }}>
-                  {selectedStation.locationName || selectedStation.chargePointId}
-                </Typography>
-                <Chip
-                  label={selectedStation.status}
-                  color={getChargePointStatusColor(selectedStation.status)}
-                  size="small"
-                  sx={{ flexShrink: 0 }}
-                />
-              </Box>
-            </DialogTitle>
-            <DialogContent dividers>
-              <List dense disablePadding sx={{ py: 0 }}>
-                {selectedStation.locationAddress && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Address"
-                      secondary={selectedStation.locationAddress}
-                    />
-                  </ListItem>
-                )}
-                {selectedStation.locationCity && selectedStation.locationRegion && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Location"
-                      secondary={`${selectedStation.locationCity}, ${selectedStation.locationRegion}`}
-                    />
-                  </ListItem>
-                )}
-                <ListItem>
-                  <ListItemText
-                    primary="Distance"
-                    secondary={`${selectedStation.distanceKm.toFixed(1)} km away`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText
-                    primary="Connectors"
-                    secondary={`${selectedStation.availableConnectors} available out of ${selectedStation.totalConnectors} total`}
-                  />
-                </ListItem>
-                {selectedStation.totalCapacityKw && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Capacity"
-                      secondary={`${selectedStation.totalCapacityKw} kW`}
-                    />
-                  </ListItem>
-                )}
-                {selectedStation.pricePerKwh && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Price"
-                      secondary={`${formatCurrency(Number(selectedStation.pricePerKwh), selectedStation.currency || 'GHS')} per kWh`}
-                    />
-                  </ListItem>
-                )}
-                {selectedStation.locationLandmarks && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Nearby Landmarks"
-                      secondary={selectedStation.locationLandmarks}
-                    />
-                  </ListItem>
-                )}
-                {selectedStation.amenities && selectedStation.amenities.length > 0 && (
-                  <ListItem>
-                    <ListItemText
-                      primary="Amenities"
-                      secondary={selectedStation.amenities.join(', ')}
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </DialogContent>
-            <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-              <Button onClick={closeDetailsDialog} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-                Close
-              </Button>
-              {selectedStation.locationLatitude && selectedStation.locationLongitude && (
-                <Button
-                  variant="outlined"
-                  startIcon={<DirectionsIcon />}
-                  onClick={(e) => selectedStation && handleGetDirections(e, selectedStation)}
-                  sx={(th) => sxObject(th, compactOutlinedCtaSx)}
-                >
-                  Directions
-                </Button>
-              )}
-              {selectedStation.status === 'Available' && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  disableElevation
-                  startIcon={isAuthenticated ? <PlayArrowIcon /> : <LoginIcon />}
-                  onClick={(e) => {
-                    if (isAuthenticated && selectedStation) {
-                      handleStartCharging(e, selectedStation);
-                    } else if (selectedStation) {
-                      openLoginPrompt(selectedStation);
-                    }
-                  }}
-                  sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-                >
-                  {isAuthenticated ? 'Start charging' : 'Log in to start'}
-                </Button>
-              )}
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-      <Dialog
+        onClose={closeDetailsDialog}
+        station={selectedStation}
+        isAuthenticated={isAuthenticated}
+        onDirections={handleGetDirections}
+        onStartCharging={handleStartCharging}
+        onLoginPrompt={openLoginPrompt}
+        onViewFullDetails={handleViewFullStationDetails}
+      />
+      <LoginPromptSheet
         open={loginPromptOpen}
         onClose={() => setLoginPromptOpen(false)}
-        fullWidth
-        maxWidth="xs"
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
-      >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Log in required</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            Log in to start charging. Continue to the login page?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button onClick={() => setLoginPromptOpen(false)} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmLoginPrompt}
-            variant="contained"
-            disableElevation
-            sx={(th) => sxObject(th, compactContainedCtaSx)}
-          >
-            Log in
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={confirmLoginPrompt}
+      />
     </Box>
   );
 }

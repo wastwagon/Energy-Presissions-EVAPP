@@ -12,15 +12,15 @@ import {
   Chip,
   Alert,
   Pagination,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
-import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
+import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
@@ -30,6 +30,8 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerPaymentHistoryPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [payments, setPayments] = useState<Payment[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,8 @@ export function CustomerPaymentHistoryPage() {
     void loadPayments();
   }, [loadPayments]);
 
+  useCustomerPullRefresh(useCallback(() => void loadPayments(true), [loadPayments]));
+
   if (loading && payments.length === 0) {
     return <CustomerChromeSkeleton preset="paymentHistory" />;
   }
@@ -72,8 +76,7 @@ export function CustomerPaymentHistoryPage() {
         liveLabel={LIVE_DATA_LABELS.payments}
         refreshing={refreshing}
         onRefresh={() => void loadPayments(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
       />
 
       {error && (
@@ -107,6 +110,33 @@ export function CustomerPaymentHistoryPage() {
             You have not made any payments yet.
           </Typography>
         </Paper>
+      ) : useGroupedList ? (
+        <>
+          <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payment history" />
+          <GroupedListSection title="Your payments">
+            {payments.map((payment, index) => (
+              <GroupedListRow
+                key={payment.id}
+                divider={index < payments.length - 1}
+                showChevron={false}
+                primary={formatCurrency(payment.amount, payment.currency)}
+                secondary={`${payment.paymentMethod} · ${new Date(payment.createdAt).toLocaleDateString()}`}
+                end={<Chip label={payment.status} color={getPaymentStatusColor(payment.status)} size="small" sx={{ height: 24 }} />}
+              />
+            ))}
+          </GroupedListSection>
+          {totalPayments > limit && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Pagination
+                count={Math.ceil(totalPayments / limit)}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
+        </>
       ) : (
         <>
           <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>

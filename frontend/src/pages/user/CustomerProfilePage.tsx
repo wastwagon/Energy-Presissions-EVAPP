@@ -11,11 +11,15 @@ import {
   Alert,
   Divider,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  ListItem,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { AdaptiveSheet } from '../../components/ios/AdaptiveSheet';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
+import { iosGroupedListRowSx, iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
 import { alpha } from '@mui/material/styles';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,15 +30,15 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { usersApi } from '../../services/usersApi';
 import { authApi } from '../../services/authApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
-  premiumDialogPaperSx,
   sxObject,
 } from '../../styles/authShell';
+import { triggerHaptic } from '../../utils/haptics';
 import { getStoredUser } from '../../utils/authSession';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -44,6 +48,8 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 
 export function CustomerProfilePage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
   const [user, setUser] = useState<any>(null);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [editing, setEditing] = useState(false);
@@ -87,6 +93,8 @@ export function CustomerProfilePage() {
     void loadUserData();
   }, [loadUserData]);
 
+  useCustomerPullRefresh(useCallback(() => void loadUserData(true), [loadUserData]));
+
   const handleSave = async () => {
     try {
       setError(null);
@@ -106,6 +114,7 @@ export function CustomerProfilePage() {
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setUser(updatedUser);
       }
+      triggerHaptic('success');
       setEditing(false);
       setSuccess('Profile updated successfully');
     } catch (err: any) {
@@ -159,8 +168,7 @@ export function CustomerProfilePage() {
         liveLabel={LIVE_DATA_LABELS.profile}
         refreshing={refreshing}
         onRefresh={() => void loadUserData(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
         refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         actions={
           <Button
@@ -192,7 +200,7 @@ export function CustomerProfilePage() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={{ ...premiumPanelCardSx, textAlign: 'center', py: { xs: 3, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, textAlign: 'center', py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3 }, mb: { xs: 0, md: 0 } }}>
             <Avatar
               sx={{
                 width: 120,
@@ -222,6 +230,125 @@ export function CustomerProfilePage() {
         </Grid>
 
         <Grid item xs={12} md={8}>
+          {isCompact ? (
+            <>
+              <GroupedListSection title="Personal information">
+                {editing ? (
+                  <>
+                    <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
+                      <TextField
+                        fullWidth
+                        label="First name"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        sx={(th) => sxObject(th, authFormFieldSx)}
+                      />
+                    </ListItem>
+                    <Divider sx={iosGroupedRowDividerSx} />
+                    <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
+                      <TextField
+                        fullWidth
+                        label="Last name"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        sx={(th) => sxObject(th, authFormFieldSx)}
+                      />
+                    </ListItem>
+                    <Divider sx={iosGroupedRowDividerSx} />
+                    <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        sx={(th) => sxObject(th, authFormFieldSx)}
+                      />
+                    </ListItem>
+                    <Divider sx={iosGroupedRowDividerSx} />
+                    <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
+                      <TextField
+                        fullWidth
+                        label="Phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        sx={(th) => sxObject(th, authFormFieldSx)}
+                      />
+                    </ListItem>
+                  </>
+                ) : (
+                  <>
+                    <GroupedListRow primary="First name" secondary={formData.firstName || '—'} showChevron={false} divider />
+                    <GroupedListRow primary="Last name" secondary={formData.lastName || '—'} showChevron={false} divider />
+                    <GroupedListRow primary="Email" secondary={formData.email || '—'} showChevron={false} divider />
+                    <GroupedListRow primary="Phone" secondary={formData.phone || '—'} showChevron={false} />
+                  </>
+                )}
+              </GroupedListSection>
+
+              <GroupedListSection title="Account">
+                <GroupedListRow primary="Account type" secondary={user.accountType} showChevron={false} divider />
+                <GroupedListRow
+                  primary="Member since"
+                  secondary={
+                    user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : 'N/A'
+                  }
+                  showChevron={false}
+                />
+              </GroupedListSection>
+
+              {editing && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2.5 }}>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    onClick={handleSave}
+                    startIcon={<SaveIcon />}
+                    sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: '100%' })}
+                  >
+                    Save changes
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setEditing(false);
+                      void loadUserData(true);
+                    }}
+                    sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              )}
+
+              <GroupedListSection title="Danger zone">
+                <ListItem sx={{ display: 'block', py: 2, px: 2 }} disablePadding>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Permanently delete your account. Enter your password to confirm.
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DeleteForeverIcon />}
+                    onClick={() => setDeleteDialogOpen(true)}
+                    sx={(th) => ({
+                      ...sxObject(th, compactOutlinedCtaSx),
+                      width: '100%',
+                      borderColor: alpha(th.palette.error.main, 0.45),
+                      color: 'error.main',
+                    })}
+                  >
+                    Delete account
+                  </Button>
+                </ListItem>
+              </GroupedListSection>
+            </>
+          ) : (
           <Paper elevation={0} sx={premiumPanelCardSx}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3 }}>
               Personal information
@@ -363,53 +490,48 @@ export function CustomerProfilePage() {
               Delete account
             </Button>
           </Paper>
+          )}
         </Grid>
       </Grid>
 
-      <Dialog
+      <AdaptiveSheet
         open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}
-        fullWidth
+        title="Delete account"
         maxWidth="xs"
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+        disableClose={deleting}
+        actions={
+          <>
+            <Button onClick={handleCloseDeleteDialog} disabled={deleting} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
+            >
+              {deleting ? 'Deleting…' : 'Delete my account'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Delete account</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            This permanently removes your account. Billing and session records may be kept as required by law, but will
-            no longer be linked to you in the app. This cannot be undone.
-          </Typography>
-          <TextField
-            fullWidth
-            type="password"
-            label="Current password"
-            value={deletePassword}
-            onChange={(e) => setDeletePassword(e.target.value)}
-            autoComplete="current-password"
-            disabled={deleting}
-            margin="dense"
-            sx={(th) => sxObject(th, authFormFieldSx)}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button
-            onClick={handleCloseDeleteDialog}
-            disabled={deleting}
-            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disableElevation
-            onClick={handleDeleteAccount}
-            disabled={deleting}
-            sx={(th) => sxObject(th, compactErrorContainedCtaSx)}
-          >
-            {deleting ? 'Deleting…' : 'Delete my account'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          This permanently removes your account. Billing and session records may be kept as required by law, but will no
+          longer be linked to you in the app. This cannot be undone.
+        </Typography>
+        <TextField
+          fullWidth
+          type="password"
+          label="Current password"
+          value={deletePassword}
+          onChange={(e) => setDeletePassword(e.target.value)}
+          autoComplete="current-password"
+          disabled={deleting}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </AdaptiveSheet>
     </Box>
   );
 }

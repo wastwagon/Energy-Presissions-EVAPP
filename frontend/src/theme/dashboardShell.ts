@@ -1,10 +1,6 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
-import {
-  JAMPACK_PAGE_BG,
-  jampackFixedAppBarMainGapSx,
-  mainLayoutFixedHeaderGapSx,
-} from './jampackShell';
+import { jampackFixedAppBarMainGapSx, mainLayoutFixedHeaderGapSx } from './jampackShell';
 
 /**
  * Unified scrollable main region for dashboard-style layouts (mobile-first).
@@ -33,7 +29,7 @@ export function dashboardScrollMainSx(options: {
     width: '100%',
     maxWidth: '100%',
     minWidth: 0,
-    bgcolor: JAMPACK_PAGE_BG,
+    bgcolor: 'background.default',
     [`& > [data-fixed-header-spacer="true"]`]: {
       ...headerSpacer,
     },
@@ -48,7 +44,7 @@ export const dashboardViewportColumnSx: SystemStyleObject<Theme> = {
   maxHeight: '100dvh',
   minHeight: '100dvh',
   overflow: 'hidden',
-  bgcolor: JAMPACK_PAGE_BG,
+  bgcolor: 'background.default',
 };
 
 export const fixedHeaderSpacerProps = {

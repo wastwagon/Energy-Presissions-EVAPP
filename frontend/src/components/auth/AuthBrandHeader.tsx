@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { LOGO_PUBLIC_URL } from '../../config/branding';
+import { authPageBodySx } from '../../styles/authShell';
 
 type AuthBrandHeaderProps = {
   /** Shown under the logo; omit for a tighter header */
@@ -50,7 +51,7 @@ export function AuthBrandHeader({ tagline, align = 'center', compact = false }: 
         }}
       />
       {tagline ? (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, maxWidth: 280 }}>
+        <Typography component="p" sx={{ ...authPageBodySx, mt: 1, maxWidth: 280 }}>
           {tagline}
         </Typography>
       ) : null}

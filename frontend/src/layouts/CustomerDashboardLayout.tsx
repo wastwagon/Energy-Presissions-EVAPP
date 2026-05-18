@@ -25,17 +25,24 @@ import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.con
 import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
 import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
-import { jampackAppBarSx, jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
+import { jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
+import { customerFrostedAppBarSx } from '../theme/customerChrome';
+import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
+import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
-export function CustomerDashboardLayout() {
+function CustomerDashboardChrome() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const pageChrome = useCustomerPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
+  const showCompactNavTitle = Boolean(
+    pageChrome?.showCompactNavTitle && pageChrome.pageTitle && showBottomNav,
+  );
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
@@ -84,11 +91,18 @@ export function CustomerDashboardLayout() {
           left: 0,
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...jampackAppBarSx,
+          ...customerFrostedAppBarSx,
           color: 'text.primary',
         }}
       >
-        <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important', gap: 1 }}>
+        <Toolbar
+          sx={{
+            px: { xs: 2, sm: 3 },
+            minHeight: '64px !important',
+            gap: 1,
+            position: 'relative',
+          }}
+        >
           {showBottomNav && isCustomer && (
             <IconButton
               onClick={() => setNavDrawerOpen(true)}
@@ -101,7 +115,7 @@ export function CustomerDashboardLayout() {
               <MenuIcon />
             </IconButton>
           )}
-          {showBottomNav && isCustomer && (
+          {showBottomNav && isCustomer && !showCompactNavTitle && (
             <Typography
               variant="h6"
               component="div"
@@ -116,6 +130,25 @@ export function CustomerDashboardLayout() {
               }}
             >
               CleanMotion
+            </Typography>
+          )}
+          {showCompactNavTitle && (
+            <Typography
+              variant="subtitle1"
+              component="h1"
+              noWrap
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                maxWidth: 'calc(100% - 160px)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'text.primary',
+                pointerEvents: 'none',
+              }}
+            >
+              {pageChrome?.pageTitle}
             </Typography>
           )}
           <Box
@@ -319,12 +352,22 @@ export function CustomerDashboardLayout() {
           }}
         >
           <Box {...fixedHeaderSpacerProps} />
-          <Outlet />
+          <CustomerScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
+            <Outlet />
+          </CustomerScrollProviders>
         </Box>
         {showBottomNav && (
           <BottomNav items={customerBottomNavItems} variant="customer" />
         )}
       </Box>
     </Box>
+  );
+}
+
+export function CustomerDashboardLayout() {
+  return (
+    <CustomerPageChromeProvider>
+      <CustomerDashboardChrome />
+    </CustomerPageChromeProvider>
   );
 }

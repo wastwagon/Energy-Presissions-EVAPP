@@ -1,19 +1,9 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import type { SvgIconComponent } from '@mui/icons-material';
-import {
-  Box,
-  Typography,
-  Paper,
-  List,
-  ListItemButton,
-  ListItemText,
-  Alert,
-  Button,
-} from '@mui/material';
+import { Box, Typography, Paper, Alert, Button } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
@@ -24,18 +14,14 @@ import { pickLastEndedChargingSession } from '../../utils/chargingSession';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
-import {
-  dashboardPageSubtitleSx,
-  dashboardPageTitleSx,
-  mobileMainLayoutBottomMarginSx,
-  premiumPanelCardSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
-import { IOS_TOUCH_TARGET_PX } from '../../theme/iosMobileTokens';
+import { mobileMainLayoutBottomMarginSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { DashboardPageLoading } from '../../components/dashboard/DashboardPageLoading';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -97,15 +83,6 @@ const listIconSx = {
   color: 'primary.main',
 };
 
-const rowSx = {
-  py: 1.75,
-  px: 2,
-  minHeight: IOS_TOUCH_TARGET_PX,
-  borderRadius: 0,
-  color: 'text.primary',
-  '&:hover': { bgcolor: 'action.hover' },
-};
-
 export function CustomerChargingPage() {
   const navigate = useNavigate();
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
@@ -149,6 +126,8 @@ export function CustomerChargingPage() {
     void loadChargingData();
   }, [loadChargingData]);
 
+  useCustomerPullRefresh(useCallback(() => void loadChargingData(true), [loadChargingData]));
+
   const lastLine = useMemo(() => {
     if (!lastSession?.stopTime) return null;
     const d = new Date(lastSession.stopTime);
@@ -168,57 +147,45 @@ export function CustomerChargingPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 }, mb: 2 }}>
-        <LivePageHeader
-          title="Charging"
-          subtitle={
-            activeCount > 0
-              ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — open Live charging below to manage`
-              : 'Jump to charging tasks—same style as the rest of your dashboard'
-          }
-          updatedAt={updatedAt}
-          liveLabel={LIVE_DATA_LABELS.charging}
-          refreshing={refreshing}
-          onRefresh={() => void loadChargingData(true)}
-          titleSx={dashboardPageTitleSx}
-          subtitleSx={dashboardPageSubtitleSx}
-          containerSx={{ mb: 0 }}
-          refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-        />
-      </Paper>
+      <LivePageHeader
+        title="Charging"
+        subtitle={
+          activeCount > 0
+            ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — open Live charging below to manage`
+            : 'Find chargers, manage sessions, and wallet'
+        }
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.charging}
+        refreshing={refreshing}
+        onRefresh={() => void loadChargingData(true)}
+        titleVariant="large"
+        containerSx={{ mb: 2 }}
+        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+      />
 
-      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, overflow: 'hidden', mb: 2 }}>
-        <List disablePadding>
-          {NAV.map((item) => {
-            const Icon = item.Icon;
-            return (
-              <Box
-                key={item.id}
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  '&:last-of-type': { borderBottom: 'none' },
-                }}
-              >
-                <ListItemButton onClick={() => navigate(item.to)} sx={rowSx}>
+      <GroupedListSection title="Shortcuts" sx={{ mb: 2 }}>
+        {NAV.map((item, index) => {
+          const Icon = item.Icon;
+          return (
+            <GroupedListRow
+              key={item.id}
+              primary={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
                   <Box sx={listIconSx} aria-hidden>
                     <Icon sx={{ fontSize: 20 }} />
                   </Box>
-                  <ListItemText
-                    primary={item.primary}
-                    secondary={item.secondary}
-                    primaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.9375rem', color: 'text.primary' } }}
-                    secondaryTypographyProps={{
-                      sx: { color: 'text.secondary', fontSize: '0.8125rem' },
-                    }}
-                  />
-                  <ChevronRightIcon sx={{ color: 'text.disabled', fontSize: 22, ml: 0.5 }} />
-                </ListItemButton>
-              </Box>
-            );
-          })}
-        </List>
-      </Paper>
+                  <Box component="span" sx={{ fontWeight: 600, fontSize: '0.9375rem' }}>
+                    {item.primary}
+                  </Box>
+                </Box>
+              }
+              secondary={item.secondary}
+              onClick={() => navigate(item.to)}
+              divider={index < NAV.length - 1}
+            />
+          );
+        })}
+      </GroupedListSection>
 
       {lastSession && lastLine && (
         <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 } }}>

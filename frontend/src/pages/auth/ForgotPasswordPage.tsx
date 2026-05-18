@@ -18,6 +18,8 @@ import {
   authPagePaperSx,
   authPageRootSx,
   authPageTitleSx,
+  authPageBodySx,
+  authPageLinkSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   sxObject,
@@ -78,7 +80,7 @@ export function ForgotPasswordPage() {
           <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Reset your password
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, lineHeight: 1.45, textAlign: 'left' }}>
+          <Typography component="p" sx={{ ...authPageBodySx, display: 'block', mb: 1, textAlign: 'left' }}>
             Enter the email you used to register. After you continue, you can enter your code and pick a new password below.
           </Typography>
 
@@ -175,7 +177,7 @@ export function ForgotPasswordPage() {
           </Collapse>
 
           <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'center' }}>
-            <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/login" sx={authPageLinkSx}>
               Back to sign in
             </Link>
           </Box>

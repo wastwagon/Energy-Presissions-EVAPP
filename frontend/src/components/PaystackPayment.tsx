@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Alert,
@@ -21,13 +17,9 @@ import {
 import { paymentsApi, PaymentInitResponse } from '../services/paymentsApi';
 import { walletApi, WalletBalance } from '../services/walletApi';
 import { formatCurrency } from '../utils/formatters';
-import {
-  authFormFieldSx,
-  compactContainedCtaSx,
-  compactOutlinedCtaSx,
-  premiumDialogPaperSx,
-  sxObject,
-} from '../styles/authShell';
+import { authFormFieldSx, compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
+import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { triggerHaptic } from '../utils/haptics';
 
 interface PaystackPaymentProps {
   open: boolean;
@@ -64,7 +56,7 @@ export function PaystackPayment({
 
   useEffect(() => {
     if (open && userId) {
-      loadWalletBalance();
+      void loadWalletBalance();
     }
   }, [open, userId]);
 
@@ -74,7 +66,7 @@ export function PaystackPayment({
     try {
       const balance = await walletApi.getBalance(userId);
       setWalletBalance(balance);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading wallet balance:', err);
     } finally {
       setLoadingBalance(false);
@@ -107,15 +99,15 @@ export function PaystackPayment({
         throw new Error('Either invoiceId or transactionId is required');
       }
 
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to process wallet payment';
+      triggerHaptic('success');
+      onSuccess?.();
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (err as Error)?.message ||
+        'Failed to process wallet payment';
       setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
-      }
+      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -133,7 +125,7 @@ export function PaystackPayment({
     }
 
     if (paymentChannel === 'mobile_money') {
-      if (!mobileMoneyPhone || mobileMoneyPhone.trim() === '') {
+      if (!mobileMoneyPhone.trim()) {
         setError('Please enter your mobile money phone number');
         return;
       }
@@ -150,7 +142,6 @@ export function PaystackPayment({
 
     try {
       let paymentData: PaymentInitResponse;
-
       let formattedPhone = mobileMoneyPhone;
       if (paymentChannel === 'mobile_money' && mobileMoneyPhone) {
         formattedPhone = mobileMoneyPhone.replace(/^0/, '+233').replace(/\s+/g, '');
@@ -175,16 +166,18 @@ export function PaystackPayment({
       }
 
       if (paymentData.authorizationUrl) {
+        triggerHaptic('light');
         window.location.href = paymentData.authorizationUrl;
       } else {
         throw new Error('Payment URL not received');
       }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to initialize payment';
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (err as Error)?.message ||
+        'Failed to initialize payment';
       setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
-      }
+      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -194,190 +187,156 @@ export function PaystackPayment({
   const canUseWallet = userId && walletBalance !== null;
 
   return (
-    <Dialog
+    <AdaptiveSheet
       open={open}
       onClose={onClose}
+      title="Payment"
+      tall
+      disableClose={loading}
       maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      actions={
+        <>
+          <Button onClick={onClose} disabled={loading} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handlePayment}
+            variant="contained"
+            disableElevation
+            disabled={
+              loading ||
+              (paymentMethod === 'paystack' && (!email || (paymentChannel === 'mobile_money' && !mobileMoneyPhone))) ||
+              (paymentMethod === 'wallet' && !hasSufficientBalance)
+            }
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            {loading
+              ? 'Processing…'
+              : paymentMethod === 'wallet'
+                ? 'Pay with wallet'
+                : paymentChannel === 'mobile_money'
+                  ? `Pay with ${mobileMoneyProvider}`
+                  : 'Proceed to payment'}
+          </Button>
+        </>
+      }
     >
-      <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Payment</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Amount to pay:
-          </Typography>
-          <Typography variant="h5" color="primary" fontWeight="bold">
-            {formatCurrency(amount, currency)}
-          </Typography>
-        </Box>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Amount to pay
+        </Typography>
+        <Typography variant="h5" color="primary" fontWeight="bold">
+          {formatCurrency(amount, currency)}
+        </Typography>
+      </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-        {canUseWallet && (
-          <>
-            <Tabs
-              value={paymentMethod}
-              onChange={(_, newValue) => setPaymentMethod(newValue)}
-              variant="scrollable"
-              scrollButtons="auto"
-              allowScrollButtonsMobile
-              sx={{ mb: 2 }}
-            >
-              <Tab label="Paystack" value="paystack" />
-              <Tab label="Wallet" value="wallet" />
-            </Tabs>
+      {canUseWallet && (
+        <>
+          <Tabs
+            value={paymentMethod}
+            onChange={(_, newValue) => setPaymentMethod(newValue)}
+            variant="fullWidth"
+            sx={{ mb: 2, minHeight: 44 }}
+          >
+            <Tab label="Paystack" value="paystack" sx={{ minHeight: 44 }} />
+            <Tab label="Wallet" value="wallet" sx={{ minHeight: 44 }} />
+          </Tabs>
 
-            {paymentMethod === 'wallet' && (
-              <Box
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  borderRadius: '10px',
-                  bgcolor: 'action.hover',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Wallet Balance:
-                </Typography>
-                <Typography variant="h6" color={hasSufficientBalance ? 'success.main' : 'error.main'}>
-                  {loadingBalance ? 'Loading...' : formatCurrency(walletBalance?.balance || 0, currency)}
-                </Typography>
-                {!hasSufficientBalance && walletBalance && (
-                  <Alert severity="warning" sx={{ mt: 1 }}>
-                    Insufficient balance. You need {formatCurrency(amount - walletBalance.balance, currency)} more.
-                  </Alert>
-                )}
-              </Box>
-            )}
-          </>
-        )}
-
-        {paymentMethod === 'paystack' && (
-          <>
-            <TextField
-              label="Email Address"
-              type="email"
-              fullWidth
-              margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@example.com"
-              required
-              disabled={loading}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
-              <InputLabel>Payment Method</InputLabel>
-              <Select
-                value={paymentChannel}
-                label="Payment Method"
-                onChange={(e) => setPaymentChannel(e.target.value as typeof paymentChannel)}
-                disabled={loading}
-              >
-                <MenuItem value="card">Card (Visa, Mastercard)</MenuItem>
-                <MenuItem value="mobile_money">Mobile Money (MTN, Vodafone, AirtelTigo)</MenuItem>
-                <MenuItem value="bank">Bank Transfer</MenuItem>
-                <MenuItem value="ussd">USSD</MenuItem>
-                <MenuItem value="qr">QR Code</MenuItem>
-              </Select>
-              <FormHelperText>
-                {paymentChannel === 'mobile_money' && 'Select your mobile money provider below'}
-                {paymentChannel === 'card' && 'Pay with your debit or credit card'}
-                {paymentChannel === 'bank' && 'Transfer directly from your bank account'}
-                {paymentChannel === 'ussd' && 'Pay using USSD code'}
-                {paymentChannel === 'qr' && 'Scan QR code to pay'}
-              </FormHelperText>
-            </FormControl>
-
-            {paymentChannel === 'mobile_money' && (
-              <>
-                <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
-                  <InputLabel>Mobile Money Provider</InputLabel>
-                  <Select
-                    value={mobileMoneyProvider}
-                    label="Mobile Money Provider"
-                    onChange={(e) => setMobileMoneyProvider(e.target.value as typeof mobileMoneyProvider)}
-                    disabled={loading}
-                  >
-                    <MenuItem value="MTN">MTN Mobile Money</MenuItem>
-                    <MenuItem value="Vodafone">Vodafone Cash</MenuItem>
-                    <MenuItem value="AirtelTigo">AirtelTigo Money</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  label="Mobile Money Phone Number"
-                  type="tel"
-                  fullWidth
-                  margin="normal"
-                  value={mobileMoneyPhone}
-                  onChange={(e) => setMobileMoneyPhone(e.target.value)}
-                  placeholder="+233XXXXXXXXX or 0XXXXXXXXX"
-                  required
-                  disabled={loading}
-                  helperText="Enter your mobile money registered phone number"
-                  InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>+233</Typography>,
-                  }}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    <strong>Mobile Money Payment:</strong> You will be redirected to Paystack where you can select{' '}
-                    {mobileMoneyProvider} and complete your payment using your mobile money account.
-                  </Typography>
-                </Alert>
-              </>
-            )}
-
-            {paymentChannel !== 'mobile_money' && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                You will be redirected to Paystack to complete your payment securely.
+          {paymentMethod === 'wallet' && (
+            <Box sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" color="text.secondary">
+                Wallet balance
               </Typography>
-            )}
-          </>
-        )}
+              <Typography variant="h6" color={hasSufficientBalance ? 'success.main' : 'error.main'}>
+                {loadingBalance ? 'Loading…' : formatCurrency(walletBalance?.balance || 0, currency)}
+              </Typography>
+              {!hasSufficientBalance && walletBalance && (
+                <Alert severity="warning" sx={{ mt: 1 }}>
+                  You need {formatCurrency(amount - walletBalance.balance, currency)} more.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </>
+      )}
 
-        {paymentMethod === 'wallet' && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Payment will be deducted from your wallet balance.
-          </Typography>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-        <Button onClick={onClose} disabled={loading} sx={(th) => sxObject(th, compactOutlinedCtaSx)}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handlePayment}
-          variant="contained"
-          disableElevation
-          disabled={
-            loading ||
-            (paymentMethod === 'paystack' && (!email || (paymentChannel === 'mobile_money' && !mobileMoneyPhone))) ||
-            (paymentMethod === 'wallet' && !hasSufficientBalance)
-          }
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-          sx={(th) => sxObject(th, compactContainedCtaSx)}
-        >
-          {loading
-            ? 'Processing...'
-            : paymentMethod === 'wallet'
-              ? 'Pay with Wallet'
-              : paymentChannel === 'mobile_money'
-                ? `Pay with ${mobileMoneyProvider}`
-                : 'Proceed to Payment'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      {paymentMethod === 'paystack' && (
+        <>
+          <TextField
+            label="Email address"
+            type="email"
+            fullWidth
+            margin="normal"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your.email@example.com"
+            required
+            disabled={loading}
+            sx={(th) => sxObject(th, authFormFieldSx)}
+          />
+
+          <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
+            <InputLabel>Payment method</InputLabel>
+            <Select
+              value={paymentChannel}
+              label="Payment method"
+              onChange={(e) => setPaymentChannel(e.target.value as typeof paymentChannel)}
+              disabled={loading}
+            >
+              <MenuItem value="card">Card (Visa, Mastercard)</MenuItem>
+              <MenuItem value="mobile_money">Mobile money</MenuItem>
+              <MenuItem value="bank">Bank transfer</MenuItem>
+              <MenuItem value="ussd">USSD</MenuItem>
+              <MenuItem value="qr">QR code</MenuItem>
+            </Select>
+            <FormHelperText>Secure checkout via Paystack</FormHelperText>
+          </FormControl>
+
+          {paymentChannel === 'mobile_money' && (
+            <>
+              <FormControl fullWidth margin="normal" sx={(th) => sxObject(th, authFormFieldSx)}>
+                <InputLabel>Provider</InputLabel>
+                <Select
+                  value={mobileMoneyProvider}
+                  label="Provider"
+                  onChange={(e) => setMobileMoneyProvider(e.target.value as typeof mobileMoneyProvider)}
+                  disabled={loading}
+                >
+                  <MenuItem value="MTN">MTN</MenuItem>
+                  <MenuItem value="Vodafone">Vodafone</MenuItem>
+                  <MenuItem value="AirtelTigo">AirtelTigo</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="Mobile money number"
+                type="tel"
+                fullWidth
+                margin="normal"
+                value={mobileMoneyPhone}
+                onChange={(e) => setMobileMoneyPhone(e.target.value)}
+                placeholder="0XXXXXXXXX"
+                required
+                disabled={loading}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </>
+          )}
+        </>
+      )}
+
+      {paymentMethod === 'wallet' && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Payment will be deducted from your wallet balance.
+        </Typography>
+      )}
+    </AdaptiveSheet>
   );
 }

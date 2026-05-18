@@ -21,8 +21,11 @@ import {
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   premiumIconButtonTouchSx,
+  premiumInteractiveCardSx,
   sxObject,
 } from '../../styles/authShell';
+import { iosFontStacks } from '../../theme/iosMobileTokens';
+import { triggerHaptic } from '../../utils/haptics';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { parseLatLng } from '../../utils/googleMapsDirections';
@@ -106,31 +109,13 @@ export function StationListCard({
       tabIndex={0}
       aria-label={`Open details for ${title}`}
       sx={{
-        position: 'relative',
+        ...sxObject(theme, premiumInteractiveCardSx),
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: { xs: 2.5, sm: 3 },
         overflow: 'hidden',
         cursor: 'pointer',
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: alpha(theme.palette.text.primary, 0.08),
-        boxShadow: `0 1px 0 ${alpha(theme.palette.text.primary, 0.04)}, 0 12px 32px ${alpha(
-          theme.palette.text.primary,
-          0.07,
-        )}`,
-        transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease',
-        '@media (hover: hover) and (pointer: fine)': {
-          '&:hover': {
-            transform: 'translateY(-3px)',
-            boxShadow: `0 1px 0 ${alpha(theme.palette.text.primary, 0.06)}, 0 20px 44px ${alpha(
-              primary,
-              0.14,
-            )}`,
-            borderColor: alpha(primary, 0.35),
-          },
-        },
+        fontFamily: iosFontStacks.ui,
       }}
     >
       <Box
@@ -363,9 +348,12 @@ export function StationListCard({
             fullWidth
             size="medium"
             startIcon={<DirectionsIcon />}
-            onClick={(e) => onDirections(e, station)}
+            onClick={(e) => {
+              triggerHaptic('light');
+              onDirections(e, station);
+            }}
             disabled={!canNavigate}
-            sx={compactOutlinedCtaSx}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
           >
             Directions
           </Button>
@@ -376,9 +364,12 @@ export function StationListCard({
             size="medium"
             disableElevation
             startIcon={<PlayArrowIcon />}
-            onClick={(e) => onStartCharging(e, station)}
+            onClick={(e) => {
+              triggerHaptic('light');
+              onStartCharging(e, station);
+            }}
             disabled={!canStart}
-            sx={compactContainedCtaSx}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
             Start charging
           </Button>

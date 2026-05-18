@@ -9,7 +9,8 @@ import {
 import type { ReactNode } from 'react';
 import { alpha } from '@mui/material/styles';
 import { brandColors } from '../theme';
-import { IOS_PAGE_BACKGROUND, iosMotion, iosRadii } from '../theme/iosMobileTokens';
+import { iosMotion, iosRadii, iosSheetBlurBg } from '../theme/iosMobileTokens';
+import { triggerHaptic } from '../utils/haptics';
 
 /** Tab that navigates to a route */
 export type BottomNavRouteItem = {
@@ -77,18 +78,18 @@ export function BottomNav({ items, accentColor = brandColors.primary, variant = 
         boxSizing: 'border-box',
         zIndex: theme.zIndex.appBar,
         borderTop: '1px solid',
-        borderColor: variant === 'customer' ? 'rgba(47, 52, 58, 0.09)' : 'divider',
+        borderColor: 'divider',
         borderRadius: iosRadii.flat,
         pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
         pt: variant === 'customer' ? 0.5 : 0,
-        background:
-          variant === 'customer'
-            ? IOS_PAGE_BACKGROUND
-            : (_t) =>
-                _t.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(28, 28, 30, 0.94)',
-        backdropFilter: variant === 'customer' ? 'none' : 'blur(14px)',
-        WebkitBackdropFilter: variant === 'customer' ? 'none' : 'blur(14px)',
-        boxShadow: variant === 'customer' ? '0 -1px 0 rgba(47, 52, 58, 0.04)' : undefined,
+        background: (_t) =>
+          _t.palette.mode === 'light' ? iosSheetBlurBg('light') : iosSheetBlurBg('dark'),
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        boxShadow: (t) =>
+          t.palette.mode === 'dark'
+            ? 'none'
+            : '0 -0.5px 0 rgba(60, 60, 67, 0.12)',
       }}
     >
       <BottomNavigation
@@ -96,6 +97,7 @@ export function BottomNav({ items, accentColor = brandColors.primary, variant = 
         onChange={(_, newValue) => {
           const item = items[newValue as number];
           if (!item) return;
+          triggerHaptic('light');
           if (isBottomNavRouteItem(item)) {
             navigate(item.path);
             return;

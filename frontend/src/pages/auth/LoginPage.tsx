@@ -23,6 +23,8 @@ import {
   authPagePaperSx,
   authPageRootSx,
   authPageTitleSx,
+  authPageLinkSx,
+  authDividerSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   premiumIconButtonTouchSx,
@@ -292,7 +294,7 @@ export function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
-            <Divider sx={{ my: { xs: 1, sm: 1.125 } }}>or</Divider>
+            <Divider sx={authDividerSx}>or</Divider>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch' }}>
               {googleClientId && (
@@ -335,10 +337,10 @@ export function LoginPage() {
           </form>
 
           <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 0.375 }}>
-            <Link component={RouterLink} to="/forgot-password" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/forgot-password" sx={authPageLinkSx}>
               Forgot password?
             </Link>
-            <Link component={RouterLink} to="/register" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/register" sx={authPageLinkSx}>
               Create account
             </Link>
           </Box>

@@ -2,6 +2,8 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import { Box, Link, Typography, type LinkProps } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
+import { authPageBodySx } from '../../styles/authShell';
+import { iosFontStacks } from '../../theme/iosMobileTokens';
 
 export function LegalDocLink({
   label,
@@ -20,7 +22,11 @@ export function LegalDocLink({
   sx?: LinkProps['sx'];
 }) {
   const linkSx: LinkProps['sx'] = [
-    { fontWeight: 600 },
+    {
+      fontFamily: iosFontStacks.ui,
+      fontWeight: 600,
+      letterSpacing: '-0.01em',
+    },
     ...(Array.isArray(sx) ? sx : sx != null ? [sx] : []),
   ];
   if (external) {
@@ -82,7 +88,7 @@ export function LegalFooterLinks({ onInternalNavigate, sx: containerSx }: LegalF
         external={privacy.external}
         onInternalNavigate={onInternalNavigate}
       />
-      <Typography variant="caption" color="text.secondary" component="span" aria-hidden>
+      <Typography component="span" sx={{ ...authPageBodySx, fontSize: '0.75rem' }} aria-hidden>
         ·
       </Typography>
       <LegalDocLink
@@ -91,7 +97,7 @@ export function LegalFooterLinks({ onInternalNavigate, sx: containerSx }: LegalF
         external={terms.external}
         onInternalNavigate={onInternalNavigate}
       />
-      <Typography variant="caption" color="text.secondary" component="span" aria-hidden>
+      <Typography component="span" sx={{ ...authPageBodySx, fontSize: '0.75rem' }} aria-hidden>
         ·
       </Typography>
       <LegalDocLink
@@ -110,13 +116,13 @@ export function LegalAuthNotice({ includeAppleDisclosure = false }: LegalAuthNot
 
   return (
     <Box sx={{ mt: 1.5, mb: 0.5 }}>
-      <Typography variant="caption" color="text.secondary" component="p" sx={{ lineHeight: 1.5, mb: includeAppleDisclosure ? 1 : 0 }}>
+      <Typography component="p" sx={{ ...authPageBodySx, mb: includeAppleDisclosure ? 1 : 0 }}>
         By continuing with Google or Apple, you agree to our{' '}
         <LegalDocLink label="Terms of Service" href={terms.href} external={terms.external} /> and acknowledge our{' '}
         <LegalDocLink label="Privacy Policy" href={privacy.href} external={privacy.external} />.
       </Typography>
       {includeAppleDisclosure && (
-        <Typography variant="caption" color="text.secondary" component="p" sx={{ lineHeight: 1.5 }}>
+        <Typography component="p" sx={authPageBodySx}>
           Sign in with Apple is operated by Apple. We only receive the name and email you choose to share in Apple’s
           sign-in flow, to create and secure your account. Apple’s handling of your data is described in Apple’s privacy
           materials.

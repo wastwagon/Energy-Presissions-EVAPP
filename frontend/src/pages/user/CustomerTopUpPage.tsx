@@ -14,7 +14,10 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx } from '../../theme/jampackShell';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
+import { triggerHaptic } from '../../utils/haptics';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
@@ -62,7 +65,10 @@ export function CustomerTopUpPage() {
     void loadBalance();
   }, [loadBalance]);
 
+  useCustomerPullRefresh(useCallback(() => void loadBalance(true), [loadBalance]));
+
   const handleQuickAmount = (value: number) => {
+    triggerHaptic('light');
     setQuickAmount(value);
     setAmount(value.toString());
   };
@@ -82,10 +88,14 @@ export function CustomerTopUpPage() {
   };
 
   const handlePaymentSuccess = () => {
+    triggerHaptic('success');
     setPaymentDialogOpen(false);
-    loadBalance();
+    void loadBalance(true);
     navigate(CUSTOMER_ROUTES.wallet);
   };
+
+  const user = getStoredUser();
+  const userId = typeof user?.id === 'number' ? user.id : undefined;
 
   if (loading) {
     return <CustomerChromeSkeleton preset="topUp" />;
@@ -100,8 +110,7 @@ export function CustomerTopUpPage() {
         liveLabel={LIVE_DATA_LABELS.wallet}
         refreshing={refreshing}
         onRefresh={() => void loadBalance(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
       />
 
       {error && (
@@ -138,40 +147,27 @@ export function CustomerTopUpPage() {
               </Box>
             )}
 
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Select amount
-            </Typography>
-
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              {[10, 25, 50, 100, 200, 500].map((value) => (
-                <Grid item xs={6} sm={4} key={value}>
-                  <Button
-                    fullWidth
-                    disableElevation
-                    variant={quickAmount === value ? 'contained' : 'outlined'}
-                    onClick={() => handleQuickAmount(value)}
-                    sx={(th) =>
-                      quickAmount === value
-                        ? {
-                            ...sxObject(th, compactContainedCtaSx),
-                            mt: 0,
-                            minHeight: 48,
-                            py: 1.25,
-                            fontSize: '0.9375rem',
-                          }
-                        : {
-                            ...sxObject(th, compactOutlinedCtaSx),
-                            minHeight: 48,
-                            py: 1.25,
-                            fontSize: '0.875rem',
-                          }
-                    }
-                  >
-                    {formatCurrency(value)}
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
+            <GroupedListSection title="Quick amounts" sx={{ mb: 2 }}>
+              <Grid container spacing={1.5} sx={{ p: 2, pt: 1 }}>
+                {[10, 25, 50, 100, 200, 500].map((value) => (
+                  <Grid item xs={6} key={value}>
+                    <Button
+                      fullWidth
+                      disableElevation
+                      variant={quickAmount === value ? 'contained' : 'outlined'}
+                      onClick={() => handleQuickAmount(value)}
+                      sx={(th) =>
+                        quickAmount === value
+                          ? { ...sxObject(th, compactContainedCtaSx), minHeight: 48 }
+                          : { ...sxObject(th, compactOutlinedCtaSx), minHeight: 48 }
+                      }
+                    >
+                      {formatCurrency(value)}
+                    </Button>
+                  </Grid>
+                ))}
+              </Grid>
+            </GroupedListSection>
 
             <TextField
               fullWidth
@@ -245,6 +241,7 @@ export function CustomerTopUpPage() {
           onClose={() => setPaymentDialogOpen(false)}
           amount={parseFloat(amount)}
           currency="GHS"
+          userId={userId}
           onSuccess={handlePaymentSuccess}
           onError={(err) => setError(err)}
         />

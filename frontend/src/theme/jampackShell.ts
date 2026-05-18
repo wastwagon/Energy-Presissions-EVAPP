@@ -10,11 +10,11 @@ import { IOS_PAGE_BACKGROUND, iosRadii, iosMotion } from './iosMobileTokens';
  */
 export const JAMPACK_DRAWER_WIDTH = 270;
 
-/** Shared KPI / widget card surface (Jampack-style white tiles). */
+/** Shared KPI / widget card surface (Jampack-style tiles). */
 export const jampackKpiCardBaseSx: SystemStyleObject<Theme> = {
   borderRadius: `${iosRadii.sm}px`,
-  bgcolor: '#ffffff',
-  border: '1px solid rgba(47, 52, 58, 0.09)',
+  bgcolor: 'background.paper',
+  border: (theme) => `1px solid ${theme.palette.divider}`,
   boxShadow: 'none',
 };
 
@@ -34,19 +34,19 @@ export const jampackKpiCardHoverSx: SystemStyleObject<Theme> = {
 export const JAMPACK_PAGE_BG = IOS_PAGE_BACKGROUND;
 
 /** Drawer paper shared by mobile + desktop */
-export const jampackDrawerPaper = {
-  boxSizing: 'border-box' as const,
+export const jampackDrawerPaper: SystemStyleObject<Theme> = {
+  boxSizing: 'border-box',
   width: JAMPACK_DRAWER_WIDTH,
-  borderRight: '1px solid rgba(47, 52, 58, 0.09)',
-  bgcolor: '#ffffff',
+  borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+  bgcolor: 'background.paper',
   boxShadow: 'none',
 };
 
-/** Top navbar: light, minimal separation like hk-navbar */
-export const jampackAppBarSx = {
-  background: '#ffffff',
-  borderBottom: '1px solid rgba(47, 52, 58, 0.09)',
-  boxShadow: '0 1px 0 rgba(47, 52, 58, 0.04)',
+/** Top navbar: minimal separation like hk-navbar */
+export const jampackAppBarSx: SystemStyleObject<Theme> = {
+  bgcolor: 'background.paper',
+  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+  boxShadow: 'none',
 };
 
 /**
@@ -141,7 +141,8 @@ export const premiumPanelCardSx: SystemStyleObject<Theme> = {
   ...jampackKpiCardBaseSx,
   p: { xs: 2, sm: 2.5 },
   borderRadius: `${iosRadii.md}px`,
-  boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+  boxShadow: (theme) =>
+    theme.palette.mode === 'light' ? '0 8px 28px rgba(15, 23, 42, 0.06)' : 'none',
 };
 
 /** Centered empty state (lists, history) — same surface as panel cards. */
@@ -155,6 +156,7 @@ export const premiumEmptyStatePaperSx: SystemStyleObject<Theme> = {
 export const premiumTableSurfaceSx: SystemStyleObject<Theme> = {
   ...jampackKpiCardBaseSx,
   borderRadius: `${iosRadii.md}px`,
-  boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06)',
+  boxShadow: (theme) =>
+    theme.palette.mode === 'light' ? '0 8px 28px rgba(15, 23, 42, 0.06)' : 'none',
   overflow: 'hidden',
 };

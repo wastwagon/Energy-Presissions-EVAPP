@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Typography,
   Box,
@@ -22,13 +18,10 @@ import { walletApi } from '../services/walletApi';
 import { getStoredUserId } from '../utils/authSession';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../utils/formatters';
 import { premiumPanelCardSx } from '../theme/jampackShell';
-import {
-  compactContainedCtaSx,
-  premiumDialogPaperSx,
-  premiumIconButtonTouchSx,
-  sxObject,
-} from '../styles/authShell';
+import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { TransactionSummaryBodySkeleton } from './dashboard/BlockContentSkeletons';
+import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { triggerHaptic } from '../utils/haptics';
 
 interface TransactionSummaryDialogProps {
   open: boolean;
@@ -83,11 +76,11 @@ export function TransactionSummaryDialog({
         if (cancelled) return;
         setTransaction(data);
         if (data.walletReservedAmount && data.totalCost) {
-          const refund = data.walletReservedAmount - data.totalCost;
-          setRefundAmount(Math.max(0, refund));
+          setRefundAmount(Math.max(0, data.walletReservedAmount - data.totalCost));
         } else {
           setRefundAmount(0);
         }
+        triggerHaptic('success');
         onRefreshRef.current?.();
       } catch (err: any) {
         console.error('Failed to load transaction:', err);
@@ -101,8 +94,8 @@ export function TransactionSummaryDialog({
       }
     };
 
-    loadWalletBalance();
-    loadTransaction();
+    void loadWalletBalance();
+    void loadTransaction();
 
     return () => {
       cancelled = true;
@@ -113,173 +106,138 @@ export function TransactionSummaryDialog({
     return null;
   }
 
+  const sheetHeader = (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, width: '100%' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        {!loading && transaction && <CheckCircleIcon color="success" sx={{ flexShrink: 0 }} />}
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          {loading ? 'Loading session…' : 'Session complete'}
+        </Typography>
+      </Box>
+      <IconButton onClick={onClose} aria-label="Close" sx={(th) => sxObject(th, premiumIconButtonTouchSx)}>
+        <CloseIcon />
+      </IconButton>
+    </Box>
+  );
+
   return (
-    <Dialog
+    <AdaptiveSheet
       open={open}
       onClose={onClose}
+      title="Charging session complete"
+      header={sheetHeader}
+      tall
       maxWidth="md"
-      fullWidth
-      PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
-    >
-      <DialogTitle sx={{ pr: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-            {!loading && transaction && <CheckCircleIcon color="success" sx={{ flexShrink: 0 }} />}
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-              {loading ? 'Loading session…' : 'Charging session complete'}
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={onClose}
-            aria-label="Close transaction summary dialog"
-            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        {loading || !transaction ? (
-          <TransactionSummaryBodySkeleton />
-        ) : (
-          <>
-            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>
-                Transaction #{transaction.transactionId}
-              </Typography>
-              <Typography variant="body2">
-                Status: <strong>{transaction.status}</strong>
-              </Typography>
-            </Paper>
-
-            <Grid container spacing={{ xs: 2, sm: 2 }}>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <BoltIcon color="primary" />
-                  Charging details
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Typography variant="body2" color="text.secondary">
-                    Energy delivered
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold" color="primary">
-                    {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Typography variant="body2" color="text.secondary">
-                    Duration
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {transaction.durationMinutes ? formatDurationMinutes(transaction.durationMinutes) : 'N/A'}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ReceiptIcon color="primary" />
-                  Billing summary
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Charge point:
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {transaction.chargePointId}
-                    </Typography>
-                  </Box>
-                  {transaction.startTime && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Start time:
-                      </Typography>
-                      <Typography variant="body2">{new Date(transaction.startTime).toLocaleString()}</Typography>
-                    </Box>
-                  )}
-                  {transaction.stopTime && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        End time:
-                      </Typography>
-                      <Typography variant="body2">{new Date(transaction.stopTime).toLocaleString()}</Typography>
-                    </Box>
-                  )}
-                  <Divider sx={{ my: 1 }} />
-                  {transaction.walletReservedAmount && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Amount reserved:
-                      </Typography>
-                      <Typography variant="body2">
-                        {formatCurrency(transaction.walletReservedAmount, transaction.currency || 'GHS')}
-                      </Typography>
-                    </Box>
-                  )}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body1" fontWeight="bold">
-                      Total cost:
-                    </Typography>
-                    <Typography variant="h6" fontWeight="bold" color="primary">
-                      {formatCurrency(transaction.totalCost, transaction.currency || 'GHS')}
-                    </Typography>
-                  </Box>
-                  {refundAmount > 0 && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        mt: 1,
-                        p: 1,
-                        bgcolor: 'success.light',
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight="bold">
-                        Refunded to wallet:
-                      </Typography>
-                      <Typography variant="body1" fontWeight="bold" color="success.dark">
-                        {formatCurrency(refundAmount, transaction.currency || 'GHS')}
-                      </Typography>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
-
-              {walletBalance !== null && (
-                <Grid item xs={12}>
-                  <Paper sx={{ ...premiumPanelCardSx, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AccountBalanceWalletIcon />
-                        <Typography variant="body1" fontWeight="bold">
-                          Updated wallet balance:
-                        </Typography>
-                      </Box>
-                      <Typography variant="h6" fontWeight="bold">
-                        {formatCurrency(walletBalance, 'GHS')}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-              )}
-            </Grid>
-          </>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+      actions={
         <Button onClick={onClose} variant="contained" disableElevation sx={(th) => sxObject(th, compactContainedCtaSx)}>
-          Close
+          Done
         </Button>
-      </DialogActions>
-    </Dialog>
+      }
+    >
+      {loading || !transaction ? (
+        <TransactionSummaryBodySkeleton />
+      ) : (
+        <>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              Transaction #{transaction.transactionId}
+            </Typography>
+            <Typography variant="body2">
+              Status: <strong>{transaction.status}</strong>
+            </Typography>
+          </Paper>
+
+          <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1.5 }}>
+            <BoltIcon color="primary" fontSize="small" />
+            Charging details
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={6}>
+              <Paper sx={{ ...premiumPanelCardSx, p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Energy
+                </Typography>
+                <Typography variant="h6" fontWeight="bold" color="primary">
+                  {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6}>
+              <Paper sx={{ ...premiumPanelCardSx, p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Duration
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {transaction.durationMinutes ? formatDurationMinutes(transaction.durationMinutes) : 'N/A'}
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1.5 }}>
+            <ReceiptIcon color="primary" fontSize="small" />
+            Billing
+          </Typography>
+          <Paper sx={{ ...premiumPanelCardSx, p: 2, mb: 2 }}>
+            <SummaryRow label="Charge point" value={transaction.chargePointId} />
+            {transaction.startTime && (
+              <SummaryRow label="Start" value={new Date(transaction.startTime).toLocaleString()} />
+            )}
+            {transaction.stopTime && <SummaryRow label="End" value={new Date(transaction.stopTime).toLocaleString()} />}
+            {transaction.walletReservedAmount != null && (
+              <SummaryRow
+                label="Reserved"
+                value={formatCurrency(transaction.walletReservedAmount, transaction.currency || 'GHS')}
+              />
+            )}
+            <Divider sx={{ my: 1 }} />
+            <SummaryRow
+              label="Total cost"
+              value={formatCurrency(transaction.totalCost, transaction.currency || 'GHS')}
+              bold
+            />
+            {refundAmount > 0 && (
+              <Box sx={{ mt: 1.5, p: 1.25, bgcolor: 'success.light', borderRadius: 1 }}>
+                <SummaryRow
+                  label="Refunded"
+                  value={formatCurrency(refundAmount, transaction.currency || 'GHS')}
+                  bold
+                />
+              </Box>
+            )}
+          </Paper>
+
+          {walletBalance !== null && (
+            <Paper sx={{ ...premiumPanelCardSx, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountBalanceWalletIcon fontSize="small" />
+                  <Typography variant="body2" fontWeight={600}>
+                    Wallet balance
+                  </Typography>
+                </Box>
+                <Typography variant="h6" fontWeight="bold">
+                  {formatCurrency(walletBalance, 'GHS')}
+                </Typography>
+              </Box>
+            </Paper>
+          )}
+        </>
+      )}
+    </AdaptiveSheet>
+  );
+}
+
+function SummaryRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75, gap: 2 }}>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={bold ? 700 : 500} textAlign="right">
+        {value}
+      </Typography>
+    </Box>
   );
 }

@@ -14,17 +14,17 @@ import {
   TableHead,
   TableRow,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { alpha } from '@mui/material/styles';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import { walletApi, WalletBalance, WalletTransaction } from '../../services/walletApi';
-import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumPanelCardSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
+import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
@@ -35,9 +35,12 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { triggerHaptic } from '../../utils/haptics';
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
@@ -71,6 +74,8 @@ export function CustomerWalletPage() {
     void loadWalletData();
   }, [loadWalletData]);
 
+  useCustomerPullRefresh(useCallback(() => void loadWalletData(true), [loadWalletData]));
+
   if (loading && balance === null) {
     return <CustomerChromeSkeleton preset="wallet" />;
   }
@@ -84,15 +89,17 @@ export function CustomerWalletPage() {
         liveLabel={LIVE_DATA_LABELS.wallet}
         refreshing={refreshing}
         onRefresh={() => void loadWalletData(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
       />
       <Box sx={{ mb: 3 }}>
         <Button
           variant="contained"
           disableElevation
           startIcon={<AddIcon />}
-          onClick={() => navigate(CUSTOMER_ROUTES.walletTopUp)}
+          onClick={() => {
+            triggerHaptic('light');
+            navigate(CUSTOMER_ROUTES.walletTopUp);
+          }}
           sx={(th) => ({
             ...sxObject(th, compactContainedCtaSx),
             width: { xs: '100%', sm: 'auto' },
@@ -162,70 +169,106 @@ export function CustomerWalletPage() {
         </Grid>
       )}
 
-      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
-        <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
-        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Transaction history
-          </Typography>
+      {useGroupedList ? (
+        <Box sx={{ position: 'relative' }}>
+          <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
+          {transactions.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No transactions yet
+            </Typography>
+          ) : (
+            <GroupedListSection title="Transaction history">
+              {transactions.map((tx, index) => (
+                <GroupedListRow
+                  key={tx.id}
+                  divider={index < transactions.length - 1}
+                  showChevron={false}
+                  primary={tx.description || tx.type.replace('_', ' ')}
+                  secondary={`${new Date(tx.createdAt).toLocaleDateString()} · ${tx.status}`}
+                  end={
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          color: tx.type === 'debit' || tx.type === 'payment' ? 'error.main' : 'success.main',
+                        }}
+                      >
+                        {tx.type === 'debit' || tx.type === 'payment' ? '-' : '+'}
+                        {formatCurrency(Math.abs(tx.amount))}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatCurrency(tx.balanceAfter)}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              ))}
+            </GroupedListSection>
+          )}
         </Box>
-        <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Balance After</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {transactions.length === 0 ? (
+      ) : (
+        <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
+          <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
+          <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Transaction history
+            </Typography>
+          </Box>
+          <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No transactions yet
-                    </Typography>
-                  </TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Balance After</TableCell>
+                  <TableCell>Status</TableCell>
                 </TableRow>
-              ) : (
-                transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={tx.type.replace('_', ' ').toUpperCase()}
-                        color={getWalletTransactionTypeColor(tx.type)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{tx.description || '-'}</TableCell>
-                    <TableCell
-                      sx={{
-                        color: tx.type === 'debit' || tx.type === 'payment' ? 'error.main' : 'success.main',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {tx.type === 'debit' || tx.type === 'payment' ? '-' : '+'}
-                      {formatCurrency(Math.abs(tx.amount))}
-                    </TableCell>
-                    <TableCell>{formatCurrency(tx.balanceAfter)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={tx.status}
-                        color={getPaymentStatusColor(tx.status)}
-                        size="small"
-                      />
+              </TableHead>
+              <TableBody>
+                {transactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No transactions yet
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                ) : (
+                  transactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={tx.type.replace('_', ' ').toUpperCase()}
+                          color={getWalletTransactionTypeColor(tx.type)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{tx.description || '-'}</TableCell>
+                      <TableCell
+                        sx={{
+                          color: tx.type === 'debit' || tx.type === 'payment' ? 'error.main' : 'success.main',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {tx.type === 'debit' || tx.type === 'payment' ? '-' : '+'}
+                        {formatCurrency(Math.abs(tx.amount))}
+                      </TableCell>
+                      <TableCell>{formatCurrency(tx.balanceAfter)}</TableCell>
+                      <TableCell>
+                        <Chip label={tx.status} color={getPaymentStatusColor(tx.status)} size="small" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
     </Box>
   );
 }

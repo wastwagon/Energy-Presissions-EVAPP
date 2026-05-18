@@ -12,6 +12,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { customerDrawerMoreItems, type CustomerDrawerNavItem } from '../../config/customerDrawerNav';
+import { triggerHaptic } from '../../utils/haptics';
 import {
   customerNavDrawerLightCloseIconButtonSx,
   customerNavDrawerLightHeaderRowSx,
@@ -33,6 +34,7 @@ export function CustomerAppNavDrawer({ open, onClose, id = 'customer-app-nav-dra
   const navigate = useNavigate();
 
   const go = (to: string) => {
+    triggerHaptic('light');
     navigate(to);
     onClose();
   };

@@ -1,6 +1,6 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
-import { IOS_TOUCH_TARGET_PX, iosRadii } from '../theme/iosMobileTokens';
+import { IOS_TOUCH_TARGET_PX, iosFontStacks, iosRadii } from '../theme/iosMobileTokens';
 
 /** Turn SxProps into a plain object for spreading (MUI SxProps can be an array; spreading that breaks TS). */
 export function sxObject(theme: Theme, sx: SxProps<Theme>): Record<string, unknown> {
@@ -74,6 +74,7 @@ export const premiumIconButtonTouchSx: SxProps<Theme> = {
 };
 
 export const authPageTitleSx: SxProps<Theme> = {
+  fontFamily: iosFontStacks.ui,
   fontWeight: 700,
   color: 'text.primary',
   mb: { xs: 1, sm: 1.125 },
@@ -82,6 +83,89 @@ export const authPageTitleSx: SxProps<Theme> = {
   fontSize: { xs: '1.0625rem', sm: '1.125rem' },
   lineHeight: 1.3,
 };
+
+/** Auth body / helper copy — SF system stack on Apple. */
+export const authPageBodySx: SxProps<Theme> = {
+  fontFamily: iosFontStacks.ui,
+  fontSize: '0.875rem',
+  lineHeight: 1.45,
+  letterSpacing: '-0.01em',
+  color: 'text.secondary',
+};
+
+/** Tappable auth links (forgot password, register) — 44px row height. */
+export const authPageLinkSx: SxProps<Theme> = {
+  fontFamily: iosFontStacks.ui,
+  fontSize: '0.8125rem',
+  fontWeight: 500,
+  letterSpacing: '-0.01em',
+  color: 'primary.main',
+  textDecoration: 'none',
+  minHeight: IOS_TOUCH_TARGET_PX,
+  display: 'inline-flex',
+  alignItems: 'center',
+  py: 0.5,
+};
+
+/** “or” divider between sign-in methods */
+export const authDividerSx: SxProps<Theme> = {
+  my: { xs: 1, sm: 1.125 },
+  '&::before, &::after': { borderColor: 'divider' },
+  '& .MuiDivider-wrapper': {
+    fontFamily: iosFontStacks.ui,
+    fontSize: '0.75rem',
+    fontWeight: 500,
+    color: 'text.secondary',
+    px: 1.5,
+    letterSpacing: '-0.01em',
+  },
+};
+
+/** Sheet / adaptive modal title typography */
+export const sheetTitleTypographySx: SxProps<Theme> = {
+  fontFamily: iosFontStacks.ui,
+  fontWeight: 600,
+  fontSize: '1.0625rem',
+  letterSpacing: '-0.02em',
+  lineHeight: 1.3,
+};
+
+/**
+ * Tappable cards (station rows, pickers) — theme borders, soft elevation, press feedback.
+ * Respects prefers-reduced-motion for hover/press transforms.
+ */
+export const premiumInteractiveCardSx: SxProps<Theme> = (theme) => ({
+  position: 'relative',
+  borderRadius: `${iosRadii.md}px`,
+  bgcolor: 'background.paper',
+  border: '1px solid',
+  borderColor: theme.palette.divider,
+  boxShadow:
+    theme.palette.mode === 'light'
+      ? `0 1px 0 ${alpha(theme.palette.text.primary, 0.04)}, 0 8px 24px ${alpha(theme.palette.text.primary, 0.06)}`
+      : 'none',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease',
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+  },
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow:
+        theme.palette.mode === 'light'
+          ? `0 1px 0 ${alpha(theme.palette.text.primary, 0.06)}, 0 16px 36px ${alpha(theme.palette.primary.main, 0.12)}`
+          : undefined,
+      borderColor: alpha(theme.palette.primary.main, 0.35),
+    },
+  },
+  '&:active': {
+    transform: 'scale(0.985)',
+    transition: 'transform 0.08s ease',
+    '@media (prefers-reduced-motion: reduce)': {
+      transform: 'none',
+    },
+  },
+});
 
 /** Compact outlined fields: tighter helper text, soft borders, focus ring. */
 export const authFormFieldSx: SxProps<Theme> = (theme) => ({
