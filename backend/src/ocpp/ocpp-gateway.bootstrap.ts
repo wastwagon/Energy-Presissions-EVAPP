@@ -8,6 +8,7 @@ import { InternalService } from '../internal/internal.service';
 import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
 import { WebSocketServer } from 'ws';
+import { OCPP_WEBSOCKET_SERVER_OPTIONS } from './ocpp-websocket-options';
 import type { WebSocket } from 'ws';
 import Redis from 'ioredis';
 import axios from 'axios';
@@ -315,7 +316,7 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
 
   const httpServer = app.getHttpServer();
   // Do not use `{ server }` here: without `path`, `ws` accepts every upgrade and steals Socket.IO on `/ws`.
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, ...OCPP_WEBSOCKET_SERVER_OPTIONS });
 
   const onHttpUpgrade = (req: IncomingMessage, socket: Duplex, head: Buffer) => {
     const pathname = (req.url || '').split('?')[0] || '';

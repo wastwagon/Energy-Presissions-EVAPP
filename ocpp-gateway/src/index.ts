@@ -1,4 +1,5 @@
 import { WebSocketServer } from 'ws';
+import { OCPP_WEBSOCKET_SERVER_OPTIONS } from './ocpp-websocket-options';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
 import Redis from 'ioredis';
@@ -121,8 +122,9 @@ const server = createServer((req, res) => {
 // Create WebSocket server
 // Note: We don't specify path here to allow both /ocpp and /ocpp/
 // Path validation is done in the connection handler
-const wss = new WebSocketServer({ 
-  server
+const wss = new WebSocketServer({
+  server,
+  ...OCPP_WEBSOCKET_SERVER_OPTIONS,
 });
 
 // Initialize services
