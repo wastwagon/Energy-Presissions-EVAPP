@@ -35,10 +35,16 @@ Use when touching a screen after the design-system rollout.
 - [x] Modals on mobile use `AdaptiveSheet` (bottom sheet) instead of centered `Dialog`.
 - [x] Destructive list actions: `SwipeableGroupedListRow` on mobile where appropriate.
 - [x] Pull-to-refresh: page registers `useCustomerPullRefresh` in customer layout scroll region.
-- [x] Dark mode: `ColorModeProvider` + Preferences toggle (`user_pref_dark_mode`).
 - [x] Large title scroll: `LivePageHeader` `titleVariant="large"` registers compact AppBar title on mobile.
 - [x] Detail screens use `GroupedDetailRow` on mobile (`CustomerTransactionDetailPage`, `StationDetailPage`, etc.).
-- [x] Shared surfaces (`premiumPanelCardSx`, `premiumEmptyStatePaperSx`, `premiumInteractiveCardSx`) respect dark mode via theme tokens.
+- [x] Shared surfaces (`premiumPanelCardSx`, `premiumEmptyStatePaperSx`, `premiumInteractiveCardSx`) use theme tokens (light shell only).
+
+## Phase 13 — leftovers & map sheet
+
+- [x] `/support` (`SupportPage`) — `authPageBodySx` / `authPageLinkSx` parity with Terms & Privacy.
+- [x] Login — `LegalAuthNotice` with `includeAppleDisclosure` below Sign in with Apple.
+- [x] Stations map bottom sheet on `xs` — `StationSheetListItem` grouped rows; `sm+` keeps premium cards.
+- [x] In-app Help — FAQ haptics + SF body typography on answers.
 
 ## Premium polish (Phase 12)
 
@@ -55,9 +61,8 @@ Use when touching a screen after the design-system rollout.
 - [ ] Frosted AppBar + tab bar visible over scroll content.
 - [ ] Pull down at top of wallet/history/stations to refresh.
 - [ ] Scroll a large-title page: AppBar shows compact page title after large title leaves view.
-- [ ] Toggle dark mode in Preferences; grouped lists and chrome update without reload.
-- [ ] Login / legal pages respect saved dark mode (no forced white chrome).
-- [ ] Stations map sheet + app menu drawer match light/dark palette.
+- [ ] Login / legal pages use light chrome consistently.
+- [ ] Stations map sheet + app menu drawer match light palette.
 - [ ] List rows, toggles, refresh, and drawer nav give light haptic feedback on tap.
 - [ ] Auth titles and body use SF system stack (`authPageTitleSx` / `authPageBodySx`).
 - [ ] Stations detail sheet → “Full station details” opens `/stations/:id`.

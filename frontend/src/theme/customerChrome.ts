@@ -7,17 +7,13 @@ export const customerFrostedChromeSx: SystemStyleObject<Theme> = {
   background: (theme) => iosSheetBlurBg(theme.palette.mode),
   backdropFilter: 'saturate(180%) blur(20px)',
   WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-  borderColor: (theme) =>
-    theme.palette.mode === 'dark' ? 'rgba(84, 84, 88, 0.65)' : 'rgba(60, 60, 67, 0.12)',
+  borderColor: 'rgba(60, 60, 67, 0.12)',
   boxShadow: 'none',
 };
 
 export const customerFrostedAppBarSx: SystemStyleObject<Theme> = {
   ...customerFrostedChromeSx,
-  borderBottom: (theme) =>
-    `0.5px solid ${
-      theme.palette.mode === 'dark' ? 'rgba(84, 84, 88, 0.65)' : 'rgba(60, 60, 67, 0.12)'
-    }`,
+  borderBottom: '0.5px solid rgba(60, 60, 67, 0.12)',
 };
 
 /** Large navigation title (mobile); compacts on md+ via LivePageHeader. */

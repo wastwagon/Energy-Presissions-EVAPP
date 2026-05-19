@@ -34,10 +34,10 @@ interface AdaptiveSheetProps {
   contentSx?: object;
 }
 
-const sheetPaperSx = (mode: 'light' | 'dark', tall: boolean) => ({
+const sheetPaperSx = (tall: boolean) => ({
   borderTopLeftRadius: iosRadii.lg,
   borderTopRightRadius: iosRadii.lg,
-  background: iosSheetBlurBg(mode),
+  background: iosSheetBlurBg('light'),
   backdropFilter: 'saturate(180%) blur(20px)',
   WebkitBackdropFilter: 'saturate(180%) blur(20px)',
   pb: 'max(env(safe-area-inset-bottom, 0px), 12px)',
@@ -73,7 +73,7 @@ export function AdaptiveSheet({
   );
 
   if (isMobileSheet) {
-    const paperProps = { sx: sheetPaperSx(theme.palette.mode, tall) };
+    const paperProps = { sx: sheetPaperSx(tall) };
     const sheetBody = (
       <>
         <SheetDragHandle />

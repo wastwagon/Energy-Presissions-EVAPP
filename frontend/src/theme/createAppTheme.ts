@@ -1,6 +1,4 @@
 import { createTheme, alpha } from '@mui/material/styles';
-
-type PaletteMode = 'light' | 'dark';
 import { iosBrandColors, iosFontStacks, iosRadii, iosMotion } from './iosMobileTokens';
 
 export type AppThemeOptions = {
@@ -36,14 +34,14 @@ const shadows = [
   '0 20px 25px -5px rgba(15, 23, 42, 0.19), 0 8px 10px -6px rgba(15, 23, 42, 0.11)',
 ] as const;
 
-export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {}) {
+/** App theme — light mode only. */
+export function createAppTheme(options: AppThemeOptions = {}) {
   const fontStackDisplay = options.customerTypography ? iosFontStacks.ui : iosFontStacks.display;
   const fontStackBody = iosFontStacks.ui;
-  const isDark = mode === 'dark';
 
   return createTheme({
     palette: {
-      mode,
+      mode: 'light',
       primary: {
         main: iosBrandColors.primary,
         light: '#14919e',
@@ -56,13 +54,9 @@ export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {})
         dark: '#0d5c66',
         contrastText: '#ffffff',
       },
-      background: isDark
-        ? { default: '#000000', paper: '#1c1c1e' }
-        : { default: iosBrandColors.background, paper: iosBrandColors.paper },
-      text: isDark
-        ? { primary: '#ffffff', secondary: 'rgba(235, 235, 245, 0.6)' }
-        : { primary: '#0f172a', secondary: '#64748b' },
-      divider: isDark ? 'rgba(84, 84, 88, 0.65)' : alpha('#0f172a', 0.08),
+      background: { default: iosBrandColors.background, paper: iosBrandColors.paper },
+      text: { primary: '#0f172a', secondary: '#64748b' },
+      divider: alpha('#0f172a', 0.08),
       success: { main: '#0d9488', dark: '#0f766e', contrastText: '#fff' },
       info: { main: '#0284c7', dark: '#0369a1', contrastText: '#fff' },
       error: { main: '#dc2626', dark: '#b91c1c', contrastText: '#fff' },
@@ -92,7 +86,7 @@ export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {})
           html: {
             minHeight: '100dvh',
             backgroundColor: theme.palette.background.default,
-            colorScheme: theme.palette.mode,
+            colorScheme: 'light',
           },
           body: {
             minHeight: '100dvh',
@@ -123,9 +117,7 @@ export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {})
         styleOverrides: {
           root: { backgroundImage: 'none' },
           elevation1: {
-            boxShadow: isDark
-              ? 'none'
-              : '0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.08)',
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.08)',
           },
         },
       },
@@ -134,7 +126,7 @@ export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {})
           root: {
             borderRadius: iosRadii.md,
             border: `1px solid`,
-            borderColor: isDark ? 'rgba(84, 84, 88, 0.65)' : alpha('#0f172a', 0.06),
+            borderColor: alpha('#0f172a', 0.06),
             boxShadow: 'none',
           },
         },
@@ -182,7 +174,7 @@ export function createAppTheme(mode: PaletteMode, options: AppThemeOptions = {})
       MuiSkeleton: {
         styleOverrides: {
           root: {
-            bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.06)',
+            bgcolor: 'rgba(15, 23, 42, 0.06)',
           },
         },
       },

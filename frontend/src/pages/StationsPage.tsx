@@ -11,6 +11,8 @@ import {
   TextField,
   InputAdornment,
   Button,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
@@ -31,6 +33,8 @@ import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/char
 import { SheetDragHandle } from '../components/ios/SheetDragHandle';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
+import { StationSheetListItem } from '../components/stations/StationSheetListItem';
+import { GroupedListSection } from '../components/ios/GroupedListSection';
 import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
 import { LoginPromptSheet } from '../components/stations/LoginPromptSheet';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
@@ -46,6 +50,8 @@ import { formatApiOrNetworkError } from '../utils/apiErrors';
 const NEARBY_LOAD_RADIUS_KM = 50;
 
 export function StationsPage() {
+  const theme = useTheme();
+  const useCompactStationList = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
@@ -412,8 +418,7 @@ export function StationsPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   p: 2,
-                  bgcolor: (t) =>
-                    t.palette.mode === 'dark' ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.6)',
+                  bgcolor: 'rgba(255,255,255,0.6)',
                 }}
                 role="status"
                 aria-busy="true"
@@ -534,7 +539,22 @@ export function StationsPage() {
                 )}
               </Paper>
             )}
-            {!loading && sortedStations.length > 0 && (
+            {!loading && sortedStations.length > 0 && useCompactStationList ? (
+              <GroupedListSection sx={{ mx: -0.5 }}>
+                {sortedStations.map((station, index) => (
+                  <StationSheetListItem
+                    key={station.chargePointId}
+                    station={station}
+                    isAuthenticated={isAuthenticated}
+                    isFavorite={favoriteIds.includes(station.chargePointId)}
+                    divider={index < sortedStations.length - 1}
+                    onOpen={handleStationClick}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
+              </GroupedListSection>
+            ) : null}
+            {!loading && sortedStations.length > 0 && !useCompactStationList ? (
               <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                 {sortedStations.map((station) => (
                   <Grid item xs={12} sm={6} key={station.chargePointId}>
@@ -551,7 +571,7 @@ export function StationsPage() {
                   </Grid>
                 ))}
               </Grid>
-            )}
+            ) : null}
           </Paper>
         </Box>
 

@@ -31,7 +31,7 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
-import { LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
+import { LegalAuthNotice, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 
 declare global {
   interface Window {
@@ -334,6 +334,8 @@ export function LoginPage() {
                 Sign in with Apple
               </Button>
             </Box>
+
+            <LegalAuthNotice includeAppleDisclosure />
           </form>
 
           <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 0.375 }}>

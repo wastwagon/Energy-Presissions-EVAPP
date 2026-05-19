@@ -152,10 +152,7 @@ export const chargingBottomSheetPremiumSx: SystemStyleObject<Theme> = {
   background: (theme) => iosSheetBlurBg(theme.palette.mode),
   backdropFilter: 'saturate(180%) blur(20px)',
   WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-  border: (theme) =>
-    `0.5px solid ${
-      theme.palette.mode === 'dark' ? 'rgba(84, 84, 88, 0.65)' : 'rgba(60, 60, 67, 0.12)'
-    }`,
+  border: '0.5px solid rgba(60, 60, 67, 0.12)',
   borderBottom: 'none',
 };
 
@@ -238,10 +235,7 @@ export const customerNavDrawerLightPaperSx: SystemStyleObject<Theme> = {
   borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
   borderTopLeftRadius: `${iosRadii.md}px`,
   borderBottomLeftRadius: `${iosRadii.md}px`,
-  boxShadow: (theme) =>
-    theme.palette.mode === 'dark'
-      ? '-8px 0 32px rgba(0, 0, 0, 0.45)'
-      : '-8px 0 24px rgba(47, 52, 58, 0.08)',
+  boxShadow: '-8px 0 24px rgba(47, 52, 58, 0.08)',
   pt: 'max(12px, env(safe-area-inset-top, 0px))',
   pb: 'env(safe-area-inset-bottom, 0px)',
 };

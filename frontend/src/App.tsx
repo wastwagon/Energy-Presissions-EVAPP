@@ -10,7 +10,7 @@ import { CUSTOMER_ROUTES } from './config/customerNav.paths';
 import { getDashboardPathForAccountType, getStoredUser } from './utils/authSession';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
-import { getAppChromeBackground, readDarkModePreference } from './constants/userPreferences';
+import { getAppChromeBackground } from './constants/userPreferences';
 
 const MainLayout = lazy(() =>
   import('./layouts/MainLayout').then((m) => ({ default: m.MainLayout })),
@@ -254,12 +254,11 @@ function App() {
 
   useEffect(() => {
     const path = location.pathname.toLowerCase();
-    const dark = readDarkModePreference();
-    const chromeColor = getAppChromeBackground(dark);
+    const chromeColor = getAppChromeBackground();
 
     document.documentElement.style.setProperty('--app-chrome-bg', chromeColor);
     document.body.style.backgroundColor = chromeColor;
-    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = 'light';
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {

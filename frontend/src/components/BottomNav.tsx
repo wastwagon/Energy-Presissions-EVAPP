@@ -82,14 +82,10 @@ export function BottomNav({ items, accentColor = brandColors.primary, variant = 
         borderRadius: iosRadii.flat,
         pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
         pt: variant === 'customer' ? 0.5 : 0,
-        background: (_t) =>
-          _t.palette.mode === 'light' ? iosSheetBlurBg('light') : iosSheetBlurBg('dark'),
+        background: iosSheetBlurBg('light'),
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        boxShadow: (t) =>
-          t.palette.mode === 'dark'
-            ? 'none'
-            : '0 -0.5px 0 rgba(60, 60, 67, 0.12)',
+        boxShadow: '0 -0.5px 0 rgba(60, 60, 67, 0.12)',
       }}
     >
       <BottomNavigation

@@ -8,7 +8,14 @@ import {
   SUPPORT_PHONE_TEL,
   SUPPORT_SECTIONS,
 } from '../../legal/supportPageContent';
-import { authPagePaperSx, authPageRootSx, authPageTitleSx } from '../../styles/authShell';
+import {
+  authPageBodySx,
+  authPageLinkSx,
+  authPagePaperSx,
+  authPageRootSx,
+  authPageTitleSx,
+} from '../../styles/authShell';
+import { iosFontStacks } from '../../theme/iosMobileTokens';
 
 /**
  * Public support page for App Store “Support URL” and in-app deep link /support.
@@ -22,17 +29,20 @@ export function SupportPage() {
           <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
             Help &amp; support
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
+          <Typography component="p" sx={{ ...authPageBodySx, display: 'block', textAlign: 'center', mb: 2 }}>
             Last updated: {SUPPORT_LAST_UPDATED}
           </Typography>
 
           {SUPPORT_SECTIONS.map((section) => (
             <Box key={section.id}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 2, mb: 0.5 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontFamily: iosFontStacks.ui, fontWeight: 700, mt: 2, mb: 0.5, letterSpacing: '-0.02em' }}
+              >
                 {section.title}
               </Typography>
               {section.paragraphs.map((p, i) => (
-                <Typography key={`${section.id}-p-${i}`} variant="body2" sx={{ mb: 1, lineHeight: 1.6 }}>
+                <Typography key={`${section.id}-p-${i}`} component="p" sx={{ ...authPageBodySx, mb: 1 }}>
                   {p}
                 </Typography>
               ))}
@@ -40,25 +50,28 @@ export function SupportPage() {
           ))}
 
           <Box sx={{ mt: 2, mb: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.75 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontFamily: iosFontStacks.ui, fontWeight: 700, mb: 0.75, letterSpacing: '-0.02em' }}
+            >
               Direct contacts
             </Typography>
-            <Link href={`mailto:${SUPPORT_EMAIL}`} variant="body2" sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}>
+            <Link href={`mailto:${SUPPORT_EMAIL}`} sx={{ ...authPageLinkSx, display: 'flex', fontWeight: 600 }}>
               {SUPPORT_EMAIL}
             </Link>
-            <Link href={SUPPORT_PHONE_TEL} variant="body2" sx={{ display: 'block', fontWeight: 600 }}>
+            <Link href={SUPPORT_PHONE_TEL} sx={{ ...authPageLinkSx, display: 'flex', fontWeight: 600 }}>
               {SUPPORT_PHONE_DISPLAY}
             </Link>
           </Box>
 
           <Box sx={{ mt: 2, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Link component={RouterLink} to="/login" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/login" sx={authPageLinkSx}>
               ← Back to sign in
             </Link>
-            <Link component={RouterLink} to="/privacy" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/privacy" sx={authPageLinkSx}>
               Privacy Policy
             </Link>
-            <Link component={RouterLink} to="/terms" variant="caption" sx={{ textDecoration: 'none' }}>
+            <Link component={RouterLink} to="/terms" sx={authPageLinkSx}>
               Terms of Service
             </Link>
           </Box>

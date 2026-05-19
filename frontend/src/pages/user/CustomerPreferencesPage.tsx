@@ -9,25 +9,21 @@ import {
   Alert,
   ListItem,
   ListItemText,
-  Divider,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedSwitchRow } from '../../components/ios/GroupedSwitchRow';
 import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
-import { iosGroupedListRowSx, iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
+import { iosGroupedListRowSx } from '../../theme/iosGroupedList';
 import { triggerHaptic } from '../../utils/haptics';
-import { useColorMode } from '../../contexts/ColorModeContext';
-import { USER_PREF_KEYS, writeDarkModePreference } from '../../constants/userPreferences';
+import { USER_PREF_KEYS } from '../../constants/userPreferences';
 
 export function CustomerPreferencesPage() {
-  const { mode, setMode } = useColorMode();
   const [currency, setCurrency] = useState('GHS');
   const [notifications, setNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const darkMode = mode === 'dark';
 
   useEffect(() => {
     setCurrency(localStorage.getItem(USER_PREF_KEYS.currency) || 'GHS');
@@ -38,7 +34,6 @@ export function CustomerPreferencesPage() {
     try {
       localStorage.setItem(USER_PREF_KEYS.currency, currency);
       localStorage.setItem(USER_PREF_KEYS.notifications, String(notifications));
-      writeDarkModePreference(darkMode);
       triggerHaptic('success');
       setSaved(true);
       setError(null);
@@ -88,17 +83,6 @@ export function CustomerPreferencesPage() {
             </Select>
           </FormControl>
         </ListItem>
-        <Divider sx={iosGroupedRowDividerSx} />
-        <GroupedSwitchRow
-          label="Dark mode"
-          secondary="Use dark appearance across the app"
-          checked={darkMode}
-          onChange={(e) => {
-            const next = e.target.checked;
-            setMode(next ? 'dark' : 'light');
-            writeDarkModePreference(next);
-          }}
-        />
       </GroupedListSection>
 
       <GroupedListSection title="Notifications">

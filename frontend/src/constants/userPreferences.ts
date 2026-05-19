@@ -1,21 +1,18 @@
 export const USER_PREF_KEYS = {
   currency: 'user_pref_currency',
   notifications: 'user_pref_notifications',
-  darkMode: 'user_pref_dark_mode',
 } as const;
 
-export function readDarkModePreference(): boolean {
+/** WebView / status-bar chrome — always light shell. */
+export function getAppChromeBackground(): string {
+  return '#f4f7f9';
+}
+
+/** Remove legacy dark-mode preference from older app versions. */
+export function clearLegacyDarkModePreference(): void {
   try {
-    return localStorage.getItem(USER_PREF_KEYS.darkMode) === 'true';
+    localStorage.removeItem('user_pref_dark_mode');
   } catch {
-    return false;
+    /* ignore */
   }
-}
-
-export function writeDarkModePreference(enabled: boolean): void {
-  localStorage.setItem(USER_PREF_KEYS.darkMode, String(enabled));
-}
-
-export function getAppChromeBackground(dark: boolean): string {
-  return dark ? '#000000' : '#f4f7f9';
 }

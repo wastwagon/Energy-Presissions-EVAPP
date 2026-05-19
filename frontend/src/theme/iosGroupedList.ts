@@ -4,10 +4,7 @@ import { iosFontStacks, iosRadii, iosSemanticColors, IOS_TOUCH_TARGET_PX } from 
 
 /** Page background behind grouped sections (UITableView-style). */
 export const iosGroupedPageBgSx: SystemStyleObject<Theme> = {
-  bgcolor: (theme) =>
-    theme.palette.mode === 'dark'
-      ? theme.palette.background.default
-      : iosSemanticColors.groupingBackground,
+  bgcolor: iosSemanticColors.groupingBackground,
 };
 
 /** Uppercase-style section header above a grouped block. */

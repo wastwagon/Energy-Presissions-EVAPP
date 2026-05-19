@@ -15,6 +15,9 @@ import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../l
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { authPageBodySx } from '../../styles/authShell';
+import { iosFontStacks } from '../../theme/iosMobileTokens';
+import { triggerHaptic } from '../../utils/haptics';
 
 const faqs = [
   {
@@ -94,6 +97,7 @@ export function CustomerHelpPage() {
             key={faq.q}
             disableGutters
             elevation={0}
+            onChange={() => triggerHaptic('light')}
             sx={{
               '&:before': { display: 'none' },
               bgcolor: 'transparent',
@@ -105,12 +109,16 @@ export function CustomerHelpPage() {
               expandIcon={<ExpandMoreIcon />}
               sx={{ minHeight: 48, px: 2, '& .MuiAccordionSummary-content': { my: 1 } }}
             >
-              <Typography fontWeight={500} variant="body2">
+              <Typography
+                fontWeight={500}
+                variant="body2"
+                sx={{ fontFamily: iosFontStacks.ui, letterSpacing: '-0.01em' }}
+              >
                 {faq.q}
               </Typography>
             </AccordionSummary>
             <AccordionDetails sx={{ px: 2, pt: 0, pb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography component="p" sx={authPageBodySx}>
                 {faq.a}
               </Typography>
             </AccordionDetails>
@@ -142,7 +150,7 @@ export function CustomerHelpPage() {
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5, pt: 1 }}>
         <SupportAgentIcon fontSize="small" color="primary" />
-        <Typography variant="caption" color="text.secondary">
+        <Typography component="p" sx={{ ...authPageBodySx, fontSize: '0.75rem' }}>
           App Store and Play Store use the same legal links as above.
         </Typography>
       </Box>
