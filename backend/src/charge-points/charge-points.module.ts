@@ -10,6 +10,7 @@ import { Vendor } from '../entities/vendor.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
+import { IdTag } from '../entities/id-tag.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -17,7 +18,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User, BlockedChargePointId, Vendor]),
+    TypeOrmModule.forFeature([ChargePoint, Connector, Transaction, User, IdTag, BlockedChargePointId, Vendor]),
     ConfigModule,
     WalletModule,
     JwtModule.registerAsync({

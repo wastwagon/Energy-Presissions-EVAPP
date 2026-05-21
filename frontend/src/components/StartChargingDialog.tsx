@@ -48,6 +48,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [quickAmount, setQuickAmount] = useState<number | null>(null);
 
   const QUICK_AMOUNTS = [25, 50, 100, 200] as const;
@@ -71,6 +72,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       setAmount('');
       setQuickAmount(null);
       setError(null);
+      setInfoMessage(null);
     }
   }, [open, station]);
 
@@ -123,10 +125,19 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       triggerHaptic('light');
       setStarting(true);
       setError(null);
+      setInfoMessage(null);
       const userId = requireStoredUserId();
       const result = await chargePointsApi.walletStart(station.chargePointId, 1, userId, parsed);
 
       if (result.success) {
+        if (result.pendingSession) {
+          setInfoMessage(
+            result.message ||
+              'Remote start was sent. Plug your vehicle into the connector — your session will appear when the charger confirms.',
+          );
+          setStarting(false);
+          return;
+        }
         triggerHaptic('success');
         onClose();
         onSuccess();
@@ -185,22 +196,37 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleStart}
-            variant="contained"
-            disableElevation
-            disabled={
-              starting ||
-              !amount ||
-              parseFloat(amount) <= 0 ||
-              (availableBalance !== null && parseFloat(amount) > availableBalance) ||
-              (walletBalance !== null && parseFloat(amount) > walletBalance)
-            }
-            startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
-            sx={(th) => sxObject(th, compactContainedCtaSx)}
-          >
-            {starting ? 'Starting…' : 'Start session'}
-          </Button>
+          {infoMessage ? (
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={() => {
+                triggerHaptic('light');
+                onClose();
+                onSuccess();
+              }}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
+            >
+              Done
+            </Button>
+          ) : (
+            <Button
+              onClick={handleStart}
+              variant="contained"
+              disableElevation
+              disabled={
+                starting ||
+                !amount ||
+                parseFloat(amount) <= 0 ||
+                (availableBalance !== null && parseFloat(amount) > availableBalance) ||
+                (walletBalance !== null && parseFloat(amount) > walletBalance)
+              }
+              startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
+              sx={(th) => sxObject(th, compactContainedCtaSx)}
+            >
+              {starting ? 'Starting…' : 'Start session'}
+            </Button>
+          )}
         </>
       }
     >
@@ -216,6 +242,11 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       {error && (
         <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+      {infoMessage && (
+        <Alert severity="info" sx={{ mb: 1.5 }}>
+          {infoMessage}
         </Alert>
       )}
 

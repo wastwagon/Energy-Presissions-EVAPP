@@ -315,9 +315,26 @@ export class InternalService {
   }
 
   async authorizeIdTag(idTag: string) {
-    const idTagEntity = await this.idTagRepository.findOne({
+    let idTagEntity = await this.idTagRepository.findOne({
       where: { idTag },
     });
+
+    if (!idTagEntity) {
+      const walletMatch = /^USER_(\d+)$/.exec(idTag);
+      if (walletMatch) {
+        const userId = Number(walletMatch[1]);
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (user) {
+          idTagEntity = this.idTagRepository.create({
+            idTag,
+            userId,
+            status: 'Active',
+          });
+          await this.idTagRepository.save(idTagEntity);
+          this.logger.log(`Auto-provisioned wallet IdTag ${idTag} for user ${userId}`);
+        }
+      }
+    }
 
     if (!idTagEntity) {
       return {

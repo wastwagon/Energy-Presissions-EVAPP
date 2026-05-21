@@ -8,6 +8,7 @@ import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { User } from '../entities/user.entity';
+import { IdTag } from '../entities/id-tag.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { Vendor } from '../entities/vendor.entity';
@@ -28,6 +29,8 @@ export class ChargePointsService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(IdTag)
+    private idTagRepository: Repository<IdTag>,
     @InjectRepository(BlockedChargePointId)
     private blockedChargePointIdRepository: Repository<BlockedChargePointId>,
     @InjectRepository(Vendor)
@@ -50,6 +53,31 @@ export class ChargePointsService {
 
   private ocppInternalHeaders(): { Authorization: string } {
     return { Authorization: `Bearer ${this.getServiceToken()}` };
+  }
+
+  /** Wallet charging uses USER_{userId}; ensure the tag exists so Authorize/StartTransaction succeed. */
+  private async ensureWalletIdTag(userId: number): Promise<string> {
+    const idTag = `USER_${userId}`;
+    let row = await this.idTagRepository.findOne({ where: { idTag } });
+    if (!row) {
+      row = this.idTagRepository.create({ idTag, userId, status: 'Active' });
+      await this.idTagRepository.save(row);
+      this.logger.log(`Created wallet IdTag ${idTag} for user ${userId}`);
+      return idTag;
+    }
+    let dirty = false;
+    if (row.userId !== userId) {
+      row.userId = userId;
+      dirty = true;
+    }
+    if (row.status !== 'Active') {
+      row.status = 'Active';
+      dirty = true;
+    }
+    if (dirty) {
+      await this.idTagRepository.save(row);
+    }
+    return idTag;
   }
 
   /** Charge point IDs with an open OCPP WebSocket on this API instance. */
@@ -436,6 +464,7 @@ export class ChargePointsService {
     idTag: string,
   ): Promise<{ success: boolean }> {
     await this.findOne(chargePointId); // Verify charge point exists
+    await this.assertChargePointOcppConnected(chargePointId);
 
     if (connectorId === 0) {
       throw new BadRequestException('Connector ID 0 is not valid for transactions');
@@ -482,8 +511,16 @@ export class ChargePointsService {
       },
     ];
 
-    const success = await this.sendOCPPCommand(chargePointId, message);
-    return { success };
+    const ocppResult = await this.sendOCPPCommandWithResponse(chargePointId, message);
+    const status = String((ocppResult as { status?: string })?.status ?? '');
+    if (status !== 'Accepted') {
+      throw new BadRequestException(
+        status === 'Rejected'
+          ? 'Charge point rejected remote start. Plug in the connector cable, then try again.'
+          : `Remote start was not accepted by the charge point (${status || 'no status'}).`,
+      );
+    }
+    return { success: true };
   }
 
   /**
@@ -517,8 +554,8 @@ export class ChargePointsService {
 
     // Reserve amount from wallet (create a pending transaction)
     // We'll deduct it when the transaction actually starts
-    const idTag = `USER_${userId}`;
-    
+    const idTag = await this.ensureWalletIdTag(userId);
+
     // Reserve the amount from wallet FIRST (before starting transaction)
     // This ensures the reservation exists when the transaction is created
     const walletReservation = await this.walletService.reserve(
@@ -575,18 +612,22 @@ export class ChargePointsService {
       
       return {
         success: true,
+        pendingSession: false,
         transactionId: activeTransaction.transactionId,
         message: `Charging started. Amount ${amount} GHS reserved. Session will stop automatically when amount is exhausted.`,
       };
     }
 
-    // If transaction not found after retries, the reservation will be linked later
-    // when createTransaction checks for pending reservations
-    this.logger.warn(`Transaction not found after wallet-start for ${chargePointId}, reservation ${walletReservation.id} will be linked when transaction is created`);
+    // Remote start accepted but StartTransaction not received yet (cable not plugged, etc.)
+    this.logger.warn(
+      `Transaction not found after wallet-start for ${chargePointId}, reservation ${walletReservation.id} — waiting for StartTransaction`,
+    );
 
     return {
       success: true,
-      message: 'Charging session started. Amount will be reserved when transaction begins.',
+      pendingSession: true,
+      message:
+        'Remote start was sent. Plug your vehicle into the connector now — your session will appear in the app when the charger confirms. If nothing happens within a minute, try again.',
     };
   }
 
