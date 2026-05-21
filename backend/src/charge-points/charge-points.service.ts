@@ -48,6 +48,10 @@ export class ChargePointsService {
     return this.configService.get<string>('SERVICE_TOKEN') || process.env.SERVICE_TOKEN || '';
   }
 
+  private ocppInternalHeaders(): { Authorization: string } {
+    return { Authorization: `Bearer ${this.getServiceToken()}` };
+  }
+
   /** Charge point IDs with an open OCPP WebSocket on this API instance. */
   async fetchConnectedChargePointIds(): Promise<Set<string>> {
     try {
@@ -415,7 +419,7 @@ export class ChargePointsService {
       const response = await axios.post(
         `${this.ocppGatewayUrl}/command/${chargePointId}`,
         { message },
-        { timeout: 5000 }
+        { timeout: 5000, headers: this.ocppInternalHeaders() },
       );
       return response.data.success === true;
     } catch (error) {
@@ -768,7 +772,10 @@ export class ChargePointsService {
       const response = await axios.post(
         `${this.ocppGatewayUrl}/command/${chargePointId}`,
         { message },
-        { timeout: 35000 } // Slightly longer timeout for commands with responses
+        {
+          timeout: 35000,
+          headers: this.ocppInternalHeaders(),
+        },
       );
       
       if (response.data.success) {
@@ -785,6 +792,11 @@ export class ChargePointsService {
             : data.message
           : data?.error;
 
+        if (error.response?.status === 401) {
+          throw new BadRequestException(
+            apiMsg || 'OCPP gateway rejected the request (service token missing or invalid)',
+          );
+        }
         if (error.response?.status === 503) {
           throw new BadRequestException(
             apiMsg || 'Charge point is not connected to the OCPP gateway',

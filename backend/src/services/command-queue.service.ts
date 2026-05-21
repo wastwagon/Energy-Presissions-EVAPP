@@ -24,6 +24,12 @@ export class CommandQueueService {
       `http://127.0.0.1:${process.env.PORT || 3000}`;
   }
 
+  private ocppInternalHeaders(): { Authorization: string } {
+    const token =
+      this.configService.get<string>('SERVICE_TOKEN') || process.env.SERVICE_TOKEN || '';
+    return { Authorization: `Bearer ${token}` };
+  }
+
   /**
    * Queue a command for later execution when charge point comes online
    */
@@ -67,7 +73,7 @@ export class CommandQueueService {
         const response = await axios.post(
           `${this.ocppGatewayUrl}/command/${chargePointId}`,
           { message },
-          { timeout: 35000 },
+          { timeout: 35000, headers: this.ocppInternalHeaders() },
         );
 
         if (response.data.success) {
@@ -163,7 +169,7 @@ export class CommandQueueService {
         const response = await axios.post(
           `${this.ocppGatewayUrl}/command/${chargePointId}`,
           { message },
-          { timeout: 35000 },
+          { timeout: 35000, headers: this.ocppInternalHeaders() },
         );
 
         if (response.data.success) {
