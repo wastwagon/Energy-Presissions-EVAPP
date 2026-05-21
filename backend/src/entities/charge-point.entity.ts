@@ -107,5 +107,15 @@ export class ChargePoint {
 
   /** Set in ChargePointsService.findAll only; not persisted. */
   activeTransactionCount?: number;
+
+  /** Live WebSocket to OCPP gateway (not persisted). */
+  ocppConnected?: boolean;
+
+  /** online | stale | offline | never_seen — CSMS link, not connector OCPP status (not persisted). */
+  linkStatus?: string;
+
+  secondsSinceHeartbeat?: number | null;
+
+  heartbeatStale?: boolean;
 }
 

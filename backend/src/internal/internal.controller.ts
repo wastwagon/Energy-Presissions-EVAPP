@@ -33,6 +33,17 @@ export class InternalController implements OnModuleInit {
     return this.internalService.updateChargePointStatus(id, data);
   }
 
+  @Post('charge-points/:id/disconnected')
+  async markChargePointDisconnected(@Param('id') id: string) {
+    return this.internalService.markChargePointDisconnected(id);
+  }
+
+  @Post('charge-points/:id/link-sync')
+  async syncChargePointLink(@Param('id') id: string) {
+    await this.internalService.broadcastChargePointLinkUpdate(id);
+    return { ok: true };
+  }
+
   @Get('charge-points/:id/status')
   async getChargePointStatus(@Param('id') id: string) {
     return this.internalService.getChargePointStatus(id);

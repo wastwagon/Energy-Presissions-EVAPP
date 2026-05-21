@@ -22,6 +22,16 @@ export interface ChargePoint {
   updatedAt: string;
   /** From GET /charge-points list; number of DB rows with status Active. */
   activeTransactionCount?: number;
+
+  /** Live OCPP WebSocket (GET /charge-points enrichment). */
+  ocppConnected?: boolean;
+
+  /** online | stale | offline | never_seen — CSMS connectivity, not connector OCPP status. */
+  linkStatus?: 'online' | 'stale' | 'offline' | 'never_seen';
+
+  secondsSinceHeartbeat?: number | null;
+
+  heartbeatStale?: boolean;
 }
 
 export interface Connector {

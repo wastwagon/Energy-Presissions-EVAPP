@@ -59,6 +59,29 @@ function sendError(ws: WebSocket, errorCode: string, errorDescription: string) {
 
 const CONNECT_STUB_MODEL = 'OCPP connected; Boot will update this when received';
 
+async function notifyChargePointLinkSync(chargePointId: string): Promise<void> {
+  if (!chargePointId || chargePointId.startsWith('temp_')) {
+    return;
+  }
+  const csmsBase = process.env.CSMS_API_URL || 'http://127.0.0.1:3000';
+  const token = process.env.SERVICE_TOKEN || '';
+  try {
+    await axios.post(
+      `${csmsBase}/api/internal/charge-points/${encodeURIComponent(chargePointId)}/link-sync`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 5000,
+      },
+    );
+  } catch (err: any) {
+    logger.warn(`link-sync failed for ${chargePointId}: ${err?.message ?? String(err)}`);
+  }
+}
+
 /**
  * When the URL is /ocpp/{chargePointId}, upsert a row so Device Inventory is not empty
  * if BootNotification is late or never persisted. Full Boot overwrites vendor/model/serial.
@@ -156,6 +179,19 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
         });
         return;
       }
+    }
+
+    if (req.method === 'GET' && pathname === '/health/connections') {
+      if (!hasValidServiceToken(req)) {
+        res.status(401).json({ error: 'Service token required' });
+        return;
+      }
+      const connectedChargePointIds = connectionManager
+        .getAllConnections()
+        .map((c) => c.chargePointId)
+        .filter((id) => id && !id.startsWith('temp_'));
+      res.status(200).json({ connectedChargePointIds });
+      return;
     }
 
     if (req.method === 'GET' && pathname.startsWith('/health/connection/')) {
@@ -462,6 +498,8 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
           warning: 'Vendor resolution failed',
         });
       }
+
+      await notifyChargePointLinkSync(chargePointId);
     }
 
     ws.on('message', async (data: Buffer) => {
@@ -515,6 +553,28 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
           connection?.vendorId,
         );
         commandManager.clearPending(currentChargePointId);
+
+        if (!currentChargePointId.startsWith('temp_')) {
+          const csmsBase = process.env.CSMS_API_URL || 'http://127.0.0.1:3000';
+          const token = process.env.SERVICE_TOKEN || '';
+          try {
+            await axios.post(
+              `${csmsBase}/api/internal/charge-points/${encodeURIComponent(currentChargePointId)}/disconnected`,
+              {},
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                timeout: 5000,
+              },
+            );
+          } catch (err: any) {
+            logger.warn(
+              `Failed to mark ${currentChargePointId} disconnected in CSMS: ${err.message}`,
+            );
+          }
+        }
       }
       connectionManager.removeConnectionByWebSocket(ws);
     });

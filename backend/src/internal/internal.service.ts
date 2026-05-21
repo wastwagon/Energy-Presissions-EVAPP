@@ -50,6 +50,21 @@ export class InternalService {
     private blockedChargePointIdRepository: Repository<BlockedChargePointId>,
   ) {}
 
+  /** Push live CSMS link fields to authenticated ops dashboards. */
+  async broadcastChargePointLinkUpdate(chargePointId: string): Promise<void> {
+    if (!this.websocketGateway || !this.chargePointsService) {
+      return;
+    }
+    try {
+      const payload = await this.chargePointsService.buildLinkStatusBroadcast(chargePointId);
+      if (payload) {
+        this.websocketGateway.broadcastChargePointStatus(payload);
+      }
+    } catch (error) {
+      this.logger.error(`Error broadcasting link update for ${chargePointId}:`, error);
+    }
+  }
+
   // Set ChargePointsService (injected via setter to avoid circular dependency)
   setChargePointsService(service: any) {
     this.chargePointsService = service;
@@ -128,19 +143,7 @@ export class InternalService {
     }
   }
 
-  // Broadcast charge point status update
-  if (this.websocketGateway) {
-    try {
-      this.websocketGateway.broadcastChargePointStatus({
-        chargePointId: chargePoint.chargePointId,
-        status: chargePoint.status,
-        lastSeen: chargePoint.lastSeen,
-        lastHeartbeat: chargePoint.lastHeartbeat,
-      });
-    } catch (error) {
-      this.logger.error(`Error broadcasting charge point status:`, error);
-    }
-  }
+  await this.broadcastChargePointLinkUpdate(chargePoint.chargePointId);
 
   return chargePoint;
 }
@@ -210,6 +213,38 @@ export class InternalService {
     };
   }
 
+  /**
+   * OCPP WebSocket closed — mark charge point offline for ops dashboards (not connector-level OCPP status).
+   */
+  async markChargePointDisconnected(chargePointId: string): Promise<{ chargePointId: string; status: string }> {
+    const chargePoint = await this.chargePointRepository.findOne({
+      where: { chargePointId },
+    });
+
+    if (!chargePoint) {
+      this.logger.warn(`disconnect: charge point ${chargePointId} not found`);
+      return { chargePointId, status: 'Offline' };
+    }
+
+    const activeTransactions = await this.transactionRepository.count({
+      where: { chargePointId, status: 'Active' },
+    });
+
+    if (activeTransactions === 0 && chargePoint.status !== 'Offline') {
+      chargePoint.status = 'Offline';
+      chargePoint.lastSeen = new Date();
+      await this.chargePointRepository.save(chargePoint);
+    }
+
+    await this.broadcastChargePointLinkUpdate(chargePointId);
+
+    this.logger.debug(
+      `Marked ${chargePointId} disconnected (status=${chargePoint.status}, activeTx=${activeTransactions})`,
+    );
+
+    return { chargePointId, status: chargePoint.status };
+  }
+
   async updateChargePointStatus(
     chargePointId: string,
     data: {
@@ -229,6 +264,7 @@ export class InternalService {
         chargePoint.status = data.status;
         chargePoint.lastSeen = new Date();
         await this.chargePointRepository.save(chargePoint);
+        await this.broadcastChargePointLinkUpdate(chargePointId);
       }
     } else {
       // Connector level status
@@ -269,12 +305,7 @@ export class InternalService {
             where: { chargePointId },
           });
           if (chargePoint) {
-            this.websocketGateway.broadcastChargePointStatus({
-              chargePointId,
-              status: chargePoint.status,
-              lastSeen: chargePoint.lastSeen,
-              lastHeartbeat: chargePoint.lastHeartbeat,
-            });
+            await this.broadcastChargePointLinkUpdate(chargePointId);
           }
         } catch (error) {
           this.logger.error(`Error broadcasting connector status:`, error);
@@ -821,19 +852,7 @@ export class InternalService {
     chargePoint.lastSeen = new Date();
     await this.chargePointRepository.save(chargePoint);
 
-    // Broadcast heartbeat update
-    if (this.websocketGateway) {
-      try {
-        this.websocketGateway.broadcastChargePointStatus({
-          chargePointId: chargePoint.chargePointId,
-          status: chargePoint.status,
-          lastSeen: chargePoint.lastSeen,
-          lastHeartbeat: chargePoint.lastHeartbeat,
-        });
-      } catch (error) {
-        this.logger.error(`Error broadcasting heartbeat update:`, error);
-      }
-    }
+    await this.broadcastChargePointLinkUpdate(chargePointId);
 
     this.logger.debug(`Updated heartbeat for charge point ${chargePointId}`);
   }

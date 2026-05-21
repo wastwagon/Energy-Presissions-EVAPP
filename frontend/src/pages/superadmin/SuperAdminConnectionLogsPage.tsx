@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -19,42 +19,66 @@ import {
   InputLabel,
   Pagination,
   Grid,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import IconButton from '@mui/material/IconButton';
 import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatistics } from '../../services/connectionLogsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
+import { dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
+import {
+  buildLinkStatusMap,
+  mergeChargePointLinkUpdate,
+  useChargePointLinkRealtime,
+} from '../../hooks/useChargePointLinkRealtime';
+import {
+  countByLinkStatus,
+  formatSecondsSinceHeartbeat,
+  getLinkStatusChipColor,
+  getLinkStatusLabel,
+} from '../../utils/chargePointLink';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
 export function SuperAdminConnectionLogsPage() {
   const [logs, setLogs] = useState<ConnectionLog[]>([]);
   const [statistics, setStatistics] = useState<ConnectionStatistics[]>([]);
+  const [linkByChargePointId, setLinkByChargePointId] = useState<
+    Map<string, Pick<ChargePoint, 'linkStatus' | 'ocppConnected' | 'secondsSinceHeartbeat'>>
+  >(new Map());
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState<ConnectionEventType | ''>('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const limit = 50;
 
-  useEffect(() => {
-    loadData();
-  }, [page, eventTypeFilter]);
-
-  const loadData = async () => {
+  const loadLinkSnapshot = useCallback(async () => {
     try {
-      setLoading(true);
+      const cps = await chargePointsApi.getAll();
+      setLinkByChargePointId(buildLinkStatusMap(cps));
+    } catch {
+      // Non-blocking — logs table still works
+    }
+  }, []);
+
+  const loadData = async (silent?: boolean) => {
+    const isQuiet = silent === true;
+    try {
+      if (isQuiet) setRefreshing(true);
+      else setLoading(true);
       setError(null);
-      
-      // Only use searchTerm as chargePointId if it looks like a charge point ID
-      // Otherwise, use search API
+
       let logsData;
       if (searchTerm && searchTerm.trim()) {
-        // Try to get logs by chargePointId first
         try {
           logsData = await connectionLogsApi.getLogs(
             searchTerm.trim(),
@@ -62,8 +86,7 @@ export function SuperAdminConnectionLogsPage() {
             limit,
             (page - 1) * limit,
           );
-        } catch (searchErr) {
-          // If that fails, try search API
+        } catch {
           logsData = await connectionLogsApi.searchLogs(
             searchTerm.trim(),
             limit,
@@ -71,7 +94,6 @@ export function SuperAdminConnectionLogsPage() {
           );
         }
       } else {
-        // No search term, get all logs
         logsData = await connectionLogsApi.getLogs(
           undefined,
           eventTypeFilter || undefined,
@@ -79,19 +101,66 @@ export function SuperAdminConnectionLogsPage() {
           (page - 1) * limit,
         );
       }
-      
-      const statsData = await connectionLogsApi.getAllStatistics();
-      
+
+      const [statsData] = await Promise.all([
+        connectionLogsApi.getAllStatistics(),
+        loadLinkSnapshot(),
+      ]);
+
       setLogs(logsData.logs);
       setTotal(logsData.total);
       setStatistics(statsData);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to load connection logs';
+      setUpdatedAt(Date.now());
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = e.response?.data?.message || e.message || 'Failed to load connection logs';
       setError(errorMessage);
       console.error('Error loading connection logs:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, [page, eventTypeFilter]);
+
+  const applyLinkRealtime = useCallback(
+    (payload: Parameters<typeof mergeChargePointLinkUpdate>[1]) => {
+      setLinkByChargePointId((prev) => {
+        const next = new Map(prev);
+        next.set(payload.chargePointId, {
+          linkStatus: payload.linkStatus,
+          ocppConnected: payload.ocppConnected,
+          secondsSinceHeartbeat: payload.secondsSinceHeartbeat,
+        });
+        return next;
+      });
+      setUpdatedAt(Date.now());
+    },
+    [],
+  );
+
+  useChargePointLinkRealtime(applyLinkRealtime);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void loadData(true);
+    }, 60000);
+    return () => window.clearInterval(interval);
+  }, [page, eventTypeFilter, searchTerm]);
+
+  const linkCounts = useMemo(() => {
+    const rows = Array.from(linkByChargePointId.values());
+    return countByLinkStatus(rows);
+  }, [linkByChargePointId]);
+
+  const resolveLogLink = (chargePointId: string) => {
+    if (chargePointId === 'UNKNOWN') {
+      return null;
+    }
+    return linkByChargePointId.get(chargePointId);
   };
 
   if (loading && logs.length === 0) {
@@ -100,14 +169,16 @@ export function SuperAdminConnectionLogsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Connection Logs
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          Monitor and debug charge point connections
-        </Typography>
-      </Box>
+      <LivePageHeader
+        title="Connection Logs"
+        subtitle="OCPP connection events plus live CSMS link (WebSocket + heartbeat). Refreshes on charger connect/disconnect."
+        updatedAt={updatedAt}
+        liveLabel={LIVE_DATA_LABELS.devices}
+        showSeconds
+        refreshing={refreshing}
+        onRefresh={() => void loadData(true)}
+        containerSx={{ mb: 3 }}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -115,27 +186,58 @@ export function SuperAdminConnectionLogsPage() {
         </Alert>
       )}
 
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mr: 0.5 }}>
+          Fleet CSMS link
+        </Typography>
+        <Chip label={`${linkCounts.online} online`} color="success" size="small" variant="outlined" />
+        <Chip label={`${linkCounts.stale} recent off`} color="warning" size="small" variant="outlined" />
+        <Chip label={`${linkCounts.offline} offline`} color="error" size="small" variant="outlined" />
+        <Chip label={`${linkCounts.never_seen} never`} size="small" variant="outlined" />
+      </Box>
+
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
-        {statistics.slice(0, 4).map((stat) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.chargePointId}>
-            <Paper elevation={0} sx={premiumPanelCardSx}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em' }}>
-                {stat.chargePointId}
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5 }}>
-                {stat.successfulConnections} / {stat.totalAttempts}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Success rate:{' '}
-                {stat.totalAttempts > 0 ? Math.round((stat.successfulConnections / stat.totalAttempts) * 100) : 0}%
-              </Typography>
-            </Paper>
-          </Grid>
-        ))}
+        {statistics.slice(0, 4).map((stat) => {
+          const link = resolveLogLink(stat.chargePointId);
+          return (
+            <Grid item xs={12} sm={6} md={3} key={stat.chargePointId}>
+              <Paper elevation={0} sx={premiumPanelCardSx}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em' }}>
+                  {stat.chargePointId}
+                </Typography>
+                {link?.linkStatus ? (
+                  <Chip
+                    label={getLinkStatusLabel(link.linkStatus)}
+                    color={getLinkStatusChipColor(link.linkStatus)}
+                    size="small"
+                    sx={{ mt: 0.75, mb: 0.5 }}
+                  />
+                ) : (
+                  <Chip label="No link data" size="small" sx={{ mt: 0.75, mb: 0.5 }} />
+                )}
+                <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5 }}>
+                  {stat.successfulConnections} / {stat.totalAttempts}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Log success:{' '}
+                  {stat.totalAttempts > 0
+                    ? Math.round((stat.successfulConnections / stat.totalAttempts) * 100)
+                    : 0}
+                  %
+                </Typography>
+                {link && (
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Heartbeat {formatSecondsSinceHeartbeat(link.secondsSinceHeartbeat ?? null)}
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
+          );
+        })}
       </Grid>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
-        <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Updating connection logs" />
+        <TableSurfaceProgress active={refreshing && logs.length > 0} ariaLabel="Updating connection logs" />
         <Box
           sx={{
             px: { xs: 2, sm: 2.5 },
@@ -157,7 +259,7 @@ export function SuperAdminConnectionLogsPage() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setPage(1);
-                  loadData();
+                  void loadData();
                 }
               }}
               InputProps={{
@@ -172,7 +274,7 @@ export function SuperAdminConnectionLogsPage() {
                       onClick={() => {
                         setSearchTerm('');
                         setPage(1);
-                        loadData();
+                        void loadData();
                       }}
                       aria-label="Clear connection log search"
                       sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -211,59 +313,80 @@ export function SuperAdminConnectionLogsPage() {
           </Box>
         </Box>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>Timestamp</TableCell>
-              <TableCell>Charge Point</TableCell>
-              <TableCell>Event Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Error Code</TableCell>
-              <TableCell>IP Address</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {logs.length === 0 ? (
+          <Table size="small" stickyHeader>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No connection logs found
-                  </Typography>
-                </TableCell>
+                <TableCell>Timestamp</TableCell>
+                <TableCell>Charge Point</TableCell>
+                <TableCell>CSMS link</TableCell>
+                <TableCell>Event Type</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Error Code</TableCell>
+                <TableCell>IP Address</TableCell>
               </TableRow>
-            ) : (
-              logs.map((log) => (
-                <TableRow key={log.id} hover>
-                  <TableCell>
-                    {new Date(log.createdAt).toLocaleString()}
+            </TableHead>
+            <TableBody>
+              {logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No connection logs found
+                    </Typography>
                   </TableCell>
-                  <TableCell>{log.chargePointId}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={log.eventType.replace('_', ' ')}
-                      color={getConnectionEventColor(log.eventType)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {log.status && (
-                      <Chip
-                        label={log.status}
-                        color={getConnectionStatusColor(log.status)}
-                        size="small"
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {log.errorCode || '-'}
-                  </TableCell>
-                  <TableCell>{log.ipAddress || '-'}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : (
+                logs.map((log) => {
+                  const link = resolveLogLink(log.chargePointId);
+                  return (
+                    <TableRow key={log.id} hover>
+                      <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>{log.chargePointId}</TableCell>
+                      <TableCell>
+                        {link?.linkStatus ? (
+                          <Tooltip
+                            title={
+                              link.ocppConnected
+                                ? 'WebSocket open now'
+                                : `Last heartbeat ${formatSecondsSinceHeartbeat(link.secondsSinceHeartbeat ?? null)}`
+                            }
+                          >
+                            <Chip
+                              label={getLinkStatusLabel(link.linkStatus)}
+                              color={getLinkStatusChipColor(link.linkStatus)}
+                              size="small"
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            —
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={log.eventType.replace(/_/g, ' ')}
+                          color={getConnectionEventColor(log.eventType)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {log.status && (
+                          <Chip
+                            label={log.status}
+                            color={getConnectionStatusColor(log.status)}
+                            size="small"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>{log.errorCode || '-'}</TableCell>
+                      <TableCell>{log.ipAddress || '-'}</TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
 
       {total > limit && (
@@ -279,4 +402,3 @@ export function SuperAdminConnectionLogsPage() {
     </Box>
   );
 }
-

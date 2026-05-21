@@ -162,6 +162,10 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     status: string;
     lastSeen?: Date;
     lastHeartbeat?: Date;
+    linkStatus?: string;
+    ocppConnected?: boolean;
+    secondsSinceHeartbeat?: number | null;
+    heartbeatStale?: boolean;
   }) {
     this.emitToAuthenticated('chargePointStatus', {
       type: 'chargePointStatus',

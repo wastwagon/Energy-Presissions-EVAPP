@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -51,6 +51,18 @@ import {
   getConnectionEventColor,
   getConnectionStatusColor,
 } from '../../utils/statusColors';
+import {
+  countByLinkStatus,
+  formatSecondsSinceHeartbeat,
+  getLinkStatusChipColor,
+  getLinkStatusLabel,
+  getLinkStatusTooltip,
+  type ChargePointLinkStatus,
+} from '../../utils/chargePointLink';
+import {
+  mergeChargePointLinkUpdate,
+  useChargePointLinkRealtime,
+} from '../../hooks/useChargePointLinkRealtime';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -111,6 +123,7 @@ export function DevicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [showOnlyFieldProvisioned, setShowOnlyFieldProvisioned] = useState(false);
+  const [linkFilter, setLinkFilter] = useState<'all' | ChargePointLinkStatus>('all');
   
   // Connection logs state
   const [selectedChargePoint, setSelectedChargePoint] = useState<ChargePoint | null>(null);
@@ -211,6 +224,20 @@ export function DevicesPage() {
     loadRecentErrors();
   }, []);
 
+  const applyLinkRealtime = useCallback((payload: Parameters<typeof mergeChargePointLinkUpdate>[1]) => {
+    setChargePoints((prev) => mergeChargePointLinkUpdate(prev, payload));
+    setUpdatedAt(Date.now());
+  }, []);
+
+  useChargePointLinkRealtime(applyLinkRealtime);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void loadChargePoints(true);
+    }, 60000);
+    return () => window.clearInterval(interval);
+  }, [searchTerm]);
+
   // Excludes known catalog import ID patterns; field-provisioned = vendor/serial, numeric OCPP id (14–20 digits), or assigned vendorId.
   const isRealDevice = (cp: ChargePoint): boolean => {
     const catalogImportIdPattern = /^CP-(ACC|ASH|WES)-\d{3}$/;
@@ -274,8 +301,25 @@ export function DevicesPage() {
       );
     }
 
+    if (linkFilter !== 'all') {
+      filtered = filtered.filter((cp) => cp.linkStatus === linkFilter);
+    }
+
+    filtered.sort((a, b) => {
+      const order: Record<string, number> = {
+        online: 0,
+        stale: 1,
+        offline: 2,
+        never_seen: 3,
+      };
+      const ao = order[a.linkStatus ?? 'never_seen'] ?? 4;
+      const bo = order[b.linkStatus ?? 'never_seen'] ?? 4;
+      if (ao !== bo) return ao - bo;
+      return a.chargePointId.localeCompare(b.chargePointId);
+    });
+
     setFilteredChargePoints(filtered);
-  }, [searchTerm, chargePoints, showOnlyFieldProvisioned]);
+  }, [searchTerm, chargePoints, showOnlyFieldProvisioned, linkFilter]);
 
   const loadChargePoints = async (silent?: boolean) => {
     const isQuiet = silent === true;
@@ -368,11 +412,14 @@ export function DevicesPage() {
     return recentErrors.filter((log) => log.chargePointId === chargePointId).length;
   };
 
+  const fieldDevices = chargePoints.filter(isRealDevice);
+  const linkCounts = countByLinkStatus(showOnlyFieldProvisioned ? fieldDevices : chargePoints);
+
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Device Inventory"
-        subtitle="Monitor field inventory, connection health, and recent errors. The public map only lists stations with coordinates set (Operations -> Device Detail)"
+        subtitle="CSMS link shows live WebSocket + heartbeat. OCPP status (Available, Charging, …) is separate. Updates live over Socket.IO; refreshes every 60s as fallback."
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.devices}
         showSeconds
@@ -397,6 +444,35 @@ export function DevicesPage() {
             >
               {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
             </Button>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 0.75,
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            >
+              {(
+                [
+                  ['all', 'All links'],
+                  ['online', 'Online'],
+                  ['stale', 'Recent off'],
+                  ['offline', 'Offline'],
+                  ['never_seen', 'Never'],
+                ] as const
+              ).map(([value, label]) => (
+                <Chip
+                  key={value}
+                  label={label}
+                  size="small"
+                  clickable
+                  color={linkFilter === value ? 'primary' : 'default'}
+                  variant={linkFilter === value ? 'filled' : 'outlined'}
+                  onClick={() => setLinkFilter(value)}
+                  sx={{ minHeight: 36 }}
+                />
+              ))}
+            </Box>
             <TextField
               placeholder="Search devices..."
               size="small"
@@ -516,6 +592,24 @@ export function DevicesPage() {
                   </Button>
                 </Alert>
               )}
+              <Box
+                sx={{
+                  mt: 2,
+                  mb: 1,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mr: 0.5 }}>
+                  CSMS link
+                </Typography>
+                <Chip label={`${linkCounts.online} online`} color="success" size="small" variant="outlined" />
+                <Chip label={`${linkCounts.stale} recent off`} color="warning" size="small" variant="outlined" />
+                <Chip label={`${linkCounts.offline} offline`} color="error" size="small" variant="outlined" />
+                <Chip label={`${linkCounts.never_seen} never`} size="small" variant="outlined" />
+              </Box>
             <TableContainer sx={{ mt: 2, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table size="small" stickyHeader>
                 <TableHead>
@@ -526,8 +620,9 @@ export function DevicesPage() {
                     <TableCell>Model</TableCell>
                     <TableCell>Serial Number</TableCell>
                     <TableCell>Firmware</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Last Heartbeat</TableCell>
+                    <TableCell>CSMS link</TableCell>
+                    <TableCell>OCPP status</TableCell>
+                    <TableCell>Last heartbeat</TableCell>
                     <TableCell>Location / map</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -537,16 +632,25 @@ export function DevicesPage() {
                     const errorCount = getErrorCount(cp.chargePointId);
                     const isReal = isRealDevice(cp);
                     const onCustomerMap = chargePointHasMapCoords(cp);
-                    const hasRecentActivity = cp.lastHeartbeat && 
-                      (new Date().getTime() - new Date(cp.lastHeartbeat).getTime()) < 24 * 60 * 60 * 1000; // Within 24 hours
-                    
+                    const linkRowTint =
+                      cp.linkStatus === 'online'
+                        ? 'rgba(76, 175, 80, 0.08)'
+                        : cp.linkStatus === 'stale'
+                          ? 'rgba(255, 152, 0, 0.08)'
+                          : cp.linkStatus === 'offline'
+                            ? 'rgba(244, 67, 54, 0.06)'
+                            : 'rgba(158, 158, 158, 0.05)';
+
                     return (
                       <TableRow 
                         key={cp.chargePointId}
                         sx={{
-                          backgroundColor: isReal ? 'rgba(76, 175, 80, 0.05)' : 'rgba(158, 158, 158, 0.05)',
+                          backgroundColor: linkRowTint,
                           '&:hover': {
-                            backgroundColor: isReal ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                            backgroundColor:
+                              cp.linkStatus === 'online'
+                                ? 'rgba(76, 175, 80, 0.14)'
+                                : 'rgba(158, 158, 158, 0.1)',
                           }
                         }}
                       >
@@ -564,14 +668,6 @@ export function DevicesPage() {
                             <Typography variant="body2" fontWeight="medium">
                               {cp.chargePointId}
                             </Typography>
-                            {hasRecentActivity && (
-                              <Chip 
-                                label="Active" 
-                                color="success" 
-                                size="small" 
-                                sx={{ height: 18, fontSize: '0.65rem' }}
-                              />
-                            )}
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -591,6 +687,20 @@ export function DevicesPage() {
                         </TableCell>
                         <TableCell>{cp.firmwareVersion || '-'}</TableCell>
                         <TableCell>
+                          <Tooltip title={getLinkStatusTooltip(cp)}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
+                              <Chip
+                                label={getLinkStatusLabel(cp.linkStatus)}
+                                color={getLinkStatusChipColor(cp.linkStatus)}
+                                size="small"
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {formatSecondsSinceHeartbeat(cp.secondsSinceHeartbeat ?? null)}
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
                           <Chip
                             label={cp.status}
                             color={getChargePointStatusColor(cp.status)}
@@ -600,7 +710,10 @@ export function DevicesPage() {
                         <TableCell>
                           {cp.lastHeartbeat ? (
                             <Tooltip title={new Date(cp.lastHeartbeat).toLocaleString()}>
-                              <Typography variant="body2">
+                              <Typography
+                                variant="body2"
+                                color={cp.heartbeatStale ? 'warning.main' : 'text.primary'}
+                              >
                                 {new Date(cp.lastHeartbeat).toLocaleString()}
                               </Typography>
                             </Tooltip>

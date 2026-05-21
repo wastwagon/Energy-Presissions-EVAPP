@@ -51,6 +51,12 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import {
+  formatSecondsSinceHeartbeat,
+  getLinkStatusChipColor,
+  getLinkStatusLabel,
+  getLinkStatusTooltip,
+} from '../../utils/chargePointLink';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -407,9 +413,17 @@ export function ChargePointDetailPage() {
             >
               Back
             </Button>
+            <Tooltip title={getLinkStatusTooltip(chargePoint)}>
+              <Chip
+                label={getLinkStatusLabel(chargePoint.linkStatus)}
+                color={getLinkStatusChipColor(chargePoint.linkStatus)}
+                sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+              />
+            </Tooltip>
             <Chip
               label={chargePoint.status}
               color={getChargePointStatusColor(chargePoint.status)}
+              variant="outlined"
               sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
             />
           </>
@@ -434,8 +448,8 @@ export function ChargePointDetailPage() {
         </Typography>
         <Typography variant="body2" color="text.secondary" component="div">
           Connectors appear in this list when the charger reports them over OCPP (e.g. StatusNotification).
-          Set latitude and longitude in Settings for the public Stations map. Last heartbeat reflects OCPP
-          Heartbeat; last seen is updated when the server last stored registration or status from the device.
+          CSMS link (Online / Offline) is live WebSocket + heartbeat. OCPP status is what the charger last reported.
+          Set latitude and longitude in Settings for the public Stations map.
         </Typography>
       </Alert>
 
@@ -564,7 +578,7 @@ export function ChargePointDetailPage() {
                       variant="outlined"
                       startIcon={<PlayArrowIcon />}
                       onClick={() => setRemoteStartDialogOpen(true)}
-                      disabled={chargePoint.status === 'Offline' || remoteStartBlockedByConnectors}
+                      disabled={chargePoint.linkStatus !== 'online' || remoteStartBlockedByConnectors}
                       sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                     >
                       Remote start
@@ -586,7 +600,7 @@ export function ChargePointDetailPage() {
                         }
                         onClick={handleClearStaleOperationalState}
                         disabled={
-                          chargePoint.status === 'Offline' || clearStaleSubmitting || loading
+                          chargePoint.linkStatus !== 'online' || clearStaleSubmitting || loading
                         }
                         sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                       >
@@ -599,7 +613,7 @@ export function ChargePointDetailPage() {
                   variant="outlined"
                   startIcon={<SettingsIcon />}
                   onClick={handleGetConfiguration}
-                  disabled={chargePoint.status === 'Offline'}
+                  disabled={chargePoint.linkStatus !== 'online'}
                   sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
                   Get configuration
@@ -608,7 +622,7 @@ export function ChargePointDetailPage() {
                   variant="outlined"
                   color="warning"
                   onClick={() => handleReset('Soft')}
-                  disabled={chargePoint.status === 'Offline' || loading}
+                  disabled={chargePoint.linkStatus !== 'online' || loading}
                   sx={(th) => ({
                     ...sxObject(th, compactOutlinedCtaSx),
                     width: '100%',
@@ -622,7 +636,7 @@ export function ChargePointDetailPage() {
                   variant="outlined"
                   color="error"
                   onClick={() => handleReset('Hard')}
-                  disabled={chargePoint.status === 'Offline' || loading}
+                  disabled={chargePoint.linkStatus !== 'online' || loading}
                   sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
                   Reset (hard)
@@ -630,7 +644,7 @@ export function ChargePointDetailPage() {
                 <Button
                   variant="outlined"
                   onClick={handleClearCache}
-                  disabled={chargePoint.status === 'Offline' || loading}
+                  disabled={chargePoint.linkStatus !== 'online' || loading}
                   sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
                 >
                   Clear cache
@@ -695,7 +709,7 @@ export function ChargePointDetailPage() {
                               variant="outlined"
                               startIcon={<LockOpenIcon />}
                               onClick={() => handleUnlockConnector(connector.connectorId)}
-                              disabled={chargePoint.status === 'Offline'}
+                              disabled={chargePoint.linkStatus !== 'online'}
                               sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
                             >
                               Unlock
@@ -709,7 +723,7 @@ export function ChargePointDetailPage() {
                                   connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
                                 )
                               }
-                              disabled={chargePoint.status === 'Offline'}
+                              disabled={chargePoint.linkStatus !== 'online'}
                               sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
                             >
                               {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
@@ -834,7 +848,7 @@ export function ChargePointDetailPage() {
                   variant="outlined"
                   startIcon={<CloudUploadIcon />}
                   onClick={handleFirmwareUpdate}
-                  disabled={chargePoint.status === 'Offline' || firmwareLoading || !firmwareLocation}
+                  disabled={chargePoint.linkStatus !== 'online' || firmwareLoading || !firmwareLocation}
                   sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
                   {firmwareLoading ? 'Starting…' : 'Start update'}
@@ -887,7 +901,7 @@ export function ChargePointDetailPage() {
                   variant="outlined"
                   startIcon={<BugReportIcon />}
                   onClick={handleDiagnosticsGet}
-                  disabled={chargePoint.status === 'Offline' || diagnosticsLoading || !diagnosticsLocation}
+                  disabled={chargePoint.linkStatus !== 'online' || diagnosticsLoading || !diagnosticsLocation}
                   sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
                 >
                   {diagnosticsLoading ? 'Requesting…' : 'Get diagnostics'}

@@ -12,6 +12,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
+import { computeChargePointLinkInfo } from '../common/charge-point-link-status';
 
 @Injectable()
 export class ChargePointsService {
@@ -43,6 +44,70 @@ export class ChargePointsService {
       `http://127.0.0.1:${process.env.PORT || 3000}`;
   }
 
+  private getServiceToken(): string {
+    return this.configService.get<string>('SERVICE_TOKEN') || process.env.SERVICE_TOKEN || '';
+  }
+
+  /** Charge point IDs with an open OCPP WebSocket on this API instance. */
+  async fetchConnectedChargePointIds(): Promise<Set<string>> {
+    try {
+      const response = await axios.get<{ connectedChargePointIds?: string[] }>(
+        `${this.ocppGatewayUrl}/health/connections`,
+        {
+          headers: { Authorization: `Bearer ${this.getServiceToken()}` },
+          timeout: 5000,
+        },
+      );
+      const ids = response.data?.connectedChargePointIds ?? [];
+      return new Set(ids);
+    } catch (error) {
+      this.logger.warn(
+        `OCPP health/connections unavailable: ${(error as Error).message}`,
+      );
+      return new Set();
+    }
+  }
+
+  private attachLinkFields(cp: ChargePoint, connectedIds: Set<string>): void {
+    const ocppConnected = connectedIds.has(cp.chargePointId);
+    const link = computeChargePointLinkInfo(cp, ocppConnected);
+    cp.ocppConnected = link.ocppConnected;
+    cp.linkStatus = link.linkStatus;
+    cp.secondsSinceHeartbeat = link.secondsSinceHeartbeat;
+    cp.heartbeatStale = link.heartbeatStale;
+  }
+
+  /** Payload for Socket.IO dashboards (includes live CSMS link fields). */
+  async buildLinkStatusBroadcast(chargePointId: string): Promise<{
+    chargePointId: string;
+    status: string;
+    lastSeen?: Date;
+    lastHeartbeat?: Date;
+    linkStatus: string;
+    ocppConnected: boolean;
+    secondsSinceHeartbeat: number | null;
+    heartbeatStale: boolean;
+  } | null> {
+    const chargePoint = await this.chargePointRepository.findOne({
+      where: { chargePointId },
+    });
+    if (!chargePoint) {
+      return null;
+    }
+    const connectedIds = await this.fetchConnectedChargePointIds();
+    this.attachLinkFields(chargePoint, connectedIds);
+    return {
+      chargePointId: chargePoint.chargePointId,
+      status: chargePoint.status,
+      lastSeen: chargePoint.lastSeen,
+      lastHeartbeat: chargePoint.lastHeartbeat,
+      linkStatus: chargePoint.linkStatus!,
+      ocppConnected: chargePoint.ocppConnected!,
+      secondsSinceHeartbeat: chargePoint.secondsSinceHeartbeat ?? null,
+      heartbeatStale: chargePoint.heartbeatStale!,
+    };
+  }
+
   async findAll(search?: string, vendorId?: number): Promise<ChargePoint[]> {
     // Get all charge points with their active transaction status
     const queryBuilder = this.chargePointRepository.createQueryBuilder('cp');
@@ -60,6 +125,7 @@ export class ChargePointsService {
     }
 
     const chargePoints = await queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
+    const connectedIds = await this.fetchConnectedChargePointIds();
 
     const cpIds = chargePoints.map((cp) => cp.chargePointId);
     const activeCountByCp = new Map<string, number>();
@@ -95,6 +161,8 @@ export class ChargePointsService {
           cp.status = 'Charging';
         }
       }
+
+      this.attachLinkFields(cp, connectedIds);
     }
 
     return chargePoints;
@@ -113,6 +181,9 @@ export class ChargePointsService {
       where: { chargePointId, status: 'Active' },
     });
     chargePoint.activeTransactionCount = activeTransactions;
+
+    const connectedIds = await this.fetchConnectedChargePointIds();
+    this.attachLinkFields(chargePoint, connectedIds);
 
     return chargePoint;
   }
