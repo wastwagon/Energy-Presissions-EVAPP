@@ -354,7 +354,7 @@ export class BillingService {
   ) {
     const qb = this.transactionRepository
       .createQueryBuilder('t')
-      .leftJoinAndSelect('t.chargePoint', 'cp')
+      .leftJoinAndSelect('t.user', 'user')
       .orderBy('t.startTime', 'DESC')
       .take(limit)
       .skip(offset);
@@ -364,14 +364,25 @@ export class BillingService {
     }
 
     if (vendorId != null) {
-      qb.andWhere('cp.vendor_id = :vendorId', { vendorId });
+      qb.innerJoin('charge_points', 'cp', 'cp.charge_point_id = t.charge_point_id').andWhere(
+        'cp.vendor_id = :vendorId',
+        { vendorId },
+      );
     }
 
     if (startDate && endDate) {
       qb.andWhere('t.start_time BETWEEN :startDate AND :endDate', { startDate, endDate });
     }
 
-    const [transactions, total] = await qb.getManyAndCount();
+    let transactions: Transaction[];
+    let total: number;
+    try {
+      [transactions, total] = await qb.getManyAndCount();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`getTransactions failed: ${message}`);
+      throw err;
+    }
     return { transactions, total };
   }
 
@@ -387,7 +398,7 @@ export class BillingService {
     const qb = this.invoiceRepository
       .createQueryBuilder('inv')
       .leftJoinAndSelect('inv.user', 'user')
-      .orderBy('inv.created_at', 'DESC')
+      .orderBy('inv.createdAt', 'DESC')
       .take(limit)
       .skip(offset);
 
@@ -401,8 +412,24 @@ export class BillingService {
       qb.andWhere('cp.vendor_id = :vendorId', { vendorId });
     }
 
-    const [invoices, total] = await qb.getManyAndCount();
-    return { invoices, total };
+    try {
+      const [invoices, total] = await qb.getManyAndCount();
+      return { invoices, total };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`getInvoices failed: ${message}`);
+      if (vendorId != null) {
+        throw err;
+      }
+      const [invoices, total] = await this.invoiceRepository.findAndCount({
+        take: limit,
+        skip: offset,
+        order: { createdAt: 'DESC' },
+        relations: ['user'],
+        ...(userId ? { where: { userId } } : {}),
+      });
+      return { invoices, total };
+    }
   }
 
   /**

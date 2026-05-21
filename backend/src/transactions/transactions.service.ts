@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, SelectQueryBuilder } from 'typeorm';
+import { Repository, IsNull, FindOptionsWhere } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { MeterSample } from '../entities/meter-sample.entity';
 import { Connector } from '../entities/connector.entity';
@@ -40,33 +40,6 @@ export type TransactionApiView = ActiveTransactionView;
 @Injectable()
 export class TransactionsService {
   private readonly logger = new Logger(TransactionsService.name);
-
-  /** Columns safe for list/active queries (excludes wallet_reserved_amount). */
-  private applyTransactionListSelect(
-    qb: SelectQueryBuilder<Transaction>,
-  ): SelectQueryBuilder<Transaction> {
-    return qb.select([
-      'tx.id',
-      'tx.transactionId',
-      'tx.chargePointId',
-      'tx.connectorId',
-      'tx.idTag',
-      'tx.userId',
-      'tx.meterStart',
-      'tx.meterStop',
-      'tx.startTime',
-      'tx.stopTime',
-      'tx.totalEnergyKwh',
-      'tx.durationMinutes',
-      'tx.totalCost',
-      'tx.currency',
-      'tx.status',
-      'tx.reason',
-      'tx.reservationId',
-      'tx.createdAt',
-      'tx.updatedAt',
-    ]);
-  }
 
   private logSchemaMismatch(context: string, err: unknown): void {
     const message = err instanceof Error ? err.message : String(err);
@@ -168,29 +141,51 @@ export class TransactionsService {
     vendorSupportPhone: string | null;
   }> {
     try {
-      const cp = await this.chargePointRepository.findOne({
-        where: { chargePointId: tx.chargePointId },
-        relations: ['vendor'],
-      });
-      if (!cp) {
+      type CpVendorRow = {
+        location_address: string | null;
+        vendor_id: number | null;
+        cp_vendor_name: string | null;
+        vendor_name: string | null;
+        logo_url: string | null;
+        contact_email: string | null;
+        contact_phone: string | null;
+        address: string | null;
+      };
+
+      const rows = await this.chargePointRepository.manager.query<CpVendorRow[]>(
+        `SELECT cp.location_address,
+                cp.vendor_id,
+                cp.vendor AS cp_vendor_name,
+                v.name AS vendor_name,
+                v.logo_url,
+                v.contact_email,
+                v.contact_phone,
+                v.address
+         FROM charge_points cp
+         LEFT JOIN vendors v ON v.id = cp.vendor_id
+         WHERE cp.charge_point_id = $1
+         LIMIT 1`,
+        [tx.chargePointId],
+      );
+      const row = rows[0];
+      if (!row) {
         return this.emptyChargePointMeta(tx.chargePointId);
       }
 
-      const vendor = cp.vendor;
-      const vendorId = vendor?.id ?? cp.vendorId ?? null;
-      const vendorName = vendor?.name ?? cp.vendorName ?? null;
-      const vendorLogoUrl = await this.resolveVendorLogoUrl(vendorId, vendor?.logoUrl ?? null);
+      const vendorId = row.vendor_id ?? null;
+      const vendorName = row.vendor_name ?? row.cp_vendor_name ?? null;
+      const vendorLogoUrl = await this.resolveVendorLogoUrl(vendorId, row.logo_url ?? null);
 
       return {
-        locationName: cp.locationAddress?.trim() || cp.chargePointId || null,
+        locationName: row.location_address?.trim() || tx.chargePointId || null,
         vendorName,
         vendorLogoUrl,
-        vendorBusinessName: vendor?.businessName?.trim() || vendorName,
-        vendorReceiptHeaderText: vendor?.receiptHeaderText ?? null,
-        vendorReceiptFooterText: vendor?.receiptFooterText ?? null,
-        vendorAddress: vendor?.address?.trim() || null,
-        vendorSupportEmail: vendor?.supportEmail ?? vendor?.contactEmail ?? null,
-        vendorSupportPhone: vendor?.supportPhone ?? vendor?.contactPhone ?? null,
+        vendorBusinessName: vendorName,
+        vendorReceiptHeaderText: null,
+        vendorReceiptFooterText: null,
+        vendorAddress: row.address?.trim() || null,
+        vendorSupportEmail: row.contact_email ?? null,
+        vendorSupportPhone: row.contact_phone ?? null,
       };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -287,13 +282,21 @@ export class TransactionsService {
     let liveCostSoFar: number | null = null;
 
     if (!tx.recordPending && tx.transactionId > 0) {
-      const latest = await this.meterSampleRepository.findOne({
-        where: {
-          transactionId: tx.transactionId,
-          measurand: ENERGY_MEASURAND,
-        },
-        order: { timestamp: 'DESC' },
-      });
+      let latest: MeterSample | null = null;
+      try {
+        latest = await this.meterSampleRepository.findOne({
+          where: {
+            transactionId: tx.transactionId,
+            measurand: ENERGY_MEASURAND,
+          },
+          order: { timestamp: 'DESC' },
+        });
+      } catch (meterErr: unknown) {
+        const message = meterErr instanceof Error ? meterErr.message : String(meterErr);
+        this.logger.warn(
+          `Meter lookup skipped for transaction ${tx.transactionId}: ${message}`,
+        );
+      }
 
       if (latest) {
         const meterStart = this.parseDecimal(tx.meterStart);
@@ -438,9 +441,9 @@ export class TransactionsService {
     vendorId?: number,
     userId?: number,
   ): Promise<{ transactions: TransactionApiView[]; total: number }> {
-    const queryBuilder = this.applyTransactionListSelect(
-      this.transactionRepository.createQueryBuilder('tx'),
-    ).leftJoinAndSelect('tx.user', 'user');
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('tx')
+      .leftJoinAndSelect('tx.user', 'user');
 
     if (chargePointId) {
       queryBuilder.where('tx.charge_point_id = :chargePointId', { chargePointId });
@@ -456,7 +459,7 @@ export class TransactionsService {
       queryBuilder.andWhere('tx.user_id = :userId', { userId });
     }
 
-    queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
+    queryBuilder.orderBy('tx.startTime', 'DESC').take(limit).skip(offset);
 
     let rows: Transaction[];
     let total: number;
@@ -464,7 +467,19 @@ export class TransactionsService {
       [rows, total] = await queryBuilder.getManyAndCount();
     } catch (err: unknown) {
       this.logSchemaMismatch('findAll', err);
-      throw err;
+      if (vendorId != null) {
+        throw err;
+      }
+      const where: FindOptionsWhere<Transaction> = {};
+      if (chargePointId) where.chargePointId = chargePointId;
+      if (userId) where.userId = userId;
+      [rows, total] = await this.transactionRepository.findAndCount({
+        where: Object.keys(where).length > 0 ? where : undefined,
+        take: limit,
+        skip: offset,
+        order: { startTime: 'DESC' },
+        relations: ['user'],
+      });
     }
     const mapped: TransactionApiView[] = [];
     for (const tx of rows) {
@@ -541,9 +556,8 @@ export class TransactionsService {
       );
     }
 
-    const queryBuilder = this.applyTransactionListSelect(
-      this.transactionRepository.createQueryBuilder('tx'),
-    )
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('tx')
       .leftJoinAndSelect('tx.user', 'user')
       .where('tx.status = :status', { status: 'Active' });
 
@@ -558,14 +572,27 @@ export class TransactionsService {
       queryBuilder.andWhere('tx.user_id = :userId', { userId });
     }
 
-    queryBuilder.orderBy('tx.start_time', 'DESC');
+    queryBuilder.orderBy('tx.startTime', 'DESC');
 
     let fromDb: Transaction[];
     try {
       fromDb = await queryBuilder.getMany();
     } catch (err: unknown) {
       this.logSchemaMismatch('findActive', err);
-      throw err;
+      fromDb = await this.transactionRepository.find({
+        where: { status: 'Active', ...(userId != null ? { userId } : {}) },
+        relations: ['user'],
+        order: { startTime: 'DESC' },
+      });
+      if (vendorId != null) {
+        const chargePoints = await this.chargePointRepository.find({
+          select: ['chargePointId', 'vendorId'],
+        });
+        const allowedIds = new Set(
+          chargePoints.filter((cp) => cp.vendorId === vendorId).map((cp) => cp.chargePointId),
+        );
+        fromDb = fromDb.filter((t) => allowedIds.has(t.chargePointId));
+      }
     }
 
     if (userId != null) {
@@ -648,7 +675,7 @@ export class TransactionsService {
         .andWhere('cp.vendor_id = :vendorId', { vendorId });
     }
 
-    queryBuilder.orderBy('tx.start_time', 'DESC');
+    queryBuilder.orderBy('tx.startTime', 'DESC');
 
     return queryBuilder.getMany();
   }

@@ -5,6 +5,7 @@ import type { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
+import { HttpExceptionLoggingFilter } from './common/filters/http-exception-logging.filter';
 import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from './common/cors-origins';
 
@@ -42,6 +43,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionLoggingFilter());
   setupMergedOcppGateway(app);
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.use(helmet());
