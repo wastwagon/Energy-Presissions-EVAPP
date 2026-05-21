@@ -703,8 +703,28 @@ export class ChargePointsService {
     return { success };
   }
 
+  /** Remote OCPP commands require an open WebSocket on this API instance. */
+  private async assertChargePointOcppConnected(chargePointId: string): Promise<void> {
+    const connected = await this.fetchConnectedChargePointIds();
+    if (!connected.has(chargePointId)) {
+      const link = computeChargePointLinkInfo(
+        await this.chargePointRepository.findOne({ where: { chargePointId } }) ?? {
+          lastHeartbeat: null,
+          heartbeatInterval: 300,
+        },
+        false,
+      );
+      const hint =
+        link.linkStatus === 'stale'
+          ? 'The charger was online recently but the WebSocket is closed. Wait for reconnect or reboot the station.'
+          : 'The charger must be online (CSMS link: Online) before remote commands can run.';
+      throw new BadRequestException(`Charge point is not connected. ${hint}`);
+    }
+  }
+
   async getConfiguration(chargePointId: string, keys?: string[]): Promise<any> {
-    await this.findOne(chargePointId); // Verify charge point exists
+    await this.findOne(chargePointId);
+    await this.assertChargePointOcppConnected(chargePointId);
 
     const messageId = `get-config-${Date.now()}`;
     const message = [
@@ -758,14 +778,28 @@ export class ChargePointsService {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        const data = error.response?.data as { message?: string | string[]; error?: string } | undefined;
+        const apiMsg = data?.message
+          ? Array.isArray(data.message)
+            ? data.message.join(', ')
+            : data.message
+          : data?.error;
+
         if (error.response?.status === 503) {
-          throw new BadRequestException('Charge point is not connected');
+          throw new BadRequestException(
+            apiMsg || 'Charge point is not connected to the OCPP gateway',
+          );
         }
         if (error.response?.status === 504) {
-          throw new BadRequestException('Command timeout - charge point did not respond');
+          throw new BadRequestException(
+            apiMsg || 'Command timeout — the charge point did not respond in time',
+          );
+        }
+        if (apiMsg) {
+          throw new BadRequestException(apiMsg);
         }
       }
-      throw new BadRequestException(`Failed to send command: ${error.message}`);
+      throw new BadRequestException(`Failed to send command: ${(error as Error).message}`);
     }
   }
 

@@ -1,7 +1,7 @@
 type ErrLike = {
   message?: string;
   code?: string;
-  response?: { data?: { message?: string } };
+  response?: { data?: { message?: string | string[]; error?: string } };
 };
 
 /** True when the build points the client at a different origin than the page (typical CORS setup). */
@@ -23,10 +23,25 @@ function isCrossOriginApiFromEnv(): boolean {
  * User-facing copy for API failures. Network errors in production with a cross-origin
  * VITE_API_URL are often CORS (browser blocks) or an unreachable API, not the user’s Wi‑Fi.
  */
+function nestMessage(data: { message?: string | string[]; error?: string } | undefined): string | null {
+  if (!data) return null;
+  if (typeof data.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+  if (Array.isArray(data.message) && data.message.length > 0) {
+    return data.message.join(', ');
+  }
+  if (typeof data.error === 'string' && data.error.trim()) {
+    return data.error;
+  }
+  return null;
+}
+
 export function formatApiOrNetworkError(err: unknown): string {
   const e = err as ErrLike;
-  if (e.response?.data?.message && typeof e.response.data.message === 'string') {
-    return e.response.data.message;
+  const fromBody = nestMessage(e.response?.data);
+  if (fromBody) {
+    return fromBody;
   }
   if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
     if (import.meta.env.PROD && isCrossOriginApiFromEnv()) {

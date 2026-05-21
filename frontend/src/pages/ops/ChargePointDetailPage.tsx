@@ -50,6 +50,7 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
+import { formatApiOrNetworkError } from '../../utils/apiErrors';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import {
   formatSecondsSinceHeartbeat,
@@ -361,13 +362,20 @@ export function ChargePointDetailPage() {
 
   const handleGetConfiguration = async () => {
     if (!id) return;
+    if (chargePoint?.linkStatus !== 'online') {
+      setError(
+        'Get configuration requires CSMS link Online (open WebSocket). Reconnect the charger or wait for heartbeat, then try again.',
+      );
+      return;
+    }
     try {
+      setError(null);
       const config = await chargePointsApi.getConfiguration(id);
       setConfigurationPayload(config);
       setConfigurationDialogOpen(true);
       setSuccess('Configuration loaded');
-    } catch (err: any) {
-      setError(err.message || 'Failed to get configuration');
+    } catch (err: unknown) {
+      setError(formatApiOrNetworkError(err));
     }
   };
 

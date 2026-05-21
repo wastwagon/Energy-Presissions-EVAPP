@@ -249,10 +249,20 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
               response,
             });
           } catch (error: any) {
-            res.status(504).json({
-              error: 'Command timeout or error',
-              message: error.message,
-            });
+            const msg = error?.message || 'Command failed';
+            const isTimeout =
+              msg.includes('timeout') || msg.includes('Timeout') || msg.includes('disconnected');
+            if (isTimeout) {
+              res.status(504).json({
+                error: 'Command timeout or error',
+                message: msg,
+              });
+            } else {
+              res.status(400).json({
+                error: msg,
+                message: msg,
+              });
+            }
           }
         } catch (error: any) {
           logger.error('Error processing command:', error);
