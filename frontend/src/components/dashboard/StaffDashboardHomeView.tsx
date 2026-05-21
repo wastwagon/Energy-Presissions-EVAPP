@@ -126,7 +126,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
             <Grid item xs={12} sm={variant === 'admin' ? 4 : 6} md={variant === 'admin' ? undefined : 3}>
               <DashboardMetricCard
                 value={formatCurrency(stats.overview.totalRevenue ?? 0, 'GHS')}
-                label="Total revenue"
+                label={variant === 'admin' ? 'Revenue (completed)' : 'Total revenue'}
                 icon={
                   variant === 'admin' ? (
                     <AttachMoneyIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
@@ -145,6 +145,13 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
             </Grid>
           </Grid>
 
+          {variant === 'admin' && (stats.overview.pendingWalletReserved ?? 0) > 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 0 }}>
+              {formatCurrency(stats.overview.pendingWalletReserved ?? 0)} in pending wallet holds — not
+              counted in revenue until sessions complete.
+            </Typography>
+          ) : null}
+
           {variant === 'superadmin' && stats.connectionHealth ? (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 0 }}>
               Network health: {stats.connectionHealth.averageSuccessRate.toFixed(1)}% success ·{' '}
@@ -158,6 +165,12 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
               >
                 System health
               </Link>
+            </Typography>
+          ) : null}
+
+          {variant === 'superadmin' && (stats.overview.pendingWalletReserved ?? 0) > 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 0 }}>
+              Pending wallet holds network-wide: {formatCurrency(stats.overview.pendingWalletReserved ?? 0)}
             </Typography>
           ) : null}
         </>

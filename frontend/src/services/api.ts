@@ -67,7 +67,18 @@ api.interceptors.request.use(
     // Vendor scope: backend filters /charge-points (and similar) by X-Vendor-Id.
     // Super Admin Ops should list all charge points unless they are actively impersonating;
     // otherwise a stale currentVendorId (e.g. from vendor management) yields an empty list.
-    const vendorId = localStorage.getItem('currentVendorId');
+    let vendorId: string | null = localStorage.getItem('currentVendorId');
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr) as { accountType?: string; vendorId?: number };
+        if (user.accountType === 'Admin' && user.vendorId != null) {
+          vendorId = String(user.vendorId);
+        }
+      } catch {
+        /* ignore malformed session user */
+      }
+    }
     const pathname =
       typeof window !== 'undefined' ? window.location.pathname : '';
     const isSuperAdminOps = pathname.startsWith('/superadmin/ops');

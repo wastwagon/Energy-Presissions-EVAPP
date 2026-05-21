@@ -21,11 +21,17 @@ export class UsersService {
     private dataSource: DataSource,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      relations: ['idTags'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(vendorId?: number): Promise<User[]> {
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.idTags', 'idTags')
+      .orderBy('user.createdAt', 'DESC');
+
+    if (vendorId != null) {
+      qb.andWhere('user.vendor_id = :vendorId', { vendorId });
+    }
+
+    return qb.getMany();
   }
 
   async findOne(id: number): Promise<User> {

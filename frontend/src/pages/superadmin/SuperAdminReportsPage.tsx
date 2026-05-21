@@ -22,6 +22,11 @@ import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
 import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
+import { VendorsReportPanel } from '../../components/reports/VendorsReportPanel';
+import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
+import { ReportSessionAverages } from '../../components/reports/ReportSessionAverages';
+import { reportsApi } from '../../services/dashboardApi';
+import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -91,8 +96,18 @@ export function SuperAdminReportsPage() {
     };
   }, [loadStats]);
 
-  const handleExport = (type: string) => {
-    setExportNotice(`Export ${type} report - feature coming soon.`);
+  const handleExport = async () => {
+    try {
+      setExportNotice(null);
+      const data = await reportsApi.getSessionRows(200, 0);
+      downloadSessionsReportCsv(
+        data.transactions,
+        `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`,
+      );
+      setExportNotice('Sessions CSV downloaded.');
+    } catch (err: unknown) {
+      setExportNotice(err instanceof Error ? err.message : 'Export failed');
+    }
   };
   const tabA11yProps = (index: number) => ({
     id: `superadmin-reports-tab-${index}`,
@@ -124,7 +139,7 @@ export function SuperAdminReportsPage() {
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
-            onClick={() => handleExport('all')}
+            onClick={() => void handleExport()}
             sx={(th) => ({
               ...sxObject(th, compactOutlinedCtaSx),
               flex: { xs: '1 1 auto', sm: '0 0 auto' },
@@ -225,32 +240,41 @@ export function SuperAdminReportsPage() {
                   <Typography variant="body2" color="text.secondary" paragraph>
                     Comprehensive overview of the entire EV charging network.
                   </Typography>
-                  <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid item xs={12} md={6}>
-                      <Paper sx={premiumPanelCardSx}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Average Revenue per Vendor
-                        </Typography>
-                        <Typography variant="h6">
-                          {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0
-                            ? formatCurrency((stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0) / Math.max(1, (stats.overview?.totalVendors ?? stats.totalVendors ?? 1)))
-                            : 'N/A'}
-                        </Typography>
-                      </Paper>
+                  <ReportSessionAverages stats={stats} />
+                  {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0 && (
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={premiumPanelCardSx}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Average revenue per vendor
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {formatCurrency(
+                              (stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0) /
+                                Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
+                            )}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Network total ÷ vendor count
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={premiumPanelCardSx}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Average sessions per vendor
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {Math.round(
+                              (stats.overview?.totalTransactions ?? stats.totalSessions ?? 0) /
+                                Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
+                            )}
+                          </Typography>
+                        </Paper>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Paper sx={premiumPanelCardSx}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Average Sessions per Vendor
-                        </Typography>
-                        <Typography variant="h6">
-                          {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0
-                            ? Math.round((stats.overview?.totalTransactions ?? stats.totalSessions ?? 0) / Math.max(1, (stats.overview?.totalVendors ?? stats.totalVendors ?? 1)))
-                            : 'N/A'}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  </Grid>
+                  )}
+                  <AnalyticsBreakdownPanel stats={stats} />
                 </Box>
               )}
 
@@ -268,12 +292,7 @@ export function SuperAdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Vendor Performance Report
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Performance metrics for each vendor.
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    Vendor performance charts and comparisons coming soon.
-                  </Alert>
+                  <VendorsReportPanel />
                 </Box>
               )}
 

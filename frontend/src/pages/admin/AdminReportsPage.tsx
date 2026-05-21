@@ -22,6 +22,12 @@ import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
 import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
+import { UsersReportPanel } from '../../components/reports/UsersReportPanel';
+import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
+import { ReportSessionAverages } from '../../components/reports/ReportSessionAverages';
+import { reportsApi } from '../../services/dashboardApi';
+import { downloadSessionsReportCsv } from '../../utils/reportExport';
+import { getStoredUser } from '../../utils/authSession';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -91,9 +97,19 @@ export function AdminReportsPage() {
     };
   }, [loadStats]);
 
-  const handleExport = (type: string) => {
-    // TODO: Implement export functionality
-    setExportNotice(`Export ${type} report - feature coming soon.`);
+  const handleExport = async () => {
+    try {
+      setExportNotice(null);
+      const vendorId = getStoredUser()?.vendorId;
+      const data = await reportsApi.getSessionRows(200, 0, vendorId);
+      downloadSessionsReportCsv(
+        data.transactions,
+        `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`,
+      );
+      setExportNotice('Sessions CSV downloaded.');
+    } catch (err: unknown) {
+      setExportNotice(err instanceof Error ? err.message : 'Export failed');
+    }
   };
   const tabA11yProps = (index: number) => ({
     id: `admin-reports-tab-${index}`,
@@ -125,7 +141,7 @@ export function AdminReportsPage() {
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
-            onClick={() => handleExport('all')}
+            onClick={() => void handleExport()}
             sx={(th) => ({
               ...sxObject(th, compactOutlinedCtaSx),
               flex: { xs: '1 1 auto', sm: '0 0 auto' },
@@ -226,32 +242,8 @@ export function AdminReportsPage() {
                   <Typography variant="body2" color="text.secondary" paragraph>
                     Comprehensive overview of your charging operations.
                   </Typography>
-                  <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid item xs={12} md={6}>
-                      <Paper sx={premiumPanelCardSx}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Average Session Duration
-                        </Typography>
-                        <Typography variant="h6">
-                          {(stats.overview?.averageSessionDuration ?? stats.averageSessionDuration)
-                            ? `${Math.round(stats.overview?.averageSessionDuration ?? stats.averageSessionDuration ?? 0)} minutes`
-                            : 'N/A'}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Paper sx={premiumPanelCardSx}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Average Revenue per Session
-                        </Typography>
-                        <Typography variant="h6">
-                          {(stats.overview?.averageRevenuePerSession ?? stats.averageRevenuePerSession)
-                            ? formatCurrency(stats.overview?.averageRevenuePerSession ?? stats.averageRevenuePerSession ?? 0)
-                            : 'N/A'}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  </Grid>
+                  <ReportSessionAverages stats={stats} />
+                  <AnalyticsBreakdownPanel stats={stats} />
                 </Box>
               )}
 
@@ -278,12 +270,7 @@ export function AdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Users Report
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    User statistics and growth metrics.
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    User charts and detailed breakdowns coming soon.
-                  </Alert>
+                  <UsersReportPanel vendorId={getStoredUser()?.vendorId} />
                 </Box>
               )}
             </Box>

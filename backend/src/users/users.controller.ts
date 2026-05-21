@@ -49,8 +49,9 @@ export class UsersController {
   @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'List of users' })
-  async findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  async findAll(@Request() req: { user: { accountType: string; vendorId?: number } }): Promise<User[]> {
+    const vendorId = req.user.accountType === 'Admin' ? req.user.vendorId : undefined;
+    return this.usersService.findAll(vendorId);
   }
 
   // Register :id/* before bare :id so paths like /users/1/favorites match correctly.

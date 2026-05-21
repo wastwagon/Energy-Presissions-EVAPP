@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { resolveJwtSecret } from '../common/utils/jwt-secret';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { Transaction } from '../entities/transaction.entity';
@@ -14,6 +17,14 @@ import { WalletModule } from '../wallet/wallet.module';
   imports: [
     TypeOrmModule.forFeature([Transaction, MeterSample, Connector, WalletTransaction, ChargePoint, User]),
     WalletModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: resolveJwtSecret(configService),
+        signOptions: { expiresIn: '7d' },
+      }),
+      inject: [ConfigService],
+    }),
   ],
   controllers: [TransactionsController],
   providers: [TransactionsService],

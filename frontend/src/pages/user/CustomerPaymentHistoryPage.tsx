@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -22,6 +23,8 @@ import { paymentsApi, Payment } from '../../services/paymentsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
+import { triggerHaptic } from '../../utils/haptics';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -30,6 +33,7 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerPaymentHistoryPage() {
+  const navigate = useNavigate();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -118,10 +122,18 @@ export function CustomerPaymentHistoryPage() {
               <GroupedListRow
                 key={payment.id}
                 divider={index < payments.length - 1}
-                showChevron={false}
+                showChevron={Boolean(payment.transactionId)}
                 primary={formatCurrency(payment.amount, payment.currency)}
                 secondary={`${payment.paymentMethod} · ${new Date(payment.createdAt).toLocaleDateString()}`}
                 end={<Chip label={payment.status} color={getPaymentStatusColor(payment.status)} size="small" sx={{ height: 24 }} />}
+                onClick={
+                  payment.transactionId
+                    ? () => {
+                        triggerHaptic('light');
+                        navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${payment.transactionId}`);
+                      }
+                    : undefined
+                }
               />
             ))}
           </GroupedListSection>

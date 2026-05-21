@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,8 @@ import {
   useTheme,
 } from '@mui/material';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import PrintIcon from '@mui/icons-material/Print';
+import { openPrintableReceipt } from '../../utils/printReceipt';
 import { billingApi, Invoice } from '../../services/billingApi';
 import { transactionsApi, type Transaction } from '../../services/transactionsApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -57,6 +59,14 @@ export function SuperAdminBillingPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<number | null>(null);
+
+  const transactionByOcppId = useMemo(() => {
+    const map = new Map<number, Transaction>();
+    for (const tx of transactions) {
+      if (tx.transactionId > 0) map.set(tx.transactionId, tx);
+    }
+    return map;
+  }, [transactions]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -161,6 +171,7 @@ export function SuperAdminBillingPage() {
                     <TableCell>Total</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Created</TableCell>
+                    <TableCell align="right">Receipt</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -173,6 +184,24 @@ export function SuperAdminBillingPage() {
                         <Chip label={inv.status} color={getInvoiceStatusColor(inv.status)} size="small" />
                       </TableCell>
                       <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<PrintIcon />}
+                          onClick={() =>
+                            openPrintableReceipt(
+                              inv,
+                              inv.transactionId
+                                ? transactionByOcppId.get(inv.transactionId) ?? null
+                                : null,
+                            )
+                          }
+                          sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+                        >
+                          Print
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

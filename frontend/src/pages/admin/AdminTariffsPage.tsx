@@ -187,6 +187,11 @@ export function AdminTariffsPage() {
         </Alert>
       )}
 
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Tariffs apply to all charge points on the network today. Per-vendor tariff plans can be added when
+        vendor scoping is enabled on tariff records.
+      </Alert>
+
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && tariffs.length > 0} ariaLabel="Loading tariffs" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>

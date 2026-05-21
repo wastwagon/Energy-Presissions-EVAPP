@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
@@ -304,6 +304,34 @@ export class TransactionsService {
     );
 
     return { transactions: mapped, total };
+  }
+
+  async assertTransactionAccessByOcppId(
+    ocppTransactionId: number,
+    user: { id: number; accountType: string; vendorId?: number },
+  ): Promise<void> {
+    const transaction = await this.transactionRepository.findOne({
+      where: { transactionId: ocppTransactionId },
+    });
+    if (!transaction) {
+      throw new NotFoundException(`Transaction ${ocppTransactionId} not found`);
+    }
+
+    if (user.accountType === 'Customer' || user.accountType === 'WalkIn') {
+      if (transaction.userId !== user.id) {
+        throw new ForbiddenException('You cannot access this transaction');
+      }
+      return;
+    }
+
+    if (user.accountType === 'Admin' && user.vendorId) {
+      const cp = await this.chargePointRepository.findOne({
+        where: { chargePointId: transaction.chargePointId },
+      });
+      if (!cp || cp.vendorId !== user.vendorId) {
+        throw new ForbiddenException('You cannot access this transaction');
+      }
+    }
   }
 
   async findOne(transactionId: number): Promise<TransactionApiView> {

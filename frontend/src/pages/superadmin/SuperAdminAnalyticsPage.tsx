@@ -6,7 +6,9 @@ import {
   Paper,
   Grid,
   Alert,
+  Button,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import axios from 'axios';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
@@ -21,6 +23,8 @@ import { formatCurrency } from '../../utils/formatters';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminAnalyticsPage() {
   const [searchParams] = useSearchParams();
@@ -113,8 +117,8 @@ export function SuperAdminAnalyticsPage() {
         title={vendorScope ? 'Vendor Analytics' : 'System Analytics'}
         subtitle={
           vendorScope
-            ? 'Cross-vendor benchmarks and network health (same data scope as system view; vendor-specific breakdowns coming soon)'
-            : 'Comprehensive analytics and insights across all vendors'
+            ? 'System-wide metrics — open Reports for vendor-scoped exports'
+            : 'Network metrics, user mix, and connection health across all vendors'
         }
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.analytics}
@@ -147,6 +151,9 @@ export function SuperAdminAnalyticsPage() {
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
                 {formatCurrency(stats.overview?.totalRevenue || 0)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                Completed sessions only
               </Typography>
             </Paper>
           </Grid>
@@ -201,17 +208,27 @@ export function SuperAdminAnalyticsPage() {
             </Paper>
           </Grid>
           <Grid item xs={12}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="h6" gutterBottom>
-                Analytics Overview
-              </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Detailed charts and visualizations coming soon.
-              </Typography>
-              <Alert severity="info">
-                Advanced analytics features including revenue trends, session patterns, and vendor performance comparisons will be available in the next update.
-              </Alert>
-            </Paper>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              <Button
+                component={RouterLink}
+                to={SUPERADMIN_ROUTES.reports}
+                variant="outlined"
+                size="small"
+                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+              >
+                Open reports
+              </Button>
+              <Button
+                component={RouterLink}
+                to={SUPERADMIN_ROUTES.billing}
+                variant="outlined"
+                size="small"
+                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+              >
+                Billing & invoices
+              </Button>
+            </Box>
+            <AnalyticsBreakdownPanel stats={stats} />
           </Grid>
         </Grid>
       )}

@@ -58,6 +58,53 @@ export class DashboardService {
     return Math.round((Number.isFinite(sum) ? sum : 0) * 100) / 100;
   }
 
+  /** Averages from completed sessions with cost &gt; 0 (meaningful billing only). */
+  private async computeSessionAverages(vendorId?: number): Promise<{
+    averageSessionDuration: number | null;
+    averageRevenuePerSession: number | null;
+    billedSessionCount: number;
+  }> {
+    const qb = this.transactionRepository
+      .createQueryBuilder('tx')
+      .where('tx.status = :status', { status: 'Completed' });
+
+    if (vendorId != null) {
+      qb.innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id').andWhere(
+        'cp.vendor_id = :vendorId',
+        { vendorId },
+      );
+    }
+
+    const rows = await qb.select(['tx.durationMinutes', 'tx.totalCost']).getMany();
+
+    const billed = rows.filter((tx) => {
+      const cost =
+        typeof tx.totalCost === 'string' ? parseFloat(tx.totalCost) : Number(tx.totalCost ?? 0);
+      return Number.isFinite(cost) && cost > 0;
+    });
+
+    if (billed.length === 0) {
+      return {
+        averageSessionDuration: null,
+        averageRevenuePerSession: null,
+        billedSessionCount: 0,
+      };
+    }
+
+    const durationSum = billed.reduce((sum, tx) => sum + (Number(tx.durationMinutes) || 0), 0);
+    const revenueSum = billed.reduce((sum, tx) => {
+      const cost =
+        typeof tx.totalCost === 'string' ? parseFloat(tx.totalCost) : Number(tx.totalCost ?? 0);
+      return sum + (Number.isFinite(cost) ? cost : 0);
+    }, 0);
+
+    return {
+      averageSessionDuration: Math.round(durationSum / billed.length),
+      averageRevenuePerSession: Math.round((revenueSum / billed.length) * 100) / 100,
+      billedSessionCount: billed.length,
+    };
+  }
+
   /** Distinct charge points that have either an Active CSMS transaction or OCPP connectors in session. */
   private async countOperationalActiveChargePoints(vendorId?: number): Promise<number> {
     const busyStatuses = ['Charging', 'Finishing'];
@@ -143,6 +190,7 @@ export class DashboardService {
     }, 0);
 
     const pendingWalletReserved = await this.sumPendingWalletReservations();
+    const sessionAverages = await this.computeSessionAverages();
 
     // Connection health
     const totalDevices = connectionStats.length;
@@ -181,6 +229,9 @@ export class DashboardService {
         totalPaymentsAmount: Math.round(totalPaymentsAmount * 100) / 100,
         pendingWalletReserved,
         activeBillingSessions: activeTransactions,
+        averageSessionDuration: sessionAverages.averageSessionDuration,
+        averageRevenuePerSession: sessionAverages.averageRevenuePerSession,
+        billedSessionCount: sessionAverages.billedSessionCount,
       },
       connectionHealth: {
         totalDevices,
@@ -270,6 +321,15 @@ export class DashboardService {
     }, 0);
 
     const pendingWalletReserved = await this.sumPendingWalletReservations(vendorId);
+    const sessionAverages = await this.computeSessionAverages(vendorId);
+
+    const usersByType = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.vendor_id = :vendorId', { vendorId })
+      .select('user.accountType', 'accountType')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('user.accountType')
+      .getRawMany();
 
     // Charge point status breakdown for this vendor
     const chargePointsByStatus = await this.chargePointRepository
@@ -291,8 +351,15 @@ export class DashboardService {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         pendingWalletReserved,
         activeBillingSessions: activeTransactions,
+        averageSessionDuration: sessionAverages.averageSessionDuration,
+        averageRevenuePerSession: sessionAverages.averageRevenuePerSession,
+        billedSessionCount: sessionAverages.billedSessionCount,
       },
       breakdowns: {
+        usersByType: usersByType.map((u) => ({
+          type: u.accountType,
+          count: parseInt(u.count, 10),
+        })),
         chargePointsByStatus: chargePointsByStatus.map((cp) => ({
           status: cp.status,
           count: parseInt(cp.count),

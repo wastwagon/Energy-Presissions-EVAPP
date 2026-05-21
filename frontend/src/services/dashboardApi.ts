@@ -15,8 +15,9 @@ export interface DashboardStats {
     /** Sum of pending wallet session holds network-wide */
     pendingWalletReserved?: number;
     activeBillingSessions?: number;
-    averageSessionDuration?: number;
-    averageRevenuePerSession?: number;
+    averageSessionDuration?: number | null;
+    averageRevenuePerSession?: number | null;
+    billedSessionCount?: number;
   };
   totalUsers?: number;
   totalRevenue?: number;

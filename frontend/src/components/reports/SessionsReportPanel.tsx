@@ -29,46 +29,7 @@ import {
   sessionStatusChipColor,
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
-
-function downloadSessionsCsv(rows: Transaction[], filename: string) {
-  const headers = [
-    'Transaction ID',
-    'Customer',
-    'Charge Point',
-    'Connector',
-    'Energy',
-    'Duration',
-    'Cost',
-    'Status',
-    'Start',
-  ];
-  const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
-  const lines = [
-    headers.join(','),
-    ...rows.map((tx) =>
-      [
-        tx.recordPending ? 'Pending sync' : String(tx.transactionId),
-        formatCustomerDisplayName(tx),
-        tx.chargePointId,
-        String(tx.connectorId),
-        formatSessionEnergy(tx),
-        formatSessionDuration(tx),
-        formatSessionCost(tx),
-        sessionStatusLabel(tx),
-        new Date(tx.startTime).toISOString(),
-      ]
-        .map(escape)
-        .join(','),
-    ),
-  ];
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import { downloadSessionsReportCsv } from '../../utils/reportExport';
 
 interface SessionsReportPanelProps {
   vendorId?: number;
@@ -100,7 +61,7 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
   }, [load]);
 
   const exportCsv = () => {
-    downloadSessionsCsv(rows, `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadSessionsReportCsv(rows, `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   if (error) {
