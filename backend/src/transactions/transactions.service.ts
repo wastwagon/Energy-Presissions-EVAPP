@@ -71,6 +71,53 @@ export class TransactionsService {
     };
   }
 
+  private emptyChargePointMeta(chargePointId?: string | null): {
+    locationName: string | null;
+    vendorName: string | null;
+    vendorLogoUrl: string | null;
+    vendorBusinessName: string | null;
+    vendorReceiptHeaderText: string | null;
+    vendorReceiptFooterText: string | null;
+    vendorAddress: string | null;
+    vendorSupportEmail: string | null;
+    vendorSupportPhone: string | null;
+  } {
+    return {
+      locationName: chargePointId ?? null,
+      vendorName: null,
+      vendorLogoUrl: null,
+      vendorBusinessName: null,
+      vendorReceiptHeaderText: null,
+      vendorReceiptFooterText: null,
+      vendorAddress: null,
+      vendorSupportEmail: null,
+      vendorSupportPhone: null,
+    };
+  }
+
+  private async resolveVendorLogoUrl(
+    vendorId: number | null,
+    logoUrl: string | null,
+  ): Promise<string | null> {
+    if (logoUrl?.trim()) {
+      return logoUrl.trim();
+    }
+    if (vendorId == null) {
+      return null;
+    }
+    try {
+      const logoAsset = await this.brandingAssetRepository.findOne({
+        where: { vendorId, assetType: 'logo', isActive: true },
+        order: { createdAt: 'DESC' },
+      });
+      return logoAsset?.filePath?.trim() ?? null;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Branding logo lookup skipped for vendor ${vendorId}: ${message}`);
+      return null;
+    }
+  }
+
   private async attachChargePointMeta(
     tx: Transaction,
   ): Promise<{
@@ -84,43 +131,77 @@ export class TransactionsService {
     vendorSupportEmail: string | null;
     vendorSupportPhone: string | null;
   }> {
-    const cp = await this.chargePointRepository.findOne({
-      where: { chargePointId: tx.chargePointId },
-      relations: ['vendor'],
-    });
-    const vendor = cp?.vendor;
-    const vendorId = vendor?.id ?? cp?.vendorId ?? null;
-    const vendorName = vendor?.name ?? cp?.vendorName ?? null;
-    let vendorLogoUrl = vendor?.logoUrl ?? null;
-    if (!vendorLogoUrl && vendorId != null) {
-      const logoAsset = await this.brandingAssetRepository.findOne({
-        where: { vendorId, assetType: 'logo', isActive: true },
-        order: { createdAt: 'DESC' },
+    try {
+      const cp = await this.chargePointRepository.findOne({
+        where: { chargePointId: tx.chargePointId },
+        relations: ['vendor'],
       });
-      vendorLogoUrl = logoAsset?.filePath ?? null;
+      if (!cp) {
+        return this.emptyChargePointMeta(tx.chargePointId);
+      }
+
+      const vendor = cp.vendor;
+      const vendorId = vendor?.id ?? cp.vendorId ?? null;
+      const vendorName = vendor?.name ?? cp.vendorName ?? null;
+      const vendorLogoUrl = await this.resolveVendorLogoUrl(vendorId, vendor?.logoUrl ?? null);
+
+      return {
+        locationName: cp.locationAddress?.trim() || cp.chargePointId || null,
+        vendorName,
+        vendorLogoUrl,
+        vendorBusinessName: vendor?.businessName?.trim() || vendorName,
+        vendorReceiptHeaderText: vendor?.receiptHeaderText ?? null,
+        vendorReceiptFooterText: vendor?.receiptFooterText ?? null,
+        vendorAddress: vendor?.address?.trim() || null,
+        vendorSupportEmail: vendor?.supportEmail ?? vendor?.contactEmail ?? null,
+        vendorSupportPhone: vendor?.supportPhone ?? vendor?.contactPhone ?? null,
+      };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `Charge point meta skipped for ${tx.chargePointId ?? 'unknown'}: ${message}`,
+      );
+      return this.emptyChargePointMeta(tx.chargePointId);
     }
+  }
+
+  /** Avoid serializing password hashes and ORM relation graphs in API responses. */
+  private sanitizeUserForApi(user: User | null | undefined): Partial<User> | undefined {
+    if (!user) return undefined;
     return {
-      locationName: cp?.locationAddress?.trim() || cp?.chargePointId || null,
-      vendorName,
-      vendorLogoUrl,
-      vendorBusinessName: vendor?.businessName?.trim() || vendorName,
-      vendorReceiptHeaderText: vendor?.receiptHeaderText ?? null,
-      vendorReceiptFooterText: vendor?.receiptFooterText ?? null,
-      vendorAddress: vendor?.address?.trim() || null,
-      vendorSupportEmail: vendor?.supportEmail ?? vendor?.contactEmail ?? null,
-      vendorSupportPhone: vendor?.supportPhone ?? vendor?.contactPhone ?? null,
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      accountType: user.accountType,
+      vendorId: user.vendorId,
     };
+  }
+
+  private buildTransactionApiPayload(
+    tx: Transaction & { user?: User; recordPending?: boolean },
+    extras: Partial<TransactionApiView>,
+  ): TransactionApiView {
+    const { user, chargePoint: _cp, meterSamples: _ms, ...base } = tx as Transaction & {
+      user?: User;
+      chargePoint?: unknown;
+      meterSamples?: unknown;
+    };
+    return {
+      ...(base as Transaction),
+      user: this.sanitizeUserForApi(user) as User | undefined,
+      ...extras,
+    } as TransactionApiView;
   }
 
   private async mapTransactionForApi(tx: Transaction & { user?: User }): Promise<TransactionApiView> {
     const { customerName, customerEmail } = this.formatUserDisplay(tx.user);
     const cpMeta = await this.attachChargePointMeta(tx);
-    return {
-      ...tx,
+    return this.buildTransactionApiPayload(tx, {
       customerName,
       customerEmail,
       ...cpMeta,
-    } as TransactionApiView;
+    });
   }
 
   private parseDecimal(value: unknown): number {
@@ -204,21 +285,31 @@ export class TransactionsService {
     const { customerName, customerEmail } = this.formatUserDisplay(userEntity);
     const cpMeta = await this.attachChargePointMeta(tx);
 
-    return {
-      ...tx,
-      walletReservedAmount: walletReserved ?? tx.walletReservedAmount,
+    return this.buildTransactionApiPayload(tx, {
+      walletReservedAmount: walletReserved ?? tx.walletReservedAmount ?? null,
       liveEnergyKwh,
       liveCostSoFar,
       customerName,
       customerEmail,
       ...cpMeta,
-    };
+    });
   }
 
   private async enrichActiveSessions(
     rows: Array<Transaction & { recordPending?: boolean }>,
   ): Promise<ActiveTransactionView[]> {
-    return Promise.all(rows.map((tx) => this.enrichActiveSession(tx)));
+    const out: ActiveTransactionView[] = [];
+    for (const tx of rows) {
+      try {
+        out.push(await this.enrichActiveSession(tx));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `Active session ${tx.transactionId} omitted from response: ${message}`,
+        );
+      }
+    }
+    return out;
   }
 
   /** Matches `reserve()` description from wallet-based remote start (`charge-points.service`). */
@@ -332,14 +423,21 @@ export class TransactionsService {
     queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
 
     const [rows, total] = await queryBuilder.getManyAndCount();
-    const mapped = await Promise.all(
-      rows.map(async (tx) => {
+    const mapped: TransactionApiView[] = [];
+    for (const tx of rows) {
+      try {
         if (tx.status === 'Active' && tx.transactionId > 0) {
-          return this.enrichActiveSession(tx as Transaction & { user?: User });
+          mapped.push(await this.enrichActiveSession(tx as Transaction & { user?: User }));
+        } else {
+          mapped.push(await this.mapTransactionForApi(tx as Transaction & { user?: User }));
         }
-        return this.mapTransactionForApi(tx as Transaction & { user?: User });
-      }),
-    );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `Transaction ${tx.transactionId} omitted from list response: ${message}`,
+        );
+      }
+    }
 
     return { transactions: mapped, total };
   }

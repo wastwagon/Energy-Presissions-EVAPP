@@ -77,7 +77,18 @@ export class Transaction {
   @Column({ name: 'reservation_id', nullable: true })
   reservationId: number;
 
-  @Column({ name: 'wallet_reserved_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  /**
+   * Excluded from default SELECT so list/detail APIs work before
+   * `database/init/18-transaction-wallet-amount.sql` is applied; resolved via wallet holds in service.
+   */
+  @Column({
+    name: 'wallet_reserved_amount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    select: false,
+  })
   walletReservedAmount: number;
 
   @OneToMany(() => MeterSample, (meterSample) => meterSample.transaction)
