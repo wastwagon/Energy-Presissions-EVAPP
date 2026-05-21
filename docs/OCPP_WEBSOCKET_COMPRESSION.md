@@ -16,6 +16,17 @@ The CSMS enables **per-message deflate** on the OCPP `WebSocketServer` (`backend
 
 Nginx: `gzip off` on `location /ocpp` so HTTP gzip is not applied to the upgrade path.
 
+## WebSocket header spelling (Sec-WebSocket-Accept)
+
+Some EVSE firmware (vendor lab tests) rejects the upgrade response when nginx rewrites header names to `Sec-Websocket-Accept` (lowercase **s** in “socket”) instead of RFC 6455’s `Sec-WebSocket-Accept`.
+
+HTTP treats header names as case-insensitive, but strict embedded clients may not. Production nginx (`frontend/default.conf.template`) re-emits:
+
+- `Sec-WebSocket-Accept`
+- `Sec-WebSocket-Protocol` (e.g. `ocpp1.6`)
+
+After changing nginx config, **redeploy the frontend** container (Coolify rebuilds nginx from `default.conf.template`).
+
 ## Disabling compression on the charger
 
 Many **DY / embedded OCPP** units do **not** expose a “WebSocket compression” toggle. If your web UI has no such option, rely on the server fix above.
