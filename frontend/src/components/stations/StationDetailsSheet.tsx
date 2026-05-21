@@ -172,7 +172,7 @@ export function StationDetailsSheet({
               Directions
             </Button>
           )}
-          {station.status === 'Available' && (
+          {['Available', 'Preparing'].includes(station.status) && (station.availableConnectors ?? 0) > 0 && (
             <Button
               variant="contained"
               disableElevation

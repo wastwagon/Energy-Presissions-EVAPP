@@ -62,12 +62,14 @@ export function StationListCard({
   const priceValue = parsePrice(station.pricePerKwh);
   const currency = station.currency || 'GHS';
   const title = station.locationName?.trim() || station.chargePointId;
+  const showChargePointIdLine = Boolean(station.locationName?.trim());
   const locality =
     [station.locationCity, station.locationRegion].filter(Boolean).join(', ') || null;
   const canNavigate =
     parseLatLng(station.locationLatitude, station.locationLongitude) != null;
+  /** Matches backend remote-start: Available or Preparing with a startable connector. */
   const canStart =
-    station.status === 'Available' && station.availableConnectors > 0;
+    ['Available', 'Preparing'].includes(station.status) && (station.availableConnectors ?? 0) > 0;
 
   const ac = station.availableConnectors ?? 0;
   const tc = station.totalConnectors ?? 0;
@@ -130,79 +132,109 @@ export function StationListCard({
       />
 
       <Box sx={{ p: { xs: 2, sm: 2.25 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              minWidth: 48,
-              borderRadius: 2.5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: alpha(primary, 0.1),
-              color: primary,
-              border: `1px solid ${alpha(primary, 0.2)}`,
-            }}
-          >
-            <EvStationIcon sx={{ fontSize: 26 }} />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="subtitle1"
-              component="h2"
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, minWidth: 0 }}>
+            <Box
               sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.25,
-                fontSize: { xs: '1.05rem', sm: '1.08rem' },
+                width: 48,
+                height: 48,
+                minWidth: 48,
+                borderRadius: 2.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: alpha(primary, 0.1),
+                color: primary,
+                border: `1px solid ${alpha(primary, 0.2)}`,
               }}
             >
-              {title}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                display: 'block',
-                color: 'text.secondary',
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                fontSize: '0.7rem',
-                mt: 0.25,
-                letterSpacing: '0.02em',
-              }}
-            >
-              {station.chargePointId}
-            </Typography>
-            {station.vendorName ? (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                {station.vendorName}
-              </Typography>
-            ) : null}
-            {station.locationAddress ? (
+              <EvStationIcon sx={{ fontSize: 26 }} />
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
-                variant="body2"
-                color="text.secondary"
+                variant="subtitle1"
+                component="h2"
+                noWrap
                 sx={{
-                  mt: 0.75,
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 0.5,
-                  lineHeight: 1.45,
-                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.25,
+                  fontSize: showChargePointIdLine
+                    ? { xs: '1.05rem', sm: '1.08rem' }
+                    : { xs: '0.8125rem', sm: '0.875rem' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontFamily: showChargePointIdLine
+                    ? iosFontStacks.ui
+                    : 'ui-monospace, SFMono-Regular, Menlo, monospace',
                 }}
               >
-                <LocationOnIcon sx={{ fontSize: 16, mt: '2px', flexShrink: 0, opacity: 0.8 }} />
-                <span>{station.locationAddress}</span>
+                {title}
               </Typography>
-            ) : null}
-            {locality ? (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
-                {locality}
-              </Typography>
-            ) : null}
+              {showChargePointIdLine ? (
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{
+                    display: 'block',
+                    color: 'text.secondary',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                    fontSize: '0.7rem',
+                    mt: 0.25,
+                    letterSpacing: '0.02em',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {station.chargePointId}
+                </Typography>
+              ) : null}
+              {station.vendorName ? (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                  {station.vendorName}
+                </Typography>
+              ) : null}
+              {station.locationAddress ? (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mt: 0.75,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 0.5,
+                    lineHeight: 1.45,
+                    fontSize: '0.8125rem',
+                  }}
+                >
+                  <LocationOnIcon sx={{ fontSize: 16, mt: '2px', flexShrink: 0, opacity: 0.8 }} />
+                  <span>{station.locationAddress}</span>
+                </Typography>
+              ) : null}
+              {locality ? (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+                  {locality}
+                </Typography>
+              ) : null}
+            </Box>
           </Box>
 
-          <Stack direction="row" spacing={0.5} alignItems="flex-start" sx={{ flexShrink: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              pl: { xs: 0, sm: 'calc(48px + 10px)' },
+              flexWrap: 'wrap',
+            }}
+          >
+            <Chip
+              label={station.status}
+              color={getChargePointStatusColor(station.status)}
+              size="small"
+              sx={{ fontWeight: 700, fontSize: '0.7rem', height: 26, maxWidth: '100%' }}
+            />
             {isAuthenticated ? (
               <Tooltip title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}>
                 <IconButton
@@ -213,19 +245,14 @@ export function StationListCard({
                   sx={{
                     ...sxObject(theme, premiumIconButtonTouchSx),
                     color: isFavorite ? undefined : 'text.secondary',
+                    ml: 'auto',
                   }}
                 >
                   {isFavorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
             ) : null}
-            <Chip
-              label={station.status}
-              color={getChargePointStatusColor(station.status)}
-              size="small"
-              sx={{ fontWeight: 700, fontSize: '0.7rem', height: 26 }}
-            />
-          </Stack>
+          </Box>
         </Box>
 
         {station.activeSessions > 0 ? (
