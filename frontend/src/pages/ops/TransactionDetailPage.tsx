@@ -21,6 +21,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction, MeterSample } from '../../services/transactionsApi';
@@ -252,20 +253,32 @@ export function TransactionDetailPage() {
                     {generatingInvoice ? 'Generating…' : invoice ? 'Regenerate invoice' : 'Generate invoice'}
                   </Button>
                   {invoice && (
-                    <Button
-                      variant="outlined"
-                      startIcon={<PrintIcon />}
-                      onClick={() =>
-                        openPrintableReceipt(
-                          invoice,
-                          transaction,
-                          receiptBrandingFromTransaction(transaction),
-                        )
-                      }
-                      sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
-                    >
-                      Print receipt
-                    </Button>
+                    <>
+                      {invoice.pdfPath && (
+                        <Button
+                          variant="outlined"
+                          startIcon={<PictureAsPdfIcon />}
+                          onClick={() => billingApi.openInvoicePdfUrl(invoice.pdfPath!)}
+                          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                        >
+                          Download PDF
+                        </Button>
+                      )}
+                      <Button
+                        variant="outlined"
+                        startIcon={<PrintIcon />}
+                        onClick={() =>
+                          openPrintableReceipt(
+                            invoice,
+                            transaction,
+                            receiptBrandingFromTransaction(transaction),
+                          )
+                        }
+                        sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                      >
+                        Print receipt
+                      </Button>
+                    </>
                   )}
                 </>
               )}
@@ -453,6 +466,20 @@ export function TransactionDetailPage() {
                           >
                             {generatingInvoice ? 'Generating…' : invoice ? 'Regenerate invoice' : 'Generate invoice'}
                           </Button>
+                          {invoice?.pdfPath && (
+                            <Button
+                              variant="outlined"
+                              startIcon={<PictureAsPdfIcon />}
+                              onClick={() => billingApi.openInvoicePdfUrl(invoice.pdfPath!)}
+                              sx={(th) => ({
+                                ...sxObject(th, compactOutlinedCtaSx),
+                                minWidth: { xs: '100%', sm: 140 },
+                                width: { xs: '100%', sm: 'auto' },
+                              })}
+                            >
+                              PDF
+                            </Button>
+                          )}
                           {invoice && (
                             <Button
                               variant="outlined"

@@ -7,7 +7,9 @@ import {
   ParseIntPipe,
   UseGuards,
   Request,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -99,6 +101,23 @@ export class BillingController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.billingService.getInvoice(id, this.resolveVendorId(req.user));
+  }
+
+  @Get('invoices/:id/pdf')
+  @ApiOperation({ summary: 'Redirect to stored invoice PDF (generates if missing)' })
+  async getInvoicePdf(
+    @Request() req: { user: RequestUser },
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const invoice = await this.billingService.ensureInvoicePdf(
+      id,
+      this.resolveVendorId(req.user),
+    );
+    if (!invoice.pdfPath) {
+      return res.status(404).json({ message: 'Invoice PDF is not available' });
+    }
+    return res.redirect(invoice.pdfPath);
   }
 
   @Post('transactions/:transactionId/calculate')

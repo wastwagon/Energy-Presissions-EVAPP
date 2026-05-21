@@ -62,6 +62,7 @@ import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
+import { ChargerCellularGuide } from '../../components/ops/ChargerCellularGuide';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
 
@@ -461,6 +462,12 @@ export function ChargePointDetailPage() {
         </Typography>
       </Alert>
 
+      {chargePoint.linkStatus === 'offline' ? (
+        <ChargerCellularGuide compact />
+      ) : (
+        <ChargerCellularGuide />
+      )}
+
       <Grid container spacing={3}>
         {/* Charge Point Info */}
         <Grid item xs={12} md={6}>
@@ -492,6 +499,39 @@ export function ChargePointDetailPage() {
                     Firmware
                   </Typography>
                   <Typography variant="body1">{chargePoint.firmwareVersion || '-'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    SIM operator
+                  </Typography>
+                  <Typography variant="body1">
+                    {chargePoint.cellularProvider || '—'}
+                    {chargePoint.cellularProvider === 'MTN' && (
+                      <Chip label="Recommended" size="small" color="primary" sx={{ ml: 1, verticalAlign: 'middle' }} />
+                    )}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Cellular APN
+                  </Typography>
+                  <Typography variant="body1">{chargePoint.cellularApn || '—'}</Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    ICCID
+                  </Typography>
+                  <Typography variant="body1" sx={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                    {chargePoint.iccid || '—'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    IMSI
+                  </Typography>
+                  <Typography variant="body1" sx={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                    {chargePoint.imsi || '—'}
+                  </Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">

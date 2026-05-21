@@ -22,6 +22,11 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { chargePointsApi, ChargePoint } from '../services/chargePointsApi';
 import { vendorApi, Vendor } from '../services/vendorApi';
+import {
+  CELLULAR_PROVIDER_OPTIONS,
+  getCellularPreset,
+  type CellularProviderId,
+} from '../constants/chargerCellularGhana';
 import { api } from '../services/api';
 import {
   authFormFieldSx,
@@ -61,6 +66,8 @@ export function ChargePointSettingsDialog({
     locationLongitude: '',
     locationAddress: '',
     googleMapsUrl: '', // New field for Google Maps URL
+    cellularProvider: '',
+    cellularApn: '',
   });
 
   useEffect(() => {
@@ -82,6 +89,8 @@ export function ChargePointSettingsDialog({
           locationLongitude: chargePoint.locationLongitude?.toString() || '',
           locationAddress: chargePoint.locationAddress || '',
           googleMapsUrl: '', // Reset URL field when dialog opens
+          cellularProvider: chargePoint.cellularProvider || '',
+          cellularApn: chargePoint.cellularApn || '',
         });
       } else {
         // Reset form when no charge point
@@ -94,6 +103,8 @@ export function ChargePointSettingsDialog({
           locationLongitude: '',
           locationAddress: '',
           googleMapsUrl: '',
+          cellularProvider: '',
+          cellularApn: '',
         });
       }
     }
@@ -143,6 +154,13 @@ export function ChargePointSettingsDialog({
 
       if (formData.locationAddress) {
         updateData.locationAddress = formData.locationAddress;
+      }
+
+      if (formData.cellularProvider) {
+        updateData.cellularProvider = formData.cellularProvider;
+      }
+      if (formData.cellularApn.trim()) {
+        updateData.cellularApn = formData.cellularApn.trim();
       }
 
       await chargePointsApi.update(chargePoint.chargePointId, updateData);
@@ -452,6 +470,77 @@ export function ChargePointSettingsDialog({
                 ))}
               </TextField>
             )}
+          </Grid>
+
+          {/* Cellular backhaul (MTN recommended) */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+              Cellular SIM
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+              MTN is the preferred operator. Vodafone and AirtelTigo are alternatives. Telecel is not used.
+            </Typography>
+          </Grid>
+          {chargePoint?.iccid || chargePoint?.imsi ? (
+            <>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="ICCID (from charger)"
+                  fullWidth
+                  value={chargePoint?.iccid || ''}
+                  InputProps={{ readOnly: true }}
+                  helperText="Reported on OCPP BootNotification"
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="IMSI (from charger)"
+                  fullWidth
+                  value={chargePoint?.imsi || ''}
+                  InputProps={{ readOnly: true }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+            </>
+          ) : null}
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="SIM operator"
+              select
+              fullWidth
+              value={formData.cellularProvider}
+              onChange={(e) => {
+                const id = e.target.value as CellularProviderId | '';
+                const preset = id ? getCellularPreset(id) : undefined;
+                setFormData((prev) => ({
+                  ...prev,
+                  cellularProvider: id,
+                  cellularApn: preset?.apn && id !== 'Other' ? preset.apn : prev.cellularApn,
+                }));
+              }}
+              helperText="Field record for this site — does not push APN to the modem"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            >
+              <MenuItem value="">Not set</MenuItem>
+              {CELLULAR_PROVIDER_OPTIONS.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  {p.label}
+                  {p.recommended ? ' (recommended)' : ''}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="APN"
+              fullWidth
+              value={formData.cellularApn}
+              onChange={(e) => setFormData({ ...formData, cellularApn: e.target.value })}
+              placeholder="e.g. internet (MTN Ghana)"
+              helperText="Configure the same APN on the charger modem / router"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
           </Grid>
 
           {/* Location Section */}

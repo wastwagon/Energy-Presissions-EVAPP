@@ -14,9 +14,15 @@ import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { Connector } from '../entities/connector.entity';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
+import { WalletModule } from '../wallet/wallet.module';
+import { ChargePointsModule } from '../charge-points/charge-points.module';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @Module({
   imports: [
+    WalletModule,
+    ChargePointsModule,
     TypeOrmModule.forFeature([
       User,
       ChargePoint,
@@ -38,7 +44,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
     }),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, JwtAuthGuard, RolesGuard],
   exports: [DashboardService],
 })
 export class DashboardModule {}

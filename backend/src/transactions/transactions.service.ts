@@ -7,6 +7,7 @@ import { MeterSample } from '../entities/meter-sample.entity';
 import { Connector } from '../entities/connector.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { User } from '../entities/user.entity';
+import { BrandingAsset } from '../entities/branding-asset.entity';
 import {
   WalletTransaction,
   WalletTransactionStatus,
@@ -26,6 +27,12 @@ export type ActiveTransactionView = Transaction & {
   locationName?: string | null;
   vendorName?: string | null;
   vendorLogoUrl?: string | null;
+  vendorBusinessName?: string | null;
+  vendorReceiptHeaderText?: string | null;
+  vendorReceiptFooterText?: string | null;
+  vendorAddress?: string | null;
+  vendorSupportEmail?: string | null;
+  vendorSupportPhone?: string | null;
 };
 
 export type TransactionApiView = ActiveTransactionView;
@@ -47,6 +54,8 @@ export class TransactionsService {
     private chargePointRepository: Repository<ChargePoint>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(BrandingAsset)
+    private brandingAssetRepository: Repository<BrandingAsset>,
     private walletService: WalletService,
   ) {}
 
@@ -68,15 +77,38 @@ export class TransactionsService {
     locationName: string | null;
     vendorName: string | null;
     vendorLogoUrl: string | null;
+    vendorBusinessName: string | null;
+    vendorReceiptHeaderText: string | null;
+    vendorReceiptFooterText: string | null;
+    vendorAddress: string | null;
+    vendorSupportEmail: string | null;
+    vendorSupportPhone: string | null;
   }> {
     const cp = await this.chargePointRepository.findOne({
       where: { chargePointId: tx.chargePointId },
       relations: ['vendor'],
     });
+    const vendor = cp?.vendor;
+    const vendorId = vendor?.id ?? cp?.vendorId ?? null;
+    const vendorName = vendor?.name ?? cp?.vendorName ?? null;
+    let vendorLogoUrl = vendor?.logoUrl ?? null;
+    if (!vendorLogoUrl && vendorId != null) {
+      const logoAsset = await this.brandingAssetRepository.findOne({
+        where: { vendorId, assetType: 'logo', isActive: true },
+        order: { createdAt: 'DESC' },
+      });
+      vendorLogoUrl = logoAsset?.filePath ?? null;
+    }
     return {
       locationName: cp?.locationAddress?.trim() || cp?.chargePointId || null,
-      vendorName: cp?.vendor?.name ?? cp?.vendorName ?? null,
-      vendorLogoUrl: cp?.vendor?.logoUrl ?? null,
+      vendorName,
+      vendorLogoUrl,
+      vendorBusinessName: vendor?.businessName?.trim() || vendorName,
+      vendorReceiptHeaderText: vendor?.receiptHeaderText ?? null,
+      vendorReceiptFooterText: vendor?.receiptFooterText ?? null,
+      vendorAddress: vendor?.address?.trim() || null,
+      vendorSupportEmail: vendor?.supportEmail ?? vendor?.contactEmail ?? null,
+      vendorSupportPhone: vendor?.supportPhone ?? vendor?.contactPhone ?? null,
     };
   }
 

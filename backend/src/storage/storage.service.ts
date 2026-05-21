@@ -78,6 +78,12 @@ export class StorageService {
     return this.putPublicObject(objectName, buffer, mimeType);
   }
 
+  /** Invoice PDF under invoices/{invoiceId}/… — stored in invoices.pdf_path */
+  async uploadInvoicePdf(invoiceId: number, buffer: Buffer): Promise<string> {
+    const objectName = `invoices/${invoiceId}/${randomUUID()}.pdf`;
+    return this.putPublicObject(objectName, buffer, 'application/pdf');
+  }
+
   /** Vendor logo under vendors/{id}/… — stored in vendors.logo_url */
   async uploadVendorLogo(
     vendorId: number,

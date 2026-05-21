@@ -18,6 +18,10 @@ export interface ChargePoint {
   totalCapacityKw?: number;
   pricePerKwh?: number;
   currency?: string;
+  iccid?: string;
+  imsi?: string;
+  cellularProvider?: string;
+  cellularApn?: string;
   createdAt: string;
   updatedAt: string;
   /** From GET /charge-points list; number of DB rows with status Active. */

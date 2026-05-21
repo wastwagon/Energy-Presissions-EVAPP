@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PrintIcon from '@mui/icons-material/Print';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { openPrintableReceipt, receiptBrandingFromTransaction } from '../../utils/printReceipt';
 import { billingApi, Invoice } from '../../services/billingApi';
 import { transactionsApi, type Transaction } from '../../services/transactionsApi';
@@ -189,12 +190,23 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                       </TableCell>
                       <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
                       <TableCell align="right">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<PrintIcon />}
-                          onClick={() =>
-                            (() => {
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          {inv.pdfPath && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<PictureAsPdfIcon />}
+                              onClick={() => billingApi.openInvoicePdfUrl(inv.pdfPath!)}
+                              sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+                            >
+                              PDF
+                            </Button>
+                          )}
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<PrintIcon />}
+                            onClick={() => {
                               const tx = inv.transactionId
                                 ? transactionByOcppId.get(inv.transactionId) ?? null
                                 : null;
@@ -203,12 +215,12 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                                 tx,
                                 receiptBrandingFromTransaction(tx),
                               );
-                            })()
-                          }
-                          sx={(th) => sxObject(th, compactOutlinedCtaSx)}
-                        >
-                          Print
-                        </Button>
+                            }}
+                            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+                          >
+                            Print
+                          </Button>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}

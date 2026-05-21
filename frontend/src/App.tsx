@@ -180,6 +180,9 @@ const AdminReportsPage = lazy(() =>
 const AdminBillingPage = lazy(() =>
   import('./pages/admin/AdminBillingPage').then((m) => ({ default: m.AdminBillingPage })),
 );
+const AdminAnalyticsPage = lazy(() =>
+  import('./pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })),
+);
 
 /** Authenticated `/` → role default (customers → Stations). */
 function AuthenticatedRootRedirect() {
@@ -419,6 +422,7 @@ function App() {
               <Route path="tariffs" element={<AdminTariffsPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="billing" element={<AdminBillingPage />} />
               <Route path="users" element={<UserManagementPage />} />
             </Route>

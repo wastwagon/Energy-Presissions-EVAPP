@@ -8,6 +8,7 @@ export const ADMIN_ROUTES = {
   opsDevices: '/admin/ops/devices',
   wallets: '/admin/wallets',
   reports: '/admin/reports',
+  analytics: '/admin/analytics',
   users: '/admin/users',
   vendorPortal: '/vendor',
   tariffs: '/admin/tariffs',

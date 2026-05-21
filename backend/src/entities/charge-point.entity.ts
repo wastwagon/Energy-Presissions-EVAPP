@@ -84,6 +84,13 @@ export class ChargePoint {
   @Column({ length: 50, nullable: true })
   imsi: string;
 
+  /** Site SIM operator — MTN recommended; Telecel not used */
+  @Column({ name: 'cellular_provider', length: 32, nullable: true })
+  cellularProvider: string;
+
+  @Column({ name: 'cellular_apn', length: 128, nullable: true })
+  cellularApn: string;
+
   @Column({ name: 'last_seen', type: 'timestamp', nullable: true })
   lastSeen: Date;
 

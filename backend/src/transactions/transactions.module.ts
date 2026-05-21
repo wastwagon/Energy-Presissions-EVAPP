@@ -11,11 +11,20 @@ import { Connector } from '../entities/connector.entity';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { User } from '../entities/user.entity';
+import { BrandingAsset } from '../entities/branding-asset.entity';
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, MeterSample, Connector, WalletTransaction, ChargePoint, User]),
+    TypeOrmModule.forFeature([
+      Transaction,
+      MeterSample,
+      Connector,
+      WalletTransaction,
+      ChargePoint,
+      User,
+      BrandingAsset,
+    ]),
     WalletModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

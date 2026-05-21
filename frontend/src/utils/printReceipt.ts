@@ -8,6 +8,10 @@ export type ReceiptBranding = {
   locationLine?: string | null;
   customerName?: string | null;
   logoUrl?: string | null;
+  receiptHeaderText?: string | null;
+  receiptFooterText?: string | null;
+  addressLine?: string | null;
+  supportLine?: string | null;
 };
 
 function escapeHtml(value: string): string {
@@ -18,15 +22,26 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function formatSupportLine(transaction?: Transaction | null): string | null {
+  if (!transaction) return null;
+  const parts = [transaction.vendorSupportEmail, transaction.vendorSupportPhone].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 export function receiptBrandingFromTransaction(
   transaction?: Transaction | null,
 ): ReceiptBranding {
   if (!transaction) return {};
   return {
-    businessName: transaction.vendorName ?? null,
+    businessName:
+      transaction.vendorBusinessName ?? transaction.vendorName ?? null,
     locationLine: transaction.locationName ?? transaction.chargePointId ?? null,
     customerName: formatCustomerDisplayName(transaction),
     logoUrl: transaction.vendorLogoUrl ?? null,
+    receiptHeaderText: transaction.vendorReceiptHeaderText ?? null,
+    receiptFooterText: transaction.vendorReceiptFooterText ?? null,
+    addressLine: transaction.vendorAddress ?? null,
+    supportLine: formatSupportLine(transaction),
   };
 }
 
@@ -35,14 +50,20 @@ export function openPrintableReceipt(
   transaction?: Transaction | null,
   branding?: ReceiptBranding,
 ) {
+  const fromTx = receiptBrandingFromTransaction(transaction);
   const resolved = {
-    businessName: branding?.businessName ?? transaction?.vendorName ?? null,
+    businessName: branding?.businessName ?? fromTx.businessName ?? transaction?.vendorName ?? null,
     locationLine:
-      branding?.locationLine ?? transaction?.locationName ?? transaction?.chargePointId ?? null,
+      branding?.locationLine ?? fromTx.locationLine ?? transaction?.chargePointId ?? null,
     customerName:
       branding?.customerName ??
+      fromTx.customerName ??
       (transaction ? formatCustomerDisplayName(transaction) : null),
-    logoUrl: branding?.logoUrl ?? transaction?.vendorLogoUrl ?? null,
+    logoUrl: branding?.logoUrl ?? fromTx.logoUrl ?? transaction?.vendorLogoUrl ?? null,
+    receiptHeaderText: branding?.receiptHeaderText ?? fromTx.receiptHeaderText ?? null,
+    receiptFooterText: branding?.receiptFooterText ?? fromTx.receiptFooterText ?? null,
+    addressLine: branding?.addressLine ?? fromTx.addressLine ?? null,
+    supportLine: branding?.supportLine ?? fromTx.supportLine ?? formatSupportLine(transaction),
   };
 
   const currency = invoice.currency || 'GHS';
@@ -52,6 +73,15 @@ export function openPrintableReceipt(
     resolved.logoUrl?.trim()
       ? `<img src="${escapeHtml(resolved.logoUrl.trim())}" alt="" style="max-height:48px;max-width:160px;margin-bottom:8px;display:block" />`
       : '';
+
+  const headerExtra = [
+    resolved.addressLine?.trim()
+      ? `<p class="muted" style="margin:4px 0 0">${escapeHtml(resolved.addressLine.trim())}</p>`
+      : '',
+    resolved.receiptHeaderText?.trim()
+      ? `<p style="margin:12px 0 0;font-size:0.9rem">${escapeHtml(resolved.receiptHeaderText.trim())}</p>`
+      : '',
+  ].join('');
 
   const lines = [
     ['Invoice', invoice.invoiceNumber],
@@ -76,6 +106,15 @@ export function openPrintableReceipt(
     )
     .join('');
 
+  const footerHtml = [
+    resolved.receiptFooterText?.trim()
+      ? `<p style="margin:20px 0 8px;font-size:0.875rem">${escapeHtml(resolved.receiptFooterText.trim())}</p>`
+      : '',
+    resolved.supportLine?.trim()
+      ? `<p class="muted" style="margin:0">${escapeHtml(resolved.supportLine.trim())}</p>`
+      : '',
+  ].join('');
+
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/><title>${escapeHtml(invoice.invoiceNumber)}</title>
 <style>
@@ -90,9 +129,11 @@ export function openPrintableReceipt(
     ${logoHtml}
     <h1>${escapeHtml(headerTitle)}</h1>
     <p class="muted" style="margin:0">${escapeHtml(headerSubtitle)}</p>
+    ${headerExtra}
   </div>
   <p class="muted">Save as PDF via Print → Save as PDF</p>
   <table>${bodyRows}</table>
+  ${footerHtml}
 </body></html>`;
 
   const win = window.open('', '_blank', 'noopener,noreferrer');

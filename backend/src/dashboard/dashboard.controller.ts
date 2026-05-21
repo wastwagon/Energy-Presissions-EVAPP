@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -79,6 +79,27 @@ export class DashboardController {
     const parsedDays = days ? parseInt(days, 10) : 30;
     const vendorId = this.resolveVendorId(req);
     return this.dashboardService.getRevenueTrend(vendorId, parsedDays);
+  }
+
+  @Post('ops/maintenance')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin')
+  @ApiOperation({
+    summary: 'Release stale wallet holds and clear stuck connector operational state',
+  })
+  @ApiResponse({ status: 200, description: 'Maintenance summary' })
+  async runOpsMaintenance(
+    @Query('releaseWalletHours') releaseWalletHours?: string,
+    @Query('sweepConnectorMinutes') sweepConnectorMinutes?: string,
+  ) {
+    return this.dashboardService.runOpsMaintenance({
+      releaseWalletHours: releaseWalletHours
+        ? parseInt(releaseWalletHours, 10)
+        : undefined,
+      sweepConnectorMinutes: sweepConnectorMinutes
+        ? parseInt(sweepConnectorMinutes, 10)
+        : undefined,
+    });
   }
 }
 

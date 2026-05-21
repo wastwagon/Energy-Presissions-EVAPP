@@ -14,6 +14,8 @@ import { ChargePoint } from '../entities/charge-point.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
+import { StorageModule } from '../storage/storage.module';
+import { InvoicePdfService } from './invoice-pdf.service';
 
 @Module({
   imports: [
@@ -26,6 +28,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
       SystemSetting,
       ChargePoint,
     ]),
+    StorageModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -36,7 +39,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
     }),
   ],
   controllers: [BillingController],
-  providers: [BillingService, JwtAuthGuard, RolesGuard],
+  providers: [BillingService, InvoicePdfService, JwtAuthGuard, RolesGuard],
   exports: [BillingService],
 })
 export class BillingModule {}

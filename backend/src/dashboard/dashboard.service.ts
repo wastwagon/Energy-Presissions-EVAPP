@@ -14,6 +14,8 @@ import {
   WalletTransactionStatus,
   WalletTransactionType,
 } from '../entities/wallet-transaction.entity';
+import { WalletService } from '../wallet/wallet.service';
+import { ChargePointsService } from '../charge-points/charge-points.service';
 
 @Injectable()
 export class DashboardService {
@@ -38,7 +40,34 @@ export class DashboardService {
     private connectorRepository: Repository<Connector>,
     @InjectRepository(WalletTransaction)
     private walletTransactionRepository: Repository<WalletTransaction>,
+    private readonly walletService: WalletService,
+    private readonly chargePointsService: ChargePointsService,
   ) {}
+
+  async runOpsMaintenance(opts?: {
+    releaseWalletHours?: number;
+    sweepConnectorMinutes?: number;
+  }): Promise<{
+    walletHoldsReleased: number;
+    sweep: {
+      chargePointsProcessed: number;
+      connectorsCleared: number;
+      chargePointIds: string[];
+      skippedActiveSession: string[];
+    };
+  }> {
+    const releaseWalletHours = opts?.releaseWalletHours ?? 48;
+    const sweepConnectorMinutes = opts?.sweepConnectorMinutes ?? 30;
+    const walletHoldsReleased =
+      await this.walletService.releaseStalePendingReservations(releaseWalletHours);
+    const sweep = await this.chargePointsService.sweepStaleOperationalStates(
+      sweepConnectorMinutes,
+    );
+    this.logger.log(
+      `Ops maintenance: released ${walletHoldsReleased} wallet hold(s); cleared ${sweep.connectorsCleared} connector(s) on ${sweep.chargePointIds.length} device(s)`,
+    );
+    return { walletHoldsReleased, sweep };
+  }
 
   private async sumPendingWalletReservations(vendorId?: number): Promise<number> {
     const q = this.walletTransactionRepository

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
@@ -9,9 +9,13 @@ import { Vendor } from '../entities/vendor.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
 import Decimal from 'decimal.js';
+import { StorageService } from '../storage/storage.service';
+import { InvoicePdfService } from './invoice-pdf.service';
 
 @Injectable()
 export class BillingService {
+  private readonly logger = new Logger(BillingService.name);
+
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
@@ -27,7 +31,37 @@ export class BillingService {
     private systemSettingRepository: Repository<SystemSetting>,
     @InjectRepository(ChargePoint)
     private chargePointRepository: Repository<ChargePoint>,
+    private readonly storageService: StorageService,
+    private readonly invoicePdfService: InvoicePdfService,
   ) {}
+
+  private async attachInvoicePdf(
+    invoice: Invoice,
+    transaction: Transaction,
+  ): Promise<Invoice> {
+    if (invoice.pdfPath) {
+      return invoice;
+    }
+
+    try {
+      const branding = this.invoicePdfService.buildBranding(
+        transaction,
+        transaction.user ?? null,
+      );
+      const buffer = await this.invoicePdfService.buildInvoicePdfBuffer(
+        invoice,
+        transaction,
+        branding,
+      );
+      const pdfPath = await this.storageService.uploadInvoicePdf(invoice.id, buffer);
+      invoice.pdfPath = pdfPath;
+      return this.invoiceRepository.save(invoice);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Invoice PDF not stored for ${invoice.invoiceNumber}: ${message}`);
+      return invoice;
+    }
+  }
 
   /**
    * Calculate cost for a transaction based on tariff
@@ -222,14 +256,8 @@ export class BillingService {
     });
 
     if (existingInvoice) {
-      return existingInvoice;
+      return this.attachInvoicePdf(existingInvoice, transaction);
     }
-
-    // Vendor for future PDF branding (not stored on invoice row yet)
-    const _resolvedVendorIdForBranding =
-      (transaction.chargePoint as any)?.vendorId ??
-      (transaction.user as any)?.vendorId ??
-      1;
 
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${transaction.transactionId}`;
@@ -252,11 +280,26 @@ export class BillingService {
       status: 'Generated',
     });
 
-    // Note: Vendor branding (logo, business name, address, etc.) will be retrieved
-    // when generating the PDF receipt using the vendorId
-    // This is handled in the invoice generation service/controller
+    const saved = await this.invoiceRepository.save(invoice);
+    return this.attachInvoicePdf(saved, transaction);
+  }
 
-    return this.invoiceRepository.save(invoice);
+  async ensureInvoicePdf(id: number, actingVendorId?: number): Promise<Invoice> {
+    const invoice = await this.getInvoice(id, actingVendorId);
+    if (invoice.pdfPath) {
+      return invoice;
+    }
+    if (!invoice.transactionId) {
+      return invoice;
+    }
+    const transaction = await this.transactionRepository.findOne({
+      where: { transactionId: invoice.transactionId },
+      relations: ['user', 'chargePoint', 'chargePoint.vendor'],
+    });
+    if (!transaction) {
+      return invoice;
+    }
+    return this.attachInvoicePdf(invoice, transaction);
   }
 
   async getInvoiceByTransactionId(

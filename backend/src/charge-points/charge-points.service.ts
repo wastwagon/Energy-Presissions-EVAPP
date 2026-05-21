@@ -333,6 +333,59 @@ export class ChargePointsService {
   }
 
   /**
+   * Bulk-clear operational state on charge points with connectors stuck in session-like
+   * statuses longer than maxAgeMinutes (no active billing session).
+   */
+  async sweepStaleOperationalStates(maxAgeMinutes = 30): Promise<{
+    chargePointsProcessed: number;
+    connectorsCleared: number;
+    chargePointIds: string[];
+    skippedActiveSession: string[];
+  }> {
+    const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+    const staleConnectorStatuses = [
+      'Charging',
+      'Finishing',
+      'SuspendedEVSE',
+      'SuspendedEV',
+      'Preparing',
+    ];
+
+    const staleConnectors = await this.connectorRepository
+      .createQueryBuilder('c')
+      .where('c.status IN (:...statuses)', { statuses: staleConnectorStatuses })
+      .andWhere('(c.last_status_update IS NULL OR c.last_status_update < :cutoff)', { cutoff })
+      .getMany();
+
+    const chargePointIds = [...new Set(staleConnectors.map((c) => c.chargePointId))];
+    let connectorsCleared = 0;
+    const clearedIds: string[] = [];
+    const skippedActiveSession: string[] = [];
+
+    for (const chargePointId of chargePointIds) {
+      try {
+        const res = await this.clearStaleOperationalState(chargePointId);
+        if (res.clearedConnectors > 0) {
+          connectorsCleared += res.clearedConnectors;
+          clearedIds.push(chargePointId);
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes('active billing session')) {
+          skippedActiveSession.push(chargePointId);
+        }
+      }
+    }
+
+    return {
+      chargePointsProcessed: chargePointIds.length,
+      connectorsCleared,
+      chargePointIds: clearedIds,
+      skippedActiveSession,
+    };
+  }
+
+  /**
    * When connectors or CP row show Charging/Preparing but there is no Active transaction,
    * reset stored connector + CP status so ops can delete or re-use the device.
    * Does not send OCPP RemoteStop (use remoteStopTransaction when a real session exists).

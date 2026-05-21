@@ -25,11 +25,13 @@ import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
 import { RevenueTrendChart } from '../../components/reports/RevenueTrendChart';
-import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
-export function SuperAdminAnalyticsPage() {
+export type StaffAnalyticsVariant = 'admin' | 'superadmin';
+
+export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: StaffAnalyticsVariant }) {
   const [searchParams] = useSearchParams();
-  const vendorScope = searchParams.get('scope') === 'vendor';
+  const vendorScope = variant === 'superadmin' && searchParams.get('scope') === 'vendor';
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,11 +117,19 @@ export function SuperAdminAnalyticsPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title={vendorScope ? 'Vendor Analytics' : 'System Analytics'}
+        title={
+          variant === 'admin'
+            ? 'Vendor Analytics'
+            : vendorScope
+              ? 'Vendor Analytics'
+              : 'System Analytics'
+        }
         subtitle={
-          vendorScope
-            ? 'System-wide metrics — open Reports for vendor-scoped exports'
-            : 'Network metrics, user mix, and connection health across all vendors'
+          variant === 'admin'
+            ? 'Your vendor metrics, revenue trend, and operational breakdowns'
+            : vendorScope
+              ? 'System-wide metrics — open Reports for vendor-scoped exports'
+              : 'Network metrics, user mix, and connection health across all vendors'
         }
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.analytics}
@@ -212,7 +222,7 @@ export function SuperAdminAnalyticsPage() {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
               <Button
                 component={RouterLink}
-                to={SUPERADMIN_ROUTES.reports}
+                to={variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports}
                 variant="outlined"
                 size="small"
                 sx={(th) => sxObject(th, compactOutlinedCtaSx)}
@@ -221,7 +231,7 @@ export function SuperAdminAnalyticsPage() {
               </Button>
               <Button
                 component={RouterLink}
-                to={SUPERADMIN_ROUTES.billing}
+                to={variant === 'admin' ? ADMIN_ROUTES.billing : SUPERADMIN_ROUTES.billing}
                 variant="outlined"
                 size="small"
                 sx={(th) => sxObject(th, compactOutlinedCtaSx)}
@@ -238,4 +248,8 @@ export function SuperAdminAnalyticsPage() {
       )}
     </Box>
   );
+}
+
+export function SuperAdminAnalyticsPage() {
+  return <StaffAnalyticsPage variant="superadmin" />;
 }

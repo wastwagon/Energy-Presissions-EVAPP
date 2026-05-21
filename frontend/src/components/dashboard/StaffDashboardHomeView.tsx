@@ -167,6 +167,16 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
                 component="button"
                 type="button"
                 variant="body2"
+                onClick={() => navigate(ADMIN_ROUTES.analytics)}
+                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, mr: 1 }}
+              >
+                Analytics
+              </Link>
+              ·{' '}
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
                 onClick={() => navigate(ADMIN_ROUTES.billing)}
                 sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
               >

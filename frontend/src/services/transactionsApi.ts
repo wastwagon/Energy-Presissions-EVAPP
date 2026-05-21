@@ -30,6 +30,12 @@ export interface Transaction {
   locationName?: string | null;
   vendorName?: string | null;
   vendorLogoUrl?: string | null;
+  vendorBusinessName?: string | null;
+  vendorReceiptHeaderText?: string | null;
+  vendorReceiptFooterText?: string | null;
+  vendorAddress?: string | null;
+  vendorSupportEmail?: string | null;
+  vendorSupportPhone?: string | null;
   createdAt: string;
   updatedAt: string;
 }

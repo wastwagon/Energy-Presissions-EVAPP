@@ -290,6 +290,13 @@ export const adminMenuConfig: MenuSection[] = [
         roles: ['Admin'],
       },
       {
+        id: 'analytics',
+        text: 'Analytics',
+        icon: <TrendingUpIcon />,
+        path: ADMIN_ROUTES.analytics,
+        roles: ['Admin'],
+      },
+      {
         id: 'ops-dashboard',
         text: 'Operations Dashboard',
         icon: <SpeedIcon />,

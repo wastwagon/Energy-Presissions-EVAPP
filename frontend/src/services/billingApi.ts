@@ -75,6 +75,12 @@ export const billingApi = {
     const response = await api.get(`/billing/transactions/${transactionId}/invoice`);
     return response.data;
   },
+
+  openInvoicePdfUrl: (pdfPath: string): void => {
+    if (pdfPath) {
+      window.open(pdfPath, '_blank', 'noopener,noreferrer');
+    }
+  },
 };
 
 
