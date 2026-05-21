@@ -25,8 +25,12 @@ describe('BillingService', () => {
   const chargePointRepository = {
     findOne: jest.fn(),
   } as any;
+  const brandingAssetRepository = {
+    findOne: jest.fn(),
+  } as any;
   const storageService = {
     uploadInvoicePdf: jest.fn().mockRejectedValue(new Error('storage unavailable in tests')),
+    fetchImageBuffer: jest.fn().mockResolvedValue(null),
   } as any;
   const invoicePdfService = {
     buildBranding: jest.fn(() => ({ businessName: 'Test Vendor' })),
@@ -41,6 +45,7 @@ describe('BillingService', () => {
     vendorRepository,
     systemSettingRepository,
     chargePointRepository,
+    brandingAssetRepository,
     storageService,
     invoicePdfService,
   );

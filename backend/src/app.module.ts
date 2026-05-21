@@ -1,5 +1,6 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -39,6 +40,7 @@ import { ChargePointsService } from './charge-points/charge-points.service';
       // Root `.env` (docker-compose / monorepo) and `backend/.env` (local nest start from ./backend)
       envFilePath: ['.env', '../.env'],
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     TypeOrmModule.forFeature([User]),
     AuthModule,

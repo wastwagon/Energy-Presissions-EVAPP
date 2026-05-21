@@ -11,6 +11,7 @@ import { Payment } from '../entities/payment.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
+import { BrandingAsset } from '../entities/branding-asset.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
@@ -27,6 +28,7 @@ import { InvoicePdfService } from './invoice-pdf.service';
       Vendor,
       SystemSetting,
       ChargePoint,
+      BrandingAsset,
     ]),
     StorageModule,
     JwtModule.registerAsync({

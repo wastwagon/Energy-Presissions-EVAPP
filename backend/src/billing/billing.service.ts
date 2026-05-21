@@ -8,9 +8,10 @@ import { Payment } from '../entities/payment.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
+import { BrandingAsset } from '../entities/branding-asset.entity';
 import Decimal from 'decimal.js';
 import { StorageService } from '../storage/storage.service';
-import { InvoicePdfService } from './invoice-pdf.service';
+import { InvoicePdfService, type InvoicePdfLogo } from './invoice-pdf.service';
 
 @Injectable()
 export class BillingService {
@@ -31,9 +32,29 @@ export class BillingService {
     private systemSettingRepository: Repository<SystemSetting>,
     @InjectRepository(ChargePoint)
     private chargePointRepository: Repository<ChargePoint>,
+    @InjectRepository(BrandingAsset)
+    private brandingAssetRepository: Repository<BrandingAsset>,
     private readonly storageService: StorageService,
     private readonly invoicePdfService: InvoicePdfService,
   ) {}
+
+  private async resolveVendorLogoForPdf(
+    vendorId?: number | null,
+    logoUrl?: string | null,
+  ): Promise<InvoicePdfLogo | null> {
+    let path = logoUrl?.trim() || null;
+    if (!path && vendorId != null) {
+      const logoAsset = await this.brandingAssetRepository.findOne({
+        where: { vendorId, assetType: 'logo', isActive: true },
+        order: { createdAt: 'DESC' },
+      });
+      path = logoAsset?.filePath?.trim() || null;
+    }
+    if (!path) {
+      return null;
+    }
+    return this.storageService.fetchImageBuffer(path);
+  }
 
   private async attachInvoicePdf(
     invoice: Invoice,
@@ -48,11 +69,15 @@ export class BillingService {
         transaction,
         transaction.user ?? null,
       );
-      const buffer = await this.invoicePdfService.buildInvoicePdfBuffer(
-        invoice,
-        transaction,
-        branding,
+      const vendor = transaction.chargePoint?.vendor;
+      const logo = await this.resolveVendorLogoForPdf(
+        vendor?.id ?? transaction.chargePoint?.vendorId,
+        vendor?.logoUrl,
       );
+      const buffer = await this.invoicePdfService.buildInvoicePdfBuffer(invoice, transaction, {
+        ...branding,
+        logo,
+      });
       const pdfPath = await this.storageService.uploadInvoicePdf(invoice.id, buffer);
       invoice.pdfPath = pdfPath;
       return this.invoiceRepository.save(invoice);

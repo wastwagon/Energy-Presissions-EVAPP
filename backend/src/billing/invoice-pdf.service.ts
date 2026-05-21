@@ -5,6 +5,11 @@ import { Transaction } from '../entities/transaction.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { User } from '../entities/user.entity';
 
+export type InvoicePdfLogo = {
+  buffer: Buffer;
+  mime: string;
+};
+
 export type InvoicePdfBranding = {
   businessName: string;
   locationLine?: string | null;
@@ -13,6 +18,7 @@ export type InvoicePdfBranding = {
   address?: string | null;
   supportLine?: string | null;
   customerName?: string | null;
+  logo?: InvoicePdfLogo | null;
 };
 
 @Injectable()
@@ -62,17 +68,54 @@ export class InvoicePdfService {
         doc.on('error', reject);
 
         const currency = invoice.currency || 'GHS';
+        const margin = 48;
+        const logoBox = 72;
+        let headerTextY = margin;
 
-        doc.fontSize(18).text(branding.businessName, { continued: false });
-        doc.moveDown(0.25);
-        doc.fontSize(10).fillColor('#444444');
-        if (branding.locationLine) {
-          doc.text(branding.locationLine);
+        if (branding.logo?.buffer?.length) {
+          try {
+            doc.image(branding.logo.buffer, margin, margin, {
+              fit: [logoBox, logoBox],
+            });
+            headerTextY = margin;
+            const textX = margin + logoBox + 14;
+            const textWidth = doc.page.width - margin - textX;
+            doc.fontSize(18).fillColor('#000000').text(branding.businessName, textX, headerTextY, {
+              width: textWidth,
+            });
+            let subY = doc.y + 4;
+            doc.fontSize(10).fillColor('#444444');
+            if (branding.locationLine) {
+              doc.text(branding.locationLine, textX, subY, { width: textWidth });
+              subY = doc.y;
+            }
+            if (branding.address) {
+              doc.text(branding.address, textX, subY, { width: textWidth });
+            }
+            doc.fillColor('#000000');
+            doc.y = Math.max(doc.y, margin + logoBox);
+          } catch (imgErr) {
+            this.logger.warn('Invoice PDF logo skipped', imgErr);
+            doc.fontSize(18).text(branding.businessName, { continued: false });
+            doc.moveDown(0.25);
+            doc.fontSize(10).fillColor('#444444');
+            if (branding.locationLine) doc.text(branding.locationLine);
+            if (branding.address) doc.text(branding.address);
+            doc.fillColor('#000000');
+          }
+        } else {
+          doc.fontSize(18).text(branding.businessName, { continued: false });
+          doc.moveDown(0.25);
+          doc.fontSize(10).fillColor('#444444');
+          if (branding.locationLine) {
+            doc.text(branding.locationLine);
+          }
+          if (branding.address) {
+            doc.text(branding.address);
+          }
+          doc.fillColor('#000000');
         }
-        if (branding.address) {
-          doc.text(branding.address);
-        }
-        doc.fillColor('#000000');
+
         if (branding.headerText) {
           doc.moveDown(0.5);
           doc.fontSize(10).text(branding.headerText);

@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import { OpsMaintenanceScheduler } from './ops-maintenance.scheduler';
 import { User } from '../entities/user.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Transaction } from '../entities/transaction.entity';
@@ -44,7 +45,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
     }),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService, JwtAuthGuard, RolesGuard],
+  providers: [DashboardService, OpsMaintenanceScheduler, JwtAuthGuard, RolesGuard],
   exports: [DashboardService],
 })
 export class DashboardModule {}

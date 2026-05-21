@@ -2,6 +2,8 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 import { randomUUID } from 'crypto';
+import axios from 'axios';
+import { Readable } from 'stream';
 
 @Injectable()
 export class StorageService {
@@ -133,5 +135,85 @@ export class StorageService {
     const client = this.getClient();
     const bucket = this.getBucket();
     await client.removeObject(bucket, objectKey);
+  }
+
+  private async streamToBuffer(stream: Readable): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+
+  private guessImageMime(pathOrUrl: string): string {
+    const lower = pathOrUrl.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
+  }
+
+  /**
+   * Load a vendor/branding image for PDF embedding (MinIO object or public HTTP URL).
+   */
+  async fetchImageBuffer(
+    filePath: string | null | undefined,
+  ): Promise<{ buffer: Buffer; mime: string } | null> {
+    const path = filePath?.trim();
+    if (!path) {
+      return null;
+    }
+
+    const objectKey = this.parseObjectKeyFromStoredPath(path);
+    if (objectKey) {
+      try {
+        const client = this.getClient();
+        const bucket = this.getBucket();
+        const stream = await client.getObject(bucket, objectKey);
+        const buffer = await this.streamToBuffer(stream as Readable);
+        if (buffer.length === 0) {
+          return null;
+        }
+        const stat = await client.statObject(bucket, objectKey).catch(() => null);
+        const mime =
+          stat?.metaData?.['content-type']?.split(';')[0] ||
+          this.guessImageMime(path);
+        if (!mime.startsWith('image/')) {
+          return null;
+        }
+        return { buffer, mime };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Could not read image object ${objectKey}: ${message}`);
+        return null;
+      }
+    }
+
+    if (!path.startsWith('http://') && !path.startsWith('https://')) {
+      return null;
+    }
+
+    try {
+      const res = await axios.get<ArrayBuffer>(path, {
+        responseType: 'arraybuffer',
+        timeout: 12_000,
+        maxContentLength: 2 * 1024 * 1024,
+        validateStatus: (s) => s >= 200 && s < 300,
+      });
+      const buffer = Buffer.from(res.data);
+      const headerMime =
+        typeof res.headers['content-type'] === 'string'
+          ? res.headers['content-type'].split(';')[0].trim()
+          : '';
+      const mime = headerMime.startsWith('image/') ? headerMime : this.guessImageMime(path);
+      if (!mime.startsWith('image/')) {
+        return null;
+      }
+      return { buffer, mime };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Could not fetch image URL: ${message}`);
+      return null;
+    }
   }
 }

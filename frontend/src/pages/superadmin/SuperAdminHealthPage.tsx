@@ -114,7 +114,11 @@ export function SuperAdminHealthPage() {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Releases wallet holds older than 48 hours with no active session, and clears connector
               charge-point state stuck in Preparing/Charging/Finishing for 30+ minutes when there is no
-              active billing session.
+              active billing session. The API also runs this automatically every hour (disable with{' '}
+              <Typography component="span" variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                OPS_MAINTENANCE_ENABLED=false
+              </Typography>
+              ).
             </Typography>
           </Box>
         </Box>
