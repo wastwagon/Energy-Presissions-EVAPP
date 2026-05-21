@@ -3,7 +3,13 @@ import { Box, Typography, Chip, Button, Divider, ListItem, CircularProgress, Too
 import StopIcon from '@mui/icons-material/Stop';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import type { Transaction } from '../../services/transactionsApi';
-import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
+import { formatElapsedDurationFromStart } from '../../utils/formatters';
+import {
+  activeSessionHasWalletHold,
+  formatActiveSessionCost,
+  formatActiveSessionEnergy,
+  formatActiveSessionPurchased,
+} from '../../utils/activeSessionMetrics';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
 import { compactContainedCtaSx, compactErrorContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
@@ -65,9 +71,14 @@ export function ActiveSessionListItem({
           }}
         >
           <Stat label="Duration" value={formatElapsedDurationFromStart(tx.startTime)} />
-          <Stat label="Energy" value={`${formatEnergyKwh(tx.totalEnergyKwh)} kWh`} />
-          <Stat label="Cost" value={formatCurrency(tx.totalCost, 'GHS')} />
           <Stat label="Started" value={new Date(tx.startTime).toLocaleTimeString()} />
+          <Stat label="Energy" value={formatActiveSessionEnergy(tx)} />
+          <Stat label="Cost" value={formatActiveSessionCost(tx)} />
+          {activeSessionHasWalletHold(tx) ? (
+            <Box sx={{ gridColumn: '1 / -1' }}>
+              <Stat label="Purchased (max)" value={formatActiveSessionPurchased(tx)} />
+            </Box>
+          ) : null}
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Button

@@ -20,6 +20,8 @@ import {
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
+import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
+import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -158,8 +160,23 @@ export function AdminReportsPage() {
                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
                   {formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
                 </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
+                  Completed sessions only — excludes wallet holds
+                </Typography>
               </Paper>
             </Grid>
+            {(stats.overview?.pendingWalletReserved ?? 0) > 0 && (
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper sx={premiumPanelCardSx}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Wallet holds (pending)
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                    {formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
+                  </Typography>
+                </Paper>
+              </Grid>
+            )}
             <Grid item xs={12} sm={6} md={3}>
               <Paper sx={premiumPanelCardSx}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -243,12 +260,7 @@ export function AdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Revenue Report
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Detailed revenue analytics and trends.
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    Revenue charts and detailed breakdowns coming soon.
-                  </Alert>
+                  <RevenueReportPanel loadStats={() => dashboardApi.getVendorStats()} />
                 </Box>
               )}
 
@@ -257,12 +269,7 @@ export function AdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Sessions Report
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Session statistics and analysis.
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    Session charts and detailed breakdowns coming soon.
-                  </Alert>
+                  <SessionsReportPanel />
                 </Box>
               )}
 

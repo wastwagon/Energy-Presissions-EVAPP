@@ -36,7 +36,13 @@ import {
 } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
-import { formatCurrency, formatElapsedDurationFromStart, formatEnergyKwh } from '../../utils/formatters';
+import { formatElapsedDurationFromStart } from '../../utils/formatters';
+import {
+  activeSessionHasWalletHold,
+  formatActiveSessionCost,
+  formatActiveSessionEnergy,
+  formatActiveSessionPurchased,
+} from '../../utils/activeSessionMetrics';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -107,9 +113,14 @@ export function CustomerActiveSessionsPage() {
       });
     });
 
+    const unsubscribeMeterValue = websocketService.on('meterValue', () => {
+      void loadActiveSessions(true);
+    });
+
     return () => {
       clearInterval(interval);
       unsubscribeTransactionStopped();
+      unsubscribeMeterValue();
     };
   }, [loadActiveSessions]);
 
@@ -273,10 +284,18 @@ export function CustomerActiveSessionsPage() {
                     </Grid>
                     <Grid item xs={6} sm={3}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        Started
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
+                        {new Date(tx.startTime).toLocaleTimeString()}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6} sm={3}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         Energy
                       </Typography>
                       <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
-                        {formatEnergyKwh(tx.totalEnergyKwh)} kWh
+                        {formatActiveSessionEnergy(tx)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
@@ -284,17 +303,19 @@ export function CustomerActiveSessionsPage() {
                         Cost
                       </Typography>
                       <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
-                        {formatCurrency(tx.totalCost, 'GHS')}
+                        {formatActiveSessionCost(tx)}
                       </Typography>
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                        Started
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
-                        {new Date(tx.startTime).toLocaleTimeString()}
-                      </Typography>
-                    </Grid>
+                    {activeSessionHasWalletHold(tx) ? (
+                      <Grid item xs={12}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                          Purchased (max)
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
+                          {formatActiveSessionPurchased(tx)}
+                        </Typography>
+                      </Grid>
+                    ) : null}
                   </Grid>
                   <Box
                     sx={{

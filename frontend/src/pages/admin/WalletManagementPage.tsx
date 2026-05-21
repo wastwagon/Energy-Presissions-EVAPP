@@ -41,6 +41,11 @@ import {
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getWalletTransactionTypeColor } from '../../utils/statusColors';
+import {
+  formatWalletLedgerAmount,
+  formatWalletLedgerTypeLabel,
+  walletLedgerAmountColor,
+} from '../../utils/walletLedgerDisplay';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -48,6 +53,12 @@ export function WalletManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
+  const [userFunds, setUserFunds] = useState<{
+    available: number;
+    reserved: number;
+    total: number;
+    currency: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -86,10 +97,15 @@ export function WalletManagementPage() {
 
   const loadUserTransactions = async (userId: number) => {
     try {
-      const { transactions } = await walletApi.getTransactions(userId, 20, 0);
+      const [{ transactions }, funds] = await Promise.all([
+        walletApi.getTransactions(userId, 20, 0),
+        walletApi.getAvailableBalance(userId),
+      ]);
       setWalletTransactions(transactions);
+      setUserFunds(funds);
     } catch (err: any) {
       console.error('Error loading wallet transactions:', err);
+      setUserFunds(null);
     }
   };
 
@@ -397,6 +413,45 @@ export function WalletManagementPage() {
               )}
             </Box>
 
+            {selectedUser && userFunds && (
+              <Box
+                sx={{
+                  px: { xs: 2, sm: 2.5 },
+                  py: 1.5,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                  gap: 1.5,
+                }}
+              >
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Available
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    {formatCurrency(userFunds.available, userFunds.currency)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    On hold
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: userFunds.reserved > 0 ? 'warning.main' : 'text.primary' }}>
+                    {formatCurrency(userFunds.reserved, userFunds.currency)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Wallet total
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    {formatCurrency(userFunds.total, userFunds.currency)}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
             {selectedUser ? (
               <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                   <Table size="small">
@@ -416,18 +471,14 @@ export function WalletManagementPage() {
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={tx.type}
+                              label={formatWalletLedgerTypeLabel(tx.type)}
                               color={getWalletTransactionTypeColor(tx.type)}
                               size="small"
                             />
                           </TableCell>
                           <TableCell>
-                            <Typography
-                              variant="body2"
-                              color={tx.type === 'TopUp' || tx.type === 'Refund' ? 'success.main' : 'error.main'}
-                            >
-                              {tx.type === 'TopUp' || tx.type === 'Refund' ? '+' : '-'}
-                              {formatCurrency(tx.amount, tx.currency)}
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: walletLedgerAmountColor(tx.type) }}>
+                              {formatWalletLedgerAmount(tx)}
                             </Typography>
                           </TableCell>
                           <TableCell>

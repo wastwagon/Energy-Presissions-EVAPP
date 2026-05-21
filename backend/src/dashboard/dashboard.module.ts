@@ -12,6 +12,7 @@ import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { Connector } from '../entities/connector.entity';
+import { WalletTransaction } from '../entities/wallet-transaction.entity';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
@@ -25,6 +26,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
       Payment,
       ConnectionStatistics,
       Connector,
+      WalletTransaction,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

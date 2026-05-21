@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, LessThan } from 'typeorm';
 import Decimal from 'decimal.js';
 import { User } from '../entities/user.entity';
 import {
@@ -503,6 +503,46 @@ export class WalletService {
 
       return walletTransactionRepo.save(refundTransaction);
     });
+  }
+
+  /**
+   * Release wallet holds that were never tied to an active session (e.g. failed remote start).
+   */
+  async releaseStalePendingReservations(maxAgeHours = 48): Promise<number> {
+    const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
+    const pending = await this.walletTransactionRepository.find({
+      where: {
+        type: WalletTransactionType.RESERVATION,
+        status: WalletTransactionStatus.PENDING,
+        createdAt: LessThan(cutoff),
+      },
+    });
+
+    let released = 0;
+    for (const reservation of pending) {
+      if (reservation.transactionId) {
+        const tx =
+          (await this.transactionRepository.findOne({
+            where: { id: reservation.transactionId },
+          })) ??
+          (await this.transactionRepository.findOne({
+            where: { transactionId: reservation.transactionId },
+          }));
+        if (tx?.status === 'Active') {
+          continue;
+        }
+      }
+
+      try {
+        await this.cancelReservation(reservation.id, 'Auto-released stale session hold');
+        released += 1;
+      } catch (err) {
+        this.logger.warn(
+          `Failed to auto-release wallet hold ${reservation.id}: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    }
+    return released;
   }
 
   /**

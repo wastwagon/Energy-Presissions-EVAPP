@@ -21,6 +21,14 @@ export interface Transaction {
   reason?: string;
   reservationId?: number;
   walletReservedAmount?: number;
+  /** Populated for Active sessions from latest OCPP meter register. */
+  liveEnergyKwh?: number | null;
+  /** Estimated cost so far (kWh × tariff, capped at wallet hold). */
+  liveCostSoFar?: number | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  locationName?: string | null;
+  vendorName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

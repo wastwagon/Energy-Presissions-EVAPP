@@ -14,6 +14,8 @@ import {
   Chip,
   Alert,
   Button,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -34,8 +36,20 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { requireStoredUserId } from '../../utils/authSession';
-import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
-import { getTransactionStatusColor } from '../../utils/statusColors';
+import { formatCurrency } from '../../utils/formatters';
+import {
+  formatCustomerDisplayName,
+  formatSessionCost,
+  formatSessionDuration,
+  formatSessionEnergy,
+  formatSessionReserved,
+  sessionStatusChipColor,
+  sessionStatusLabel,
+} from '../../utils/sessionDisplay';
+import { billingApi } from '../../services/billingApi';
+import { getStoredUser } from '../../utils/authSession';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
@@ -44,6 +58,9 @@ export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+  const isSuperAdmin = getStoredUser()?.accountType === 'SuperAdmin';
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [meterValues, setMeterValues] = useState<MeterSample[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +72,8 @@ export function TransactionDetailPage() {
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [cashNotes, setCashNotes] = useState<string>('');
   const [processingCash, setProcessingCash] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -123,8 +142,8 @@ export function TransactionDetailPage() {
               Back
             </Button>
             <Chip
-              label={transaction.status}
-              color={getTransactionStatusColor(transaction.status)}
+              label={sessionStatusLabel(transaction)}
+              color={sessionStatusChipColor(sessionStatusLabel(transaction))}
               sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
             />
           </>
@@ -137,6 +156,92 @@ export function TransactionDetailPage() {
         </Alert>
       )}
 
+      {invoiceNotice && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setInvoiceNotice(null)}>
+          {invoiceNotice}
+        </Alert>
+      )}
+
+      {isCompact ? (
+        <>
+          <GroupedListSection title="Session">
+            <GroupedDetailRow label="Customer" value={formatCustomerDisplayName(transaction)} divider />
+            <GroupedDetailRow label="Charge point" value={transaction.chargePointId} divider />
+            <GroupedDetailRow label="Connector" value={transaction.connectorId} divider />
+            <GroupedDetailRow label="IdTag" value={transaction.idTag || '—'} divider />
+            <GroupedDetailRow
+              label="Start"
+              value={new Date(transaction.startTime).toLocaleString()}
+              divider={Boolean(transaction.stopTime)}
+            />
+            {transaction.stopTime && (
+              <GroupedDetailRow label="End" value={new Date(transaction.stopTime).toLocaleString()} />
+            )}
+          </GroupedListSection>
+          <GroupedListSection title="Energy & billing">
+            <GroupedDetailRow label="Energy" value={formatSessionEnergy(transaction)} divider />
+            <GroupedDetailRow label="Duration" value={formatSessionDuration(transaction)} divider />
+            {transaction.status === 'Active' && (
+              <GroupedDetailRow label="Purchased (max)" value={formatSessionReserved(transaction)} divider />
+            )}
+            <GroupedDetailRow
+              label="Cost"
+              value={
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                  {formatSessionCost(transaction)}
+                </Typography>
+              }
+            />
+          </GroupedListSection>
+          {transaction.status === 'Completed' && Number(transaction.totalCost) > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+              <Button
+                variant="contained"
+                disableElevation
+                startIcon={<PaymentIcon />}
+                onClick={() => setPaymentDialogOpen(true)}
+                sx={(th) => ({
+                  ...sxObject(th, compactContainedCtaSx),
+                  width: '100%',
+                })}
+              >
+                Pay now
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<AttachMoneyIcon />}
+                onClick={() => {
+                  setCashAmount(transaction.totalCost || 0);
+                  setCashPaymentDialogOpen(true);
+                }}
+                sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+              >
+                Cash payment
+              </Button>
+              {isSuperAdmin && (
+                <Button
+                  variant="outlined"
+                  disabled={generatingInvoice}
+                  onClick={async () => {
+                    setGeneratingInvoice(true);
+                    try {
+                      const inv = await billingApi.generateInvoice(transaction.transactionId);
+                      setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
+                    } catch (err: unknown) {
+                      setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+                    } finally {
+                      setGeneratingInvoice(false);
+                    }
+                  }}
+                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                >
+                  {generatingInvoice ? 'Generating…' : 'Generate invoice'}
+                </Button>
+              )}
+            </Box>
+          )}
+        </>
+      ) : (
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Transaction Info */}
         <Grid item xs={12} md={6}>
@@ -162,6 +267,12 @@ export function TransactionDetailPage() {
                     Connector
                   </Typography>
                   <Typography variant="body1">{transaction.connectorId}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Customer
+                  </Typography>
+                  <Typography variant="body1">{formatCustomerDisplayName(transaction)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -193,17 +304,15 @@ export function TransactionDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     Duration
                   </Typography>
-                  <Typography variant="body1">
-                    {formatDurationMinutes(transaction.durationMinutes)}
-                  </Typography>
+                  <Typography variant="body1">{formatSessionDuration(transaction)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
                     Status
                   </Typography>
                   <Chip
-                    label={transaction.status}
-                    color={getTransactionStatusColor(transaction.status)}
+                    label={sessionStatusLabel(transaction)}
+                    color={sessionStatusChipColor(sessionStatusLabel(transaction))}
                     size="small"
                   />
                 </Grid>
@@ -237,7 +346,7 @@ export function TransactionDetailPage() {
                     Energy Consumed
                   </Typography>
                   <Typography variant="h6">
-                    {`${formatEnergyKwh(transaction.totalEnergyKwh, 3)} kWh`}
+                    {formatSessionEnergy(transaction)}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
@@ -287,6 +396,30 @@ export function TransactionDetailPage() {
                       >
                         Cash Payment
                       </Button>
+                      {isSuperAdmin && (
+                        <Button
+                          variant="outlined"
+                          disabled={generatingInvoice}
+                          onClick={async () => {
+                            setGeneratingInvoice(true);
+                            try {
+                              const inv = await billingApi.generateInvoice(transaction.transactionId);
+                              setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
+                            } catch (err: unknown) {
+                              setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+                            } finally {
+                              setGeneratingInvoice(false);
+                            }
+                          }}
+                          sx={(th) => ({
+                            ...sxObject(th, compactOutlinedCtaSx),
+                            minWidth: { xs: '100%', sm: 160 },
+                            width: { xs: '100%', sm: 'auto' },
+                          })}
+                        >
+                          {generatingInvoice ? 'Generating…' : 'Generate invoice'}
+                        </Button>
+                      )}
                     </Box>
                   )}
                 </Grid>
@@ -302,47 +435,44 @@ export function TransactionDetailPage() {
           </Paper>
         </Grid>
 
-        {/* Meter Values */}
-        {meterValues.length > 0 && (
-          <Grid item xs={12}>
-            <Paper sx={premiumTableSurfaceSx}>
-              <Box sx={{ p: { xs: 1.5, sm: 2 }, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                  Meter Values
-                </Typography>
-              </Box>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table stickyHeader size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Timestamp</TableCell>
-                      <TableCell>Measurand</TableCell>
-                      <TableCell>Location</TableCell>
-                      <TableCell>Phase</TableCell>
-                      <TableCell>Value</TableCell>
-                      <TableCell>Unit</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {meterValues.map((sample, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          {new Date(sample.timestamp).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{sample.measurand || '-'}</TableCell>
-                        <TableCell>{sample.location || '-'}</TableCell>
-                        <TableCell>{sample.phase || '-'}</TableCell>
-                        <TableCell>{sample.value}</TableCell>
-                        <TableCell>{sample.unit || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          </Grid>
-        )}
       </Grid>
+      )}
+
+      {meterValues.length > 0 && (
+        <Paper sx={{ ...premiumTableSurfaceSx, mt: 2 }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+              Meter Values
+            </Typography>
+          </Box>
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Timestamp</TableCell>
+                  <TableCell>Measurand</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Phase</TableCell>
+                  <TableCell>Value</TableCell>
+                  <TableCell>Unit</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {meterValues.map((sample, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{new Date(sample.timestamp).toLocaleString()}</TableCell>
+                    <TableCell>{sample.measurand || '-'}</TableCell>
+                    <TableCell>{sample.location || '-'}</TableCell>
+                    <TableCell>{sample.phase || '-'}</TableCell>
+                    <TableCell>{sample.value}</TableCell>
+                    <TableCell>{sample.unit || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
       {/* Paystack Payment Dialog */}
       <PaystackPayment

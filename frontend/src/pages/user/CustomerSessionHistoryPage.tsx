@@ -27,8 +27,13 @@ import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jam
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
-import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
-import { getTransactionStatusColor } from '../../utils/statusColors';
+import {
+  formatSessionCost,
+  formatSessionDuration,
+  formatSessionEnergy,
+  sessionStatusChipColor,
+  sessionStatusLabel,
+} from '../../utils/sessionDisplay';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -129,14 +134,19 @@ export function CustomerSessionHistoryPage() {
               <GroupedListRow
                 key={tx.id}
                 divider={index < transactions.length - 1}
-                primary={tx.chargePointId}
-                secondary={`${new Date(tx.startTime).toLocaleDateString()} · ${formatEnergyKwh(tx.totalEnergyKwh)} · ${formatDurationMinutes(tx.durationMinutes)}`}
+                primary={tx.locationName || tx.chargePointId}
+                secondary={`${new Date(tx.startTime).toLocaleDateString()} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
                 end={
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {formatCurrency(tx.totalCost, 'GHS')}
+                      {formatSessionCost(tx)}
                     </Typography>
-                    <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" sx={{ mt: 0.5, height: 22 }} />
+                    <Chip
+                      label={sessionStatusLabel(tx)}
+                      color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                      size="small"
+                      sx={{ mt: 0.5, height: 22 }}
+                    />
                   </Box>
                 }
                 onClick={() => navigate(`${CUSTOMER_ROUTES.sessionsRoot}/${tx.transactionId}`)}
@@ -184,11 +194,15 @@ export function CustomerSessionHistoryPage() {
                   <TableRow key={tx.id} hover>
                     <TableCell>{tx.transactionId}</TableCell>
                     <TableCell>{tx.chargePointId}</TableCell>
-                    <TableCell>{formatEnergyKwh(tx.totalEnergyKwh)}</TableCell>
-                    <TableCell>{formatDurationMinutes(tx.durationMinutes)}</TableCell>
-                    <TableCell>{formatCurrency(tx.totalCost, 'GHS')}</TableCell>
+                    <TableCell>{formatSessionEnergy(tx)}</TableCell>
+                    <TableCell>{formatSessionDuration(tx)}</TableCell>
+                    <TableCell>{formatSessionCost(tx)}</TableCell>
                     <TableCell>
-                      <Chip label={tx.status} color={getTransactionStatusColor(tx.status)} size="small" />
+                      <Chip
+                        label={sessionStatusLabel(tx)}
+                        color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell>{new Date(tx.startTime).toLocaleDateString()}</TableCell>
                     <TableCell>

@@ -1,17 +1,38 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { WalletService } from '../wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { MeterSample } from '../entities/meter-sample.entity';
 import { Connector } from '../entities/connector.entity';
+import { ChargePoint } from '../entities/charge-point.entity';
+import { User } from '../entities/user.entity';
 import {
   WalletTransaction,
   WalletTransactionStatus,
   WalletTransactionType,
 } from '../entities/wallet-transaction.entity';
 
+const ENERGY_MEASURAND = 'Energy.Active.Import.Register';
+
+export type ActiveTransactionView = Transaction & {
+  recordPending?: boolean;
+  /** Energy consumed so far from latest meter register (not persisted until stop). */
+  liveEnergyKwh?: number | null;
+  /** Estimated cost from kWh × tariff, capped at wallet hold (not final until stop). */
+  liveCostSoFar?: number | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  locationName?: string | null;
+  vendorName?: string | null;
+};
+
+export type TransactionApiView = ActiveTransactionView;
+
 @Injectable()
 export class TransactionsService {
+  private readonly logger = new Logger(TransactionsService.name);
+
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
@@ -21,7 +42,146 @@ export class TransactionsService {
     private connectorRepository: Repository<Connector>,
     @InjectRepository(WalletTransaction)
     private walletTransactionRepository: Repository<WalletTransaction>,
+    @InjectRepository(ChargePoint)
+    private chargePointRepository: Repository<ChargePoint>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private walletService: WalletService,
   ) {}
+
+  private formatUserDisplay(user: User | null | undefined): {
+    customerName: string | null;
+    customerEmail: string | null;
+  } {
+    if (!user) return { customerName: null, customerEmail: null };
+    const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return {
+      customerName: name || user.email || null,
+      customerEmail: user.email || null,
+    };
+  }
+
+  private async attachChargePointMeta(
+    tx: Transaction,
+  ): Promise<{ locationName: string | null; vendorName: string | null }> {
+    const cp = await this.chargePointRepository.findOne({
+      where: { chargePointId: tx.chargePointId },
+      relations: ['vendor'],
+    });
+    return {
+      locationName: cp?.locationAddress?.trim() || cp?.chargePointId || null,
+      vendorName: cp?.vendor?.name ?? cp?.vendorName ?? null,
+    };
+  }
+
+  private async mapTransactionForApi(tx: Transaction & { user?: User }): Promise<TransactionApiView> {
+    const { customerName, customerEmail } = this.formatUserDisplay(tx.user);
+    const cpMeta = await this.attachChargePointMeta(tx);
+    return {
+      ...tx,
+      customerName,
+      customerEmail,
+      ...cpMeta,
+    } as TransactionApiView;
+  }
+
+  private parseDecimal(value: unknown): number {
+    if (value === undefined || value === null) return 0;
+    const n = typeof value === 'number' ? value : parseFloat(String(value));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  private async resolveWalletReservedAmount(tx: Transaction): Promise<number | null> {
+    const onRow = this.parseDecimal(tx.walletReservedAmount);
+    if (onRow > 0) return onRow;
+    if (!tx.userId || tx.transactionId <= 0) return null;
+
+    const linked = await this.walletTransactionRepository.findOne({
+      where: {
+        userId: tx.userId,
+        transactionId: tx.transactionId,
+        type: WalletTransactionType.RESERVATION,
+        status: WalletTransactionStatus.PENDING,
+      },
+      order: { createdAt: 'DESC' },
+    });
+    if (linked) return this.parseDecimal(linked.amount);
+
+    const bySite = await this.walletTransactionRepository.find({
+      where: {
+        userId: tx.userId,
+        type: WalletTransactionType.RESERVATION,
+        status: WalletTransactionStatus.PENDING,
+        transactionId: IsNull(),
+      },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+    for (const res of bySite) {
+      const cpId = this.parseChargePointIdFromReservationDescription(res.description);
+      if (cpId === tx.chargePointId) return this.parseDecimal(res.amount);
+    }
+    return null;
+  }
+
+  private async enrichActiveSession(
+    tx: Transaction & { recordPending?: boolean; user?: User },
+  ): Promise<ActiveTransactionView> {
+    const walletReserved = await this.resolveWalletReservedAmount(tx);
+    let liveEnergyKwh: number | null = null;
+    let liveCostSoFar: number | null = null;
+
+    if (!tx.recordPending && tx.transactionId > 0) {
+      const latest = await this.meterSampleRepository.findOne({
+        where: {
+          transactionId: tx.transactionId,
+          measurand: ENERGY_MEASURAND,
+        },
+        order: { timestamp: 'DESC' },
+      });
+
+      if (latest) {
+        const meterStart = this.parseDecimal(tx.meterStart);
+        const energyWh = Math.max(0, this.parseDecimal(latest.value) - meterStart);
+        liveEnergyKwh = Math.round((energyWh / 1000) * 1000) / 1000;
+
+        const chargePoint = await this.chargePointRepository.findOne({
+          where: { chargePointId: tx.chargePointId },
+        });
+        const pricePerKwh = chargePoint?.pricePerKwh
+          ? this.parseDecimal(chargePoint.pricePerKwh)
+          : 0;
+        if (pricePerKwh > 0 && liveEnergyKwh > 0) {
+          let cost = liveEnergyKwh * pricePerKwh;
+          if (walletReserved != null && walletReserved > 0) {
+            cost = Math.min(cost, walletReserved);
+          }
+          liveCostSoFar = Math.round(cost * 100) / 100;
+        }
+      }
+    }
+
+    const userEntity =
+      tx.user ?? (tx.userId ? await this.userRepository.findOne({ where: { id: tx.userId } }) : null);
+    const { customerName, customerEmail } = this.formatUserDisplay(userEntity);
+    const cpMeta = await this.attachChargePointMeta(tx);
+
+    return {
+      ...tx,
+      walletReservedAmount: walletReserved ?? tx.walletReservedAmount,
+      liveEnergyKwh,
+      liveCostSoFar,
+      customerName,
+      customerEmail,
+      ...cpMeta,
+    };
+  }
+
+  private async enrichActiveSessions(
+    rows: Array<Transaction & { recordPending?: boolean }>,
+  ): Promise<ActiveTransactionView[]> {
+    return Promise.all(rows.map((tx) => this.enrichActiveSession(tx)));
+  }
 
   /** Matches `reserve()` description from wallet-based remote start (`charge-points.service`). */
   private parseChargePointIdFromReservationDescription(description: string | undefined): string | null {
@@ -112,14 +272,15 @@ export class TransactionsService {
     chargePointId?: string,
     vendorId?: number,
     userId?: number,
-  ): Promise<{ transactions: Transaction[]; total: number }> {
-    const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
+  ): Promise<{ transactions: TransactionApiView[]; total: number }> {
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('tx')
+      .leftJoinAndSelect('tx.user', 'user');
 
     if (chargePointId) {
       queryBuilder.where('tx.charge_point_id = :chargePointId', { chargePointId });
     }
 
-    // Filter by vendorId via charge point relationship
     if (vendorId) {
       queryBuilder
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
@@ -132,25 +293,50 @@ export class TransactionsService {
 
     queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
 
-    const [transactions, total] = await queryBuilder.getManyAndCount();
+    const [rows, total] = await queryBuilder.getManyAndCount();
+    const mapped = await Promise.all(
+      rows.map(async (tx) => {
+        if (tx.status === 'Active' && tx.transactionId > 0) {
+          return this.enrichActiveSession(tx as Transaction & { user?: User });
+        }
+        return this.mapTransactionForApi(tx as Transaction & { user?: User });
+      }),
+    );
 
-    return { transactions, total };
+    return { transactions: mapped, total };
   }
 
-  async findOne(transactionId: number): Promise<Transaction> {
+  async findOne(transactionId: number): Promise<TransactionApiView> {
     const transaction = await this.transactionRepository.findOne({
       where: { transactionId },
+      relations: ['user'],
     });
 
     if (!transaction) {
       throw new NotFoundException(`Transaction ${transactionId} not found`);
     }
 
-    return transaction;
+    if (transaction.status === 'Active') {
+      return this.enrichActiveSession(transaction as Transaction & { user?: User });
+    }
+    return this.mapTransactionForApi(transaction as Transaction & { user?: User });
   }
 
-  async findActive(vendorId?: number, userId?: number): Promise<Transaction[]> {
-    const queryBuilder = this.transactionRepository.createQueryBuilder('tx');
+  async findActive(vendorId?: number, userId?: number): Promise<ActiveTransactionView[]> {
+    try {
+      const released = await this.walletService.releaseStalePendingReservations(48);
+      if (released > 0) {
+        this.logger.log(`Auto-released ${released} stale wallet hold(s)`);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Stale wallet hold cleanup skipped: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('tx')
+      .leftJoinAndSelect('tx.user', 'user');
 
     queryBuilder.where('tx.status = :status', { status: 'Active' });
 
@@ -171,7 +357,7 @@ export class TransactionsService {
 
     if (userId != null) {
       const walletSynthetic = await this.syntheticActiveSessionsForWalletUser(userId, fromDb);
-      return [...fromDb, ...walletSynthetic];
+      return this.enrichActiveSessions([...fromDb, ...walletSynthetic]);
     }
 
     // When OCPP reports Charging but CSMS missed StartTransaction (service token/network), show a placeholder row.
@@ -214,7 +400,7 @@ export class TransactionsService {
       } as Transaction & { recordPending?: boolean });
     }
 
-    return [...fromDb, ...synthetic];
+    return this.enrichActiveSessions([...fromDb, ...synthetic]);
   }
 
   async getMeterValues(transactionId: number): Promise<MeterSample[]> {

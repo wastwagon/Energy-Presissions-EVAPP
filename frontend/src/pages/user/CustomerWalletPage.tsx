@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Button,
   Alert,
   Table,
@@ -29,6 +28,12 @@ import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
+import {
+  formatWalletLedgerAmount,
+  formatWalletLedgerTypeLabel,
+  walletLedgerAmountColor,
+} from '../../utils/walletLedgerDisplay';
+import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -42,6 +47,7 @@ export function CustomerWalletPage() {
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [balance, setBalance] = useState<WalletBalance | null>(null);
+  const [funds, setFunds] = useState<{ available: number; reserved: number; total: number; currency: string } | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +61,13 @@ export function CustomerWalletPage() {
           setError('User not logged in');
           return false;
         }
-        const [balanceData, transactionsData] = await Promise.all([
+        const [balanceData, availableData, transactionsData] = await Promise.all([
           walletApi.getBalance(user.id),
+          walletApi.getAvailableBalance(user.id),
           walletApi.getTransactions(user.id, 20, 0),
         ]);
         setBalance(balanceData);
+        setFunds(availableData);
         setTransactions(transactionsData.transactions);
         return true;
       } catch (err: any) {
@@ -115,58 +123,89 @@ export function CustomerWalletPage() {
         </Alert>
       )}
 
-      {balance && (
-        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={(theme) => ({
-                ...premiumPanelCardSx,
-                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.07)} 0%, ${alpha(
-                  theme.palette.primary.main,
-                  0.02
-                )} 100%)`,
-                borderColor: alpha(theme.palette.primary.main, 0.18),
-              })}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <Box
-                  sx={(theme) => ({
-                    width: 52,
-                    height: 52,
-                    borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    bgcolor: alpha(theme.palette.primary.main, 0.12),
-                    color: 'primary.main',
-                  })}
-                >
-                  <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    Current balance
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
-                      wordBreak: 'break-word',
-                      lineHeight: 1.2,
-                      mt: 0.25,
-                    }}
-                  >
-                    {formatCurrency(balance.balance, balance.currency)}
-                  </Typography>
-                </Box>
+      {balance && funds && (
+        <Box sx={{ mb: 3 }}>
+          <Paper
+            elevation={0}
+            sx={(th) => ({
+              ...premiumPanelCardSx,
+              mb: 2,
+              background: `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.07)} 0%, ${alpha(
+                th.palette.primary.main,
+                0.02,
+              )} 100%)`,
+              borderColor: alpha(th.palette.primary.main, 0.18),
+            })}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Box
+                sx={(th) => ({
+                  width: 52,
+                  height: 52,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  bgcolor: alpha(th.palette.primary.main, 0.12),
+                  color: 'primary.main',
+                })}
+              >
+                <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
               </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                >
+                  Available to spend
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    color: 'text.primary',
+                    fontSize: { xs: '1.75rem', sm: '2.25rem' },
+                    wordBreak: 'break-word',
+                    lineHeight: 1.2,
+                    mt: 0.25,
+                  }}
+                >
+                  {formatCurrency(funds.available, funds.currency)}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+          <GroupedListSection title="Balance">
+            <GroupedDetailRow
+              label="Available"
+              value={
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {formatCurrency(funds.available, funds.currency)}
+                </Typography>
+              }
+              divider
+            />
+            <GroupedDetailRow
+              label="On hold"
+              value={
+                <Typography variant="body2" sx={{ fontWeight: 600, color: funds.reserved > 0 ? 'warning.main' : 'text.primary' }}>
+                  {formatCurrency(funds.reserved, funds.currency)}
+                </Typography>
+              }
+              divider
+            />
+            <GroupedDetailRow
+              label="Wallet total"
+              value={
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {formatCurrency(funds.total, funds.currency)}
+                </Typography>
+              }
+            />
+          </GroupedListSection>
+        </Box>
       )}
 
       {useGroupedList ? (
@@ -183,7 +222,7 @@ export function CustomerWalletPage() {
                   key={tx.id}
                   divider={index < transactions.length - 1}
                   showChevron={false}
-                  primary={tx.description || tx.type.replace('_', ' ')}
+                  primary={tx.description || formatWalletLedgerTypeLabel(tx.type)}
                   secondary={`${new Date(tx.createdAt).toLocaleDateString()} · ${tx.status}`}
                   end={
                     <Box sx={{ textAlign: 'right' }}>
@@ -191,11 +230,10 @@ export function CustomerWalletPage() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: tx.type === 'debit' || tx.type === 'payment' ? 'error.main' : 'success.main',
+                          color: walletLedgerAmountColor(tx.type),
                         }}
                       >
-                        {tx.type === 'debit' || tx.type === 'payment' ? '-' : '+'}
-                        {formatCurrency(Math.abs(tx.amount))}
+                        {formatWalletLedgerAmount(tx)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatCurrency(tx.balanceAfter)}
@@ -242,7 +280,7 @@ export function CustomerWalletPage() {
                       <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Chip
-                          label={tx.type.replace('_', ' ').toUpperCase()}
+                          label={formatWalletLedgerTypeLabel(tx.type)}
                           color={getWalletTransactionTypeColor(tx.type)}
                           size="small"
                         />
@@ -250,12 +288,11 @@ export function CustomerWalletPage() {
                       <TableCell>{tx.description || '-'}</TableCell>
                       <TableCell
                         sx={{
-                          color: tx.type === 'debit' || tx.type === 'payment' ? 'error.main' : 'success.main',
+                          color: walletLedgerAmountColor(tx.type),
                           fontWeight: 600,
                         }}
                       >
-                        {tx.type === 'debit' || tx.type === 'payment' ? '-' : '+'}
-                        {formatCurrency(Math.abs(tx.amount))}
+                        {formatWalletLedgerAmount(tx)}
                       </TableCell>
                       <TableCell>{formatCurrency(tx.balanceAfter)}</TableCell>
                       <TableCell>

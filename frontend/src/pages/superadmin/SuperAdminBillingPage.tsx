@@ -13,13 +13,29 @@ import {
   Alert,
   Tabs,
   Tab,
+  Button,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import { billingApi, Invoice } from '../../services/billingApi';
-import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
+import { transactionsApi, type Transaction } from '../../services/transactionsApi';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { formatCurrency } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import {
+  formatCustomerDisplayName,
+  formatSessionCost,
+  formatSessionEnergy,
+  sessionStatusChipColor,
+  sessionStatusLabel,
+} from '../../utils/sessionDisplay';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
   return (
@@ -32,11 +48,15 @@ function TabPanel({ children, value, index }: { children: ReactNode; value: numb
 }
 
 export function SuperAdminBillingPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [tab, setTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [generatingId, setGeneratingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -44,20 +64,37 @@ export function SuperAdminBillingPage() {
     try {
       const [inv, tx] = await Promise.all([
         billingApi.getInvoices(100, 0).catch(() => ({ invoices: [], total: 0 })),
-        billingApi.getTransactions(100, 0).catch(() => ({ transactions: [], total: 0 })),
+        transactionsApi.getAll(100, 0).catch(() => ({ transactions: [], total: 0 })),
       ]);
       setInvoices(inv.invoices || []);
       setTransactions(tx.transactions || []);
-    } catch (e: any) {
-      setError(e.response?.data?.message || e.message || 'Failed to load billing data');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setError(err.response?.data?.message || err.message || 'Failed to load billing data');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+
+  const handleGenerateInvoice = async (transactionId: number) => {
+    setGeneratingId(transactionId);
+    setError(null);
+    try {
+      const inv = await billingApi.generateInvoice(transactionId);
+      setNotice(`Invoice ${inv.invoiceNumber} created`);
+      await load();
+      setTab(0);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setError(err.response?.data?.message || err.message || 'Failed to generate invoice');
+    } finally {
+      setGeneratingId(null);
+    }
+  };
 
   if (loading && invoices.length === 0 && transactions.length === 0) {
     return <DashboardStaffChromeSkeleton preset="billingTabs" />;
@@ -71,7 +108,7 @@ export function SuperAdminBillingPage() {
             Billing & Invoices
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Read-only view of billing transactions and invoices from the API.
+            Completed session billing and invoice generation. Active sessions show live estimates until stop.
           </Typography>
         </Box>
       </Box>
@@ -81,14 +118,13 @@ export function SuperAdminBillingPage() {
           {error}
         </Alert>
       )}
+      {notice && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setNotice(null)}>
+          {notice}
+        </Alert>
+      )}
 
-      <Paper
-        elevation={0}
-        sx={{
-          ...premiumTableSurfaceSx,
-          position: 'relative',
-        }}
-      >
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress
           active={loading && (invoices.length > 0 || transactions.length > 0)}
           ariaLabel="Loading billing data"
@@ -106,98 +142,136 @@ export function SuperAdminBillingPage() {
             '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
           }}
         >
-          <Tab label="Invoices" />
-          <Tab label="Billing transactions" />
+          <Tab label={`Invoices (${invoices.length})`} />
+          <Tab label={`Sessions (${transactions.length})`} />
         </Tabs>
 
-        <>
-            <TabPanel value={tab} index={0}>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Invoice #</TableCell>
-                      <TableCell>User</TableCell>
-                      <TableCell>Total</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Created</TableCell>
+        <TabPanel value={tab} index={0}>
+          {invoices.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No invoices yet. Generate one from a completed session.
+            </Typography>
+          ) : (
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Invoice #</TableCell>
+                    <TableCell>User</TableCell>
+                    <TableCell>Total</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Created</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {invoices.map((inv) => (
+                    <TableRow key={inv.id} hover>
+                      <TableCell>{inv.invoiceNumber}</TableCell>
+                      <TableCell>{inv.userId}</TableCell>
+                      <TableCell>{formatCurrency(inv.total, inv.currency || 'GHS')}</TableCell>
+                      <TableCell>
+                        <Chip label={inv.status} color={getInvoiceStatusColor(inv.status)} size="small" />
+                      </TableCell>
+                      <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {invoices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                            No invoices
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      invoices.map((inv) => (
-                        <TableRow key={inv.id} hover>
-                          <TableCell>{inv.invoiceNumber}</TableCell>
-                          <TableCell>{inv.userId}</TableCell>
-                          <TableCell>
-                            {formatCurrency(inv.total, inv.currency || 'GHS')}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={inv.status}
-                              color={getInvoiceStatusColor(inv.status)}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </TabPanel>
-            <TabPanel value={tab} index={1}>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Transaction ID</TableCell>
-                      <TableCell>User</TableCell>
-                      <TableCell>Cost</TableCell>
-                      <TableCell>Energy</TableCell>
-                      <TableCell>Start</TableCell>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tab} index={1}>
+          {transactions.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No transactions
+            </Typography>
+          ) : useGroupedList ? (
+            <GroupedListSection>
+              {transactions.map((tx, index) => (
+                <GroupedListRow
+                  key={`${tx.id}-${tx.transactionId}`}
+                  divider={index < transactions.length - 1}
+                  showChevron={false}
+                  primary={formatCustomerDisplayName(tx)}
+                  secondary={`#${tx.transactionId} · ${formatSessionEnergy(tx)}`}
+                  end={
+                    <Box sx={{ textAlign: 'right', minWidth: 88 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {formatSessionCost(tx)}
+                      </Typography>
+                      {tx.status === 'Completed' && Number(tx.totalCost) > 0 && (
+                        <Button
+                          size="small"
+                          startIcon={<ReceiptIcon sx={{ fontSize: 16 }} />}
+                          disabled={generatingId === tx.transactionId}
+                          onClick={() => void handleGenerateInvoice(tx.transactionId)}
+                          sx={{ mt: 0.5, minHeight: 32, fontSize: '0.75rem' }}
+                        >
+                          Invoice
+                        </Button>
+                      )}
+                      <Chip
+                        label={sessionStatusLabel(tx)}
+                        color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                        size="small"
+                        sx={{ mt: 0.5, height: 22, display: 'block', ml: 'auto' }}
+                      />
+                    </Box>
+                  }
+                />
+              ))}
+            </GroupedListSection>
+          ) : (
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Transaction</TableCell>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Cost</TableCell>
+                    <TableCell>Energy</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Start</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow key={`${tx.id}-${tx.transactionId}`} hover>
+                      <TableCell>{tx.transactionId}</TableCell>
+                      <TableCell>{formatCustomerDisplayName(tx)}</TableCell>
+                      <TableCell>{formatSessionCost(tx)}</TableCell>
+                      <TableCell>{formatSessionEnergy(tx)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={sessionStatusLabel(tx)}
+                          color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{tx.startTime ? new Date(tx.startTime).toLocaleString() : '—'}</TableCell>
+                      <TableCell align="right">
+                        {tx.status === 'Completed' && Number(tx.totalCost) > 0 && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<ReceiptIcon />}
+                            disabled={generatingId === tx.transactionId}
+                            onClick={() => void handleGenerateInvoice(tx.transactionId)}
+                            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+                          >
+                            {generatingId === tx.transactionId ? '…' : 'Invoice'}
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {transactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                            No transactions
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions.map((tx) => (
-                        <TableRow key={tx.transactionId ?? tx.id} hover>
-                          <TableCell>{tx.transactionId ?? tx.id}</TableCell>
-                          <TableCell>{tx.userId ?? '—'}</TableCell>
-                          <TableCell>
-                            {formatCurrency(tx.totalCost, 'GHS')}
-                          </TableCell>
-                          <TableCell>
-                            {tx.totalEnergyKwh != null ? `${formatEnergyKwh(tx.totalEnergyKwh, 3)} kWh` : '—'}
-                          </TableCell>
-                          <TableCell>
-                            {tx.startTime ? new Date(tx.startTime).toLocaleString() : '—'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </TabPanel>
-        </>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
       </Paper>
     </Box>
   );

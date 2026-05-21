@@ -9,6 +9,11 @@ import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
 import { Connector } from '../entities/connector.entity';
+import {
+  WalletTransaction,
+  WalletTransactionStatus,
+  WalletTransactionType,
+} from '../entities/wallet-transaction.entity';
 
 @Injectable()
 export class DashboardService {
@@ -31,7 +36,27 @@ export class DashboardService {
     private connectionStatisticsRepository: Repository<ConnectionStatistics>,
     @InjectRepository(Connector)
     private connectorRepository: Repository<Connector>,
+    @InjectRepository(WalletTransaction)
+    private walletTransactionRepository: Repository<WalletTransaction>,
   ) {}
+
+  private async sumPendingWalletReservations(vendorId?: number): Promise<number> {
+    const q = this.walletTransactionRepository
+      .createQueryBuilder('wt')
+      .select('COALESCE(SUM(wt.amount), 0)', 'sum')
+      .where('wt.type = :type', { type: WalletTransactionType.RESERVATION })
+      .andWhere('wt.status = :status', { status: WalletTransactionStatus.PENDING });
+
+    if (vendorId != null) {
+      q.innerJoin('transactions', 'tx', 'tx.id = wt.transaction_id')
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
+        .andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
+
+    const row = await q.getRawOne<{ sum: string }>();
+    const sum = typeof row?.sum === 'string' ? parseFloat(row.sum) : Number(row?.sum ?? 0);
+    return Math.round((Number.isFinite(sum) ? sum : 0) * 100) / 100;
+  }
 
   /** Distinct charge points that have either an Active CSMS transaction or OCPP connectors in session. */
   private async countOperationalActiveChargePoints(vendorId?: number): Promise<number> {
@@ -117,6 +142,8 @@ export class DashboardService {
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
 
+    const pendingWalletReserved = await this.sumPendingWalletReservations();
+
     // Connection health
     const totalDevices = connectionStats.length;
     const devicesWithErrors = connectionStats.filter((s) => s.consecutiveFailures > 0).length;
@@ -152,6 +179,8 @@ export class DashboardService {
         totalPayments,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         totalPaymentsAmount: Math.round(totalPaymentsAmount * 100) / 100,
+        pendingWalletReserved,
+        activeBillingSessions: activeTransactions,
       },
       connectionHealth: {
         totalDevices,
@@ -240,6 +269,8 @@ export class DashboardService {
       return sum + (isNaN(cost) ? 0 : cost);
     }, 0);
 
+    const pendingWalletReserved = await this.sumPendingWalletReservations(vendorId);
+
     // Charge point status breakdown for this vendor
     const chargePointsByStatus = await this.chargePointRepository
       .createQueryBuilder('cp')
@@ -258,6 +289,8 @@ export class DashboardService {
         totalInvoices,
         totalPayments,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
+        pendingWalletReserved,
+        activeBillingSessions: activeTransactions,
       },
       breakdowns: {
         chargePointsByStatus: chargePointsByStatus.map((cp) => ({

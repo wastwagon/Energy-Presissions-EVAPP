@@ -14,20 +14,33 @@ import {
   Alert,
   Tabs,
   Tab,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import {
+  formatCustomerDisplayName,
+  formatSessionCost,
+  formatSessionDuration,
+  formatSessionEnergy,
+  sessionStatusChipColor,
+  sessionStatusLabel,
+} from '../../utils/sessionDisplay';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export function SessionsPage() {
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [activeTab, setActiveTab] = useState(0);
   const [activeTransactions, setActiveTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
@@ -38,23 +51,21 @@ export function SessionsPage() {
 
   useEffect(() => {
     loadTransactions();
-    
-    // Set up WebSocket listeners for real-time updates
+
     const unsubscribeTransactionStarted = websocketService.on('transactionStarted', () => {
-      loadTransactions(); // Reload when new transaction starts
+      loadTransactions();
     });
 
     const unsubscribeTransactionStopped = websocketService.on('transactionStopped', () => {
-      loadTransactions(); // Reload when transaction stops
+      loadTransactions();
     });
 
-    // Refresh active transactions every 10 seconds
     const interval = setInterval(() => {
       if (activeTab === 0) {
         loadActiveTransactions();
       }
     }, 10000);
-    
+
     return () => {
       unsubscribeTransactionStarted();
       unsubscribeTransactionStopped();
@@ -67,15 +78,12 @@ export function SessionsPage() {
     try {
       if (isQuiet) setRefreshing(true);
       setError(null);
-      const [active, all] = await Promise.all([
-        transactionsApi.getActive(),
-        transactionsApi.getAll(50, 0),
-      ]);
+      const [active, all] = await Promise.all([transactionsApi.getActive(), transactionsApi.getAll(50, 0)]);
       setActiveTransactions(active);
       setAllTransactions(all.transactions);
       setUpdatedAt(Date.now());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load transactions');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load transactions');
       console.error('Error loading transactions:', err);
     } finally {
       setLoading(false);
@@ -88,12 +96,20 @@ export function SessionsPage() {
       const active = await transactionsApi.getActive();
       setActiveTransactions(active);
       setUpdatedAt(Date.now());
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading active transactions:', err);
     }
   };
 
   const transactions = activeTab === 0 ? activeTransactions : allTransactions;
+
+  const openSession = (tx: Transaction) => {
+    if (tx.recordPending) {
+      navigate(`${opsBase}/devices/${encodeURIComponent(tx.chargePointId)}`);
+    } else {
+      navigate(`${opsBase}/sessions/${tx.transactionId}`);
+    }
+  };
 
   if (loading) {
     return <DashboardStaffChromeSkeleton preset="sessions" />;
@@ -140,93 +156,110 @@ export function SessionsPage() {
         </Tabs>
 
         <Box role="tabpanel" id={`ops-sessions-panel-${activeTab}`} aria-labelledby={`ops-sessions-tab-${activeTab}`}>
-        {transactions.length === 0 ? (
-          <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-            <Typography variant="body2" color="text.secondary">
-              {activeTab === 0 ? 'No active charging sessions.' : 'No transactions found.'}
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Transaction ID</TableCell>
-                  <TableCell>Charge Point</TableCell>
-                  <TableCell>Connector</TableCell>
-                  <TableCell>IdTag</TableCell>
-                  <TableCell>Start Time</TableCell>
-                  <TableCell>Duration</TableCell>
-                  <TableCell>Energy (kWh)</TableCell>
-                  <TableCell>Cost</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow 
-                    key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}`}
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() =>
-                      tx.recordPending
-                        ? navigate(`${opsBase}/devices/${encodeURIComponent(tx.chargePointId)}`)
-                        : navigate(`${opsBase}/sessions/${tx.transactionId}`)
+          {transactions.length === 0 ? (
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Typography variant="body2" color="text.secondary">
+                {activeTab === 0 ? 'No active charging sessions.' : 'No transactions found.'}
+              </Typography>
+            </Box>
+          ) : useGroupedList ? (
+            <Box sx={{ py: 1 }}>
+              <GroupedListSection>
+                {transactions.map((tx, index) => (
+                  <GroupedListRow
+                    key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}-${tx.id}`}
+                    divider={index < transactions.length - 1}
+                    primary={formatCustomerDisplayName(tx)}
+                    secondary={`${tx.chargePointId} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
+                    end={
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {formatSessionCost(tx)}
+                        </Typography>
+                        <Chip
+                          label={tx.recordPending ? 'Active (connector)' : sessionStatusLabel(tx)}
+                          color={
+                            tx.recordPending
+                              ? getTransactionStatusColor('Active')
+                              : sessionStatusChipColor(sessionStatusLabel(tx))
+                          }
+                          size="small"
+                          sx={{ mt: 0.5, height: 22 }}
+                        />
+                      </Box>
                     }
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      e.preventDefault();
-                      if (tx.recordPending) {
-                        navigate(`${opsBase}/devices/${encodeURIComponent(tx.chargePointId)}`);
-                      } else {
-                        navigate(`${opsBase}/sessions/${tx.transactionId}`);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
+                    onClick={() => openSession(tx)}
                     aria-label={
                       tx.recordPending
                         ? `Open device ${tx.chargePointId}`
                         : `Open session ${tx.transactionId}`
                     }
-                  >
-                    <TableCell>
-                      {tx.recordPending ? 'Pending sync' : tx.transactionId}
-                    </TableCell>
-                    <TableCell>{tx.chargePointId}</TableCell>
-                    <TableCell>{tx.connectorId}</TableCell>
-                    <TableCell>{tx.idTag || '-'}</TableCell>
-                    <TableCell>
-                      {new Date(tx.startTime).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      {tx.durationMinutes !== undefined
-                        ? formatDurationMinutes(tx.durationMinutes)
-                        : tx.status === 'Active'
-                        ? 'In progress...'
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {formatEnergyKwh(tx.totalEnergyKwh, 3)}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(tx.totalCost, 'GHS')}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={tx.recordPending ? 'Active (connector)' : tx.status}
-                        color={getTransactionStatusColor(tx.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                  </TableRow>
+                  />
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+              </GroupedListSection>
+            </Box>
+          ) : (
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Transaction ID</TableCell>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Charge Point</TableCell>
+                    <TableCell>Connector</TableCell>
+                    <TableCell>Start Time</TableCell>
+                    <TableCell>Duration</TableCell>
+                    <TableCell>Energy</TableCell>
+                    <TableCell>Cost</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow
+                      key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}-${tx.id}`}
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => openSession(tx)}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        e.preventDefault();
+                        openSession(tx);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={
+                        tx.recordPending
+                          ? `Open device ${tx.chargePointId}`
+                          : `Open session ${tx.transactionId}`
+                      }
+                    >
+                      <TableCell>{tx.recordPending ? 'Pending sync' : tx.transactionId}</TableCell>
+                      <TableCell>{formatCustomerDisplayName(tx)}</TableCell>
+                      <TableCell>{tx.chargePointId}</TableCell>
+                      <TableCell>{tx.connectorId}</TableCell>
+                      <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
+                      <TableCell>{formatSessionDuration(tx)}</TableCell>
+                      <TableCell>{formatSessionEnergy(tx)}</TableCell>
+                      <TableCell>{formatSessionCost(tx)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={tx.recordPending ? 'Active (connector)' : sessionStatusLabel(tx)}
+                          color={
+                            tx.recordPending
+                              ? getTransactionStatusColor('Active')
+                              : sessionStatusChipColor(sessionStatusLabel(tx))
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Box>
       </Paper>
     </Box>
   );
 }
-

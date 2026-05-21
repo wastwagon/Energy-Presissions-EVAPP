@@ -23,8 +23,15 @@ import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
-import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../../utils/formatters';
-import { getTransactionStatusColor } from '../../utils/statusColors';
+import { formatCurrency } from '../../utils/formatters';
+import {
+  formatSessionCost,
+  formatSessionDuration,
+  formatSessionEnergy,
+  formatSessionReserved,
+  sessionStatusChipColor,
+  sessionStatusLabel,
+} from '../../utils/sessionDisplay';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerTransactionDetailSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
@@ -109,8 +116,9 @@ export function CustomerTransactionDetailPage() {
     );
   }
 
+  const statusLabel = sessionStatusLabel(transaction);
   const statusChip = (
-    <Chip label={transaction.status} color={getTransactionStatusColor(transaction.status)} size="small" />
+    <Chip label={statusLabel} color={sessionStatusChipColor(statusLabel)} size="small" />
   );
 
   const payCta =
@@ -154,8 +162,11 @@ export function CustomerTransactionDetailPage() {
             <GroupedDetailRow label="Charge point" value={transaction.chargePointId} divider />
             <GroupedDetailRow label="Connector" value={transaction.connectorId} divider />
             <GroupedDetailRow label="Status" value={statusChip} divider />
-            <GroupedDetailRow label="Energy" value={`${formatEnergyKwh(transaction.totalEnergyKwh)} kWh`} divider />
-            <GroupedDetailRow label="Duration" value={formatDurationMinutes(transaction.durationMinutes)} divider />
+            <GroupedDetailRow label="Energy" value={formatSessionEnergy(transaction)} divider />
+            <GroupedDetailRow label="Duration" value={formatSessionDuration(transaction)} divider />
+            {transaction.status === 'Active' && (
+              <GroupedDetailRow label="Purchased (max)" value={formatSessionReserved(transaction)} divider />
+            )}
             <GroupedDetailRow
               label="Start"
               value={new Date(transaction.startTime).toLocaleString()}
@@ -172,7 +183,7 @@ export function CustomerTransactionDetailPage() {
                 Total cost
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main', my: 0.75 }}>
-                {formatCurrency(transaction.totalCost, 'GHS')}
+                {formatSessionCost(transaction)}
               </Typography>
               {payCta}
             </Box>
@@ -227,7 +238,7 @@ export function CustomerTransactionDetailPage() {
                     Energy consumed
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
-                    {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
+                    {formatSessionEnergy(transaction)}
                   </Typography>
                 </Grid>
                 <Grid item xs={6} sm={4}>
@@ -235,9 +246,19 @@ export function CustomerTransactionDetailPage() {
                     Duration
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
-                    {formatDurationMinutes(transaction.durationMinutes)}
+                    {formatSessionDuration(transaction)}
                   </Typography>
                 </Grid>
+                {transaction.status === 'Active' && (
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      Purchased (max)
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>
+                      {formatSessionReserved(transaction)}
+                    </Typography>
+                  </Grid>
+                )}
                 <Grid item xs={6} sm={4}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                     Start time
@@ -276,7 +297,7 @@ export function CustomerTransactionDetailPage() {
                   Total cost
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', my: 1 }}>
-                  {formatCurrency(transaction.totalCost, 'GHS')}
+                  {formatSessionCost(transaction)}
                 </Typography>
                 {payCta}
               </Box>
