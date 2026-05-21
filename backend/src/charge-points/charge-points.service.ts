@@ -532,7 +532,12 @@ export class ChargePointsService {
     connectorId: number,
     userId: number,
     amount: number,
-  ): Promise<{ success: boolean; transactionId?: number; message: string }> {
+  ): Promise<{
+    success: boolean;
+    pendingSession?: boolean;
+    transactionId?: number;
+    message: string;
+  }> {
     // Verify charge point exists
     await this.findOne(chargePointId);
 
