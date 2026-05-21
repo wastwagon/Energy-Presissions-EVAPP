@@ -23,7 +23,7 @@ fi
 
 # Migration files in order (POSIX sh - no arrays)
 MIGRATION_DIR="$(dirname "$0")/init"
-MIGRATION_FILES_BASE="00-migration-tracker.sql 01-init.sql 02-enhanced-schema.sql 03-pending-commands.sql 04-paystack-support.sql 05-wallet-system.sql 06-advanced-features.sql 07-vendors.sql 08-vendor-migration.sql 09-cms-settings.sql 10-connection-logs.sql 12-vendor-branding.sql 14-ghana-location-enhancements.sql 16-charge-point-pricing-capacity.sql 17-ghana-vendors.sql 18-transaction-wallet-amount.sql 19-user-favorites.sql 20-payment-methods.sql 21-audit-logs.sql 22-users-phone-unique.sql 23-password-reset.sql 24-blocked-charge-point-ids.sql"
+MIGRATION_FILES_BASE="00-migration-tracker.sql 01-init.sql 02-enhanced-schema.sql 03-pending-commands.sql 04-paystack-support.sql 05-wallet-system.sql 06-advanced-features.sql 07-vendors.sql 08-vendor-migration.sql 09-cms-settings.sql 10-connection-logs.sql 12-vendor-branding.sql 14-ghana-location-enhancements.sql 16-charge-point-pricing-capacity.sql 17-ghana-vendors.sql 18-transaction-wallet-amount.sql 19-user-favorites.sql 20-payment-methods.sql 21-audit-logs.sql 22-users-phone-unique.sql 23-password-reset.sql 24-blocked-charge-point-ids.sql 25-pending-commands-retry-columns.sql"
 MIGRATION_FILES_SAMPLE_DATA="11-default-user.sql 13-sample-users.sql 15-sample-ghana-stations.sql"
 INCLUDE_SAMPLE_DATA=${INCLUDE_SAMPLE_DATA:-false}
 NODE_ENV=${NODE_ENV:-}

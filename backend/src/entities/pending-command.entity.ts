@@ -38,13 +38,13 @@ export class PendingCommand {
   })
   status: CommandStatus;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'retry_count', type: 'int', default: 0 })
   retryCount: number;
 
-  @Column({ type: 'int', default: 3 })
+  @Column({ name: 'max_retries', type: 'int', default: 3 })
   maxRetries: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage: string;
 
   @Column({ type: 'jsonb', nullable: true })
