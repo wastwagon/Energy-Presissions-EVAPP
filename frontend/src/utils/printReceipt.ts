@@ -1,6 +1,13 @@
 import type { Invoice } from '../services/billingApi';
 import type { Transaction } from '../services/transactionsApi';
 import { formatCurrency, formatEnergyKwh } from './formatters';
+import { formatCustomerDisplayName } from './sessionDisplay';
+
+export type ReceiptBranding = {
+  businessName?: string | null;
+  locationLine?: string | null;
+  customerName?: string | null;
+};
 
 function escapeHtml(value: string): string {
   return value
@@ -10,12 +17,40 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function openPrintableReceipt(invoice: Invoice, transaction?: Transaction | null) {
+export function receiptBrandingFromTransaction(
+  transaction?: Transaction | null,
+): ReceiptBranding {
+  if (!transaction) return {};
+  return {
+    businessName: transaction.vendorName ?? null,
+    locationLine: transaction.locationName ?? transaction.chargePointId ?? null,
+    customerName: formatCustomerDisplayName(transaction),
+  };
+}
+
+export function openPrintableReceipt(
+  invoice: Invoice,
+  transaction?: Transaction | null,
+  branding?: ReceiptBranding,
+) {
+  const resolved = {
+    businessName: branding?.businessName ?? transaction?.vendorName ?? null,
+    locationLine:
+      branding?.locationLine ?? transaction?.locationName ?? transaction?.chargePointId ?? null,
+    customerName:
+      branding?.customerName ??
+      (transaction ? formatCustomerDisplayName(transaction) : null),
+  };
+
   const currency = invoice.currency || 'GHS';
+  const headerTitle = resolved.businessName?.trim() || 'Clean Motion Ghana';
+  const headerSubtitle = resolved.locationLine?.trim() || 'EV charging receipt';
+
   const lines = [
     ['Invoice', invoice.invoiceNumber],
     ['Status', invoice.status],
     ['Date', new Date(invoice.createdAt).toLocaleString()],
+    resolved.customerName ? ['Customer', resolved.customerName] : null,
     transaction?.chargePointId ? ['Charge point', transaction.chargePointId] : null,
     transaction?.totalEnergyKwh != null
       ? ['Energy', `${formatEnergyKwh(transaction.totalEnergyKwh)} kWh`]
@@ -37,13 +72,17 @@ export function openPrintableReceipt(invoice: Invoice, transaction?: Transaction
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/><title>${escapeHtml(invoice.invoiceNumber)}</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 32px; color: #111; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 32px; color: #111; max-width: 480px; }
+  .brand { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e5e5e5; }
   h1 { font-size: 1.25rem; margin: 0 0 4px; }
   .muted { color: #666; font-size: 0.875rem; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; }
   @media print { body { margin: 16px; } }
 </style></head><body>
-  <h1>Charging receipt</h1>
+  <div class="brand">
+    <h1>${escapeHtml(headerTitle)}</h1>
+    <p class="muted" style="margin:0">${escapeHtml(headerSubtitle)}</p>
+  </div>
   <p class="muted">Save as PDF via Print → Save as PDF</p>
   <table>${bodyRows}</table>
 </body></html>`;

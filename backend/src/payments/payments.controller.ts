@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
@@ -95,12 +97,15 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get all payments (Admin/SuperAdmin)' })
   @ApiResponse({ status: 200, description: 'List of all payments' })
   async getAllPayments(
+    @Request() req: { user: { accountType: string; vendorId?: number } },
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
+    const vendorId = req.user.accountType === 'Admin' ? req.user.vendorId : undefined;
     return this.paymentsService.getAllPayments(
-      limit ? parseInt(limit.toString()) : 100,
-      offset ? parseInt(offset.toString()) : 0,
+      limit ? parseInt(limit.toString(), 10) : 100,
+      offset ? parseInt(offset.toString(), 10) : 0,
+      vendorId,
     );
   }
 
@@ -112,17 +117,25 @@ export class PaymentsController {
   }
 
   @Get('user/:userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get payments for user' })
   @ApiResponse({ status: 200, description: 'List of payments' })
   async getUserPayments(
+    @Request() req: { user: { id: number; accountType: string } },
     @Param('userId', ParseIntPipe) userId: number,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
+    if (
+      (req.user.accountType === 'Customer' || req.user.accountType === 'WalkIn') &&
+      req.user.id !== userId
+    ) {
+      throw new ForbiddenException('You cannot access these payments');
+    }
     return this.paymentsService.getUserPayments(
       userId,
-      limit ? parseInt(limit.toString()) : 50,
-      offset ? parseInt(offset.toString()) : 0,
+      limit ? parseInt(limit.toString(), 10) : 50,
+      offset ? parseInt(offset.toString(), 10) : 0,
     );
   }
 

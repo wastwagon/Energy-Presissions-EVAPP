@@ -14,6 +14,10 @@ export class Tariff {
   @Column({ length: 100 })
   name: string;
 
+  /** NULL = network-wide tariff; set for vendor-specific pricing */
+  @Column({ name: 'vendor_id', nullable: true })
+  vendorId: number | null;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

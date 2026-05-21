@@ -1,12 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { Tariff } from '../entities/tariff.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
+import { ChargePoint } from '../entities/charge-point.entity';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -24,6 +25,8 @@ export class BillingService {
     private vendorRepository: Repository<Vendor>,
     @InjectRepository(SystemSetting)
     private systemSettingRepository: Repository<SystemSetting>,
+    @InjectRepository(ChargePoint)
+    private chargePointRepository: Repository<ChargePoint>,
   ) {}
 
   /**
@@ -34,9 +37,9 @@ export class BillingService {
     durationMinutes: number,
     transactionDate: Date,
     currency: string = 'GHS',
+    vendorId?: number,
   ): Promise<{ totalCost: number; breakdown: any }> {
-    // Get active tariff for the transaction date
-    const tariff = await this.getActiveTariff(transactionDate, currency);
+    const tariff = await this.getActiveTariff(transactionDate, currency, vendorId);
 
     if (!tariff) {
       throw new NotFoundException('No active tariff found');
@@ -79,16 +82,27 @@ export class BillingService {
   /**
    * Get active tariff for a given date
    */
-  async getActiveTariff(date: Date, currency: string = 'GHS'): Promise<Tariff | null> {
-    const tariffs = await this.tariffRepository.find({
-      where: {
-        isActive: true,
-        currency,
-      },
-      order: { createdAt: 'DESC' },
-    });
+  async getActiveTariff(
+    date: Date,
+    currency: string = 'GHS',
+    vendorId?: number,
+  ): Promise<Tariff | null> {
+    const qb = this.tariffRepository
+      .createQueryBuilder('t')
+      .where('t.is_active = true')
+      .andWhere('t.currency = :currency', { currency });
 
-    // Filter by valid date range
+    if (vendorId != null) {
+      qb.andWhere('(t.vendor_id = :vendorId OR t.vendor_id IS NULL)', { vendorId });
+      qb.orderBy('CASE WHEN t.vendor_id = :vendorId THEN 0 ELSE 1 END', 'ASC').addOrderBy(
+        't.created_at',
+        'DESC',
+      );
+    } else {
+      qb.andWhere('t.vendor_id IS NULL').orderBy('t.created_at', 'DESC');
+    }
+
+    const tariffs = await qb.getMany();
     const validTariffs = tariffs.filter((tariff) => {
       const validFrom = tariff.validFrom ? new Date(tariff.validFrom) <= date : true;
       const validTo = tariff.validTo ? new Date(tariff.validTo) >= date : true;
@@ -98,13 +112,50 @@ export class BillingService {
     return validTariffs.length > 0 ? validTariffs[0] : null;
   }
 
+  private async resolveTransactionVendorId(transaction: Transaction): Promise<number | undefined> {
+    const cpVendor = (transaction.chargePoint as ChargePoint | undefined)?.vendorId;
+    if (cpVendor != null) return cpVendor;
+
+    const chargePoint = await this.chargePointRepository.findOne({
+      where: { chargePointId: transaction.chargePointId },
+    });
+    return chargePoint?.vendorId ?? undefined;
+  }
+
+  private async assertVendorAccessToTransaction(
+    transactionId: number,
+    vendorId: number,
+  ): Promise<Transaction> {
+    const transaction = await this.transactionRepository.findOne({
+      where: { transactionId },
+      relations: ['chargePoint'],
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Transaction ${transactionId} not found`);
+    }
+
+    const txVendorId = await this.resolveTransactionVendorId(transaction);
+    if (txVendorId !== vendorId) {
+      throw new ForbiddenException('Transaction is outside your vendor scope');
+    }
+
+    return transaction;
+  }
+
   /**
    * Calculate and update transaction cost
    */
-  async calculateTransactionCost(transactionId: number): Promise<Transaction> {
-    const transaction = await this.transactionRepository.findOne({
-      where: { transactionId },
-    });
+  async calculateTransactionCost(
+    transactionId: number,
+    actingVendorId?: number,
+  ): Promise<Transaction> {
+    const transaction = actingVendorId
+      ? await this.assertVendorAccessToTransaction(transactionId, actingVendorId)
+      : await this.transactionRepository.findOne({
+          where: { transactionId },
+          relations: ['chargePoint'],
+        });
 
     if (!transaction) {
       throw new NotFoundException(`Transaction ${transactionId} not found`);
@@ -114,11 +165,13 @@ export class BillingService {
       throw new Error('Transaction is not completed');
     }
 
+    const vendorId = await this.resolveTransactionVendorId(transaction);
     const { totalCost } = await this.calculateCost(
       transaction.totalEnergyKwh,
       transaction.durationMinutes || 0,
       transaction.startTime,
       transaction.currency,
+      vendorId,
     );
 
     transaction.totalCost = totalCost;
@@ -132,7 +185,11 @@ export class BillingService {
    * Note: Invoice generation will use vendor branding when generating PDFs
    * The vendor information is stored in the invoice metadata for receipt generation
    */
-  async generateInvoice(transactionId: number): Promise<Invoice> {
+  async generateInvoice(transactionId: number, actingVendorId?: number): Promise<Invoice> {
+    if (actingVendorId) {
+      await this.assertVendorAccessToTransaction(transactionId, actingVendorId);
+    }
+
     const transaction = await this.transactionRepository.findOne({
       where: { transactionId },
       relations: ['user', 'chargePoint', 'chargePoint.vendor'],
@@ -148,7 +205,7 @@ export class BillingService {
 
     // Calculate cost if not already calculated
     if (!transaction.totalCost) {
-      await this.calculateTransactionCost(transactionId);
+      await this.calculateTransactionCost(transactionId, actingVendorId);
       // Reload transaction
       const reloaded = await this.transactionRepository.findOne({
         where: { transactionId },
@@ -209,26 +266,30 @@ export class BillingService {
     limit: number = 100,
     offset: number = 0,
     userId?: number,
+    vendorId?: number,
     startDate?: Date,
     endDate?: Date,
   ) {
-    const where: any = {};
+    const qb = this.transactionRepository
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.chargePoint', 'cp')
+      .orderBy('t.startTime', 'DESC')
+      .take(limit)
+      .skip(offset);
 
     if (userId) {
-      where.userId = userId;
+      qb.andWhere('t.user_id = :userId', { userId });
+    }
+
+    if (vendorId != null) {
+      qb.andWhere('cp.vendor_id = :vendorId', { vendorId });
     }
 
     if (startDate && endDate) {
-      where.startTime = Between(startDate, endDate);
+      qb.andWhere('t.start_time BETWEEN :startDate AND :endDate', { startDate, endDate });
     }
 
-    const [transactions, total] = await this.transactionRepository.findAndCount({
-      where,
-      order: { startTime: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
-
+    const [transactions, total] = await qb.getManyAndCount();
     return { transactions, total };
   }
 
@@ -239,28 +300,33 @@ export class BillingService {
     limit: number = 100,
     offset: number = 0,
     userId?: number,
+    vendorId?: number,
   ) {
-    const where: any = {};
+    const qb = this.invoiceRepository
+      .createQueryBuilder('inv')
+      .leftJoinAndSelect('inv.user', 'user')
+      .orderBy('inv.created_at', 'DESC')
+      .take(limit)
+      .skip(offset);
 
     if (userId) {
-      where.userId = userId;
+      qb.andWhere('inv.user_id = :userId', { userId });
     }
 
-    const [invoices, total] = await this.invoiceRepository.findAndCount({
-      where,
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+    if (vendorId != null) {
+      qb.innerJoin('transactions', 'tx', 'tx.transaction_id = inv.transaction_id');
+      qb.innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id');
+      qb.andWhere('cp.vendor_id = :vendorId', { vendorId });
+    }
 
+    const [invoices, total] = await qb.getManyAndCount();
     return { invoices, total };
   }
 
   /**
    * Get invoice by ID
    */
-  async getInvoice(id: number): Promise<Invoice> {
+  async getInvoice(id: number, actingVendorId?: number): Promise<Invoice> {
     const invoice = await this.invoiceRepository.findOne({
       where: { id },
       relations: ['user'],
@@ -268,6 +334,10 @@ export class BillingService {
 
     if (!invoice) {
       throw new NotFoundException(`Invoice ${id} not found`);
+    }
+
+    if (actingVendorId && invoice.transactionId) {
+      await this.assertVendorAccessToTransaction(invoice.transactionId, actingVendorId);
     }
 
     return invoice;

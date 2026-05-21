@@ -4,6 +4,7 @@ import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
+import { AnalyticsBreakdownCharts } from './AnalyticsBreakdownCharts';
 
 interface AnalyticsBreakdownPanelProps {
   stats: DashboardStats;
@@ -80,6 +81,7 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
             ))}
           </GroupedListSection>
         )}
+        <AnalyticsBreakdownCharts stats={stats} />
       </Box>
     );
   }
@@ -158,6 +160,9 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
           </Paper>
         </Grid>
       )}
+      <Grid item xs={12}>
+        <AnalyticsBreakdownCharts stats={stats} />
+      </Grid>
     </Grid>
   );
 }

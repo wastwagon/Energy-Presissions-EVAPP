@@ -12,6 +12,7 @@ export const ADMIN_ROUTES = {
   vendorPortal: '/vendor',
   tariffs: '/admin/tariffs',
   payments: '/admin/payments',
+  billing: '/admin/billing',
 } as const;
 
 export const SUPERADMIN_ROUTES = {

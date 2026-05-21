@@ -16,7 +16,15 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { transactionsApi, Transaction } from '../services/transactionsApi';
 import { walletApi } from '../services/walletApi';
 import { getStoredUserId } from '../utils/authSession';
-import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
+import {
+  formatSessionCost,
+  formatSessionDuration,
+  formatSessionEnergy,
+  formatSessionReserved,
+  isNoEnergyCompleted,
+  sessionStatusLabel,
+} from '../utils/sessionDisplay';
 import { premiumPanelCardSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { TransactionSummaryBodySkeleton } from './dashboard/BlockContentSkeletons';
@@ -143,8 +151,13 @@ export function TransactionSummaryDialog({
               Transaction #{transaction.transactionId}
             </Typography>
             <Typography variant="body2">
-              Status: <strong>{transaction.status}</strong>
+              Status: <strong>{sessionStatusLabel(transaction)}</strong>
             </Typography>
+            {isNoEnergyCompleted(transaction) && (
+              <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.9 }}>
+                No meter energy was recorded for this session.
+              </Typography>
+            )}
           </Paper>
 
           <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, mb: 1.5 }}>
@@ -158,7 +171,7 @@ export function TransactionSummaryDialog({
                   Energy
                 </Typography>
                 <Typography variant="h6" fontWeight="bold" color="primary">
-                  {formatEnergyKwh(transaction.totalEnergyKwh)} kWh
+                  {formatSessionEnergy(transaction)}
                 </Typography>
               </Paper>
             </Grid>
@@ -168,7 +181,7 @@ export function TransactionSummaryDialog({
                   Duration
                 </Typography>
                 <Typography variant="h6" fontWeight="bold">
-                  {transaction.durationMinutes ? formatDurationMinutes(transaction.durationMinutes) : 'N/A'}
+                  {formatSessionDuration(transaction)}
                 </Typography>
               </Paper>
             </Grid>
@@ -185,18 +198,14 @@ export function TransactionSummaryDialog({
               <SummaryRow label="Start" value={new Date(transaction.startTime).toLocaleString()} />
             )}
             {transaction.stopTime && <SummaryRow label="End" value={new Date(transaction.stopTime).toLocaleString()} />}
-            {transaction.walletReservedAmount != null && (
+            {transaction.walletReservedAmount != null && Number(transaction.walletReservedAmount) > 0 && (
               <SummaryRow
-                label="Reserved"
-                value={formatCurrency(transaction.walletReservedAmount, transaction.currency || 'GHS')}
+                label="Purchased (max)"
+                value={formatSessionReserved(transaction)}
               />
             )}
             <Divider sx={{ my: 1 }} />
-            <SummaryRow
-              label="Total cost"
-              value={formatCurrency(transaction.totalCost, transaction.currency || 'GHS')}
-              bold
-            />
+            <SummaryRow label="Total cost" value={formatSessionCost(transaction)} bold />
             {refundAmount > 0 && (
               <Box sx={{ mt: 1.5, p: 1.25, bgcolor: 'success.light', borderRadius: 1 }}>
                 <SummaryRow

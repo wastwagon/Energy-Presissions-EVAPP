@@ -22,6 +22,9 @@ describe('BillingService', () => {
   const systemSettingRepository = {
     findOne: jest.fn(),
   } as any;
+  const chargePointRepository = {
+    findOne: jest.fn(),
+  } as any;
 
   const service = new BillingService(
     transactionRepository,
@@ -30,6 +33,7 @@ describe('BillingService', () => {
     paymentRepository,
     vendorRepository,
     systemSettingRepository,
+    chargePointRepository,
   );
 
   beforeEach(() => {

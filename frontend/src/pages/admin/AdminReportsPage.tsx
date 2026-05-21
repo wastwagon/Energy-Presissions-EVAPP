@@ -28,6 +28,8 @@ import { ReportSessionAverages } from '../../components/reports/ReportSessionAve
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { getStoredUser } from '../../utils/authSession';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
+import { Link as RouterLink } from 'react-router-dom';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -138,18 +140,32 @@ export function AdminReportsPage() {
           minWidth: { xs: 0, sm: 'auto' },
         })}
         actions={
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={() => void handleExport()}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              flex: { xs: '1 1 auto', sm: '0 0 auto' },
-              minWidth: { xs: 0, sm: 'auto' },
-            })}
-          >
-            Export Report
-          </Button>
+          <>
+            <Button
+              component={RouterLink}
+              to={ADMIN_ROUTES.billing}
+              variant="outlined"
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                flex: { xs: '1 1 auto', sm: '0 0 auto' },
+                minWidth: { xs: 0, sm: 'auto' },
+              })}
+            >
+              Billing
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => void handleExport()}
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                flex: { xs: '1 1 auto', sm: '0 0 auto' },
+                minWidth: { xs: 0, sm: 'auto' },
+              })}
+            >
+              Export Report
+            </Button>
+          </>
         }
       />
 

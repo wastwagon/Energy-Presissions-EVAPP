@@ -10,13 +10,22 @@ import { Invoice } from '../entities/invoice.entity';
 import { Payment } from '../entities/payment.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
+import { ChargePoint } from '../entities/charge-point.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, Tariff, Invoice, Payment, Vendor, SystemSetting]),
+    TypeOrmModule.forFeature([
+      Transaction,
+      Tariff,
+      Invoice,
+      Payment,
+      Vendor,
+      SystemSetting,
+      ChargePoint,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

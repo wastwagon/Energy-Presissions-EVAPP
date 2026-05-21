@@ -323,14 +323,23 @@ export class PaymentsService {
   /**
    * Get all payments (Admin/SuperAdmin)
    */
-  async getAllPayments(limit: number = 100, offset: number = 0) {
-    const [payments, total] = await this.paymentRepository.findAndCount({
-      relations: ['transaction', 'user'],
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+  async getAllPayments(limit: number = 100, offset: number = 0, vendorId?: number) {
+    const qb = this.paymentRepository
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.transaction', 'tx')
+      .leftJoinAndSelect('p.user', 'user')
+      .orderBy('p.createdAt', 'DESC')
+      .take(limit)
+      .skip(offset);
 
+    if (vendorId != null) {
+      qb.innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id').andWhere(
+        'cp.vendor_id = :vendorId',
+        { vendorId },
+      );
+    }
+
+    const [payments, total] = await qb.getManyAndCount();
     return { payments, total };
   }
 

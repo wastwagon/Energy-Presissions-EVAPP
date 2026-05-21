@@ -148,7 +148,30 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
           {variant === 'admin' && (stats.overview.pendingWalletReserved ?? 0) > 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 0 }}>
               {formatCurrency(stats.overview.pendingWalletReserved ?? 0)} in pending wallet holds — not
-              counted in revenue until sessions complete.
+              counted in revenue until sessions complete.{' '}
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => navigate(ADMIN_ROUTES.billing)}
+                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
+              >
+                Billing & invoices
+              </Link>
+            </Typography>
+          ) : null}
+
+          {variant === 'admin' && (stats.overview.pendingWalletReserved ?? 0) === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 0 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => navigate(ADMIN_ROUTES.billing)}
+                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
+              >
+                Billing & invoices
+              </Link>
             </Typography>
           ) : null}
 

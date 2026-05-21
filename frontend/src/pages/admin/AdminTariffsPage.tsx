@@ -27,6 +27,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
+import { getStoredUser } from '../../utils/authSession';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -41,7 +42,16 @@ import { formatCurrency } from '../../utils/formatters';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
-export function AdminTariffsPage() {
+export type StaffTariffsVariant = 'admin' | 'superadmin';
+
+function canMutateTariff(tariff: Tariff, variant: StaffTariffsVariant): boolean {
+  if (variant === 'superadmin') return true;
+  const user = getStoredUser();
+  if (!user?.vendorId) return false;
+  return tariff.vendorId != null && tariff.vendorId === user.vendorId;
+}
+
+export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffsVariant }) {
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,8 +198,9 @@ export function AdminTariffsPage() {
       )}
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        Tariffs apply to all charge points on the network today. Per-vendor tariff plans can be added when
-        vendor scoping is enabled on tariff records.
+        {variant === 'admin'
+          ? 'New tariffs apply to your vendor’s charge points. Network-wide defaults (no vendor) still apply when you have no active vendor tariff.'
+          : 'Tariffs without a vendor apply network-wide. Vendor-specific tariffs override defaults for that vendor’s charge points.'}
       </Alert>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
@@ -204,6 +215,7 @@ export function AdminTariffsPage() {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
+              {variant === 'superadmin' && <TableCell>Scope</TableCell>}
               <TableCell>Energy Price</TableCell>
               <TableCell>Time Price</TableCell>
               <TableCell>Base Fee</TableCell>
@@ -215,7 +227,7 @@ export function AdminTariffsPage() {
           <TableBody>
             {tariffs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={variant === 'superadmin' ? 8 : 7} align="center" sx={{ py: 4 }}>
                   <AttachMoneyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
                   <Typography variant="body2" color="text.secondary">
                     No tariffs configured yet
@@ -231,7 +243,9 @@ export function AdminTariffsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              tariffs.map((tariff) => (
+              tariffs.map((tariff) => {
+                const mutable = canMutateTariff(tariff, variant);
+                return (
                 <TableRow key={tariff.id} hover>
                   <TableCell>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -243,6 +257,16 @@ export function AdminTariffsPage() {
                       </Typography>
                     )}
                   </TableCell>
+                  {variant === 'superadmin' && (
+                    <TableCell>
+                      <Chip
+                        label={tariff.vendorId ? `Vendor #${tariff.vendorId}` : 'Network'}
+                        size="small"
+                        variant={tariff.vendorId ? 'outlined' : 'filled'}
+                        color={tariff.vendorId ? 'primary' : 'default'}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
                     {formatCurrency(tariff.energyRate || tariff.energyPrice || 0, tariff.currency)} / kWh
                   </TableCell>
@@ -267,15 +291,17 @@ export function AdminTariffsPage() {
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <IconButton
-                        onClick={() => handleToggleActive(tariff)}
+                        onClick={() => mutable && handleToggleActive(tariff)}
+                        disabled={!mutable}
                         color={tariff.isActive ? 'default' : 'primary'}
                         aria-label={`${tariff.isActive ? 'Deactivate' : 'Activate'} tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                       >
-                        <Switch checked={tariff.isActive} size="small" />
+                        <Switch checked={tariff.isActive} size="small" disabled={!mutable} />
                       </IconButton>
                       <IconButton
-                        onClick={() => handleOpenDialog(tariff)}
+                        onClick={() => mutable && handleOpenDialog(tariff)}
+                        disabled={!mutable}
                         color="primary"
                         aria-label={`Edit tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -283,7 +309,8 @@ export function AdminTariffsPage() {
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
-                        onClick={() => handleDelete(tariff.id)}
+                        onClick={() => mutable && handleDelete(tariff.id)}
+                        disabled={!mutable}
                         color="error"
                         aria-label={`Delete tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -293,7 +320,8 @@ export function AdminTariffsPage() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+              })
             )}
           </TableBody>
         </Table>

@@ -364,6 +364,13 @@ export const adminMenuConfig: MenuSection[] = [
         roles: ['Admin'],
       },
       {
+        id: 'billing-invoices',
+        text: 'Billing & Invoices',
+        icon: <ReceiptIcon />,
+        path: ADMIN_ROUTES.billing,
+        roles: ['Admin'],
+      },
+      {
         id: 'user-management',
         text: 'User Management',
         icon: <PeopleIcon />,

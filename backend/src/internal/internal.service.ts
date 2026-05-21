@@ -531,6 +531,7 @@ export class InternalService {
           durationMinutes,
           startTime,
           transaction.currency,
+          chargePoint?.vendorId ?? undefined,
         );
         finalCost = totalCost;
       }

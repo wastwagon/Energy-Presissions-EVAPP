@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PrintIcon from '@mui/icons-material/Print';
-import { openPrintableReceipt } from '../../utils/printReceipt';
+import { openPrintableReceipt, receiptBrandingFromTransaction } from '../../utils/printReceipt';
 import { billingApi, Invoice } from '../../services/billingApi';
 import { transactionsApi, type Transaction } from '../../services/transactionsApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -49,7 +49,9 @@ function TabPanel({ children, value, index }: { children: ReactNode; value: numb
   );
 }
 
-export function SuperAdminBillingPage() {
+export type StaffBillingVariant = 'admin' | 'superadmin';
+
+export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBillingVariant }) {
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [tab, setTab] = useState(0);
@@ -118,7 +120,9 @@ export function SuperAdminBillingPage() {
             Billing & Invoices
           </Typography>
           <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Completed session billing and invoice generation. Active sessions show live estimates until stop.
+            {variant === 'admin'
+              ? 'Vendor-scoped completed sessions and invoices. Network-wide tariffs may apply when no vendor tariff is active.'
+              : 'Completed session billing and invoice generation. Active sessions show live estimates until stop.'}
           </Typography>
         </Box>
       </Box>
@@ -190,12 +194,16 @@ export function SuperAdminBillingPage() {
                           variant="outlined"
                           startIcon={<PrintIcon />}
                           onClick={() =>
-                            openPrintableReceipt(
-                              inv,
-                              inv.transactionId
+                            (() => {
+                              const tx = inv.transactionId
                                 ? transactionByOcppId.get(inv.transactionId) ?? null
-                                : null,
-                            )
+                                : null;
+                              openPrintableReceipt(
+                                inv,
+                                tx,
+                                receiptBrandingFromTransaction(tx),
+                              );
+                            })()
                           }
                           sx={(th) => sxObject(th, compactOutlinedCtaSx)}
                         >
@@ -304,4 +312,8 @@ export function SuperAdminBillingPage() {
       </Paper>
     </Box>
   );
+}
+
+export function SuperAdminBillingPage() {
+  return <StaffBillingPage variant="superadmin" />;
 }
