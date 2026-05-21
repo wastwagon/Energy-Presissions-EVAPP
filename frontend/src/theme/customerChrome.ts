@@ -34,3 +34,18 @@ export const customerLargeSubtitleSx: SystemStyleObject<Theme> = {
   lineHeight: 1.45,
   maxWidth: '44rem',
 };
+
+/** Centered page title in the app bar when the large in-page title scrolls away. */
+export const customerCompactNavTitleSx: SystemStyleObject<Theme> = {
+  position: 'absolute',
+  left: { xs: 52, sm: 56 },
+  right: { xs: 52, sm: 56 },
+  textAlign: 'center',
+  fontWeight: 600,
+  letterSpacing: '-0.02em',
+  color: 'text.primary',
+  pointerEvents: 'none',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+};

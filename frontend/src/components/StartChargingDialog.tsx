@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Button,
   TextField,
@@ -28,6 +29,7 @@ import { premiumPanelCardSx } from '../theme/jampackShell';
 import { GroupedListSection } from './ios/GroupedListSection';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
 import { triggerHaptic } from '../utils/haptics';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -65,6 +67,17 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       : station?.pricePerKwh
         ? parseFloat(station.pricePerKwh.toString())
         : 0;
+
+  const holdBalance = availableBalance ?? walletBalance;
+  const insufficientFunds = useMemo(
+    () => holdBalance !== null && amountNum > 0 && amountNum > holdBalance,
+    [holdBalance, amountNum],
+  );
+  const canStartSession =
+    !starting &&
+    amountNum > 0 &&
+    holdBalance !== null &&
+    amountNum <= holdBalance;
 
   useEffect(() => {
     if (open && station) {
@@ -214,13 +227,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
               onClick={handleStart}
               variant="contained"
               disableElevation
-              disabled={
-                starting ||
-                !amount ||
-                parseFloat(amount) <= 0 ||
-                (availableBalance !== null && parseFloat(amount) > availableBalance) ||
-                (walletBalance !== null && parseFloat(amount) > walletBalance)
-              }
+              disabled={!canStartSession}
               startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
               sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
@@ -277,17 +284,39 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AccountBalanceWalletIcon sx={{ fontSize: 22, color: 'primary.main' }} />
                 <Typography variant="body2" fontWeight={700}>
-                  Wallet balance
+                  {reservedBalance > 0 ? 'Available balance' : 'Wallet balance'}
                 </Typography>
               </Box>
               <Typography variant="h6" fontWeight={800} sx={{ fontSize: '1.125rem' }}>
                 {loadingBalance ? (
                   <Skeleton variant="rounded" width={100} height={28} />
                 ) : (
-                  formatCurrency(walletBalance, 'GHS')
+                  formatCurrency(holdBalance ?? walletBalance, 'GHS')
                 )}
               </Typography>
             </Box>
+            {!loadingBalance && insufficientFunds && (
+              <Alert
+                severity="warning"
+                sx={{ mt: 1.5 }}
+                action={
+                  <Button
+                    component={RouterLink}
+                    to={CUSTOMER_ROUTES.walletTopUp}
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      onClose();
+                    }}
+                  >
+                    Top up
+                  </Button>
+                }
+              >
+                Add funds to cover {formatCurrency(amountNum, 'GHS')} before starting a session.
+              </Alert>
+            )}
             {reservedBalance > 0 && (
               <Box
                 sx={{

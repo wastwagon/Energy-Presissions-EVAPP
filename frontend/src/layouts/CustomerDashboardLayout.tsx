@@ -26,7 +26,7 @@ import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils
 import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
 import { jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
-import { customerFrostedAppBarSx } from '../theme/customerChrome';
+import { customerCompactNavTitleSx, customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
@@ -137,16 +137,7 @@ function CustomerDashboardChrome() {
               variant="subtitle1"
               component="h1"
               noWrap
-              sx={{
-                position: 'absolute',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                maxWidth: 'calc(100% - 160px)',
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                color: 'text.primary',
-                pointerEvents: 'none',
-              }}
+              sx={customerCompactNavTitleSx}
             >
               {pageChrome?.pageTitle}
             </Typography>
@@ -204,7 +195,12 @@ function CustomerDashboardChrome() {
             }}
           />
           <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+            <Box
+              sx={{
+                textAlign: 'right',
+                display: showCompactNavTitle ? 'none' : { xs: 'none', lg: 'block' },
+              }}
+            >
               <Typography
                 variant="body2"
                 sx={{
@@ -213,14 +209,6 @@ function CustomerDashboardChrome() {
                 }}
               >
                 {user?.firstName} {user?.lastName}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                }}
-              >
-                {user?.email}
               </Typography>
             </Box>
             <IconButton

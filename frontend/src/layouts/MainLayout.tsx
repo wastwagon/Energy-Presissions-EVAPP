@@ -1,6 +1,22 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Typography, Box, Button, IconButton, useTheme, useMediaQuery } from '@mui/material';
+import {
+  Container,
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Button,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { useEffect, useMemo, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
@@ -15,7 +31,7 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
-import { customerFrostedAppBarSx } from '../theme/customerChrome';
+import { customerCompactNavTitleSx, customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
@@ -28,7 +44,7 @@ import {
 } from '../utils/authSession';
 import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
-import { premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
+import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
@@ -41,6 +57,8 @@ function MainLayoutChrome() {
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
+  const accountMenuOpen = Boolean(accountMenuAnchor);
 
   useEffect(() => {
     const userData = getStoredUser();
@@ -142,16 +160,7 @@ function MainLayoutChrome() {
               variant="subtitle1"
               component="h1"
               noWrap
-              sx={{
-                position: 'absolute',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                maxWidth: 'calc(100% - 160px)',
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                color: 'text.primary',
-                pointerEvents: 'none',
-              }}
+              sx={customerCompactNavTitleSx}
             >
               {pageChrome?.pageTitle}
             </Typography>
@@ -210,19 +219,98 @@ function MainLayoutChrome() {
               minWidth: 0,
             }}
           />
-          {isAuthenticated && user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+          {isAuthenticated && user && usePremiumCustomerHeader ? (
+            <>
+              <IconButton
+                onClick={(e) => setAccountMenuAnchor(e.currentTarget)}
+                aria-label="Account menu"
+                aria-expanded={accountMenuOpen}
+                aria-controls="main-layout-account-menu"
+                sx={{
+                  ...sxObject(theme, premiumIconButtonTouchSx),
+                  p: 0,
+                  border: '2px solid',
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main' },
+                }}
+              >
+                <Avatar
+                  alt={user.firstName || user.name || 'User'}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: 'primary.main',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {user.firstName?.[0] || user.name?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
+              </IconButton>
+              <Menu
+                id="main-layout-account-menu"
+                anchorEl={accountMenuAnchor}
+                open={accountMenuOpen}
+                onClose={() => setAccountMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                disableScrollLock
+                PaperProps={{
+                  elevation: 0,
+                  sx: (th) => ({
+                    ...sxObject(th, premiumMenuPaperSx),
+                    zIndex: th.zIndex.snackbar,
+                  }),
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setAccountMenuAnchor(null);
+                    navigate(CUSTOMER_ROUTES.profile);
+                  }}
+                  sx={{ py: 1.5 }}
+                >
+                  <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                  <Typography>Profile</Typography>
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setAccountMenuAnchor(null);
+                    navigate(CUSTOMER_ROUTES.wallet);
+                  }}
+                  sx={{ py: 1.5 }}
+                >
+                  <AccountBalanceWalletIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                  <Typography>Wallet</Typography>
+                </MenuItem>
+                <Divider sx={{ my: 0.5 }} />
+                <MenuItem
+                  onClick={() => {
+                    setAccountMenuAnchor(null);
+                    handleLogout();
+                  }}
+                  sx={{ py: 1.5 }}
+                >
+                  <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                  <Typography>Log out</Typography>
+                </MenuItem>
+              </Menu>
+            </>
+          ) : null}
+          {isAuthenticated && user && !usePremiumCustomerHeader ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flexShrink: 0 }}>
               <Typography
                 variant="body2"
                 noWrap
                 sx={{
-                  maxWidth: { xs: 100, sm: 180 },
+                  display: { xs: 'none', md: 'block' },
+                  maxWidth: 180,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   color: 'text.primary',
                 }}
               >
-                {user.name || user.email}
+                {user.name || user.firstName || 'Account'}
               </Typography>
               <IconButton
                 color="inherit"
@@ -237,7 +325,7 @@ function MainLayoutChrome() {
                 <LogoutIcon />
               </IconButton>
             </Box>
-          )}
+          ) : null}
           {!isAuthenticated && (
             <Button color="primary" variant="text" onClick={() => navigate('/login')}>
               Login

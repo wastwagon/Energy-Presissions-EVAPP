@@ -65,6 +65,11 @@ export function AdaptiveSheet({
   const theme = useTheme();
   const isMobileSheet = useMediaQuery(theme.breakpoints.down('md'));
   const reducedMotion = usePrefersReducedMotion();
+  const sheetModalProps = {
+    keepMounted: false,
+    disableScrollLock: false,
+    sx: { zIndex: theme.zIndex.modal },
+  };
 
   const titleNode = header ?? (
     <Typography component="h2" sx={sheetTitleTypographySx}>
@@ -115,6 +120,7 @@ export function AdaptiveSheet({
           anchor="bottom"
           open={open}
           onClose={disableClose ? undefined : onClose}
+          ModalProps={sheetModalProps}
           PaperProps={paperProps}
           transitionDuration={0}
         >
@@ -131,6 +137,7 @@ export function AdaptiveSheet({
         onOpen={() => {}}
         disableSwipeToOpen
         disableDiscovery
+        ModalProps={sheetModalProps}
         transitionDuration={{ enter: iosMotion.standard, exit: iosMotion.fast }}
         PaperProps={paperProps}
       >

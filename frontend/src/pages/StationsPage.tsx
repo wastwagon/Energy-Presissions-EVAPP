@@ -11,8 +11,6 @@ import {
   TextField,
   InputAdornment,
   Button,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
@@ -33,8 +31,6 @@ import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/char
 import { SheetDragHandle } from '../components/ios/SheetDragHandle';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
-import { StationSheetListItem } from '../components/stations/StationSheetListItem';
-import { GroupedListSection } from '../components/ios/GroupedListSection';
 import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
 import { LoginPromptSheet } from '../components/stations/LoginPromptSheet';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
@@ -50,8 +46,6 @@ import { formatApiOrNetworkError } from '../utils/apiErrors';
 const NEARBY_LOAD_RADIUS_KM = 50;
 
 export function StationsPage() {
-  const theme = useTheme();
-  const useCompactStationList = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
@@ -71,6 +65,8 @@ export function StationsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [startChargingDialogOpen, setStartChargingDialogOpen] = useState(false);
   const [selectedStationForCharging, setSelectedStationForCharging] = useState<StationWithDistance | null>(null);
+  /** Open start-charging sheet after the station details sheet has closed (avoids stacked drawers on mobile). */
+  const [pendingStartChargingStation, setPendingStartChargingStation] = useState<StationWithDistance | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const searchTermRef = useRef(searchTerm);
   searchTermRef.current = searchTerm;
@@ -253,6 +249,14 @@ export function StationsPage() {
     setSelectedStation(null);
   }, []);
 
+  useEffect(() => {
+    if (!dialogOpen && pendingStartChargingStation) {
+      setSelectedStationForCharging(pendingStartChargingStation);
+      setStartChargingDialogOpen(true);
+      setPendingStartChargingStation(null);
+    }
+  }, [dialogOpen, pendingStartChargingStation]);
+
   const handleViewFullStationDetails = useCallback(
     (station: StationWithDistance) => {
       closeDetailsDialog();
@@ -298,8 +302,12 @@ export function StationsPage() {
     e.stopPropagation(); // Prevent card click
     if (!isAuthenticated) {
       openLoginPrompt(station);
+    } else if (dialogOpen) {
+      setPendingStartChargingStation(station);
+      setDialogOpen(false);
+      setMapSelectionId(null);
+      setSelectedStation(null);
     } else {
-      // For all authenticated users, show the wallet-based charging dialog
       setSelectedStationForCharging(station);
       setStartChargingDialogOpen(true);
     }
@@ -455,7 +463,7 @@ export function StationsPage() {
               pb: { xs: 2, sm: 2.25 },
               flex: 1,
               minHeight: 180,
-              maxHeight: { xs: 'min(48dvh, 480px)', sm: 'none' },
+              maxHeight: { xs: 'min(58dvh, 560px)', sm: 'none' },
               overflow: 'auto',
               WebkitOverflowScrolling: 'touch',
               ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
@@ -539,22 +547,7 @@ export function StationsPage() {
                 )}
               </Paper>
             )}
-            {!loading && sortedStations.length > 0 && useCompactStationList ? (
-              <GroupedListSection sx={{ mx: -0.5 }}>
-                {sortedStations.map((station, index) => (
-                  <StationSheetListItem
-                    key={station.chargePointId}
-                    station={station}
-                    isAuthenticated={isAuthenticated}
-                    isFavorite={favoriteIds.includes(station.chargePointId)}
-                    divider={index < sortedStations.length - 1}
-                    onOpen={handleStationClick}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                ))}
-              </GroupedListSection>
-            ) : null}
-            {!loading && sortedStations.length > 0 && !useCompactStationList ? (
+            {!loading && sortedStations.length > 0 ? (
               <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                 {sortedStations.map((station) => (
                   <Grid item xs={12} sm={6} key={station.chargePointId}>
