@@ -25,6 +25,7 @@ export type ActiveTransactionView = Transaction & {
   customerEmail?: string | null;
   locationName?: string | null;
   vendorName?: string | null;
+  vendorLogoUrl?: string | null;
 };
 
 export type TransactionApiView = ActiveTransactionView;
@@ -63,7 +64,11 @@ export class TransactionsService {
 
   private async attachChargePointMeta(
     tx: Transaction,
-  ): Promise<{ locationName: string | null; vendorName: string | null }> {
+  ): Promise<{
+    locationName: string | null;
+    vendorName: string | null;
+    vendorLogoUrl: string | null;
+  }> {
     const cp = await this.chargePointRepository.findOne({
       where: { chargePointId: tx.chargePointId },
       relations: ['vendor'],
@@ -71,6 +76,7 @@ export class TransactionsService {
     return {
       locationName: cp?.locationAddress?.trim() || cp?.chargePointId || null,
       vendorName: cp?.vendor?.name ?? cp?.vendorName ?? null,
+      vendorLogoUrl: cp?.vendor?.logoUrl ?? null,
     };
   }
 

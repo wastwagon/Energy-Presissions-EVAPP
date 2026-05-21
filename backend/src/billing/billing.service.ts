@@ -259,6 +259,20 @@ export class BillingService {
     return this.invoiceRepository.save(invoice);
   }
 
+  async getInvoiceByTransactionId(
+    transactionId: number,
+    actingVendorId?: number,
+  ): Promise<Invoice | null> {
+    if (actingVendorId) {
+      await this.assertVendorAccessToTransaction(transactionId, actingVendorId);
+    }
+
+    return this.invoiceRepository.findOne({
+      where: { transactionId },
+      relations: ['user'],
+    });
+  }
+
   /**
    * Get transactions for billing
    */

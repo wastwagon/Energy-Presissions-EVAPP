@@ -367,5 +367,67 @@ export class DashboardService {
       },
     };
   }
+
+  /**
+   * Daily completed-session revenue for charting (billed sessions only: cost &gt; 0).
+   */
+  async getRevenueTrend(
+    vendorId?: number,
+    days: number = 30,
+  ): Promise<{ points: Array<{ date: string; revenue: number; sessions: number }> }> {
+    const windowDays = Math.min(90, Math.max(7, days));
+    const since = new Date();
+    since.setUTCHours(0, 0, 0, 0);
+    since.setUTCDate(since.getUTCDate() - (windowDays - 1));
+
+    const qb = this.transactionRepository
+      .createQueryBuilder('tx')
+      .select('DATE(COALESCE(tx.stop_time, tx.start_time))', 'day')
+      .addSelect('COALESCE(SUM(CAST(tx.total_cost AS DECIMAL)), 0)', 'revenue')
+      .addSelect('COUNT(*)', 'sessions')
+      .where('tx.status = :status', { status: 'Completed' })
+      .andWhere('CAST(tx.total_cost AS DECIMAL) > 0')
+      .andWhere('COALESCE(tx.stop_time, tx.start_time) >= :since', { since });
+
+    if (vendorId != null) {
+      qb.innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id').andWhere(
+        'cp.vendor_id = :vendorId',
+        { vendorId },
+      );
+    }
+
+    const rows = await qb.groupBy('day').orderBy('day', 'ASC').getRawMany<{
+      day: string | Date;
+      revenue: string;
+      sessions: string;
+    }>();
+
+    const byDate = new Map<string, { revenue: number; sessions: number }>();
+    for (const row of rows) {
+      const date =
+        row.day instanceof Date
+          ? row.day.toISOString().slice(0, 10)
+          : String(row.day).slice(0, 10);
+      byDate.set(date, {
+        revenue: Math.round(parseFloat(row.revenue) * 100) / 100,
+        sessions: parseInt(row.sessions, 10) || 0,
+      });
+    }
+
+    const points: Array<{ date: string; revenue: number; sessions: number }> = [];
+    for (let i = 0; i < windowDays; i++) {
+      const d = new Date(since);
+      d.setUTCDate(since.getUTCDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      const entry = byDate.get(key);
+      points.push({
+        date: key,
+        revenue: entry?.revenue ?? 0,
+        sessions: entry?.sessions ?? 0,
+      });
+    }
+
+    return { points };
+  }
 }
 

@@ -77,6 +77,19 @@ export class BillingController {
     );
   }
 
+  @Get('transactions/:transactionId/invoice')
+  @ApiOperation({ summary: 'Get invoice for a transaction if it exists' })
+  @ApiResponse({ status: 200, description: 'Invoice or null' })
+  async getInvoiceForTransaction(
+    @Request() req: { user: RequestUser },
+    @Param('transactionId', ParseIntPipe) transactionId: number,
+  ) {
+    return this.billingService.getInvoiceByTransactionId(
+      transactionId,
+      this.resolveVendorId(req.user),
+    );
+  }
+
   @Get('invoices/:id')
   @ApiOperation({ summary: 'Get invoice by ID' })
   @ApiResponse({ status: 200, description: 'Invoice details' })

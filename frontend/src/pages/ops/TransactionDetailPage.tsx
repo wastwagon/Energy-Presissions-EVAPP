@@ -20,6 +20,8 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PrintIcon from '@mui/icons-material/Print';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction, MeterSample } from '../../services/transactionsApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
@@ -46,7 +48,8 @@ import {
   sessionStatusChipColor,
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
-import { billingApi } from '../../services/billingApi';
+import { billingApi, type Invoice } from '../../services/billingApi';
+import { openPrintableReceipt, receiptBrandingFromTransaction } from '../../utils/printReceipt';
 import { getStoredUser } from '../../utils/authSession';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
@@ -60,7 +63,8 @@ export function TransactionDetailPage() {
   const opsBase = useOpsBasePath();
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('md'));
-  const isSuperAdmin = getStoredUser()?.accountType === 'SuperAdmin';
+  const accountType = getStoredUser()?.accountType;
+  const canManageInvoice = accountType === 'SuperAdmin' || accountType === 'Admin';
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [meterValues, setMeterValues] = useState<MeterSample[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +78,7 @@ export function TransactionDetailPage() {
   const [processingCash, setProcessingCash] = useState(false);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -94,6 +99,12 @@ export function TransactionDetailPage() {
       setTransaction(tx);
       setMeterValues(meterVals);
       setUpdatedAt(Date.now());
+      if (tx.status === 'Completed' && Number(tx.totalCost) > 0 && canManageInvoice) {
+        const existing = await billingApi.getInvoiceForTransaction(tx.transactionId).catch(() => null);
+        setInvoice(existing);
+      } else {
+        setInvoice(null);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load transaction details');
       console.error('Error loading transaction details:', err);
@@ -218,25 +229,45 @@ export function TransactionDetailPage() {
               >
                 Cash payment
               </Button>
-              {isSuperAdmin && (
-                <Button
-                  variant="outlined"
-                  disabled={generatingInvoice}
-                  onClick={async () => {
-                    setGeneratingInvoice(true);
-                    try {
-                      const inv = await billingApi.generateInvoice(transaction.transactionId);
-                      setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
-                    } catch (err: unknown) {
-                      setError(err instanceof Error ? err.message : 'Failed to generate invoice');
-                    } finally {
-                      setGeneratingInvoice(false);
-                    }
-                  }}
-                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
-                >
-                  {generatingInvoice ? 'Generating…' : 'Generate invoice'}
-                </Button>
+              {canManageInvoice && (
+                <>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ReceiptIcon />}
+                    disabled={generatingInvoice}
+                    onClick={async () => {
+                      setGeneratingInvoice(true);
+                      try {
+                        const inv = await billingApi.generateInvoice(transaction.transactionId);
+                        setInvoice(inv);
+                        setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
+                      } catch (err: unknown) {
+                        setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+                      } finally {
+                        setGeneratingInvoice(false);
+                      }
+                    }}
+                    sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                  >
+                    {generatingInvoice ? 'Generating…' : invoice ? 'Regenerate invoice' : 'Generate invoice'}
+                  </Button>
+                  {invoice && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<PrintIcon />}
+                      onClick={() =>
+                        openPrintableReceipt(
+                          invoice,
+                          transaction,
+                          receiptBrandingFromTransaction(transaction),
+                        )
+                      }
+                      sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
+                    >
+                      Print receipt
+                    </Button>
+                  )}
+                </>
               )}
             </Box>
           )}
@@ -396,29 +427,53 @@ export function TransactionDetailPage() {
                       >
                         Cash Payment
                       </Button>
-                      {isSuperAdmin && (
-                        <Button
-                          variant="outlined"
-                          disabled={generatingInvoice}
-                          onClick={async () => {
-                            setGeneratingInvoice(true);
-                            try {
-                              const inv = await billingApi.generateInvoice(transaction.transactionId);
-                              setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
-                            } catch (err: unknown) {
-                              setError(err instanceof Error ? err.message : 'Failed to generate invoice');
-                            } finally {
-                              setGeneratingInvoice(false);
-                            }
-                          }}
-                          sx={(th) => ({
-                            ...sxObject(th, compactOutlinedCtaSx),
-                            minWidth: { xs: '100%', sm: 160 },
-                            width: { xs: '100%', sm: 'auto' },
-                          })}
-                        >
-                          {generatingInvoice ? 'Generating…' : 'Generate invoice'}
-                        </Button>
+                      {canManageInvoice && (
+                        <>
+                          <Button
+                            variant="outlined"
+                            startIcon={<ReceiptIcon />}
+                            disabled={generatingInvoice}
+                            onClick={async () => {
+                              setGeneratingInvoice(true);
+                              try {
+                                const inv = await billingApi.generateInvoice(transaction.transactionId);
+                                setInvoice(inv);
+                                setInvoiceNotice(`Invoice ${inv.invoiceNumber} generated`);
+                              } catch (err: unknown) {
+                                setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+                              } finally {
+                                setGeneratingInvoice(false);
+                              }
+                            }}
+                            sx={(th) => ({
+                              ...sxObject(th, compactOutlinedCtaSx),
+                              minWidth: { xs: '100%', sm: 160 },
+                              width: { xs: '100%', sm: 'auto' },
+                            })}
+                          >
+                            {generatingInvoice ? 'Generating…' : invoice ? 'Regenerate invoice' : 'Generate invoice'}
+                          </Button>
+                          {invoice && (
+                            <Button
+                              variant="outlined"
+                              startIcon={<PrintIcon />}
+                              onClick={() =>
+                                openPrintableReceipt(
+                                  invoice,
+                                  transaction,
+                                  receiptBrandingFromTransaction(transaction),
+                                )
+                              }
+                              sx={(th) => ({
+                                ...sxObject(th, compactOutlinedCtaSx),
+                                minWidth: { xs: '100%', sm: 140 },
+                                width: { xs: '100%', sm: 'auto' },
+                              })}
+                            >
+                              Print receipt
+                            </Button>
+                          )}
+                        </>
                       )}
                     </Box>
                   )}

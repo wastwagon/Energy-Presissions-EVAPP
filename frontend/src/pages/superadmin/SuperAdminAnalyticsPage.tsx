@@ -24,6 +24,7 @@ import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
+import { RevenueTrendChart } from '../../components/reports/RevenueTrendChart';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminAnalyticsPage() {
@@ -227,6 +228,9 @@ export function SuperAdminAnalyticsPage() {
               >
                 Billing & invoices
               </Button>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <RevenueTrendChart days={30} />
             </Box>
             <AnalyticsBreakdownPanel stats={stats} />
           </Grid>

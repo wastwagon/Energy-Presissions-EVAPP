@@ -19,6 +19,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { isNoEnergyCompleted } from '../../utils/sessionDisplay';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
+import { RevenueTrendChart } from './RevenueTrendChart';
 
 function downloadRevenueCsv(rows: { label: string; count: number; amount: number }[]) {
   const lines = ['Category,Sessions,Amount (GHS)', ...rows.map((r) => `"${r.label}",${r.count},${r.amount.toFixed(2)}`)];
@@ -172,6 +173,10 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
               </Grid>
             )}
           </Grid>
+
+          <Box sx={{ mb: 2 }}>
+            <RevenueTrendChart days={30} />
+          </Box>
 
           {useGrouped ? (
             <GroupedListSection title="Breakdown (recent sample)">

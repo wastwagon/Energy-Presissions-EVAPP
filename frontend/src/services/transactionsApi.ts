@@ -29,6 +29,7 @@ export interface Transaction {
   customerEmail?: string | null;
   locationName?: string | null;
   vendorName?: string | null;
+  vendorLogoUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

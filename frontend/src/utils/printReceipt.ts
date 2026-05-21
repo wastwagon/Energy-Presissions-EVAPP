@@ -7,6 +7,7 @@ export type ReceiptBranding = {
   businessName?: string | null;
   locationLine?: string | null;
   customerName?: string | null;
+  logoUrl?: string | null;
 };
 
 function escapeHtml(value: string): string {
@@ -25,6 +26,7 @@ export function receiptBrandingFromTransaction(
     businessName: transaction.vendorName ?? null,
     locationLine: transaction.locationName ?? transaction.chargePointId ?? null,
     customerName: formatCustomerDisplayName(transaction),
+    logoUrl: transaction.vendorLogoUrl ?? null,
   };
 }
 
@@ -40,11 +42,16 @@ export function openPrintableReceipt(
     customerName:
       branding?.customerName ??
       (transaction ? formatCustomerDisplayName(transaction) : null),
+    logoUrl: branding?.logoUrl ?? transaction?.vendorLogoUrl ?? null,
   };
 
   const currency = invoice.currency || 'GHS';
   const headerTitle = resolved.businessName?.trim() || 'Clean Motion Ghana';
   const headerSubtitle = resolved.locationLine?.trim() || 'EV charging receipt';
+  const logoHtml =
+    resolved.logoUrl?.trim()
+      ? `<img src="${escapeHtml(resolved.logoUrl.trim())}" alt="" style="max-height:48px;max-width:160px;margin-bottom:8px;display:block" />`
+      : '';
 
   const lines = [
     ['Invoice', invoice.invoiceNumber],
@@ -80,6 +87,7 @@ export function openPrintableReceipt(
   @media print { body { margin: 16px; } }
 </style></head><body>
   <div class="brand">
+    ${logoHtml}
     <h1>${escapeHtml(headerTitle)}</h1>
     <p class="muted" style="margin:0">${escapeHtml(headerSubtitle)}</p>
   </div>

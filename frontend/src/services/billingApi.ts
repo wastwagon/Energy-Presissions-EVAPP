@@ -70,6 +70,11 @@ export const billingApi = {
     const response = await api.post(`/billing/transactions/${transactionId}/invoice`);
     return response.data;
   },
+
+  getInvoiceForTransaction: async (transactionId: number): Promise<Invoice | null> => {
+    const response = await api.get(`/billing/transactions/${transactionId}/invoice`);
+    return response.data;
+  },
 };
 
 

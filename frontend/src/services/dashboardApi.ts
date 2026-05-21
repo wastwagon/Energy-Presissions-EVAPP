@@ -39,6 +39,16 @@ export interface DashboardStats {
   };
 }
 
+export type RevenueTrendPoint = {
+  date: string;
+  revenue: number;
+  sessions: number;
+};
+
+export type RevenueTrendResponse = {
+  points: RevenueTrendPoint[];
+};
+
 export const dashboardApi = {
   /**
    * Get dashboard statistics (auto-detects SuperAdmin vs Admin)
@@ -54,6 +64,16 @@ export const dashboardApi = {
    */
   getVendorStats: async (opts?: { signal?: AbortSignal }): Promise<DashboardStats> => {
     const response = await api.get('/dashboard/stats', { signal: opts?.signal });
+    return response.data;
+  },
+
+  getRevenueTrend: async (
+    days = 30,
+    opts?: { signal?: AbortSignal },
+  ): Promise<RevenueTrendResponse> => {
+    const response = await api.get(`/dashboard/revenue-trend?days=${days}`, {
+      signal: opts?.signal,
+    });
     return response.data;
   },
 };

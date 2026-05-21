@@ -1,5 +1,5 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -46,6 +46,39 @@ export class DashboardController {
     
     // Fallback to super admin stats if no vendorId
     return this.dashboardService.getSuperAdminStats();
+  }
+
+  private resolveVendorId(req: {
+    user: { accountType: string; vendorId?: number };
+    headers: Record<string, string | string[] | undefined>;
+  }): number | undefined {
+    const vendorIdHeader = req.headers['x-vendor-id'];
+    if (vendorIdHeader) {
+      const parsed = parseInt(String(vendorIdHeader), 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    if (req.user.accountType === 'Admin' && req.user.vendorId) {
+      return req.user.vendorId;
+    }
+    if (req.user.accountType === 'SuperAdmin') {
+      return undefined;
+    }
+    return req.user.vendorId;
+  }
+
+  @Get('revenue-trend')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'Daily revenue trend for completed billed sessions' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: '7–90 days (default 30)' })
+  @ApiResponse({ status: 200, description: 'Daily revenue points' })
+  async getRevenueTrend(
+    @Request() req: { user: { accountType: string; vendorId?: number }; headers: Record<string, string | string[] | undefined> },
+    @Query('days') days?: string,
+  ) {
+    const parsedDays = days ? parseInt(days, 10) : 30;
+    const vendorId = this.resolveVendorId(req);
+    return this.dashboardService.getRevenueTrend(vendorId, parsedDays);
   }
 }
 
