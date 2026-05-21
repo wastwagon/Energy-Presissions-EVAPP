@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, SelectQueryBuilder } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { MeterSample } from '../entities/meter-sample.entity';
 import { Connector } from '../entities/connector.entity';
@@ -40,6 +40,42 @@ export type TransactionApiView = ActiveTransactionView;
 @Injectable()
 export class TransactionsService {
   private readonly logger = new Logger(TransactionsService.name);
+
+  /** Columns safe for list/active queries (excludes wallet_reserved_amount). */
+  private applyTransactionListSelect(
+    qb: SelectQueryBuilder<Transaction>,
+  ): SelectQueryBuilder<Transaction> {
+    return qb.select([
+      'tx.id',
+      'tx.transactionId',
+      'tx.chargePointId',
+      'tx.connectorId',
+      'tx.idTag',
+      'tx.userId',
+      'tx.meterStart',
+      'tx.meterStop',
+      'tx.startTime',
+      'tx.stopTime',
+      'tx.totalEnergyKwh',
+      'tx.durationMinutes',
+      'tx.totalCost',
+      'tx.currency',
+      'tx.status',
+      'tx.reason',
+      'tx.reservationId',
+      'tx.createdAt',
+      'tx.updatedAt',
+    ]);
+  }
+
+  private logSchemaMismatch(context: string, err: unknown): void {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/does not exist|column .* not found/i.test(message)) {
+      this.logger.error(
+        `${context}: database schema mismatch (${message}). Run database/init/26-production-schema-hotfix.sql on PostgreSQL.`,
+      );
+    }
+  }
 
   constructor(
     @InjectRepository(Transaction)
@@ -402,9 +438,9 @@ export class TransactionsService {
     vendorId?: number,
     userId?: number,
   ): Promise<{ transactions: TransactionApiView[]; total: number }> {
-    const queryBuilder = this.transactionRepository
-      .createQueryBuilder('tx')
-      .leftJoinAndSelect('tx.user', 'user');
+    const queryBuilder = this.applyTransactionListSelect(
+      this.transactionRepository.createQueryBuilder('tx'),
+    ).leftJoinAndSelect('tx.user', 'user');
 
     if (chargePointId) {
       queryBuilder.where('tx.charge_point_id = :chargePointId', { chargePointId });
@@ -422,7 +458,14 @@ export class TransactionsService {
 
     queryBuilder.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
 
-    const [rows, total] = await queryBuilder.getManyAndCount();
+    let rows: Transaction[];
+    let total: number;
+    try {
+      [rows, total] = await queryBuilder.getManyAndCount();
+    } catch (err: unknown) {
+      this.logSchemaMismatch('findAll', err);
+      throw err;
+    }
     const mapped: TransactionApiView[] = [];
     for (const tx of rows) {
       try {
@@ -498,11 +541,11 @@ export class TransactionsService {
       );
     }
 
-    const queryBuilder = this.transactionRepository
-      .createQueryBuilder('tx')
-      .leftJoinAndSelect('tx.user', 'user');
-
-    queryBuilder.where('tx.status = :status', { status: 'Active' });
+    const queryBuilder = this.applyTransactionListSelect(
+      this.transactionRepository.createQueryBuilder('tx'),
+    )
+      .leftJoinAndSelect('tx.user', 'user')
+      .where('tx.status = :status', { status: 'Active' });
 
     // Filter by vendorId via charge point relationship
     if (vendorId) {
@@ -517,7 +560,13 @@ export class TransactionsService {
 
     queryBuilder.orderBy('tx.start_time', 'DESC');
 
-    const fromDb = await queryBuilder.getMany();
+    let fromDb: Transaction[];
+    try {
+      fromDb = await queryBuilder.getMany();
+    } catch (err: unknown) {
+      this.logSchemaMismatch('findActive', err);
+      throw err;
+    }
 
     if (userId != null) {
       const walletSynthetic = await this.syntheticActiveSessionsForWalletUser(userId, fromDb);

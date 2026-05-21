@@ -84,11 +84,13 @@ export class ChargePoint {
   @Column({ length: 50, nullable: true })
   imsi: string;
 
-  /** Site SIM operator — MTN recommended; Telecel not used */
-  @Column({ name: 'cellular_provider', length: 32, nullable: true })
+  /**
+   * Excluded from default SELECT until `database/init/10-charge-point-cellular.sql` is applied.
+   */
+  @Column({ name: 'cellular_provider', length: 32, nullable: true, select: false })
   cellularProvider: string;
 
-  @Column({ name: 'cellular_apn', length: 128, nullable: true })
+  @Column({ name: 'cellular_apn', length: 128, nullable: true, select: false })
   cellularApn: string;
 
   @Column({ name: 'last_seen', type: 'timestamp', nullable: true })

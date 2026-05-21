@@ -156,7 +156,18 @@ export class ChargePointsService {
       queryBuilder.andWhere(searchCondition, { search: `%${search}%` });
     }
 
-    const chargePoints = await queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
+    let chargePoints: ChargePoint[];
+    try {
+      chargePoints = await queryBuilder.orderBy('cp.createdAt', 'DESC').getMany();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (/does not exist|column .* not found/i.test(message)) {
+        this.logger.error(
+          `findAll charge points failed (${message}). Run database/init/26-production-schema-hotfix.sql`,
+        );
+      }
+      throw err;
+    }
     const connectedIds = await this.fetchConnectedChargePointIds();
 
     const cpIds = chargePoints.map((cp) => cp.chargePointId);
