@@ -108,6 +108,13 @@ Use when touching a screen after the design-system rollout.
 - [x] **Ops dashboard** — charge points grouped list on mobile.
 - [x] **Devices** — recent errors tab grouped list on mobile.
 
+## Safe mobile polish — phase 8 (2026-05)
+
+- [x] **Charge point detail** — connectors, active sessions, firmware/diagnostics jobs as grouped lists on mobile; firmware form fields without `size="small"`.
+- [x] **Transaction detail (ops)** — meter values grouped list on mobile.
+- [x] **Admin tariffs** — grouped list on mobile (tap row → edit dialog).
+- [x] **Stations map sheet** — tap drag handle cycles peek / half / full height on `xs` (authenticated).
+
 ## Verification (manual)
 
 - [ ] Staff pages on phone width: search/filter inputs do not zoom on focus.
@@ -118,6 +125,9 @@ Use when touching a screen after the design-system rollout.
 
 - [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent; light push-in animation on enter (reduced-motion off).
 - [ ] Billing tabs: load more on phone for invoices and sessions.
+- [ ] Charge point detail: connector actions and session stop work on grouped rows.
+- [ ] Tariffs: tap row opens edit on phone.
+- [ ] Stations map: drag handle cycles sheet height (peek → half → full).
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).

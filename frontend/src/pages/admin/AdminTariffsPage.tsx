@@ -21,6 +21,8 @@ import {
   Switch,
   IconButton,
   InputAdornment,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -41,6 +43,8 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export type StaffTariffsVariant = 'admin' | 'superadmin';
 
@@ -52,6 +56,8 @@ function canMutateTariff(tariff: Tariff, variant: StaffTariffsVariant): boolean 
 }
 
 export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffsVariant }) {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,6 +216,52 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
             Tariff plans
           </Typography>
         </Box>
+        {tariffs.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <AttachMoneyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              No tariffs configured yet
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mt: 2 })}
+            >
+              Create first tariff
+            </Button>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {tariffs.map((tariff, index) => {
+                const mutable = canMutateTariff(tariff, variant);
+                return (
+                  <GroupedListRow
+                    key={tariff.id}
+                    divider={index < tariffs.length - 1}
+                    primary={tariff.name}
+                    secondary={`${formatCurrency(tariff.energyRate || tariff.energyPrice || 0, tariff.currency)} / kWh${
+                      variant === 'superadmin'
+                        ? ` · ${tariff.vendorId ? `Vendor #${tariff.vendorId}` : 'Network'}`
+                        : ''
+                    }`}
+                    end={
+                      <Chip
+                        label={tariff.isActive ? 'Active' : 'Inactive'}
+                        color={tariff.isActive ? 'success' : 'default'}
+                        size="small"
+                        sx={{ height: 24 }}
+                      />
+                    }
+                    onClick={mutable ? () => handleOpenDialog(tariff) : undefined}
+                    aria-label={mutable ? `Edit tariff ${tariff.name}` : tariff.name}
+                  />
+                );
+              })}
+            </GroupedListSection>
+          </Box>
+        ) : (
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <Table size="small">
           <TableHead>
@@ -225,25 +277,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
             </TableRow>
           </TableHead>
           <TableBody>
-            {tariffs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={variant === 'superadmin' ? 8 : 7} align="center" sx={{ py: 4 }}>
-                  <AttachMoneyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    No tariffs configured yet
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpenDialog()}
-                    sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mt: 2 })}
-                  >
-                    Create first tariff
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ) : (
-              tariffs.map((tariff) => {
+              {tariffs.map((tariff) => {
                 const mutable = canMutateTariff(tariff, variant);
                 return (
                 <TableRow key={tariff.id} hover>
@@ -321,11 +355,11 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                   </TableCell>
                 </TableRow>
               );
-              })
-            )}
+              })}
           </TableBody>
         </Table>
       </TableContainer>
+        )}
       </Paper>
 
       <Dialog

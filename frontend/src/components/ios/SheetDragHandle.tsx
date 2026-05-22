@@ -1,20 +1,57 @@
 import { Box } from '@mui/material';
+import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
+import type { Theme } from '@mui/material/styles';
+
+const handleSx = {
+  width: 36,
+  height: 5,
+  borderRadius: 3,
+  bgcolor: 'rgba(60, 60, 67, 0.3)',
+  mx: 'auto',
+  flexShrink: 0,
+};
+
+type SheetDragHandleProps = {
+  /** When set, the handle is a button that cycles sheet height (e.g. map list on mobile). */
+  onSnapToggle?: () => void;
+  ariaLabel?: string;
+};
 
 /** iOS-style grab handle for bottom sheets and map panels. */
-export function SheetDragHandle() {
+export function SheetDragHandle({ onSnapToggle, ariaLabel = 'Adjust panel height' }: SheetDragHandleProps) {
+  const handle = <Box sx={handleSx} aria-hidden />;
+
+  if (!onSnapToggle) {
+    return (
+      <Box sx={{ mt: 1.25, mb: 0.75, flexShrink: 0 }} aria-hidden>
+        {handle}
+      </Box>
+    );
+  }
+
   return (
     <Box
-      sx={{
-        width: 36,
-        height: 5,
-        borderRadius: 3,
-        bgcolor: 'rgba(60, 60, 67, 0.3)',
-        mx: 'auto',
-        mt: 1.25,
-        mb: 0.75,
+      component="button"
+      type="button"
+      onClick={onSnapToggle}
+      aria-label={ariaLabel}
+      sx={(th: Theme) => ({
+        ...sxObject(th, premiumIconButtonTouchSx),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        minHeight: 44,
+        mt: 0.5,
+        mb: 0.25,
         flexShrink: 0,
-      }}
-      aria-hidden
-    />
+        border: 0,
+        bgcolor: 'transparent',
+        cursor: 'pointer',
+        borderRadius: 2,
+      })}
+    >
+      {handle}
+    </Box>
   );
 }

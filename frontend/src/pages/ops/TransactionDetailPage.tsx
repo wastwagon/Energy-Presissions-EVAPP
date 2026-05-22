@@ -53,6 +53,7 @@ import { billingApi, type Invoice } from '../../services/billingApi';
 import { openPrintableReceipt, receiptBrandingFromTransaction } from '../../utils/printReceipt';
 import { getStoredUser } from '../../utils/authSession';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -527,32 +528,54 @@ export function TransactionDetailPage() {
               Meter Values
             </Typography>
           </Box>
-          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <Table stickyHeader size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Timestamp</TableCell>
-                  <TableCell>Measurand</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Phase</TableCell>
-                  <TableCell>Value</TableCell>
-                  <TableCell>Unit</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          {isCompact ? (
+            <Box sx={{ py: 1 }}>
+              <GroupedListSection>
                 {meterValues.map((sample, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{new Date(sample.timestamp).toLocaleString()}</TableCell>
-                    <TableCell>{sample.measurand || '-'}</TableCell>
-                    <TableCell>{sample.location || '-'}</TableCell>
-                    <TableCell>{sample.phase || '-'}</TableCell>
-                    <TableCell>{sample.value}</TableCell>
-                    <TableCell>{sample.unit || '-'}</TableCell>
-                  </TableRow>
+                  <GroupedListRow
+                    key={`${sample.timestamp}-${sample.measurand}-${index}`}
+                    divider={index < meterValues.length - 1}
+                    showChevron={false}
+                    primary={sample.measurand || 'Sample'}
+                    secondary={new Date(sample.timestamp).toLocaleString()}
+                    end={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {sample.value}
+                        {sample.unit ? ` ${sample.unit}` : ''}
+                      </Typography>
+                    }
+                  />
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </GroupedListSection>
+            </Box>
+          ) : (
+            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Timestamp</TableCell>
+                    <TableCell>Measurand</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Phase</TableCell>
+                    <TableCell>Value</TableCell>
+                    <TableCell>Unit</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {meterValues.map((sample, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{new Date(sample.timestamp).toLocaleString()}</TableCell>
+                      <TableCell>{sample.measurand || '-'}</TableCell>
+                      <TableCell>{sample.location || '-'}</TableCell>
+                      <TableCell>{sample.phase || '-'}</TableCell>
+                      <TableCell>{sample.value}</TableCell>
+                      <TableCell>{sample.unit || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Paper>
       )}
 

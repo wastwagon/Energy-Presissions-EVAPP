@@ -22,6 +22,8 @@ import {
   DialogActions,
   TextField,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -63,6 +65,8 @@ import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
 import { ChargerCellularGuide } from '../../components/ops/ChargerCellularGuide';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 const CONNECTOR_REMOTE_START_STATUSES = ['Available', 'Preparing'] as const;
 
@@ -83,6 +87,8 @@ export function ChargePointDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [chargePoint, setChargePoint] = useState<ChargePoint | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
@@ -715,6 +721,71 @@ export function ChargePointDetailPage() {
                   No connectors found
                 </Typography>
               </Box>
+            ) : useGroupedList ? (
+              <Box sx={{ py: 1 }}>
+                <GroupedListSection>
+                  {connectors.map((connector, index) => (
+                    <GroupedListRow
+                      key={connector.connectorId}
+                      divider={index < connectors.length - 1}
+                      showChevron={false}
+                      primary={`Connector ${connector.connectorId}`}
+                      secondary={`${connector.connectorType || '—'} · ${
+                        connector.powerRatingKw ? `${connector.powerRatingKw} kW` : '—'
+                      }`}
+                      end={
+                        <Box sx={{ textAlign: 'right', minWidth: 100 }}>
+                          <Chip
+                            label={connector.status}
+                            color={getChargePointStatusColor(connector.status)}
+                            size="small"
+                            sx={{ height: 22, mb: 0.75, display: 'block', ml: 'auto' }}
+                          />
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<LockOpenIcon sx={{ fontSize: 16 }} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleUnlockConnector(connector.connectorId);
+                            }}
+                            disabled={chargePoint.linkStatus !== 'online'}
+                            sx={(th) => ({
+                              ...sxObject(th, compactOutlinedCtaSx),
+                              mb: 0.5,
+                              minHeight: 32,
+                              fontSize: '0.75rem',
+                              width: '100%',
+                            })}
+                          >
+                            Unlock
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleChangeAvailability(
+                                connector.connectorId,
+                                connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
+                              );
+                            }}
+                            disabled={chargePoint.linkStatus !== 'online'}
+                            sx={(th) => ({
+                              ...sxObject(th, compactOutlinedCtaSx),
+                              minHeight: 32,
+                              fontSize: '0.75rem',
+                              width: '100%',
+                            })}
+                          >
+                            {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
+                          </Button>
+                        </Box>
+                      }
+                    />
+                  ))}
+                </GroupedListSection>
+              </Box>
             ) : (
               <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
@@ -796,74 +867,129 @@ export function ChargePointDetailPage() {
                   Active transactions
                 </Typography>
               </Box>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Transaction ID</TableCell>
-                      <TableCell>Connector</TableCell>
-                      <TableCell>IdTag</TableCell>
-                      <TableCell>Start Time</TableCell>
-                      <TableCell>Energy (kWh)</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {activeTransactions.map((tx) => (
-                      <TableRow key={tx.transactionId}>
-                        <TableCell>{tx.transactionId}</TableCell>
-                        <TableCell>{tx.connectorId}</TableCell>
-                        <TableCell>{tx.idTag || '-'}</TableCell>
-                        <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
-                        <TableCell>
-                          {formatEnergyKwh(tx.totalEnergyKwh, 3)}
-                        </TableCell>
-                        <TableCell>
+              {useGroupedList ? (
+                <Box sx={{ py: 1 }}>
+                  <GroupedListSection>
+                    {activeTransactions.map((tx, index) => (
+                      <GroupedListRow
+                        key={tx.transactionId}
+                        divider={index < activeTransactions.length - 1}
+                        showChevron
+                        primary={`Session #${tx.transactionId}`}
+                        secondary={`Connector ${tx.connectorId} · ${formatEnergyKwh(tx.totalEnergyKwh, 3)}`}
+                        end={
                           <Button
                             size="small"
                             variant="outlined"
                             disableElevation
-                            startIcon={<StopIcon />}
-                            onClick={async () => {
+                            startIcon={<StopIcon sx={{ fontSize: 16 }} />}
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               try {
                                 await chargePointsApi.remoteStop(id!, tx.transactionId);
                                 loadData();
                               } catch (err: unknown) {
-                                const e = err as {
+                                const errObj = err as {
                                   response?: { data?: { message?: unknown } };
                                   message?: string;
                                 };
-                                const raw = e.response?.data?.message;
+                                const raw = errObj.response?.data?.message;
                                 const msg =
                                   typeof raw === 'string'
                                     ? raw
                                     : Array.isArray(raw)
                                       ? raw.join(', ')
-                                      : e.message || 'Failed to stop transaction';
+                                      : errObj.message || 'Failed to stop transaction';
                                 setError(msg);
                               }
                             }}
                             sx={(th) => ({
                               ...sxObject(th, compactOutlinedCtaSx),
-                              py: 0.5,
-                              minHeight: 36,
-                              fontSize: '0.8125rem',
+                              minHeight: 32,
+                              fontSize: '0.75rem',
                               borderColor: 'error.main',
                               color: 'error.main',
-                              '&:hover': {
-                                borderColor: 'error.dark',
-                                bgcolor: alpha(th.palette.error.main, 0.06),
-                              },
                             })}
                           >
                             Stop
                           </Button>
-                        </TableCell>
-                      </TableRow>
+                        }
+                        onClick={() =>
+                          navigate(`${opsBase}/sessions/${tx.transactionId}`)
+                        }
+                        aria-label={`Open session ${tx.transactionId}`}
+                      />
                     ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                  </GroupedListSection>
+                </Box>
+              ) : (
+                <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Transaction ID</TableCell>
+                        <TableCell>Connector</TableCell>
+                        <TableCell>IdTag</TableCell>
+                        <TableCell>Start Time</TableCell>
+                        <TableCell>Energy (kWh)</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {activeTransactions.map((tx) => (
+                        <TableRow key={tx.transactionId}>
+                          <TableCell>{tx.transactionId}</TableCell>
+                          <TableCell>{tx.connectorId}</TableCell>
+                          <TableCell>{tx.idTag || '-'}</TableCell>
+                          <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
+                          <TableCell>{formatEnergyKwh(tx.totalEnergyKwh, 3)}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              disableElevation
+                              startIcon={<StopIcon />}
+                              onClick={async () => {
+                                try {
+                                  await chargePointsApi.remoteStop(id!, tx.transactionId);
+                                  loadData();
+                                } catch (err: unknown) {
+                                  const e = err as {
+                                    response?: { data?: { message?: unknown } };
+                                    message?: string;
+                                  };
+                                  const raw = e.response?.data?.message;
+                                  const msg =
+                                    typeof raw === 'string'
+                                      ? raw
+                                      : Array.isArray(raw)
+                                        ? raw.join(', ')
+                                        : e.message || 'Failed to stop transaction';
+                                  setError(msg);
+                                }
+                              }}
+                              sx={(th) => ({
+                                ...sxObject(th, compactOutlinedCtaSx),
+                                py: 0.5,
+                                minHeight: 36,
+                                fontSize: '0.8125rem',
+                                borderColor: 'error.main',
+                                color: 'error.main',
+                                '&:hover': {
+                                  borderColor: 'error.dark',
+                                  bgcolor: alpha(th.palette.error.main, 0.06),
+                                },
+                              })}
+                            >
+                              Stop
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Paper>
           </Grid>
         )}
@@ -876,7 +1002,6 @@ export function ChargePointDetailPage() {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
                 <TextField
-                  size="small"
                   label="Firmware URL"
                   placeholder="https://…"
                   value={firmwareLocation}
@@ -884,7 +1009,6 @@ export function ChargePointDetailPage() {
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
                 <TextField
-                  size="small"
                   label="Retrieve date"
                   type="datetime-local"
                   value={firmwareRetrieveDate}
@@ -907,26 +1031,44 @@ export function ChargePointDetailPage() {
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Recent Jobs
                   </Typography>
-                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Status</TableCell>
-                          <TableCell>Retrieve Date</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {firmwareJobs.slice(0, 5).map((j) => (
-                          <TableRow key={j.id}>
-                            <TableCell><Chip label={j.status} size="small" /></TableCell>
-                            <TableCell>
-                              {j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : '-'}
-                            </TableCell>
+                  {useGroupedList ? (
+                    <GroupedListSection>
+                      {firmwareJobs.slice(0, 5).map((j, index, arr) => (
+                        <GroupedListRow
+                          key={j.id}
+                          divider={index < arr.length - 1}
+                          showChevron={false}
+                          primary={j.status}
+                          secondary={
+                            j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : 'No date'
+                          }
+                        />
+                      ))}
+                    </GroupedListSection>
+                  ) : (
+                    <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Retrieve Date</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                          {firmwareJobs.slice(0, 5).map((j) => (
+                            <TableRow key={j.id}>
+                              <TableCell>
+                                <Chip label={j.status} size="small" />
+                              </TableCell>
+                              <TableCell>
+                                {j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
                 </Box>
               )}
           </Paper>
@@ -938,7 +1080,6 @@ export function ChargePointDetailPage() {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
                 <TextField
-                  size="small"
                   label="Upload URL"
                   placeholder="https://…"
                   value={diagnosticsLocation}
@@ -960,26 +1101,44 @@ export function ChargePointDetailPage() {
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Recent Jobs
                   </Typography>
-                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Status</TableCell>
-                          <TableCell>Created</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {diagnosticsJobs.slice(0, 5).map((j) => (
-                          <TableRow key={j.id}>
-                            <TableCell><Chip label={j.status} size="small" /></TableCell>
-                            <TableCell>
-                              {j.createdAt ? new Date(j.createdAt).toLocaleString() : '-'}
-                            </TableCell>
+                  {useGroupedList ? (
+                    <GroupedListSection>
+                      {diagnosticsJobs.slice(0, 5).map((j, index, arr) => (
+                        <GroupedListRow
+                          key={j.id}
+                          divider={index < arr.length - 1}
+                          showChevron={false}
+                          primary={j.status}
+                          secondary={
+                            j.createdAt ? new Date(j.createdAt).toLocaleString() : 'No date'
+                          }
+                        />
+                      ))}
+                    </GroupedListSection>
+                  ) : (
+                    <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Created</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                          {diagnosticsJobs.slice(0, 5).map((j) => (
+                            <TableRow key={j.id}>
+                              <TableCell>
+                                <Chip label={j.status} size="small" />
+                              </TableCell>
+                              <TableCell>
+                                {j.createdAt ? new Date(j.createdAt).toLocaleString() : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
                 </Box>
               )}
           </Paper>
