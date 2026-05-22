@@ -77,6 +77,7 @@ function MainLayoutChrome() {
   };
 
   const isCustomer = isCustomerOrWalkInAccount(user);
+  const showDockedBottomNav = showBottomNav && !(isCustomer && pageChrome?.navBack);
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
   const showCompactNavTitle = Boolean(
     usePremiumCustomerHeader && pageChrome?.showCompactNavTitle && pageChrome.pageTitle,
@@ -334,7 +335,7 @@ function MainLayoutChrome() {
             overscrollBehaviorY: 'contain',
             mt: { xs: 1, sm: 2 },
             px: { xs: 2, sm: 3 },
-            pb: showBottomNav ? 2 : 4,
+            pb: showDockedBottomNav ? 2 : 4,
             width: '100%',
           }}
         >
@@ -346,7 +347,7 @@ function MainLayoutChrome() {
             <Outlet />
           )}
         </Container>
-        {showBottomNav && (
+        {showDockedBottomNav && (
           <BottomNav
             items={
               isAuthenticated

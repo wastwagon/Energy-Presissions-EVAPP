@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
   Chip,
+  Pagination,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -84,6 +85,7 @@ export function CustomerWalletPage() {
           ]);
           setBalance(balanceData);
           setFunds(availableData);
+          setTxPage(1);
           await fetchTransactionsPage(user.id, 1, false);
           return true;
         } catch (err: any) {
@@ -111,6 +113,21 @@ export function CustomerWalletPage() {
       setLoadingMoreTx(false);
     }
   }, [fetchTransactionsPage, loadingMoreTx, txPage, txTotal]);
+
+  const handleDesktopTxPageChange = useCallback(
+    async (_: unknown, value: number) => {
+      const user = getStoredUser();
+      if (typeof user?.id !== 'number') return;
+      setTxPage(value);
+      try {
+        setError(null);
+        await fetchTransactionsPage(user.id, value, false);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load transactions');
+      }
+    },
+    [fetchTransactionsPage],
+  );
 
   useEffect(() => {
     void loadWalletData();
@@ -345,6 +362,16 @@ export function CustomerWalletPage() {
               </TableBody>
             </Table>
           </TableContainer>
+          {txTotal > WALLET_TX_PAGE_SIZE && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <Pagination
+                count={Math.ceil(txTotal / WALLET_TX_PAGE_SIZE)}
+                page={txPage}
+                onChange={(_, value) => void handleDesktopTxPageChange(_, value)}
+                color="primary"
+              />
+            </Box>
+          )}
         </Paper>
       )}
     </Box>

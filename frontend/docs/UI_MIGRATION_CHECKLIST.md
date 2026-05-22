@@ -74,7 +74,17 @@ Use when touching a screen after the design-system rollout.
 - [x] Top-up screen: `useCustomerNavBack` → wallet.
 - [x] Transaction detail: hide redundant “Back to history” row when AppBar back is shown (`md` down).
 
+## Safe mobile polish — phase 3 (2026-05)
+
+- [x] Bottom tab bar hidden while `navBack` is active (stack-style detail screens).
+- [x] Theme-wide `MuiOutlinedInput` uses 16px text on `xs` (iOS zoom guard for fields without `authFormFieldSx`).
+- [x] Wallet desktop table: `Pagination` for ledger pages (`md+`).
+- [x] Admin user search: full-width field with `authFormFieldSx` (no `size="small"`).
+- [x] Customer app drawer list hover limited to fine pointers.
+
 ## Verification (manual)
+
+- [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent.
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).

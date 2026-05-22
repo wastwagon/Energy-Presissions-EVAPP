@@ -258,7 +258,9 @@ export const customerNavDrawerLightListRowSx: SystemStyleObject<Theme> = {
   minHeight: IOS_TOUCH_TARGET_PX,
   color: 'text.primary',
   transition: `background-color ${iosMotion.fast}ms ease`,
-  '&:hover': { bgcolor: 'action.hover' },
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': { bgcolor: 'action.hover' },
+  },
   '&:focus-visible': {
     outline: '2px solid',
     outlineColor: (t) => alpha(t.palette.primary.main, 0.45),

@@ -272,7 +272,7 @@ export function UserManagementPage() {
       <Box sx={{ mb: 2 }}>
         <TextField
           placeholder="Search users…"
-          size="small"
+          fullWidth
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -293,7 +293,11 @@ export function UserManagementPage() {
               </InputAdornment>
             ),
           }}
-          sx={(th) => ({ ...sxObject(th, authFormFieldSx), width: { xs: '100%', sm: 320 }, maxWidth: '100%' })}
+          sx={(th) => ({
+            ...sxObject(th, authFormFieldSx),
+            width: { xs: '100%', sm: 320 },
+            maxWidth: '100%',
+          })}
         />
       </Box>
 

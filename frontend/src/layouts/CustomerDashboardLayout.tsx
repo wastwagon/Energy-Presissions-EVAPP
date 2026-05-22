@@ -40,6 +40,8 @@ function CustomerDashboardChrome() {
   const theme = useTheme();
   const pageChrome = useCustomerPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
+  /** Stack pushes with AppBar back hide the tab bar (iOS navigation-stack pattern). */
+  const showDockedBottomNav = showBottomNav && !pageChrome?.navBack;
   const showCompactNavTitle = Boolean(
     pageChrome?.showCompactNavTitle && pageChrome.pageTitle && showBottomNav,
   );
@@ -304,7 +306,7 @@ function CustomerDashboardChrome() {
           id={APP_MAIN_CONTENT_ID}
           tabIndex={-1}
           sx={{
-            ...dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showBottomNav }),
+            ...dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showDockedBottomNav }),
             minWidth: 0,
           }}
         >
@@ -313,7 +315,7 @@ function CustomerDashboardChrome() {
             <Outlet />
           </CustomerScrollProviders>
         </Box>
-        {showBottomNav && (
+        {showDockedBottomNav && (
           <BottomNav items={customerBottomNavItems} variant="customer" />
         )}
       </Box>

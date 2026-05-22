@@ -180,7 +180,15 @@ export function createAppTheme(options: AppThemeOptions = {}) {
       },
       MuiAppBar: { styleOverrides: { root: { backgroundImage: 'none' } } },
       MuiTextField: { defaultProps: { variant: 'outlined' } },
-      MuiOutlinedInput: { styleOverrides: { root: { borderRadius: iosRadii.sm } } },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: { borderRadius: iosRadii.sm },
+          input: {
+            fontSize: '1rem',
+            '@media (min-width:600px)': { fontSize: '0.875rem' },
+          },
+        },
+      },
       MuiTypography: {
         styleOverrides: {
           h1: {
