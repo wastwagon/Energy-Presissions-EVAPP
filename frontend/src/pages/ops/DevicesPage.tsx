@@ -26,6 +26,8 @@ import {
   Tabs,
   Tab,
   Badge,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -72,6 +74,8 @@ import {
   StaffChromeTabPanelSkeleton,
 } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -113,6 +117,8 @@ function looksLikeNumericChargePointIdentity(id: string): boolean {
 
 export function DevicesPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const opsBase = useOpsBasePath();
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [filteredChargePoints, setFilteredChargePoints] = useState<ChargePoint[]>([]);
@@ -610,6 +616,40 @@ export function DevicesPage() {
                 <Chip label={`${linkCounts.offline} offline`} color="error" size="small" variant="outlined" />
                 <Chip label={`${linkCounts.never_seen} never`} size="small" variant="outlined" />
               </Box>
+            {useGroupedList ? (
+              <Box sx={{ mt: 1, py: 1 }}>
+                <GroupedListSection>
+                  {filteredChargePoints.map((cp, index) => (
+                    <GroupedListRow
+                      key={cp.chargePointId}
+                      divider={index < filteredChargePoints.length - 1}
+                      primary={cp.chargePointId}
+                      secondary={`${cp.vendorName || cp.vendor || 'No vendor'} · ${cp.model || '—'}`}
+                      end={
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Chip
+                            label={getLinkStatusLabel(cp.linkStatus)}
+                            color={getLinkStatusChipColor(cp.linkStatus)}
+                            size="small"
+                            sx={{ height: 22, mb: 0.5 }}
+                          />
+                          <Chip
+                            label={cp.status}
+                            color={getChargePointStatusColor(cp.status)}
+                            size="small"
+                            sx={{ height: 22, display: 'block', ml: 'auto' }}
+                          />
+                        </Box>
+                      }
+                      onClick={() =>
+                        navigate(`${opsBase}/devices/${encodeURIComponent(cp.chargePointId)}`)
+                      }
+                      aria-label={`Open device ${cp.chargePointId}`}
+                    />
+                  ))}
+                </GroupedListSection>
+              </Box>
+            ) : (
             <TableContainer sx={{ mt: 2, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table size="small" stickyHeader>
                 <TableHead>
@@ -809,6 +849,8 @@ export function DevicesPage() {
                 </TableBody>
               </Table>
             </TableContainer>
+            )
+            }
             </>
           )}
         </TabPanel>
@@ -855,6 +897,33 @@ export function DevicesPage() {
                 Devices are connecting successfully.
               </Typography>
             </Paper>
+          ) : useGroupedList ? (
+            <Box sx={{ mt: 1, py: 1 }}>
+              <GroupedListSection>
+                {recentErrors.map((log, index) => (
+                  <GroupedListRow
+                    key={log.id}
+                    divider={index < recentErrors.length - 1}
+                    showChevron={false}
+                    primary={log.chargePointId}
+                    secondary={`${log.eventType} · ${new Date(log.createdAt).toLocaleString()}`}
+                    end={
+                      <Chip
+                        label={log.errorCode || 'error'}
+                        color={getConnectionEventColor(log.eventType)}
+                        size="small"
+                        sx={{ height: 22 }}
+                      />
+                    }
+                    onClick={() => {
+                      const cp = chargePoints.find((c) => c.chargePointId === log.chargePointId);
+                      if (cp) handleViewLogs(cp);
+                    }}
+                    aria-label={`View logs for ${log.chargePointId}`}
+                  />
+                ))}
+              </GroupedListSection>
+            </Box>
           ) : (
             <TableContainer sx={{ mt: 2, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table size="small" stickyHeader>
@@ -880,7 +949,7 @@ export function DevicesPage() {
                       <TableCell>
                         <Chip
                           label={log.eventType}
-                              color={getConnectionEventColor(log.eventType)}
+                          color={getConnectionEventColor(log.eventType)}
                           size="small"
                         />
                       </TableCell>

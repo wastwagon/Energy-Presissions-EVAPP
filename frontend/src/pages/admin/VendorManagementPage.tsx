@@ -22,6 +22,8 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
@@ -47,9 +49,13 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 import { getOpsNavPaths } from '../../config/opsNav.paths';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export function VendorManagementPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,6 +289,36 @@ export function VendorManagementPage() {
             Vendors ({vendors.length})
           </Typography>
         </Box>
+        {vendors.length === 0 ? (
+          <Box sx={{ py: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No vendors found
+            </Typography>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {vendors.map((vendor, index) => (
+                <GroupedListRow
+                  key={vendor.id}
+                  divider={index < vendors.length - 1}
+                  primary={vendor.name}
+                  secondary={vendor.contactEmail || vendor.domain || '—'}
+                  end={
+                    <Chip
+                      label={vendor.status}
+                      color={getVendorStatusColor(vendor.status)}
+                      size="small"
+                      sx={{ height: 24 }}
+                    />
+                  }
+                  onClick={() => handleEditVendor(vendor)}
+                  aria-label={`Edit vendor ${vendor.name}`}
+                />
+              ))}
+            </GroupedListSection>
+          </Box>
+        ) : (
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -297,16 +333,7 @@ export function VendorManagementPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {vendors.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                      No vendors found
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                vendors.map((vendor) => (
+              {vendors.map((vendor) => (
                   <TableRow key={vendor.id}>
                     <TableCell>{vendor.id}</TableCell>
                     <TableCell>{vendor.name}</TableCell>
@@ -378,11 +405,11 @@ export function VendorManagementPage() {
                       </Box>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
+        )}
       </Paper>
 
       {/* Status Change Dialog */}

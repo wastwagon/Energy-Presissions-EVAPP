@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -24,6 +24,9 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Pagination,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -49,8 +52,15 @@ import {
 } from '../../utils/walletLedgerDisplay';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+
+const WALLET_TX_PAGE_SIZE = 20;
 
 export function WalletManagementPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
@@ -69,6 +79,9 @@ export function WalletManagementPage() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
+  const [loadingMoreTx, setLoadingMoreTx] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
@@ -96,19 +109,50 @@ export function WalletManagementPage() {
     }
   };
 
-  const loadUserTransactions = async (userId: number) => {
+  const fetchUserTxPage = useCallback(async (userId: number, pageNum: number, append: boolean) => {
+    const offset = (pageNum - 1) * WALLET_TX_PAGE_SIZE;
+    const { transactions, total } = await walletApi.getTransactions(userId, WALLET_TX_PAGE_SIZE, offset);
+    setWalletTransactions((prev) => (append ? [...prev, ...transactions] : transactions));
+    setTxTotal(total);
+    setTxPage(pageNum);
+  }, []);
+
+  const loadUserTransactions = useCallback(
+    async (userId: number) => {
+      try {
+        const funds = await walletApi.getAvailableBalance(userId);
+        setUserFunds(funds);
+        setTxPage(1);
+        await fetchUserTxPage(userId, 1, false);
+      } catch (err: unknown) {
+        console.error('Error loading wallet transactions:', err);
+        setUserFunds(null);
+        setWalletTransactions([]);
+        setTxTotal(0);
+      }
+    },
+    [fetchUserTxPage],
+  );
+
+  const handleLoadMoreTransactions = useCallback(async () => {
+    if (!selectedUser || loadingMoreTx || txPage * WALLET_TX_PAGE_SIZE >= txTotal) return;
+    setLoadingMoreTx(true);
     try {
-      const [{ transactions }, funds] = await Promise.all([
-        walletApi.getTransactions(userId, 20, 0),
-        walletApi.getAvailableBalance(userId),
-      ]);
-      setWalletTransactions(transactions);
-      setUserFunds(funds);
-    } catch (err: any) {
-      console.error('Error loading wallet transactions:', err);
-      setUserFunds(null);
+      await fetchUserTxPage(selectedUser.id, txPage + 1, true);
+    } catch (err: unknown) {
+      console.error('Error loading more wallet transactions:', err);
+    } finally {
+      setLoadingMoreTx(false);
     }
-  };
+  }, [fetchUserTxPage, loadingMoreTx, selectedUser, txPage, txTotal]);
+
+  const handleDesktopTxPageChange = useCallback(
+    async (_: unknown, value: number) => {
+      if (!selectedUser) return;
+      await fetchUserTxPage(selectedUser.id, value, false);
+    },
+    [fetchUserTxPage, selectedUser],
+  );
 
   const handleCreditDebt = async () => {
     if (!selectedUser || !amount || amount.trim() === '') {
@@ -297,7 +341,44 @@ export function WalletManagementPage() {
               />
             </Box>
 
-            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            {filteredUsers.length === 0 ? (
+              <Box sx={{ px: 2, pb: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                  {searchQuery ? 'No users found matching your search' : 'No users found'}
+                </Typography>
+              </Box>
+            ) : useGroupedList ? (
+              <Box sx={{ pb: 1 }}>
+                <GroupedListSection>
+                  {filteredUsers.map((user, index) => {
+                    const balance = user.balance ?? 0;
+                    const hasDebt = balance < 0;
+                    return (
+                      <GroupedListRow
+                        key={user.id}
+                        divider={index < filteredUsers.length - 1}
+                        primary={`${user.firstName} ${user.lastName}`.trim()}
+                        secondary={user.email}
+                        end={
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 700, color: hasDebt ? 'error.main' : 'success.main' }}
+                          >
+                            {formatCurrency(balance, user.currency)}
+                          </Typography>
+                        }
+                        onClick={() => {
+                          setSelectedUser(user);
+                          void loadUserTransactions(user.id);
+                        }}
+                        aria-label={`Select wallet for ${user.firstName} ${user.lastName}`}
+                      />
+                    );
+                  })}
+                </GroupedListSection>
+              </Box>
+            ) : (
+              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -308,73 +389,64 @@ export function WalletManagementPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredUsers.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} align="center">
-                          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                            {searchQuery ? 'No users found matching your search' : 'No users found'}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredUsers.map((user) => {
-                        const balance = user.balance ?? 0;
-                        const hasDebt = balance < 0;
-                        
-                        return (
-                          <TableRow
-                            key={user.id}
-                            hover
-                            selected={selectedUser?.id === user.id}
-                            onClick={() => {
-                              setSelectedUser(user);
-                              loadUserTransactions(user.id);
-                            }}
-                            sx={{ cursor: 'pointer' }}
-                            onKeyDown={handleUserRowKeyDown(user)}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Select wallet for ${user.firstName} ${user.lastName}`}
-                          >
-                            <TableCell>
-                              {user.firstName} {user.lastName}
-                            </TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                              <Typography
-                                variant="body2"
-                                color={hasDebt ? 'error.main' : 'success.main'}
-                                fontWeight="bold"
-                              >
-                                {formatCurrency(balance, user.currency)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                disableElevation
-                                startIcon={<AddIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedUser(user);
-                                  setAmount('');
-                                  setNote('');
-                                  setCreditDebtDialogOpen(true);
-                                }}
-                                sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
-                              >
-                                Credit / debt
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
+                    {filteredUsers.map((user) => {
+                      const balance = user.balance ?? 0;
+                      const hasDebt = balance < 0;
+
+                      return (
+                        <TableRow
+                          key={user.id}
+                          hover
+                          selected={selectedUser?.id === user.id}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            void loadUserTransactions(user.id);
+                          }}
+                          sx={{ cursor: 'pointer' }}
+                          onKeyDown={handleUserRowKeyDown(user)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Select wallet for ${user.firstName} ${user.lastName}`}
+                        >
+                          <TableCell>
+                            {user.firstName} {user.lastName}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Typography
+                              variant="body2"
+                              color={hasDebt ? 'error.main' : 'success.main'}
+                              fontWeight="bold"
+                            >
+                              {formatCurrency(balance, user.currency)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="primary"
+                              disableElevation
+                              startIcon={<AddIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUser(user);
+                                setAmount('');
+                                setNote('');
+                                setCreditDebtDialogOpen(true);
+                              }}
+                              sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
+                            >
+                              Credit / debt
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>
+            )}
           </Paper>
         </Grid>
 
@@ -453,51 +525,96 @@ export function WalletManagementPage() {
             )}
 
             {selectedUser ? (
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Balance</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {walletTransactions.map((tx) => (
-                        <TableRow key={tx.id}>
-                          <TableCell>
-                            {new Date(tx.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={formatWalletLedgerTypeLabel(tx.type)}
-                              color={getWalletTransactionTypeColor(tx.type)}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: walletLedgerAmountColor(tx.type) }}>
+              walletTransactions.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No transactions found
+                  </Typography>
+                </Box>
+              ) : useGroupedList ? (
+                <Box sx={{ py: 1 }}>
+                  <GroupedListSection>
+                    {walletTransactions.map((tx, index) => (
+                      <GroupedListRow
+                        key={tx.id}
+                        divider={index < walletTransactions.length - 1}
+                        showChevron={false}
+                        primary={formatWalletLedgerTypeLabel(tx.type)}
+                        secondary={new Date(tx.createdAt).toLocaleDateString()}
+                        end={
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600, color: walletLedgerAmountColor(tx.type) }}
+                            >
                               {formatWalletLedgerAmount(tx)}
                             </Typography>
-                          </TableCell>
-                          <TableCell>
-                            {formatCurrency(tx.balanceAfter, tx.currency)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {walletTransactions.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={4} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No transactions found
+                            <Typography variant="caption" color="text.secondary">
+                              {formatCurrency(tx.balanceAfter, tx.currency)}
                             </Typography>
-                          </TableCell>
+                          </Box>
+                        }
+                      />
+                    ))}
+                  </GroupedListSection>
+                  <MobileListLoadMore
+                    page={txPage}
+                    totalCount={txTotal}
+                    pageSize={WALLET_TX_PAGE_SIZE}
+                    loading={loadingMoreTx}
+                    onLoadMore={() => void handleLoadMoreTransactions()}
+                  />
+                </Box>
+              ) : (
+                <>
+                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Type</TableCell>
+                          <TableCell>Amount</TableCell>
+                          <TableCell>Balance</TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-              </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {walletTransactions.map((tx) => (
+                          <TableRow key={tx.id}>
+                            <TableCell>
+                              {new Date(tx.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={formatWalletLedgerTypeLabel(tx.type)}
+                                color={getWalletTransactionTypeColor(tx.type)}
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: walletLedgerAmountColor(tx.type) }}>
+                                {formatWalletLedgerAmount(tx)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              {formatCurrency(tx.balanceAfter, tx.currency)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  {txTotal > WALLET_TX_PAGE_SIZE && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                      <Pagination
+                        count={Math.ceil(txTotal / WALLET_TX_PAGE_SIZE)}
+                        page={txPage}
+                        onChange={(_, value) => void handleDesktopTxPageChange(_, value)}
+                        color="primary"
+                      />
+                    </Box>
+                  )}
+                </>
+              )
             ) : (
               <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4, px: 2 }}>
                 Select a user to view wallet transactions

@@ -92,13 +92,32 @@ Use when touching a screen after the design-system rollout.
 - [x] Ops/admin/superadmin **Sessions** list: `MobileListLoadMore` on mobile + `Pagination` on desktop for “All sessions” tab (20 per page).
 - [x] WebViewGold haptics setup notes: `frontend/docs/WEBVIEW_HAPTICS.md`.
 
+## Safe mobile polish — phase 6 (2026-05)
+
+- [x] **Admin payments** — grouped list + load more / desktop pagination.
+- [x] **Connection logs** — grouped list + load more / desktop pagination.
+- [x] **Users, vendors, wallets, devices, reservations, security logs** — grouped lists below `md`.
+- [x] **Wallet admin** — transaction load more + desktop pagination per selected user.
+- [x] **Billing invoices** tab — grouped list on mobile.
+- [x] **SuperAdmin settings** — inline edit fields without `size="small"` (16px on `xs`).
+
+## Safe mobile polish — phase 7 (2026-05)
+
+- [x] **Customer stack push** — `CustomerStackTransition` animates detail routes when `navBack` is active (`MainLayout` + `CustomerDashboardLayout`).
+- [x] **Billing** — invoices and sessions tabs: load more on mobile, pagination on desktop (20 per page).
+- [x] **Ops dashboard** — charge points grouped list on mobile.
+- [x] **Devices** — recent errors tab grouped list on mobile.
+
 ## Verification (manual)
 
 - [ ] Staff pages on phone width: search/filter inputs do not zoom on focus.
 - [ ] Admin/superadmin Sessions → All sessions: load more on phone, pagination on desktop.
 - [ ] WebViewGold: configure haptic bridge per `WEBVIEW_HAPTICS.md` (optional).
+- [ ] Admin payments, connection logs, wallet (selected user): load more on phone; pagination on desktop.
+- [ ] Users, vendors, devices, reservations: readable grouped rows on phone (no horizontal table scroll).
 
-- [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent.
+- [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent; light push-in animation on enter (reduced-motion off).
+- [ ] Billing tabs: load more on phone for invoices and sessions.
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).

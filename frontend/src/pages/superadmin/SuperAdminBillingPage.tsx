@@ -14,6 +14,7 @@ import {
   Tabs,
   Tab,
   Button,
+  Pagination,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -39,6 +40,9 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+
+const BILLING_PAGE_SIZE = 20;
 
 function TabPanel({ children, value, index }: { children: ReactNode; value: number; index: number }) {
   return (
@@ -62,6 +66,12 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<number | null>(null);
+  const [invPage, setInvPage] = useState(1);
+  const [invTotal, setInvTotal] = useState(0);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
+  const [loadingMoreInv, setLoadingMoreInv] = useState(false);
+  const [loadingMoreTx, setLoadingMoreTx] = useState(false);
 
   const transactionByOcppId = useMemo(() => {
     const map = new Map<number, Transaction>();
@@ -71,23 +81,58 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
     return map;
   }, [transactions]);
 
+  const fetchInvoicesPage = useCallback(async (pageNum: number, append: boolean) => {
+    const res = await billingApi.getInvoices(BILLING_PAGE_SIZE, (pageNum - 1) * BILLING_PAGE_SIZE);
+    setInvoices((prev) => (append ? [...prev, ...(res.invoices || [])] : res.invoices || []));
+    setInvTotal(res.total ?? 0);
+    setInvPage(pageNum);
+  }, []);
+
+  const fetchTransactionsPage = useCallback(async (pageNum: number, append: boolean) => {
+    const res = await transactionsApi.getAll(BILLING_PAGE_SIZE, (pageNum - 1) * BILLING_PAGE_SIZE);
+    setTransactions((prev) => (append ? [...prev, ...res.transactions] : res.transactions));
+    setTxTotal(res.total);
+    setTxPage(pageNum);
+  }, []);
+
   const load = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const [inv, tx] = await Promise.all([
-        billingApi.getInvoices(100, 0).catch(() => ({ invoices: [], total: 0 })),
-        transactionsApi.getAll(100, 0).catch(() => ({ transactions: [], total: 0 })),
-      ]);
-      setInvoices(inv.invoices || []);
-      setTransactions(tx.transactions || []);
+      await Promise.all([fetchInvoicesPage(1, false), fetchTransactionsPage(1, false)]);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } }; message?: string };
       setError(err.response?.data?.message || err.message || 'Failed to load billing data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchInvoicesPage, fetchTransactionsPage]);
+
+  const handleLoadMoreInvoices = useCallback(async () => {
+    if (loadingMoreInv || invPage * BILLING_PAGE_SIZE >= invTotal) return;
+    setLoadingMoreInv(true);
+    try {
+      await fetchInvoicesPage(invPage + 1, true);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || 'Failed to load more invoices');
+    } finally {
+      setLoadingMoreInv(false);
+    }
+  }, [fetchInvoicesPage, invPage, invTotal, loadingMoreInv]);
+
+  const handleLoadMoreTransactions = useCallback(async () => {
+    if (loadingMoreTx || txPage * BILLING_PAGE_SIZE >= txTotal) return;
+    setLoadingMoreTx(true);
+    try {
+      await fetchTransactionsPage(txPage + 1, true);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || 'Failed to load more sessions');
+    } finally {
+      setLoadingMoreTx(false);
+    }
+  }, [fetchTransactionsPage, loadingMoreTx, txPage, txTotal]);
 
   useEffect(() => {
     void load();
@@ -157,8 +202,8 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
             '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
           }}
         >
-          <Tab label={`Invoices (${invoices.length})`} />
-          <Tab label={`Sessions (${transactions.length})`} />
+          <Tab label={`Invoices (${invTotal})`} />
+          <Tab label={`Sessions (${txTotal})`} />
         </Tabs>
 
         <TabPanel value={tab} index={0}>
@@ -166,7 +211,42 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
             <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
               No invoices yet. Generate one from a completed session.
             </Typography>
+          ) : useGroupedList ? (
+            <>
+            <GroupedListSection>
+              {invoices.map((inv, index) => (
+                <GroupedListRow
+                  key={inv.id}
+                  divider={index < invoices.length - 1}
+                  showChevron={false}
+                  primary={inv.invoiceNumber}
+                  secondary={`User ${inv.userId} · ${new Date(inv.createdAt).toLocaleDateString()}`}
+                  end={
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(inv.total, inv.currency || 'GHS')}
+                      </Typography>
+                      <Chip
+                        label={inv.status}
+                        color={getInvoiceStatusColor(inv.status)}
+                        size="small"
+                        sx={{ mt: 0.5, height: 22, display: 'block', ml: 'auto' }}
+                      />
+                    </Box>
+                  }
+                />
+              ))}
+            </GroupedListSection>
+            <MobileListLoadMore
+              page={invPage}
+              totalCount={invTotal}
+              pageSize={BILLING_PAGE_SIZE}
+              loading={loadingMoreInv}
+              onLoadMore={() => void handleLoadMoreInvoices()}
+            />
+            </>
           ) : (
+            <>
             <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table size="small" stickyHeader>
                 <TableHead>
@@ -227,6 +307,17 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                 </TableBody>
               </Table>
             </TableContainer>
+            {invTotal > BILLING_PAGE_SIZE && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <Pagination
+                  count={Math.ceil(invTotal / BILLING_PAGE_SIZE)}
+                  page={invPage}
+                  onChange={(_, value) => void fetchInvoicesPage(value, false)}
+                  color="primary"
+                />
+              </Box>
+            )}
+            </>
           )}
         </TabPanel>
 
@@ -236,6 +327,7 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
               No transactions
             </Typography>
           ) : useGroupedList ? (
+            <>
             <GroupedListSection>
               {transactions.map((tx, index) => (
                 <GroupedListRow
@@ -271,7 +363,16 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                 />
               ))}
             </GroupedListSection>
+            <MobileListLoadMore
+              page={txPage}
+              totalCount={txTotal}
+              pageSize={BILLING_PAGE_SIZE}
+              loading={loadingMoreTx}
+              onLoadMore={() => void handleLoadMoreTransactions()}
+            />
+            </>
           ) : (
+            <>
             <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table size="small" stickyHeader>
                 <TableHead>
@@ -319,6 +420,17 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                 </TableBody>
               </Table>
             </TableContainer>
+            {txTotal > BILLING_PAGE_SIZE && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <Pagination
+                  count={Math.ceil(txTotal / BILLING_PAGE_SIZE)}
+                  page={txPage}
+                  onChange={(_, value) => void fetchTransactionsPage(value, false)}
+                  color="primary"
+                />
+              </Box>
+            )}
+            </>
           )}
         </TabPanel>
       </Paper>

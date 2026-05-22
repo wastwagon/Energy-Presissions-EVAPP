@@ -22,6 +22,8 @@ import {
   Tooltip,
   Grid,
   InputAdornment,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
@@ -45,8 +47,12 @@ import { formatCurrency } from '../../utils/formatters';
 import { getUserAccountStatusColor } from '../../utils/statusColors';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export function UserManagementPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,6 +315,41 @@ export function UserManagementPage() {
             All users ({filteredUsers.length})
           </Typography>
         </Box>
+        {filteredUsers.length === 0 ? (
+          <Box sx={{ py: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+            </Typography>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {filteredUsers.map((user, index) => (
+                <GroupedListRow
+                  key={user.id}
+                  divider={index < filteredUsers.length - 1}
+                  primary={`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email}
+                  secondary={user.email}
+                  end={
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(user.balance != null ? Number(user.balance) : 0, 'GHS')}
+                      </Typography>
+                      <Chip
+                        label={user.accountType}
+                        color={getAccountTypeColor(user.accountType) as 'default' | 'primary' | 'warning' | 'error'}
+                        size="small"
+                        sx={{ mt: 0.5, height: 22 }}
+                      />
+                    </Box>
+                  }
+                  onClick={() => handleEdit(user)}
+                  aria-label={`Edit user ${user.email}`}
+                />
+              ))}
+            </GroupedListSection>
+          </Box>
+        ) : (
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -325,16 +366,7 @@ export function UserManagementPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                      {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
+              {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.id}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -401,11 +433,11 @@ export function UserManagementPage() {
                       </Box>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
+        )}
       </Paper>
 
       {/* Create User Dialog */}

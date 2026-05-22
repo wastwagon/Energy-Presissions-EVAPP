@@ -21,6 +21,8 @@ import {
   Grid,
   Tooltip,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -49,8 +51,15 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+
+const CONNECTION_LOGS_PAGE_SIZE = 20;
 
 export function SuperAdminConnectionLogsPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [logs, setLogs] = useState<ConnectionLog[]>([]);
   const [statistics, setStatistics] = useState<ConnectionStatistics[]>([]);
   const [linkByChargePointId, setLinkByChargePointId] = useState<
@@ -64,7 +73,7 @@ export function SuperAdminConnectionLogsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
-  const limit = 50;
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const loadLinkSnapshot = useCallback(async () => {
     try {
@@ -75,61 +84,95 @@ export function SuperAdminConnectionLogsPage() {
     }
   }, []);
 
-  const loadData = async (silent?: boolean) => {
-    const isQuiet = silent === true;
-    try {
-      if (isQuiet) setRefreshing(true);
-      else setLoading(true);
-      setError(null);
-
+  const fetchLogsPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      const offset = (pageNum - 1) * CONNECTION_LOGS_PAGE_SIZE;
       let logsData;
       if (searchTerm && searchTerm.trim()) {
         try {
           logsData = await connectionLogsApi.getLogs(
             searchTerm.trim(),
             eventTypeFilter || undefined,
-            limit,
-            (page - 1) * limit,
+            CONNECTION_LOGS_PAGE_SIZE,
+            offset,
           );
         } catch {
           logsData = await connectionLogsApi.searchLogs(
             searchTerm.trim(),
-            limit,
-            (page - 1) * limit,
+            CONNECTION_LOGS_PAGE_SIZE,
+            offset,
           );
         }
       } else {
         logsData = await connectionLogsApi.getLogs(
           undefined,
           eventTypeFilter || undefined,
-          limit,
-          (page - 1) * limit,
+          CONNECTION_LOGS_PAGE_SIZE,
+          offset,
         );
       }
-
-      const [statsData] = await Promise.all([
-        connectionLogsApi.getAllStatistics(),
-        loadLinkSnapshot(),
-      ]);
-
-      setLogs(logsData.logs);
+      setLogs((prev) => (append ? [...prev, ...logsData.logs] : logsData.logs));
       setTotal(logsData.total);
-      setStatistics(statsData);
+      setPage(pageNum);
+      return logsData;
+    },
+    [eventTypeFilter, searchTerm],
+  );
+
+  const loadData = useCallback(
+    async (silent?: boolean) => {
+      const isQuiet = silent === true;
+      try {
+        if (isQuiet) setRefreshing(true);
+        else setLoading(true);
+        setError(null);
+
+        const [statsData] = await Promise.all([
+          connectionLogsApi.getAllStatistics(),
+          loadLinkSnapshot(),
+          fetchLogsPage(page, false),
+        ]);
+
+        setStatistics(statsData);
+        setUpdatedAt(Date.now());
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } }; message?: string };
+        const errorMessage = e.response?.data?.message || e.message || 'Failed to load connection logs';
+        setError(errorMessage);
+        console.error('Error loading connection logs:', err);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [fetchLogsPage, loadLinkSnapshot, page],
+  );
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || page * CONNECTION_LOGS_PAGE_SIZE >= total) return;
+    setLoadingMore(true);
+    try {
+      setError(null);
+      await fetchLogsPage(page + 1, true);
       setUpdatedAt(Date.now());
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } }; message?: string };
-      const errorMessage = e.response?.data?.message || e.message || 'Failed to load connection logs';
-      setError(errorMessage);
-      console.error('Error loading connection logs:', err);
+      setError(e.response?.data?.message || e.message || 'Failed to load more logs');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setLoadingMore(false);
     }
-  };
+  }, [fetchLogsPage, loadingMore, page, total]);
+
+  const handleDesktopPageChange = useCallback(
+    async (_: unknown, value: number) => {
+      setPage(value);
+    },
+    [],
+  );
 
   useEffect(() => {
     void loadData();
-  }, [page, eventTypeFilter]);
+  }, [page, eventTypeFilter, loadData]);
 
   const applyLinkRealtime = useCallback(
     (payload: Parameters<typeof mergeChargePointLinkUpdate>[1]) => {
@@ -302,7 +345,10 @@ export function SuperAdminConnectionLogsPage() {
               <Select
                 value={eventTypeFilter}
                 label="Event type"
-                onChange={(e) => setEventTypeFilter(e.target.value as ConnectionEventType | '')}
+                onChange={(e) => {
+                  setEventTypeFilter(e.target.value as ConnectionEventType | '');
+                  setPage(1);
+                }}
               >
                 <MenuItem value="">All events</MenuItem>
                 <MenuItem value="connection_attempt">Connection attempt</MenuItem>
@@ -315,30 +361,72 @@ export function SuperAdminConnectionLogsPage() {
             </FormControl>
           </Box>
         </Box>
-        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Timestamp</TableCell>
-                <TableCell>Charge Point</TableCell>
-                <TableCell>CSMS link</TableCell>
-                <TableCell>Event Type</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Error Code</TableCell>
-                <TableCell>IP Address</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logs.length === 0 ? (
+        {logs.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No connection logs found
+            </Typography>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {logs.map((log, index) => {
+                const link = resolveLogLink(log.chargePointId);
+                return (
+                  <GroupedListRow
+                    key={log.id}
+                    divider={index < logs.length - 1}
+                    showChevron={false}
+                    primary={log.chargePointId}
+                    secondary={`${log.eventType.replace(/_/g, ' ')} · ${new Date(log.createdAt).toLocaleString()}`}
+                    end={
+                      <Box sx={{ textAlign: 'right' }}>
+                        {log.status && (
+                          <Chip
+                            label={log.status}
+                            color={getConnectionStatusColor(log.status)}
+                            size="small"
+                            sx={{ mb: 0.5, height: 22 }}
+                          />
+                        )}
+                        {link?.linkStatus && (
+                          <Chip
+                            label={getLinkStatusLabel(link.linkStatus)}
+                            color={getLinkStatusChipColor(link.linkStatus)}
+                            size="small"
+                            sx={{ height: 22, display: 'block', ml: 'auto' }}
+                          />
+                        )}
+                      </Box>
+                    }
+                  />
+                );
+              })}
+            </GroupedListSection>
+            <MobileListLoadMore
+              page={page}
+              totalCount={total}
+              pageSize={CONNECTION_LOGS_PAGE_SIZE}
+              loading={loadingMore}
+              onLoadMore={() => void handleLoadMore()}
+            />
+          </Box>
+        ) : (
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No connection logs found
-                    </Typography>
-                  </TableCell>
+                  <TableCell>Timestamp</TableCell>
+                  <TableCell>Charge Point</TableCell>
+                  <TableCell>CSMS link</TableCell>
+                  <TableCell>Event Type</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Error Code</TableCell>
+                  <TableCell>IP Address</TableCell>
                 </TableRow>
-              ) : (
-                logs.map((log) => {
+              </TableHead>
+              <TableBody>
+                {logs.map((log) => {
                   const link = resolveLogLink(log.chargePointId);
                   return (
                     <TableRow key={log.id} hover>
@@ -385,19 +473,19 @@ export function SuperAdminConnectionLogsPage() {
                       <TableCell>{log.ipAddress || '-'}</TableCell>
                     </TableRow>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
 
-      {total > limit && (
+      {!useGroupedList && total > CONNECTION_LOGS_PAGE_SIZE && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
           <Pagination
-            count={Math.ceil(total / limit)}
+            count={Math.ceil(total / CONNECTION_LOGS_PAGE_SIZE)}
             page={page}
-            onChange={(_, value) => setPage(value)}
+            onChange={(_, value) => void handleDesktopPageChange(_, value)}
             color="primary"
           />
         </Box>

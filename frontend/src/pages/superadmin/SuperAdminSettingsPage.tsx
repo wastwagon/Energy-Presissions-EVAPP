@@ -378,7 +378,6 @@ function SuperAdminSettingsPage() {
                         <TableCell>
                           {editingSetting === setting.key ? (
                             <TextField
-                              size="small"
                               type={setting.dataType === 'number' ? 'number' : 'text'}
                               value={settingValue}
                               onChange={(e) => setSettingValue(e.target.value)}
@@ -463,7 +462,6 @@ function SuperAdminSettingsPage() {
                               />
                             ) : (
                               <TextField
-                                size="small"
                                 type={setting.dataType === 'number' ? 'number' : setting.key.includes('password') ? 'password' : 'text'}
                                 value={settingValue}
                                 onChange={(e) => setSettingValue(e.target.value)}
@@ -923,7 +921,6 @@ function SuperAdminSettingsPage() {
                         <TableCell>
                           {editingSetting === setting.key ? (
                             <TextField
-                              size="small"
                               type={setting.key.includes('key') || setting.key.includes('secret') ? 'password' : 'text'}
                               fullWidth
                               value={settingValue}

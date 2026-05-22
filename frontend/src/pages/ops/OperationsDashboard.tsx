@@ -18,6 +18,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
@@ -39,6 +41,8 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -46,6 +50,8 @@ import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 export function OperationsDashboard() {
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [chargePoints, setChargePoints] = useState<ChargePoint[]>([]);
   const [activeSessions, setActiveSessions] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -267,6 +273,33 @@ export function OperationsDashboard() {
             <Typography variant="body2" color="text.secondary">
               No charge points yet. They appear here after connecting and sending BootNotification.
             </Typography>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {chargePoints.map((cp, index) => (
+                <GroupedListRow
+                  key={cp.chargePointId}
+                  divider={index < chargePoints.length - 1}
+                  primary={cp.chargePointId}
+                  secondary={
+                    (cp.vendorName || cp.vendor) && cp.model
+                      ? `${cp.vendorName || cp.vendor} ${cp.model}`
+                      : cp.locationAddress || 'Unknown'
+                  }
+                  end={
+                    <Chip
+                      label={cp.status}
+                      color={getChargePointStatusColor(cp.status)}
+                      size="small"
+                      sx={{ height: 24 }}
+                    />
+                  }
+                  onClick={() => navigate(`${opsBase}/devices/${encodeURIComponent(cp.chargePointId)}`)}
+                  aria-label={`Open details for ${cp.chargePointId}`}
+                />
+              ))}
+            </GroupedListSection>
           </Box>
         ) : (
           <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>

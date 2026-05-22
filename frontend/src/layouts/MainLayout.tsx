@@ -34,6 +34,7 @@ import {
 import { customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
+import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
 import {
   clearSession,
@@ -341,7 +342,7 @@ function MainLayoutChrome() {
         >
           {isCustomer && isAuthenticated ? (
             <CustomerScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
-              <Outlet />
+              <CustomerStackTransition />
             </CustomerScrollProviders>
           ) : (
             <Outlet />

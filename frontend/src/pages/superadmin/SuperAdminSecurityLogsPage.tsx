@@ -11,20 +11,26 @@ import {
   TableRow,
   Alert,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export function SuperAdminSecurityLogsPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadLogs();
+    void loadLogs();
   }, []);
 
   const loadLogs = async () => {
@@ -33,8 +39,8 @@ export function SuperAdminSecurityLogsPage() {
       setError(null);
       const { logs: data } = await auditApi.getLogs(200, 0);
       setLogs(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load audit logs');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load audit logs');
     } finally {
       setLoading(false);
     }
@@ -43,6 +49,12 @@ export function SuperAdminSecurityLogsPage() {
   if (loading && logs.length === 0) {
     return <DashboardStaffChromeSkeleton preset="auditLogs" />;
   }
+
+  const formatDetails = (log: AuditLog) => {
+    if (!log.details) return '-';
+    const text = JSON.stringify(log.details);
+    return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  };
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
@@ -65,29 +77,44 @@ export function SuperAdminSecurityLogsPage() {
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Loading audit logs" />
-        <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Time</TableCell>
-                <TableCell>Action</TableCell>
-                <TableCell>User</TableCell>
-                <TableCell>Entity</TableCell>
-                <TableCell>Details</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logs.length === 0 ? (
+        {logs.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <SecurityIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              No audit logs yet. Logs will appear as users perform actions.
+            </Typography>
+          </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {logs.map((log, index) => (
+                <GroupedListRow
+                  key={log.id}
+                  divider={index < logs.length - 1}
+                  showChevron={false}
+                  primary={log.action}
+                  secondary={`${log.user?.email ?? (log.userId ? `User #${log.userId}` : 'System')} · ${new Date(log.createdAt).toLocaleString()}`}
+                  end={
+                    <Chip label={log.entityType || '—'} size="small" variant="outlined" sx={{ height: 22, maxWidth: 96 }} />
+                  }
+                />
+              ))}
+            </GroupedListSection>
+          </Box>
+        ) : (
+          <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    <SecurityIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      No audit logs yet. Logs will appear as users perform actions.
-                    </Typography>
-                  </TableCell>
+                  <TableCell>Time</TableCell>
+                  <TableCell>Action</TableCell>
+                  <TableCell>User</TableCell>
+                  <TableCell>Entity</TableCell>
+                  <TableCell>Details</TableCell>
                 </TableRow>
-              ) : (
-                logs.map((log) => (
+              </TableHead>
+              <TableBody>
+                {logs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
                     <TableCell>
@@ -99,15 +126,13 @@ export function SuperAdminSecurityLogsPage() {
                     <TableCell>
                       {log.entityType && log.entityId ? `${log.entityType} #${log.entityId}` : '-'}
                     </TableCell>
-                    <TableCell>
-                      {log.details ? JSON.stringify(log.details).slice(0, 80) + (JSON.stringify(log.details).length > 80 ? '...' : '') : '-'}
-                    </TableCell>
+                    <TableCell>{formatDetails(log)}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
     </Box>
   );

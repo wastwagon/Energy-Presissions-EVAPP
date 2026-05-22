@@ -29,6 +29,7 @@ import { jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme
 import { customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
+import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
@@ -312,7 +313,7 @@ function CustomerDashboardChrome() {
         >
           <Box {...fixedHeaderSpacerProps} />
           <CustomerScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
-            <Outlet />
+            <CustomerStackTransition />
           </CustomerScrollProviders>
         </Box>
         {showDockedBottomNav && (

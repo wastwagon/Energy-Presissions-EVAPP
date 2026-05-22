@@ -13,6 +13,8 @@ import {
   InputAdornment,
   IconButton,
   Typography,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -34,8 +36,12 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export function SuperAdminReservationsPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +142,34 @@ export function SuperAdminReservationsPage() {
           <Box sx={premiumEmptyStatePaperSx}>
             <Typography color="text.secondary">No active reservations</Typography>
           </Box>
+        ) : useGroupedList ? (
+          <Box sx={{ py: 1 }}>
+            <GroupedListSection>
+              {reservations.map((r, index) => {
+                const rid = (r as { reservationId?: number }).reservationId ?? r.id;
+                return (
+                  <GroupedListRow
+                    key={`${r.chargePointId}-${r.connectorId}-${rid}`}
+                    divider={index < reservations.length - 1}
+                    showChevron={false}
+                    primary={r.chargePointId}
+                    secondary={`Connector ${r.connectorId} · ${r.idTag}`}
+                    end={
+                      <IconButton
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                        color="error"
+                        onClick={() => void handleCancel(r)}
+                        disabled={cancellingId === rid}
+                        aria-label={`Cancel reservation ${rid} for ${r.chargePointId}`}
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    }
+                  />
+                );
+              })}
+            </GroupedListSection>
+          </Box>
         ) : (
           <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Table stickyHeader size="small">
@@ -150,7 +184,7 @@ export function SuperAdminReservationsPage() {
               </TableHead>
               <TableBody>
                 {reservations.map((r) => {
-                  const rid = (r as any).reservationId ?? r.id;
+                  const rid = (r as { reservationId?: number }).reservationId ?? r.id;
                   return (
                     <TableRow key={`${r.chargePointId}-${r.connectorId}-${rid}`}>
                       <TableCell>{r.chargePointId}</TableCell>
