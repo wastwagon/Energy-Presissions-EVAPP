@@ -121,6 +121,17 @@ Use when touching a screen after the design-system rollout.
 - [x] **SuperAdmin settings** — OCPP, notification, and Paystack tabs use `SettingsCategoryPanel`; tariffs tab grouped list on mobile (tap → edit dialog).
 - [x] **Devices connection logs dialog** — grouped event rows on mobile instead of wide table.
 
+## Optional polish — phase 10 (2026-05)
+
+- [x] **Customer stack pop** — `CustomerStackTransition` slides parent in from the left on history `POP` (push-in on forward unchanged).
+- [x] **Stations map sheet drag** — pointer drag on sheet handle resizes list; release snaps to peek / half / full (tap still cycles).
+- [x] **Staff ops detail AppBar back** — `useStaffNavBack` on charge point + transaction detail; inline Back hidden below `md`.
+
+## Out of scope (decided)
+
+- [x] **Dark mode** — not planned; app stays **light-only** (WebViewGold chrome, map sheet, auth/legal).
+- [ ] **Admin settings tables** — no key/value settings tables in admin portal today (`SettingsCategoryPanel` only needed if added).
+
 ## Verification (manual)
 
 See step-by-step scenarios in [`MOBILE_QA.md`](./MOBILE_QA.md).
@@ -131,11 +142,12 @@ See step-by-step scenarios in [`MOBILE_QA.md`](./MOBILE_QA.md).
 - [ ] Admin payments, connection logs, wallet (selected user): load more on phone; pagination on desktop.
 - [ ] Users, vendors, devices, reservations: readable grouped rows on phone (no horizontal table scroll).
 
-- [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent; light push-in animation on enter (reduced-motion off).
+- [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent; push-in on forward and pop-in on back (reduced-motion off).
+- [ ] Ops charge point / session detail: AppBar back on phone; no duplicate Back row below `md`.
 - [ ] Billing tabs: load more on phone for invoices and sessions.
 - [ ] Charge point detail: connector actions and session stop work on grouped rows.
 - [ ] Tariffs: tap row opens edit on phone.
-- [ ] Stations map: drag handle cycles sheet height (peek → half → full).
+- [ ] Stations map: drag handle cycles sheet height (peek → half → full); drag handle resizes sheet while held.
 - [ ] SuperAdmin settings: grouped OCPP/notification/Paystack rows + inline edit on phone; tariffs tap → edit.
 - [ ] Devices connection logs dialog: grouped events on phone.
 

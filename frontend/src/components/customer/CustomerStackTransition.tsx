@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import { useTheme, useMediaQuery } from '@mui/material';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomerPageChrome } from '../../contexts/CustomerPageChromeContext';
 import { usePrefersReducedMotion } from '../../utils/motionPreference';
 import { iosMotion } from '../../theme/iosMobileTokens';
@@ -17,17 +17,39 @@ export const customerStackPushInSx = {
   },
 };
 
+/** Pop animation when returning to a parent route (browser/history back). */
+export const customerStackPopInSx = {
+  '@keyframes customerStackPopIn': {
+    from: { opacity: 0, transform: 'translate3d(-14px, 0, 0)' },
+    to: { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+  },
+  animation: `customerStackPopIn ${iosMotion.expressive}ms cubic-bezier(0.32, 0.72, 0, 1) both`,
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+  },
+};
+
 /**
  * Wraps customer route outlet with a light push transition on phones when
  * `useCustomerNavBack` is active (detail / stack screens).
  */
 export function CustomerStackTransition() {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const chrome = useCustomerPageChrome();
   const reducedMotion = usePrefersReducedMotion();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  const animate = isMobile && !reducedMotion && Boolean(chrome?.navBack);
+  const isPop = navigationType === 'POP';
+  const isDetail = Boolean(chrome?.navBack);
+  const motionSx =
+    isMobile && !reducedMotion
+      ? isDetail && !isPop
+        ? customerStackPushInSx
+        : isPop && !isDetail
+          ? customerStackPopInSx
+          : {}
+      : {};
 
   return (
     <Box
@@ -35,7 +57,7 @@ export function CustomerStackTransition() {
       sx={{
         width: '100%',
         minWidth: 0,
-        ...(animate ? customerStackPushInSx : {}),
+        ...motionSx,
       }}
     >
       <Outlet />

@@ -13,7 +13,6 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -36,6 +35,8 @@ import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProp
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
+import { StaffPageChromeProvider } from '../contexts/StaffPageChromeContext';
+import { StaffToolbarLeading } from '../components/staff/StaffToolbarLeading';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -106,7 +107,10 @@ export function AdminDashboardLayout() {
     </Box>
   );
 
+  const navDrawerId = 'admin-staff-nav-drawer';
+
   return (
+    <StaffPageChromeProvider>
     <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
@@ -121,20 +125,11 @@ export function AdminDashboardLayout() {
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileOpen(true)}
-            sx={{
-              ...sxObject(theme, premiumIconButtonTouchSx),
-              mr: 2,
-              display: { sm: 'none' },
-              color: 'text.primary',
-            }}
-            aria-label="open menu"
-          >
-            <MenuIcon />
-          </IconButton>
+          <StaffToolbarLeading
+            navDrawerOpen={mobileOpen}
+            onOpenNavDrawer={() => setMobileOpen(true)}
+            navDrawerId={navDrawerId}
+          />
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
@@ -227,6 +222,7 @@ export function AdminDashboardLayout() {
           aria-label="navigation"
         >
           <Drawer
+            id={navDrawerId}
             variant="temporary"
             open={mobileOpen}
             onClose={() => setMobileOpen(false)}
@@ -274,6 +270,7 @@ export function AdminDashboardLayout() {
         </Box>
       </Box>
     </Box>
+    </StaffPageChromeProvider>
   );
 }
 

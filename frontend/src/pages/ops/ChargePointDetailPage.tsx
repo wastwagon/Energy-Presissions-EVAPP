@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -36,6 +36,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import HealingIcon from '@mui/icons-material/Healing';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { useStaffNavBack } from '../../hooks/useStaffNavBack';
 import { chargePointsApi, ChargePoint, Connector } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
@@ -89,6 +90,9 @@ export function ChargePointDetailPage() {
   const opsBase = useOpsBasePath();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
+  const showInlineStaffBack = useMediaQuery(theme.breakpoints.up('md'));
+  const goBackToDevices = useCallback(() => navigate(`${opsBase}/devices`), [navigate, opsBase]);
+  useStaffNavBack(goBackToDevices, 'Back to devices');
   const [chargePoint, setChargePoint] = useState<ChargePoint | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
@@ -393,13 +397,15 @@ export function ChargePointDetailPage() {
   if (!chargePoint) {
     return (
       <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(opsBase)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mb: 2, width: { xs: '100%', sm: 'auto' } })}
-        >
-          Back to dashboard
-        </Button>
+        {showInlineStaffBack ? (
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={goBackToDevices}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mb: 2, width: { xs: '100%', sm: 'auto' } })}
+          >
+            Back to devices
+          </Button>
+        ) : null}
         <Alert severity="error">Charge point not found</Alert>
       </Box>
     );
@@ -421,13 +427,15 @@ export function ChargePointDetailPage() {
         refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         actions={
           <>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate(opsBase)}
-              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-            >
-              Back
-            </Button>
+            {showInlineStaffBack ? (
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={goBackToDevices}
+                sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+              >
+                Back
+              </Button>
+            ) : null}
             <Tooltip title={getLinkStatusTooltip(chargePoint)}>
               <Chip
                 label={getLinkStatusLabel(chargePoint.linkStatus)}

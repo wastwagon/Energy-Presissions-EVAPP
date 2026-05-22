@@ -31,6 +31,7 @@ import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
 import { triggerHaptic } from '../utils/haptics';
 import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
 import { SheetDragHandle } from '../components/ios/SheetDragHandle';
+import { useMapSheetDragSnap } from '../hooks/useMapSheetDragSnap';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
 import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
@@ -47,19 +48,13 @@ import { formatApiOrNetworkError } from '../utils/apiErrors';
 /** Server-side search radius (km) when loading by GPS; not shown in the UI. */
 const NEARBY_LOAD_RADIUS_KM = 50;
 
-type MapSheetSnap = 'peek' | 'half' | 'full';
-
-const MAP_SHEET_HEIGHT: Record<MapSheetSnap, string> = {
-  peek: '28dvh',
-  half: '52dvh',
-  full: 'min(78dvh, 640px)',
-};
-
 export function StationsPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMapSheetMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [mapSheetSnap, setMapSheetSnap] = useState<MapSheetSnap>('half');
+  const { resolvedMaxHeight, isDragging, sheetDragHandleProps } = useMapSheetDragSnap({
+    initialSnap: 'half',
+  });
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
   const [mapFitToken, setMapFitToken] = useState(0);
@@ -106,11 +101,6 @@ export function StationsPage() {
   const bumpMapFit = useCallback(() => {
     setMapFitToken((n) => n + 1);
     setIgnoreViewportBoundsMoveEndsBefore(Date.now() + 1500);
-  }, []);
-
-  const cycleMapSheetSnap = useCallback(() => {
-    triggerHaptic('light');
-    setMapSheetSnap((s) => (s === 'peek' ? 'half' : s === 'half' ? 'full' : 'peek'));
   }, []);
 
   /** Nearest-first (same as former default “Distance” sort). */
@@ -483,18 +473,24 @@ export function StationsPage() {
               minHeight: 180,
               maxHeight:
                 isAuthenticated && isMapSheetMobile
-                  ? MAP_SHEET_HEIGHT[mapSheetSnap]
+                  ? resolvedMaxHeight
                   : { xs: 'none', sm: 'min(58dvh, 560px)' },
               overflow:
                 isAuthenticated && isMapSheetMobile ? 'auto' : { xs: 'visible', sm: 'auto' },
               WebkitOverflowScrolling: 'touch',
-              transition: 'max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+              transition: isDragging
+                ? 'none'
+                : 'max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
               ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
             }}
           >
             {isAuthenticated ? (
               <SheetDragHandle
-                onSnapToggle={isMapSheetMobile ? cycleMapSheetSnap : undefined}
+                onSnapToggle={isMapSheetMobile ? sheetDragHandleProps.onSnapToggle : undefined}
+                onPointerDown={isMapSheetMobile ? sheetDragHandleProps.onPointerDown : undefined}
+                onPointerMove={isMapSheetMobile ? sheetDragHandleProps.onPointerMove : undefined}
+                onPointerUp={isMapSheetMobile ? sheetDragHandleProps.onPointerUp : undefined}
+                onPointerCancel={isMapSheetMobile ? sheetDragHandleProps.onPointerCancel : undefined}
                 ariaLabel="Change stations list height"
               />
             ) : null}

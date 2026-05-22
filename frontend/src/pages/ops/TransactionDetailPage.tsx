@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -24,6 +24,7 @@ import PrintIcon from '@mui/icons-material/Print';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { useStaffNavBack } from '../../hooks/useStaffNavBack';
 import { transactionsApi, Transaction, MeterSample } from '../../services/transactionsApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { paymentsApi } from '../../services/paymentsApi';
@@ -65,6 +66,12 @@ export function TransactionDetailPage() {
   const opsBase = useOpsBasePath();
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+  const showInlineStaffBack = useMediaQuery(theme.breakpoints.up('md'));
+  const goBackToSessions = useCallback(
+    () => navigate(`${opsBase}/sessions`),
+    [navigate, opsBase],
+  );
+  useStaffNavBack(goBackToSessions, 'Back to sessions');
   const accountType = getStoredUser()?.accountType;
   const canManageInvoice = accountType === 'SuperAdmin' || accountType === 'Admin';
   const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -123,9 +130,11 @@ export function TransactionDetailPage() {
   if (!transaction) {
     return (
       <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${opsBase}/sessions`)} sx={{ mb: 2 }}>
-          Back to Sessions
-        </Button>
+        {showInlineStaffBack ? (
+          <Button startIcon={<ArrowBackIcon />} onClick={goBackToSessions} sx={{ mb: 2 }}>
+            Back to Sessions
+          </Button>
+        ) : null}
         <Alert severity="error">Transaction not found</Alert>
       </Box>
     );
@@ -147,13 +156,15 @@ export function TransactionDetailPage() {
         refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
         actions={
           <>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate(`${opsBase}/sessions`)}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
-            >
-              Back
-            </Button>
+            {showInlineStaffBack ? (
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={goBackToSessions}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                Back
+              </Button>
+            ) : null}
             <Chip
               label={sessionStatusLabel(transaction)}
               color={sessionStatusChipColor(sessionStatusLabel(transaction))}

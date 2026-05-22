@@ -21,7 +21,6 @@ import {
   DialogActions,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import MenuIcon from '@mui/icons-material/Menu';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -53,6 +52,8 @@ import {
 } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
+import { StaffPageChromeProvider } from '../contexts/StaffPageChromeContext';
+import { StaffToolbarLeading } from '../components/staff/StaffToolbarLeading';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -142,7 +143,10 @@ export function SuperAdminDashboardLayout() {
     </Box>
   );
 
+  const navDrawerId = 'superadmin-staff-nav-drawer';
+
   return (
+    <StaffPageChromeProvider>
     <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
@@ -157,20 +161,11 @@ export function SuperAdminDashboardLayout() {
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileOpen(true)}
-            sx={{
-              ...sxObject(theme, premiumIconButtonTouchSx),
-              mr: 2,
-              display: { sm: 'none' },
-              color: 'text.primary',
-            }}
-            aria-label="open menu"
-          >
-            <MenuIcon />
-          </IconButton>
+          <StaffToolbarLeading
+            navDrawerOpen={mobileOpen}
+            onOpenNavDrawer={() => setMobileOpen(true)}
+            navDrawerId={navDrawerId}
+          />
           <Box
             sx={{
               flexGrow: 1,
@@ -299,6 +294,7 @@ export function SuperAdminDashboardLayout() {
           aria-label="navigation"
         >
           <Drawer
+            id={navDrawerId}
             variant="temporary"
             open={mobileOpen}
             onClose={() => setMobileOpen(false)}
@@ -373,6 +369,7 @@ export function SuperAdminDashboardLayout() {
         </DialogActions>
       </Dialog>
     </Box>
+    </StaffPageChromeProvider>
   );
 }
 

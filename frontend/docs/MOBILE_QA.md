@@ -15,27 +15,26 @@ Run on **375–430px** width (or a real device). Check items off in `UI_MIGRATIO
 ## Customer
 
 8. **Transaction / station / top-up** detail: bottom tab bar **hidden**; AppBar **back** returns to parent.
-9. Enter detail with motion enabled: light **push-in** on enter; with `prefers-reduced-motion: reduce`, no push animation.
-10. **Billing** invoices and sessions: load more on phone.
-11. **Stations map** (`xs`): tap sheet drag handle — height cycles **peek → half → full**.
-12. **Pull-to-refresh** on wallet, history, stations (top of scroll). With reduced motion, PTR should not run.
+9. Enter detail with motion enabled: light **push-in** on forward; **pop-in** when AppBar back returns to parent; with `prefers-reduced-motion: reduce`, no animation.
+10. **Admin/superadmin ops** charge point or session detail: AppBar **back** on phone; no duplicate Back button in page header below `md`.
+11. **Billing** invoices and sessions: load more on phone.
+12. **Stations map** (`xs`): drag sheet handle up/down — list resizes; release snaps; tap still cycles **peek → half → full**.
+13. **Pull-to-refresh** on wallet, history, stations (top of scroll). With reduced motion, PTR should not run.
 
 ## Cross-cutting
 
-13. Skip link → `#main-content` lands in main content.
-14. Frosted AppBar + customer bottom nav over scrolling content.
-15. Large-title customer page: scroll until compact title appears in AppBar.
-16. List taps give **light haptic** where WebViewGold bridge is configured (`WEBVIEW_HAPTICS.md`).
-17. Auth/legal pages: SF stack typography; light chrome on login and legal routes.
+14. Skip link → `#main-content` lands in main content.
+15. Frosted AppBar + customer bottom nav over scrolling content.
+16. Large-title customer page: scroll until compact title appears in AppBar.
+17. List taps give **light haptic** where WebViewGold bridge is configured (`WEBVIEW_HAPTICS.md`).
+18. Auth/legal pages: SF stack typography; light chrome on login and legal routes.
 
 ## WebViewGold smoke
 
-18. Build wrapped app; open customer home, stations map, wallet, one staff route if applicable.
-19. Safe areas: bottom nav and notched devices — no content under home indicator.
+19. Build wrapped app; open customer home, stations map, wallet, one staff route if applicable.
+20. Safe areas: bottom nav and notched devices — no content under home indicator.
 
-## Not in this gate (optional / later)
+## Out of scope
 
-- Dark mode theme
-- Finger-drag map sheet (only tap-to-cycle snap today)
+- **Dark mode** — light shell only by product decision.
 - Native haptics without WebViewGold config
-- Customer **pop** animation on back (push-in on enter only)

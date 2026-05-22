@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import type { PointerEvent } from 'react';
 import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import type { Theme } from '@mui/material/styles';
 
@@ -15,10 +16,21 @@ type SheetDragHandleProps = {
   /** When set, the handle is a button that cycles sheet height (e.g. map list on mobile). */
   onSnapToggle?: () => void;
   ariaLabel?: string;
+  onPointerDown?: (e: PointerEvent<HTMLButtonElement>) => void;
+  onPointerMove?: (e: PointerEvent<HTMLButtonElement>) => void;
+  onPointerUp?: (e: PointerEvent<HTMLButtonElement>) => void;
+  onPointerCancel?: (e: PointerEvent<HTMLButtonElement>) => void;
 };
 
 /** iOS-style grab handle for bottom sheets and map panels. */
-export function SheetDragHandle({ onSnapToggle, ariaLabel = 'Adjust panel height' }: SheetDragHandleProps) {
+export function SheetDragHandle({
+  onSnapToggle,
+  ariaLabel = 'Adjust panel height',
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+}: SheetDragHandleProps) {
   const handle = <Box sx={handleSx} aria-hidden />;
 
   if (!onSnapToggle) {
@@ -34,7 +46,12 @@ export function SheetDragHandle({ onSnapToggle, ariaLabel = 'Adjust panel height
       component="button"
       type="button"
       onClick={onSnapToggle}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       aria-label={ariaLabel}
+      style={{ touchAction: 'none' }}
       sx={(th: Theme) => ({
         ...sxObject(th, premiumIconButtonTouchSx),
         display: 'flex',
