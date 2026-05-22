@@ -441,6 +441,7 @@ export function StationsPage() {
         updatedAt={null}
         refreshing={listRefreshing}
         onRefresh={() => void refreshStations()}
+        showToolbarRefreshOnMobile
         titleVariant="large"
         containerSx={{ mb: 2 }}
         refreshSx={{ width: { xs: '100%', sm: 'auto' } }}

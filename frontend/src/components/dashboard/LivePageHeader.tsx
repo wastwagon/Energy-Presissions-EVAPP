@@ -18,6 +18,8 @@ interface LivePageHeaderProps {
   refreshing: boolean;
   onRefresh: () => void;
   refreshDisabled?: boolean;
+  /** Keep the Refresh button visible on phone widths even when pull-to-refresh is registered. */
+  showToolbarRefreshOnMobile?: boolean;
   titleSx?: SxProps<Theme>;
   subtitleSx?: SxProps<Theme>;
   containerSx?: SxProps<Theme>;
@@ -34,6 +36,7 @@ export function LivePageHeader({
   refreshing,
   onRefresh,
   refreshDisabled = false,
+  showToolbarRefreshOnMobile = false,
   titleVariant = 'compact',
   titleSx,
   subtitleSx,
@@ -47,7 +50,10 @@ export function LivePageHeader({
   const pullRefresh = useCustomerPullRefreshContext();
   const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
   const hideToolbarRefresh =
-    isMobile && Boolean(pullRefresh?.hasRefreshHandler) && !refreshDisabled;
+    isMobile &&
+    Boolean(pullRefresh?.hasRefreshHandler) &&
+    !refreshDisabled &&
+    !showToolbarRefreshOnMobile;
 
   const titleSentinelRef = useCallback(
     (node: HTMLElement | null) => {
