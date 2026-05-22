@@ -14,8 +14,6 @@ import {
   Collapse,
   InputLabel,
   Link,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
@@ -56,10 +54,8 @@ const STATIONS_MAP_PANEL_ID = 'stations-map-panel';
 
 export function StationsPage() {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isNarrow = useMediaQuery(theme.breakpoints.down('sm'));
   const mapSectionRef = useRef<HTMLDivElement>(null);
-  const [mapExpanded, setMapExpanded] = useState(() => !isNarrow);
+  const [mapExpanded, setMapExpanded] = useState(false);
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
   const [mapFitToken, setMapFitToken] = useState(0);
@@ -277,14 +273,6 @@ export function StationsPage() {
     },
     [closeDetailsDialog, navigate],
   );
-
-  useEffect(() => {
-    if (isNarrow) {
-      setMapExpanded(false);
-    } else {
-      setMapExpanded(true);
-    }
-  }, [isNarrow]);
 
   useEffect(() => {
     if (!mapSelectionId) return;
@@ -557,7 +545,7 @@ export function StationsPage() {
           <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2, mb: 0 }}>
             <Typography variant="body2" color="text.secondary" align="center" component="div">
               {userLocation
-                ? 'No stations found for this area. Try a different search or pan the map below.'
+                ? 'No stations found for this area. Try a different search or show the map to explore.'
                 : 'Enable location or search by area or station ID.'}
             </Typography>
             {userLocation && (
@@ -643,14 +631,15 @@ export function StationsPage() {
         </Box>
       </Paper>
 
-      <Box
-        ref={mapSectionRef}
-        component="section"
-        id={STATIONS_MAP_PANEL_ID}
-        aria-labelledby="stations-map-heading"
-        aria-describedby={STATIONS_MAP_HINT_ID}
-        sx={{ mb: 2 }}
-      >
+      <Collapse in={mapExpanded}>
+        <Box
+          ref={mapSectionRef}
+          component="section"
+          id={STATIONS_MAP_PANEL_ID}
+          aria-labelledby="stations-map-heading"
+          aria-describedby={STATIONS_MAP_HINT_ID}
+          sx={{ mb: 2 }}
+        >
         <Box
           sx={{
             display: 'flex',
@@ -669,7 +658,6 @@ export function StationsPage() {
             above to select a charger.
           </Typography>
         </Box>
-        <Collapse in={mapExpanded}>
         <Box
           role="application"
           aria-label="Map of nearby charging stations"
@@ -722,8 +710,8 @@ export function StationsPage() {
             viewportSearchEnabled={stations.length > 0 && !searchTerm.trim()}
           />
         </Box>
-        </Collapse>
-      </Box>
+        </Box>
+      </Collapse>
 
       {/* Start Charging Dialog */}
       <StartChargingDialog
