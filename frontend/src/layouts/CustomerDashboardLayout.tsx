@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -9,8 +9,8 @@ import {
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
-  Button,
   Divider,
+  Container,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -18,26 +18,30 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import HelpIcon from '@mui/icons-material/Help';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { BottomNav, isBottomNavItemActive } from '../components/BottomNav';
+import { BottomNav } from '../components/BottomNav';
 import { customerBottomNavItems } from '../config/menu.config';
+import { CustomerDesktopNavCards } from '../components/customer/CustomerDesktopNavCards';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
 import { CustomerToolbarLeading } from '../components/customer/CustomerToolbarLeading';
-import { jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
+import {
+  jampackAppBarSafeAreaTopSx,
+  jampackFixedAppBarMainGapSx,
+  jampackFixedAppBarZIndexSx,
+} from '../theme/jampackShell';
 import { customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
-import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
+import { dashboardViewportColumnSx } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
 function CustomerDashboardChrome() {
   const navigate = useNavigate();
-  const location = useLocation();
   const theme = useTheme();
   const pageChrome = useCustomerPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
@@ -51,6 +55,7 @@ function CustomerDashboardChrome() {
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const open = Boolean(anchorEl);
   const isCustomer = isCustomerOrWalkInAccount(user);
+  const showCustomerDesktopNav = !showBottomNav && isCustomer;
 
   useEffect(() => {
     const userData = getStoredUser();
@@ -114,58 +119,7 @@ function CustomerDashboardChrome() {
             showCompactNavTitle={showCompactNavTitle}
             navDrawerId="customer-app-nav-drawer"
           />
-          <Box
-            component="nav"
-            aria-label="Primary"
-            sx={{
-              flex: 1,
-              display: { xs: 'none', lg: 'flex' },
-              alignItems: 'center',
-              gap: 0.25,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              minWidth: 0,
-              py: 0.5,
-              mr: 1,
-              WebkitOverflowScrolling: 'touch',
-              '&::-webkit-scrollbar': { height: 4 },
-            }}
-          >
-            {customerBottomNavItems.map((item) => {
-              const active = isBottomNavItemActive(location.pathname, item);
-              return (
-                <Button
-                  key={item.id}
-                  color="inherit"
-                  onClick={() => navigate(item.path)}
-                  startIcon={item.icon}
-                  aria-current={active ? 'page' : undefined}
-                  sx={{
-                    flexShrink: 0,
-                    minHeight: 44,
-                    px: { lg: 1.25, xl: 1.5 },
-                    py: 0.75,
-                    color: active ? 'primary.main' : 'text.secondary',
-                    fontWeight: active ? 600 : 500,
-                    fontSize: { lg: '0.8125rem', xl: '0.875rem' },
-                    borderRadius: 1,
-                    borderBottom: '2px solid',
-                    borderColor: active ? 'primary.main' : 'transparent',
-                    '& .MuiButton-startIcon': { mr: 0.75 },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              );
-            })}
-          </Box>
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: { xs: 'flex', lg: 'none' },
-              minWidth: 0,
-            }}
-          />
+          <Box sx={{ flexGrow: 1, minWidth: 0 }} />
           <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
               sx={{
@@ -293,6 +247,19 @@ function CustomerDashboardChrome() {
       {showBottomNav && isCustomer && (
         <CustomerAppNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
       )}
+      <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+      {showCustomerDesktopNav && (
+        <Container
+          maxWidth="lg"
+          sx={{
+            flexShrink: 0,
+            px: { xs: 2, sm: 3 },
+            width: '100%',
+          }}
+        >
+          <CustomerDesktopNavCards items={customerBottomNavItems} />
+        </Container>
+      )}
       <Box
         sx={{
           flex: 1,
@@ -302,20 +269,29 @@ function CustomerDashboardChrome() {
           width: '100%',
         }}
       >
-        <Box
+        <Container
           component="main"
           id={APP_MAIN_CONTENT_ID}
           tabIndex={-1}
+          maxWidth="lg"
           sx={{
-            ...dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showDockedBottomNav }),
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorY: 'contain',
+            overflowX: 'hidden',
+            mt: { xs: 1, sm: 2 },
+            px: { xs: 2, sm: 3 },
+            pb: showDockedBottomNav ? 2 : 4,
+            width: '100%',
             minWidth: 0,
           }}
         >
-          <Box {...fixedHeaderSpacerProps} />
           <CustomerScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
             <CustomerStackTransition />
           </CustomerScrollProviders>
-        </Box>
+        </Container>
         {showDockedBottomNav && (
           <BottomNav items={customerBottomNavItems} variant="customer" />
         )}
