@@ -65,6 +65,15 @@ Use when touching a screen after the design-system rollout.
 - [x] Profile compact header row; Help FAQ 44px tap rows.
 - [x] `apple-mobile-web-app-capable` + `apple-touch-icon` in `index.html`.
 
+## Safe mobile polish — phase 2 (2026-05)
+
+- [x] SuperAdmin app bar menu rows use `premiumMenuItemSx` (44px).
+- [x] Staff drawer `MenuItem` rows use `iosGroupedListRowSx`; hover slide only on fine pointers.
+- [x] `GroupedExpandableRow` for Help FAQ (replaces MUI Accordion).
+- [x] Wallet mobile list: `MobileListLoadMore` for ledger history.
+- [x] Top-up screen: `useCustomerNavBack` → wallet.
+- [x] Transaction detail: hide redundant “Back to history” row when AppBar back is shown (`md` down).
+
 ## Verification (manual)
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.

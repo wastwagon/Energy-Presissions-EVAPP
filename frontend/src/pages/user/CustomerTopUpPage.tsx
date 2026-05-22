@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useCustomerNavBack } from '../../hooks/useCustomerNavBack';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -66,6 +67,9 @@ export function CustomerTopUpPage() {
   }, [loadBalance]);
 
   useCustomerPullRefresh(useCallback(() => void loadBalance(true), [loadBalance]));
+
+  const goBack = useCallback(() => navigate(CUSTOMER_ROUTES.wallet), [navigate]);
+  useCustomerNavBack(goBack, 'Back to wallet');
 
   const handleQuickAmount = (value: number) => {
     triggerHaptic('light');

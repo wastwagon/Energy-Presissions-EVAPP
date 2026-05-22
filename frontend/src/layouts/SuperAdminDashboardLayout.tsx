@@ -47,6 +47,7 @@ import {
   compactOutlinedCtaSx,
   premiumDialogPaperSx,
   premiumIconButtonTouchSx,
+  premiumMenuItemSx,
   premiumMenuPaperSx,
   sxObject,
 } from '../styles/authShell';
@@ -270,12 +271,12 @@ export function SuperAdminDashboardLayout() {
                   handleMenuClose();
                   navigate(SUPERADMIN_ROUTES.dashboard);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Dashboard</Typography>
               </MuiMenuItem>
-              <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+              <MuiMenuItem onClick={handleLogout} sx={premiumMenuItemSx}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Logout</Typography>
               </MuiMenuItem>

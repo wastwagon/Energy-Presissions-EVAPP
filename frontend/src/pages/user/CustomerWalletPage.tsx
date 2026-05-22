@@ -41,6 +41,9 @@ import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { triggerHaptic } from '../../utils/haptics';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+
+const WALLET_TX_PAGE_SIZE = 20;
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -49,34 +52,65 @@ export function CustomerWalletPage() {
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [funds, setFunds] = useState<{ available: number; reserved: number; total: number; currency: string } | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
+  const [loadingMoreTx, setLoadingMoreTx] = useState(false);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
 
-  const loadWalletData = useCallback(async (silent?: boolean) => {
-    await runWithRefresh(async () => {
-      try {
-        setError(null);
-        const user = getStoredUser();
-        if (typeof user?.id !== 'number') {
-          setError('User not logged in');
+  const fetchTransactionsPage = useCallback(async (userId: number, pageNum: number, append: boolean) => {
+    const offset = (pageNum - 1) * WALLET_TX_PAGE_SIZE;
+    const transactionsData = await walletApi.getTransactions(userId, WALLET_TX_PAGE_SIZE, offset);
+    setTransactions((prev) =>
+      append ? [...prev, ...transactionsData.transactions] : transactionsData.transactions,
+    );
+    setTxTotal(transactionsData.total);
+    setTxPage(pageNum);
+  }, []);
+
+  const loadWalletData = useCallback(
+    async (silent?: boolean) => {
+      await runWithRefresh(async () => {
+        try {
+          setError(null);
+          const user = getStoredUser();
+          if (typeof user?.id !== 'number') {
+            setError('User not logged in');
+            return false;
+          }
+          const [balanceData, availableData] = await Promise.all([
+            walletApi.getBalance(user.id),
+            walletApi.getAvailableBalance(user.id),
+          ]);
+          setBalance(balanceData);
+          setFunds(availableData);
+          await fetchTransactionsPage(user.id, 1, false);
+          return true;
+        } catch (err: any) {
+          setError(err.message || 'Failed to load wallet data');
+          console.error('Error loading wallet data:', err);
           return false;
         }
-        const [balanceData, availableData, transactionsData] = await Promise.all([
-          walletApi.getBalance(user.id),
-          walletApi.getAvailableBalance(user.id),
-          walletApi.getTransactions(user.id, 20, 0),
-        ]);
-        setBalance(balanceData);
-        setFunds(availableData);
-        setTransactions(transactionsData.transactions);
-        return true;
-      } catch (err: any) {
-        setError(err.message || 'Failed to load wallet data');
-        console.error('Error loading wallet data:', err);
-        return false;
-      }
-    }, silent);
-  }, [runWithRefresh]);
+      }, silent);
+    },
+    [fetchTransactionsPage, runWithRefresh],
+  );
+
+  const handleLoadMoreTransactions = useCallback(async () => {
+    const user = getStoredUser();
+    if (typeof user?.id !== 'number' || loadingMoreTx || txPage * WALLET_TX_PAGE_SIZE >= txTotal) {
+      return;
+    }
+    setLoadingMoreTx(true);
+    try {
+      setError(null);
+      await fetchTransactionsPage(user.id, txPage + 1, true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load more transactions');
+    } finally {
+      setLoadingMoreTx(false);
+    }
+  }, [fetchTransactionsPage, loadingMoreTx, txPage, txTotal]);
 
   useEffect(() => {
     void loadWalletData();
@@ -244,6 +278,13 @@ export function CustomerWalletPage() {
               ))}
             </GroupedListSection>
           )}
+          <MobileListLoadMore
+            page={txPage}
+            totalCount={txTotal}
+            pageSize={WALLET_TX_PAGE_SIZE}
+            loading={loadingMoreTx}
+            onLoadMore={() => void handleLoadMoreTransactions()}
+          />
         </Box>
       ) : (
         <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>

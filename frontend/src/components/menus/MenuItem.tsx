@@ -15,6 +15,7 @@ import { MenuItem as MenuItemType } from '../../config/menu.config';
 import { getStoredAccountType } from '../../utils/authSession';
 import { getRoleAccentColor } from '../../utils/roleTheme';
 import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
+import { iosGroupedListRowSx } from '../../theme/iosGroupedList';
 
 interface MenuItemProps {
   item: MenuItemType;
@@ -58,10 +59,10 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
             disabled
             sx={{
               ...sxObject(theme, premiumIconButtonTouchSx),
+              ...sxObject(theme, iosGroupedListRowSx),
               borderRadius: '12px',
-              py: 1.5,
               px: 2.5,
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             <ListItemIcon
@@ -107,19 +108,18 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
       onClick={onClick}
       sx={{
         ...sxObject(theme, premiumIconButtonTouchSx),
+        ...sxObject(theme, iosGroupedListRowSx),
         position: 'relative',
         borderRadius: '8px',
-        py: 1,
         px: 2,
         mb: 0.25,
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-selected': {
           backgroundColor: alpha(primaryColor, 0.12),
           color: primaryColor,
           fontWeight: 600,
           '&:hover': {
             backgroundColor: alpha(primaryColor, 0.16),
-            transform: 'none',
           },
           '&::before': {
             content: '""',
@@ -136,15 +136,17 @@ export function MenuItem({ item, onClick, themeColor }: MenuItemProps) {
             color: primaryColor,
           },
         },
-        '&:hover': {
-          backgroundColor: alpha(primaryColor, 0.08),
-          transform: 'translateX(5px)',
-          '& .MuiListItemIcon-root': {
-            color: primaryColor,
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover': {
+            backgroundColor: alpha(primaryColor, 0.08),
+            transform: 'translateX(4px)',
+            '& .MuiListItemIcon-root': {
+              color: primaryColor,
+            },
           },
         },
         '&:active': {
-          transform: 'translateX(1px) scale(0.98)',
+          backgroundColor: alpha(primaryColor, 0.1),
         },
       }}
     >

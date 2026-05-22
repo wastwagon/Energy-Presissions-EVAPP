@@ -1,11 +1,4 @@
-import {
-  Box,
-  Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Box, Typography } from '@mui/material';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -15,9 +8,8 @@ import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../l
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { GroupedExpandableRow } from '../../components/ios/GroupedExpandableRow';
 import { authPageBodySx } from '../../styles/authShell';
-import { iosFontStacks } from '../../theme/iosMobileTokens';
-import { triggerHaptic } from '../../utils/haptics';
 
 const faqs = [
   {
@@ -91,44 +83,11 @@ export function CustomerHelpPage() {
         />
       </GroupedListSection>
 
-      <GroupedListSection title="FAQ" paperSx={{ p: 0, overflow: 'hidden' }}>
+      <GroupedListSection title="FAQ">
         {faqs.map((faq, idx) => (
-          <Accordion
-            key={faq.q}
-            disableGutters
-            elevation={0}
-            onChange={() => triggerHaptic('light')}
-            sx={{
-              '&:before': { display: 'none' },
-              bgcolor: 'transparent',
-              borderBottom: idx < faqs.length - 1 ? '1px solid' : 'none',
-              borderColor: idx < faqs.length - 1 ? 'divider' : undefined,
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              sx={{
-                minHeight: 44,
-                px: 2,
-                '&.Mui-expanded': { minHeight: 44 },
-                '& .MuiAccordionSummary-content': { my: 1 },
-                '& .MuiAccordionSummary-content.Mui-expanded': { my: 1 },
-              }}
-            >
-              <Typography
-                fontWeight={500}
-                variant="body1"
-                sx={{ fontFamily: iosFontStacks.ui, letterSpacing: '-0.01em', fontSize: '1rem' }}
-              >
-                {faq.q}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: 2, pt: 0, pb: 2 }}>
-              <Typography component="p" sx={authPageBodySx}>
-                {faq.a}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
+          <GroupedExpandableRow key={faq.q} primary={faq.q} divider={idx < faqs.length - 1}>
+            {faq.a}
+          </GroupedExpandableRow>
         ))}
       </GroupedListSection>
 

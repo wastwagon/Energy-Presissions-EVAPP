@@ -199,11 +199,13 @@ export function CustomerTransactionDetailPage() {
               onClick={() => navigate(`${CUSTOMER_ROUTES.stations}/${transaction.chargePointId}`)}
               divider
             />
-            <GroupedListRow
-              primary="Back to history"
-              onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
-              showChevron={false}
-            />
+            {!isCompact && (
+              <GroupedListRow
+                primary="Back to history"
+                onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
+                showChevron={false}
+              />
+            )}
           </GroupedListSection>
         </>
       ) : (
