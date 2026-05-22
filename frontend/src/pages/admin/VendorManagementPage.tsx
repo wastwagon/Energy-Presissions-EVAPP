@@ -323,21 +323,27 @@ export function VendorManagementPage() {
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Domain</TableCell>
+                <TableCell>Vendor</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Contact Email</TableCell>
                 <TableCell>Created</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {vendors.map((vendor) => (
                   <TableRow key={vendor.id}>
-                    <TableCell>{vendor.id}</TableCell>
-                    <TableCell>{vendor.name}</TableCell>
-                    <TableCell>{vendor.domain || '-'}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {vendor.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {vendor.contactEmail || 'No contact email'}
+                        {vendor.domain ? ` · ${vendor.domain}` : ''}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        ID {vendor.id}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={vendor.status}
@@ -345,12 +351,11 @@ export function VendorManagementPage() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{vendor.contactEmail || '-'}</TableCell>
                     <TableCell>
                       {new Date(vendor.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <Tooltip title="Login as vendor">
                           <IconButton
                             onClick={() => handleLoginAsVendor(vendor)}

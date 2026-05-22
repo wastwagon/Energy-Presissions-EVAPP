@@ -6,6 +6,7 @@ import { customerLargeSubtitleSx, customerLargeTitleSx } from '../../theme/custo
 import { dashboardPageSubtitleSx, dashboardPageTitleSx } from '../../theme/jampackShell';
 import { useCustomerPageChrome } from '../../contexts/CustomerPageChromeContext';
 import { useCustomerPullRefreshContext } from '../../contexts/CustomerPullRefreshContext';
+import { useStaffPageChrome } from '../../contexts/StaffPageChromeContext';
 
 interface LivePageHeaderProps {
   title: string;
@@ -46,7 +47,9 @@ export function LivePageHeader({
 }: LivePageHeaderProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const chrome = useCustomerPageChrome();
+  const customerChrome = useCustomerPageChrome();
+  const staffChrome = useStaffPageChrome();
+  const chrome = customerChrome ?? staffChrome;
   const pullRefresh = useCustomerPullRefreshContext();
   const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
   const hideToolbarRefresh =

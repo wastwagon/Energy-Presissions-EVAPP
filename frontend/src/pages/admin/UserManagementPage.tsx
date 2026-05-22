@@ -354,39 +354,41 @@ export function UserManagementPage() {
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>User</TableCell>
                 <TableCell>Phone</TableCell>
-                <TableCell>Account Type</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell>Account</TableCell>
                 <TableCell>Balance</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      {user.firstName} {user.lastName}
+                      <Typography variant="body2" fontWeight={600}>
+                        {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.email}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {user.email}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        ID {user.id} · joined {new Date(user.createdAt).toLocaleDateString()}
+                      </Typography>
                     </TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
+                    <TableCell>{user.phone || '—'}</TableCell>
                     <TableCell>
-                      <Chip
-                        label={user.accountType}
-                        color={getAccountTypeColor(user.accountType) as any}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.status}
-                        color={getUserAccountStatusColor(user.status)}
-                        size="small"
-                      />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
+                        <Chip
+                          label={user.accountType}
+                          color={getAccountTypeColor(user.accountType) as any}
+                          size="small"
+                        />
+                        <Chip
+                          label={user.status}
+                          color={getUserAccountStatusColor(user.status)}
+                          size="small"
+                        />
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {formatCurrency(
@@ -394,10 +396,7 @@ export function UserManagementPage() {
                         'GHS',
                       )}
                     </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell align="right">
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
                         <Tooltip title="Change role">
                           <IconButton

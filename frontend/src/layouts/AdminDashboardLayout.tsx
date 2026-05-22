@@ -26,26 +26,32 @@ import { clearSession, getStoredUser } from '../utils/authSession';
 import {
   JAMPACK_DRAWER_WIDTH,
   JAMPACK_PAGE_BG,
-  jampackAppBarSx,
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarZIndexSx,
   jampackDrawerPaper,
 } from '../theme/jampackShell';
+import { staffFrostedAppBarSx } from '../theme/staffChrome';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
-import { StaffPageChromeProvider } from '../contexts/StaffPageChromeContext';
+import { StaffPageChromeProvider, useStaffPageChrome } from '../contexts/StaffPageChromeContext';
 import { StaffToolbarLeading } from '../components/staff/StaffToolbarLeading';
+import { StaffScrollProviders } from '../components/staff/StaffScrollProviders';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
-export function AdminDashboardLayout() {
+function AdminDashboardChrome() {
   const location = useLocation();
   const navigate = useNavigate();
   const portalSubtitle = location.pathname.startsWith('/vendor') ? 'Vendor Portal' : 'Admin Portal';
   const theme = useTheme();
+  const pageChrome = useStaffPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('sm'));
+  const showDockedBottomNav = showBottomNav && !pageChrome?.navBack;
+  const showCompactNavTitle = Boolean(
+    showBottomNav && pageChrome?.showCompactNavTitle && pageChrome.pageTitle,
+  );
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -110,7 +116,6 @@ export function AdminDashboardLayout() {
   const navDrawerId = 'admin-staff-nav-drawer';
 
   return (
-    <StaffPageChromeProvider>
     <Box sx={dashboardViewportColumnSx}>
       <SkipToMain />
       <AppBar
@@ -121,7 +126,8 @@ export function AdminDashboardLayout() {
           ml: { sm: `${drawerWidth}px` },
           ...jampackFixedAppBarZIndexSx,
           ...jampackAppBarSafeAreaTopSx,
-          ...jampackAppBarSx,
+          ...staffFrostedAppBarSx,
+          color: 'text.primary',
         }}
       >
         <Toolbar sx={{ px: { xs: 2, sm: 3 }, minHeight: '64px !important' }}>
@@ -129,6 +135,8 @@ export function AdminDashboardLayout() {
             navDrawerOpen={mobileOpen}
             onOpenNavDrawer={() => setMobileOpen(true)}
             navDrawerId={navDrawerId}
+            showPhoneChrome={showBottomNav}
+            showCompactNavTitle={showCompactNavTitle}
           />
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ flexGrow: 0, ml: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -259,17 +267,26 @@ export function AdminDashboardLayout() {
             component="main"
             id={APP_MAIN_CONTENT_ID}
             tabIndex={-1}
-            sx={dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showBottomNav })}
+            sx={dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showDockedBottomNav })}
           >
-            <Box {...fixedHeaderSpacerProps} />
-            <Outlet />
+            <StaffScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
+              <Box {...fixedHeaderSpacerProps} />
+              <Outlet />
+            </StaffScrollProviders>
           </Box>
-          {showBottomNav && (
+          {showDockedBottomNav && (
             <BottomNav items={staffMobileNavItems} accentColor={brandColors.secondary} />
           )}
         </Box>
       </Box>
     </Box>
+  );
+}
+
+export function AdminDashboardLayout() {
+  return (
+    <StaffPageChromeProvider>
+      <AdminDashboardChrome />
     </StaffPageChromeProvider>
   );
 }

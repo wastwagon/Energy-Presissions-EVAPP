@@ -7,7 +7,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { LivePageHeader } from './LivePageHeader';
@@ -31,6 +32,8 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
     useCallback(() => void loadStats(true), [loadStats]),
     variant === 'superadmin' ? 'superadmin' : 'admin'
   );
+
+  useStaffPullRefresh(useCallback(() => void loadStats(false), [loadStats]));
 
   const createKeyboardNavHandler =
     (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -60,8 +63,10 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
         refreshing={refreshing}
         refreshDisabled={loading}
         onRefresh={() => void loadStats(false)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
         refreshSx={(th) => ({
           ...sxObject(th, compactOutlinedCtaSx),
           width: { xs: '100%', sm: 'auto' },

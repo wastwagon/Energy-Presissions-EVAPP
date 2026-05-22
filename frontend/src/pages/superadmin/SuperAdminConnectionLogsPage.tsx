@@ -50,6 +50,8 @@ import {
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
@@ -148,6 +150,8 @@ export function SuperAdminConnectionLogsPage() {
     [fetchLogsPage, loadLinkSnapshot, page],
   );
 
+  useStaffPullRefresh(useCallback(() => void loadData(true), [loadData]));
+
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || page * CONNECTION_LOGS_PAGE_SIZE >= total) return;
     setLoadingMore(true);
@@ -225,6 +229,10 @@ export function SuperAdminConnectionLogsPage() {
         showSeconds
         refreshing={refreshing}
         onRefresh={() => void loadData(true)}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
         containerSx={{ mb: 3 }}
       />
 
@@ -416,13 +424,10 @@ export function SuperAdminConnectionLogsPage() {
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>Timestamp</TableCell>
-                  <TableCell>Charge Point</TableCell>
-                  <TableCell>CSMS link</TableCell>
-                  <TableCell>Event Type</TableCell>
+                  <TableCell>Event</TableCell>
+                  <TableCell>Device</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Error Code</TableCell>
-                  <TableCell>IP Address</TableCell>
+                  <TableCell>Details</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -430,9 +435,21 @@ export function SuperAdminConnectionLogsPage() {
                   const link = resolveLogLink(log.chargePointId);
                   return (
                     <TableRow key={log.id} hover>
-                      <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
-                      <TableCell>{log.chargePointId}</TableCell>
                       <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {new Date(log.createdAt).toLocaleString()}
+                        </Typography>
+                        <Chip
+                          label={log.eventType.replace(/_/g, ' ')}
+                          color={getConnectionEventColor(log.eventType)}
+                          size="small"
+                          sx={{ mt: 0.5, height: 22 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {log.chargePointId}
+                        </Typography>
                         {link?.linkStatus ? (
                           <Tooltip
                             title={
@@ -445,32 +462,34 @@ export function SuperAdminConnectionLogsPage() {
                               label={getLinkStatusLabel(link.linkStatus)}
                               color={getLinkStatusChipColor(link.linkStatus)}
                               size="small"
+                              sx={{ mt: 0.5, height: 22 }}
                             />
                           </Tooltip>
                         ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            —
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            Link unknown
                           </Typography>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={log.eventType.replace(/_/g, ' ')}
-                          color={getConnectionEventColor(log.eventType)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {log.status && (
+                        {log.status ? (
                           <Chip
                             label={log.status}
                             color={getConnectionStatusColor(log.status)}
                             size="small"
                           />
+                        ) : (
+                          '—'
                         )}
                       </TableCell>
-                      <TableCell>{log.errorCode || '-'}</TableCell>
-                      <TableCell>{log.ipAddress || '-'}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{log.errorCode || '—'}</Typography>
+                        {log.ipAddress ? (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            {log.ipAddress}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

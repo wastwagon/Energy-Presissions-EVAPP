@@ -127,6 +127,19 @@ Use when touching a screen after the design-system rollout.
 - [x] **Stations map sheet drag** — pointer drag on sheet handle resizes list; release snaps to peek / half / full (tap still cycles).
 - [x] **Staff ops detail AppBar back** — `useStaffNavBack` on charge point + transaction detail; inline Back hidden below `md`.
 
+## Staff dashboards — Apple chrome & tables (2026-05)
+
+See rollout plan: [`STAFF_DASHBOARD_UI_PLAN.md`](./STAFF_DASHBOARD_UI_PLAN.md).
+
+- [x] **Staff frosted AppBar** — `staffFrostedAppBarSx` on admin + superadmin layouts.
+- [x] **Staff home large title** — `StaffDashboardHomeView` uses `titleVariant="large"` + mobile Refresh.
+- [x] **Devices desktop table** — 5 columns (device, connection, OCPP, location, actions); shared `DevicesPage`.
+- [x] **Users desktop table** — consolidated user + account columns.
+- [x] **Payments / vendors / connection logs desktop tables** — consolidated columns on `md+`.
+- [x] **Vendor settings grouped layout** — iOS section cards + `LivePageHeader`.
+- [x] **Staff large-title AppBar scroll** — `StaffPageChrome` + compact title in `StaffToolbarLeading`.
+- [x] **Staff pull-to-refresh** — `StaffScrollProviders` on admin / superadmin layouts.
+
 ## Stations page — list-first layout (2026-05)
 
 - [x] **List before map** — search + station cards first; map section below for spatial context (Uber/Bolt-style).

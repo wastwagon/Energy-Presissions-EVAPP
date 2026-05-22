@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -33,7 +33,7 @@ import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { DashboardStatTile } from '../../components/dashboard/DashboardStatTile';
 import { DashboardOperationsSkeleton } from '../../components/dashboard/DashboardOperationsSkeleton';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   compactOutlinedCtaSx,
   compactWarningContainedCtaSx,
@@ -44,6 +44,8 @@ import { getChargePointStatusColor } from '../../utils/statusColors';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 
@@ -154,6 +156,12 @@ export function OperationsDashboard() {
     }
   };
 
+  const refreshOperations = useCallback(() => {
+    void loadData(true);
+  }, []);
+
+  useStaffPullRefresh(refreshOperations);
+
   const availableCount = chargePoints.filter((cp) => cp.status === 'Available').length;
   const offlineCount = chargePoints.filter((cp) => cp.status === 'Offline').length;
 
@@ -170,14 +178,11 @@ export function OperationsDashboard() {
         liveLabel={LIVE_DATA_LABELS.operations}
         showSeconds
         refreshing={refreshing}
-        onRefresh={() => void loadData(true)}
-        titleSx={{
-          ...dashboardPageTitleSx,
-          minWidth: 0,
-          flex: '1 1 200px',
-          mb: 0,
-        }}
-        subtitleSx={dashboardPageSubtitleSx}
+        onRefresh={refreshOperations}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
         containerSx={{ mb: 0.5 }}
         refreshSx={(th) => ({
           ...sxObject(th, compactOutlinedCtaSx),

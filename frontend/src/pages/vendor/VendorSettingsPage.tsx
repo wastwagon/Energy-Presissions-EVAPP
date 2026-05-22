@@ -1,21 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Grid,
   TextField,
   Button,
   Alert,
   Paper,
-  Divider,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import BusinessIcon from '@mui/icons-material/Business';
-import ReceiptIcon from '@mui/icons-material/Receipt';
 import { vendorApi } from '../../services/vendorApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx } from '../../theme/jampackShell';
+import { iosGroupedPaperSx, iosGroupedSectionHeaderSx } from '../../theme/iosGroupedList';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
@@ -29,6 +27,30 @@ import {
 } from '../../utils/authSession';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+
+function VendorSettingsSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Box component="section" sx={{ mb: 2.5 }}>
+      <Typography component="h2" variant="caption" sx={iosGroupedSectionHeaderSx}>
+        {title}
+      </Typography>
+      <Paper
+        elevation={0}
+        sx={{
+          ...iosGroupedPaperSx,
+          p: { xs: 2, sm: 2.25 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+        }}
+      >
+        {children}
+      </Paper>
+    </Box>
+  );
+}
 
 export function VendorSettingsPage() {
   const navigate = useNavigate();
@@ -40,8 +62,7 @@ export function VendorSettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [, setVendor] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
-  
-  // Check session + role on mount.
+
   useEffect(() => {
     if (!hasValidSession()) {
       navigate('/login', { replace: true });
@@ -58,8 +79,7 @@ export function VendorSettingsPage() {
       navigate(getDashboardPathForAccountType(accountType), { replace: true });
     }
   }, [navigate]);
-  
-  // Get current vendor ID from impersonation context or current user.
+
   const getCurrentVendorId = (): number | null => {
     const stored = localStorage.getItem('currentVendorId');
     if (stored) {
@@ -87,12 +107,6 @@ export function VendorSettingsPage() {
     receiptFooterText: '',
     logoUrl: '',
   });
-
-  useEffect(() => {
-    if (user) {
-      loadVendor();
-    }
-  }, [user]);
 
   const loadVendor = async () => {
     try {
@@ -128,6 +142,14 @@ export function VendorSettingsPage() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      void loadVendor();
+    }
+  }, [user]);
+
+  useStaffPullRefresh(useCallback(() => void loadVendor(), [user]));
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -140,7 +162,7 @@ export function VendorSettingsPage() {
       await vendorApi.update(vendorId, formData);
       setSuccess('Vendor settings saved successfully');
       setTimeout(() => setSuccess(null), 3000);
-      loadVendor(); // Reload to get updated data
+      void loadVendor();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to save settings');
     } finally {
@@ -176,31 +198,41 @@ export function VendorSettingsPage() {
   }
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: 'relative', minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <TableSurfaceProgress active={loading && initialLoadDone} ariaLabel="Loading vendor settings" />
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Vendor Settings
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage business identity, branding assets, and receipt details.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-          disabled={saving}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </Box>
+
+      <LivePageHeader
+        title="Vendor settings"
+        subtitle="Business identity, branding, and receipt copy for your chargers."
+        updatedAt={null}
+        refreshing={saving}
+        refreshDisabled={loading}
+        onRefresh={() => void loadVendor()}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
+        containerSx={{ mb: 2 }}
+        refreshSx={(th) => ({
+          ...sxObject(th, compactOutlinedCtaSx),
+          width: { xs: '100%', sm: 'auto' },
+        })}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<SaveIcon />}
+            onClick={() => void handleSave()}
+            disabled={saving || loading}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -214,218 +246,166 @@ export function VendorSettingsPage() {
         </Alert>
       )}
 
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {/* Business Information */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <BusinessIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">Business Information</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
+      <VendorSettingsSection title="Business">
+        <TextField
+          fullWidth
+          label="Vendor name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Business name (receipts)"
+          value={formData.businessName}
+          onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+          helperText="Official name printed on customer receipts"
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Business registration number"
+          value={formData.businessRegistrationNumber}
+          onChange={(e) => setFormData({ ...formData, businessRegistrationNumber: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Tax ID"
+          value={formData.taxId}
+          onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Address"
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          multiline
+          rows={3}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </VendorSettingsSection>
 
-            <TextField
-              fullWidth
-              label="Vendor Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              margin="normal"
-              required
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
+      <VendorSettingsSection title="Contact & support">
+        <TextField
+          fullWidth
+          label="Contact email"
+          type="email"
+          value={formData.contactEmail}
+          onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Contact phone"
+          value={formData.contactPhone}
+          onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Support email"
+          type="email"
+          value={formData.supportEmail}
+          onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
+          helperText="Shown on receipts for customer support"
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Support phone"
+          value={formData.supportPhone}
+          onChange={(e) => setFormData({ ...formData, supportPhone: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Website URL"
+          value={formData.websiteUrl}
+          onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </VendorSettingsSection>
 
-            <TextField
-              fullWidth
-              label="Business Name (for receipts)"
-              value={formData.businessName}
-              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-              margin="normal"
-              helperText="Official business name displayed on receipts"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
+      <VendorSettingsSection title="Branding">
+        <Box>
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="logo-upload"
+            type="file"
+            onChange={handleLogoUpload}
+          />
+          <label htmlFor="logo-upload">
+            <Button
+              variant="outlined"
+              component="span"
+              startIcon={<CloudUploadIcon />}
+              disabled={logoUploading}
+              sx={(th) => ({
+                ...sxObject(th, compactOutlinedCtaSx),
+                width: { xs: '100%', sm: 'auto' },
+              })}
+            >
+              {logoUploading ? 'Uploading…' : 'Upload logo'}
+            </Button>
+          </label>
+        </Box>
+        {formData.logoUrl ? (
+          <Box
+            component="img"
+            src={formData.logoUrl}
+            alt="Vendor logo"
+            sx={{ mt: 1, maxWidth: 200, maxHeight: 100, objectFit: 'contain', borderRadius: 1 }}
+          />
+        ) : null}
+        <TextField
+          fullWidth
+          label="Logo URL"
+          value={formData.logoUrl}
+          onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+          helperText="Upload to object storage or paste an external image URL"
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </VendorSettingsSection>
 
-            <TextField
-              fullWidth
-              label="Business Registration Number"
-              value={formData.businessRegistrationNumber}
-              onChange={(e) => setFormData({ ...formData, businessRegistrationNumber: e.target.value })}
-              margin="normal"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
+      <VendorSettingsSection title="Receipts">
+        <TextField
+          fullWidth
+          label="Receipt header"
+          value={formData.receiptHeaderText}
+          onChange={(e) => setFormData({ ...formData, receiptHeaderText: e.target.value })}
+          multiline
+          rows={2}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+        <TextField
+          fullWidth
+          label="Receipt footer"
+          value={formData.receiptFooterText}
+          onChange={(e) => setFormData({ ...formData, receiptFooterText: e.target.value })}
+          multiline
+          rows={3}
+          helperText="Support or legal text at the bottom of receipts"
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </VendorSettingsSection>
 
-            <TextField
-              fullWidth
-              label="Tax ID"
-              value={formData.taxId}
-              onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-              margin="normal"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              margin="normal"
-              multiline
-              rows={3}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Paper>
-        </Grid>
-
-        {/* Contact Information */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <BusinessIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">Contact Information</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-
-            <TextField
-              fullWidth
-              label="Contact Email"
-              type="email"
-              value={formData.contactEmail}
-              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-              margin="normal"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Contact Phone"
-              value={formData.contactPhone}
-              onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-              margin="normal"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Support Email"
-              type="email"
-              value={formData.supportEmail}
-              onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
-              margin="normal"
-              helperText="Email displayed on receipts for customer support"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Support Phone"
-              value={formData.supportPhone}
-              onChange={(e) => setFormData({ ...formData, supportPhone: e.target.value })}
-              margin="normal"
-              helperText="Phone number displayed on receipts"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Website URL"
-              value={formData.websiteUrl}
-              onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-              margin="normal"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Paper>
-        </Grid>
-
-        {/* Branding & Logo */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <CloudUploadIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">Branding & Logo</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-
-            <Box sx={{ mb: 2 }}>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="logo-upload"
-                type="file"
-                onChange={handleLogoUpload}
-              />
-              <label htmlFor="logo-upload">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUploadIcon />}
-                  disabled={logoUploading}
-                  sx={(th) => ({
-                    ...sxObject(th, compactOutlinedCtaSx),
-                    width: { xs: '100%', sm: 'auto' },
-                  })}
-                >
-                  {logoUploading ? 'Uploading…' : 'Upload Logo'}
-                </Button>
-              </label>
-            </Box>
-
-            {formData.logoUrl && (
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <img
-                  src={formData.logoUrl}
-                  alt="Logo"
-                  style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
-                />
-              </Box>
-            )}
-
-            <TextField
-              fullWidth
-              label="Logo URL"
-              value={formData.logoUrl}
-              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-              margin="normal"
-              helperText="Upload stores the file in your configured object storage; you can also paste an external image URL."
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Paper>
-        </Grid>
-
-        {/* Receipt Customization */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <ReceiptIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">Receipt Customization</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-
-            <TextField
-              fullWidth
-              label="Receipt Header Text"
-              value={formData.receiptHeaderText}
-              onChange={(e) => setFormData({ ...formData, receiptHeaderText: e.target.value })}
-              margin="normal"
-              multiline
-              rows={2}
-              helperText="Text displayed at the top of receipts"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-
-            <TextField
-              fullWidth
-              label="Receipt Footer Text"
-              value={formData.receiptFooterText}
-              onChange={(e) => setFormData({ ...formData, receiptFooterText: e.target.value })}
-              margin="normal"
-              multiline
-              rows={3}
-              helperText="Text displayed at the bottom of receipts (e.g., support contact info)"
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Paper>
-        </Grid>
-      </Grid>
+      <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 }, display: { xs: 'block', sm: 'none' } }}>
+        <Button
+          variant="contained"
+          disableElevation
+          fullWidth
+          startIcon={<SaveIcon />}
+          onClick={() => void handleSave()}
+          disabled={saving || loading}
+          sx={(th) => sxObject(th, compactContainedCtaSx)}
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
+      </Paper>
     </Box>
   );
 }
-

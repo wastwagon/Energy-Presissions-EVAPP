@@ -32,6 +32,8 @@ import {
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -303,8 +305,10 @@ export function SessionsPage() {
         showSeconds
         refreshing={refreshing}
         onRefresh={() => void loadTransactions(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
         containerSx={{ mb: 2 }}
       />
 

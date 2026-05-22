@@ -40,7 +40,7 @@ import HealingIcon from '@mui/icons-material/Healing';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   staffFilterFieldSx,
@@ -67,6 +67,8 @@ import {
   useChargePointLinkRealtime,
 } from '../../hooks/useChargePointLinkRealtime';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import {
@@ -346,6 +348,12 @@ export function DevicesPage() {
     }
   };
 
+  const refreshDevicesPage = useCallback(() => {
+    void loadChargePoints(true);
+  }, [searchTerm]);
+
+  useStaffPullRefresh(refreshDevicesPage);
+
   const loadRecentErrors = async () => {
     try {
       const errors = await connectionLogsApi.getRecentErrors(10);
@@ -431,9 +439,11 @@ export function DevicesPage() {
         liveLabel={LIVE_DATA_LABELS.devices}
         showSeconds
         refreshing={refreshing}
-        onRefresh={() => void loadChargePoints(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        onRefresh={refreshDevicesPage}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
         containerSx={{ mb: 3 }}
         refreshSx={(th) => ({
           ...sxObject(th, compactOutlinedCtaSx),
@@ -654,17 +664,11 @@ export function DevicesPage() {
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Charge Point ID</TableCell>
-                    <TableCell>Vendor</TableCell>
-                    <TableCell>Model</TableCell>
-                    <TableCell>Serial Number</TableCell>
-                    <TableCell>Firmware</TableCell>
-                    <TableCell>CSMS link</TableCell>
-                    <TableCell>OCPP status</TableCell>
-                    <TableCell>Last heartbeat</TableCell>
-                    <TableCell>Location / map</TableCell>
-                    <TableCell>Actions</TableCell>
+                    <TableCell>Device</TableCell>
+                    <TableCell>Connection</TableCell>
+                    <TableCell>OCPP</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -695,48 +699,51 @@ export function DevicesPage() {
                         }}
                       >
                         <TableCell>
-                          <Tooltip title={inventoryTypeTooltip(cp)}>
-                            {isReal ? (
-                              <CheckCircleIcon color="success" fontSize="small" />
-                            ) : (
-                              <WarningIcon color="warning" fontSize="small" />
-                            )}
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" fontWeight="medium">
-                              {cp.chargePointId}
-                            </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
+                            <Tooltip title={inventoryTypeTooltip(cp)}>
+                              <Box component="span" sx={{ mt: 0.25, flexShrink: 0 }}>
+                                {isReal ? (
+                                  <CheckCircleIcon color="success" fontSize="small" />
+                                ) : (
+                                  <WarningIcon color="warning" fontSize="small" />
+                                )}
+                              </Box>
+                            </Tooltip>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography variant="body2" fontWeight={600} noWrap>
+                                {cp.chargePointId}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                {[cp.vendorName || cp.vendor || 'No vendor', cp.model, cp.serialNumber]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                                {cp.firmwareVersion ? ` · FW ${cp.firmwareVersion}` : ''}
+                              </Typography>
+                            </Box>
                           </Box>
                         </TableCell>
                         <TableCell>
-                          {cp.vendorName || cp.vendor || (
-                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                              No vendor
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>{cp.model || '-'}</TableCell>
-                        <TableCell>
-                          {cp.serialNumber || (
-                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                              No serial
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>{cp.firmwareVersion || '-'}</TableCell>
-                        <TableCell>
                           <Tooltip title={getLinkStatusTooltip(cp)}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
                               <Chip
                                 label={getLinkStatusLabel(cp.linkStatus)}
                                 color={getLinkStatusChipColor(cp.linkStatus)}
                                 size="small"
                               />
-                              <Typography variant="caption" color="text.secondary">
-                                {formatSecondsSinceHeartbeat(cp.secondsSinceHeartbeat ?? null)}
-                              </Typography>
+                              {cp.lastHeartbeat ? (
+                                <Tooltip title={new Date(cp.lastHeartbeat).toLocaleString()}>
+                                  <Typography
+                                    variant="caption"
+                                    color={cp.heartbeatStale ? 'warning.main' : 'text.secondary'}
+                                  >
+                                    {formatSecondsSinceHeartbeat(cp.secondsSinceHeartbeat ?? null)}
+                                  </Typography>
+                                </Tooltip>
+                              ) : (
+                                <Typography variant="caption" color="text.secondary" fontStyle="italic">
+                                  No heartbeat
+                                </Typography>
+                              )}
                             </Box>
                           </Tooltip>
                         </TableCell>
@@ -746,22 +753,6 @@ export function DevicesPage() {
                             color={getChargePointStatusColor(cp.status)}
                             size="small"
                           />
-                        </TableCell>
-                        <TableCell>
-                          {cp.lastHeartbeat ? (
-                            <Tooltip title={new Date(cp.lastHeartbeat).toLocaleString()}>
-                              <Typography
-                                variant="body2"
-                                color={cp.heartbeatStale ? 'warning.main' : 'text.primary'}
-                              >
-                                {new Date(cp.lastHeartbeat).toLocaleString()}
-                              </Typography>
-                            </Tooltip>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                              Never
-                            </Typography>
-                          )}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
@@ -779,8 +770,8 @@ export function DevicesPage() {
                             />
                           </Box>
                         </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                        <TableCell align="right">
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
                             <Tooltip title="View details">
                               <IconButton
                                 onClick={() =>

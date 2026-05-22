@@ -23,7 +23,10 @@ import { paymentsApi, Payment } from '../../services/paymentsApi';
 import { getStoredAccountType } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffFilterFieldSx, sxObject } from '../../styles/authShell';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
@@ -115,6 +118,8 @@ export function AdminPaymentsPage() {
     void loadPayments();
   }, [loadPayments]);
 
+  useStaffPullRefresh(loadPayments);
+
   const filteredPayments = payments.filter(
     (payment) =>
       payment.id.toString().includes(searchTerm) ||
@@ -139,14 +144,19 @@ export function AdminPaymentsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-          Payment management
-        </Typography>
-        <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-          View and manage payment transactions
-        </Typography>
-      </Box>
+      <LivePageHeader
+        title="Payments"
+        subtitle="View and manage payment transactions"
+        updatedAt={null}
+        refreshing={loading && payments.length > 0}
+        refreshDisabled={loading && payments.length === 0}
+        onRefresh={() => void loadPayments()}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
+        showToolbarRefreshOnMobile
+        containerSx={{ mb: 2 }}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -214,12 +224,10 @@ export function AdminPaymentsPage() {
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>Payment ID</TableCell>
-                  <TableCell>Transaction ID</TableCell>
-                  <TableCell>User ID</TableCell>
+                  <TableCell>Payment</TableCell>
+                  <TableCell>User</TableCell>
                   <TableCell>Amount</TableCell>
                   <TableCell>Method</TableCell>
-                  <TableCell>Gateway</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Date</TableCell>
                 </TableRow>
@@ -227,16 +235,30 @@ export function AdminPaymentsPage() {
               <TableBody>
                 {filteredPayments.map((payment) => (
                   <TableRow key={payment.id} hover>
-                    <TableCell>#{payment.id}</TableCell>
-                    <TableCell>{payment.transactionId || '-'}</TableCell>
-                    <TableCell>{payment.userId}</TableCell>
                     <TableCell>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        #{payment.id}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {payment.transactionId ? `Txn ${payment.transactionId}` : 'No linked transaction'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">User {payment.userId}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {formatCurrency(payment.amount, payment.currency)}
                       </Typography>
                     </TableCell>
-                    <TableCell>{payment.paymentMethod}</TableCell>
-                    <TableCell>{payment.paymentGateway || '-'}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{payment.paymentMethod}</Typography>
+                      {payment.paymentGateway ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          {payment.paymentGateway}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={payment.status}
