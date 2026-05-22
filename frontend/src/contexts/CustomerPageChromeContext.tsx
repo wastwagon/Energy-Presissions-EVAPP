@@ -4,11 +4,18 @@ import { createTheme } from '@mui/material/styles';
 import { iosFontStacks } from '../theme/iosMobileTokens';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
+export type CustomerNavBack = {
+  onBack: () => void;
+  ariaLabel?: string;
+};
+
 type CustomerPageChromeContextValue = {
   pageTitle: string | null;
   setPageTitle: (title: string | null) => void;
   showCompactNavTitle: boolean;
   registerTitleSentinel: (node: HTMLElement | null) => void;
+  navBack: CustomerNavBack | null;
+  setNavBack: (back: CustomerNavBack | null) => void;
 };
 
 const CustomerPageChromeContext = createContext<CustomerPageChromeContextValue | null>(null);
@@ -71,6 +78,7 @@ export function CustomerPageChromeProvider({ children }: { children: ReactNode }
   const [pageTitle, setPageTitle] = useState<string | null>(null);
   const [showCompactNavTitle, setShowCompactNavTitle] = useState(false);
   const [sentinelEl, setSentinelEl] = useState<HTMLElement | null>(null);
+  const [navBack, setNavBack] = useState<CustomerNavBack | null>(null);
 
   const registerTitleSentinel = useCallback((node: HTMLElement | null) => {
     setSentinelEl(node);
@@ -86,8 +94,10 @@ export function CustomerPageChromeProvider({ children }: { children: ReactNode }
       setPageTitle,
       showCompactNavTitle,
       registerTitleSentinel,
+      navBack,
+      setNavBack,
     }),
-    [pageTitle, showCompactNavTitle, registerTitleSentinel],
+    [pageTitle, showCompactNavTitle, registerTitleSentinel, navBack],
   );
 
   return (

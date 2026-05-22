@@ -54,6 +54,17 @@ Use when touching a screen after the design-system rollout.
 - [x] Sheet body copy uses `authPageBodySx` (not raw `DialogContentText`).
 - [x] Station card CTAs: haptics + theme-aware `premiumInteractiveCardSx`.
 
+## Safe mobile polish (2026-05)
+
+- [x] Form inputs use **16px** on `xs` (`authFormFieldSx`) to avoid iOS zoom.
+- [x] Customer AppBar **back** via `useCustomerNavBack` on detail routes; menu hidden while back is active.
+- [x] Mobile lists use **Load more** (`MobileListLoadMore`) instead of `Pagination` below `md`.
+- [x] **Pull-to-refresh** hides duplicate header Refresh button on mobile when a handler is registered.
+- [x] App bar menu rows use `premiumMenuItemSx` (44px).
+- [x] Stations sheet: single scroll owner on `xs` (no nested list scroll).
+- [x] Profile compact header row; Help FAQ 44px tap rows.
+- [x] `apple-mobile-web-app-capable` + `apple-touch-icon` in `index.html`.
+
 ## Verification (manual)
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.

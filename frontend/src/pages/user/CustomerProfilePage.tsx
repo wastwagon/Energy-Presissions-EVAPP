@@ -199,39 +199,63 @@ export function CustomerProfilePage() {
       )}
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={{ ...premiumPanelCardSx, textAlign: 'center', py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3 }, mb: { xs: 0, md: 0 } }}>
-            <Avatar
-              sx={{
-                width: 120,
-                height: 120,
-                mx: 'auto',
-                mb: 2,
-                bgcolor: 'primary.main',
-                fontSize: '3rem',
-              }}
-            >
-              {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
-              {user.lastName?.[0]?.toUpperCase() || ''}
-            </Avatar>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-              {user.firstName} {user.lastName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {user.email}
-            </Typography>
-            <Chip
-              label={user.accountType}
-              sx={{ mt: 2 }}
-              color="primary"
-              size="small"
-            />
-          </Paper>
-        </Grid>
+        {!isCompact && (
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ ...premiumPanelCardSx, textAlign: 'center', py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3 }, mb: { xs: 0, md: 0 } }}>
+              <Avatar
+                sx={{
+                  width: 120,
+                  height: 120,
+                  mx: 'auto',
+                  mb: 2,
+                  bgcolor: 'primary.main',
+                  fontSize: '3rem',
+                }}
+              >
+                {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+                {user.lastName?.[0]?.toUpperCase() || ''}
+              </Avatar>
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                {user.firstName} {user.lastName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                {user.email}
+              </Typography>
+              <Chip label={user.accountType} sx={{ mt: 2 }} color="primary" size="small" />
+            </Paper>
+          </Grid>
+        )}
 
         <Grid item xs={12} md={8}>
           {isCompact ? (
             <>
+              <GroupedListSection>
+                <ListItem sx={{ ...iosGroupedListRowSx, gap: 1.5 }} disablePadding>
+                  <Avatar
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      bgcolor: 'primary.main',
+                      fontSize: '1.25rem',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {user.firstName?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+                    {user.lastName?.[0]?.toUpperCase() || ''}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                      {user.firstName} {user.lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {user.email}
+                    </Typography>
+                    <Chip label={user.accountType} size="small" color="primary" sx={{ mt: 0.75, height: 22 }} />
+                  </Box>
+                </ListItem>
+              </GroupedListSection>
+
               <GroupedListSection title="Personal information">
                 {editing ? (
                   <>

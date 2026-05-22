@@ -33,7 +33,7 @@ import {
   jampackDrawerPaper,
 } from '../theme/jampackShell';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
-import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
+import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
@@ -199,12 +199,12 @@ export function AdminDashboardLayout() {
                   handleMenuClose();
                   navigate(ADMIN_ROUTES.dashboard);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Dashboard</Typography>
               </MuiMenuItem>
-              <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+              <MuiMenuItem onClick={handleLogout} sx={premiumMenuItemSx}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Logout</Typography>
               </MuiMenuItem>

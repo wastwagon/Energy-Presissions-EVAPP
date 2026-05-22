@@ -23,14 +23,14 @@ import { customerBottomNavItems } from '../config/menu.config';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
-import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
+import { CustomerToolbarLeading } from '../components/customer/CustomerToolbarLeading';
 import { jampackAppBarSafeAreaTopSx, jampackFixedAppBarZIndexSx } from '../theme/jampackShell';
-import { customerCompactNavTitleSx, customerFrostedAppBarSx } from '../theme/customerChrome';
+import { customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx, dashboardScrollMainSx, fixedHeaderSpacerProps } from '../theme/dashboardShell';
-import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
+import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
@@ -103,45 +103,14 @@ function CustomerDashboardChrome() {
             position: 'relative',
           }}
         >
-          {showBottomNav && isCustomer && (
-            <IconButton
-              onClick={() => setNavDrawerOpen(true)}
-              aria-label="Open app menu"
-              aria-expanded={navDrawerOpen}
-              aria-controls="customer-app-nav-drawer"
-              edge="start"
-              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx), color: 'text.primary' })}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          {showBottomNav && isCustomer && !showCompactNavTitle && (
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                fontSize: { xs: '1rem', sm: '1.0625rem' },
-                color: 'primary.main',
-                minWidth: 0,
-                flex: '0 1 auto',
-                mr: 1,
-              }}
-            >
-              CleanMotion
-            </Typography>
-          )}
-          {showCompactNavTitle && (
-            <Typography
-              variant="subtitle1"
-              component="h1"
-              noWrap
-              sx={customerCompactNavTitleSx}
-            >
-              {pageChrome?.pageTitle}
-            </Typography>
-          )}
+          <CustomerToolbarLeading
+            showBottomNav={showBottomNav}
+            isCustomer={isCustomer}
+            navDrawerOpen={navDrawerOpen}
+            onOpenNavDrawer={() => setNavDrawerOpen(true)}
+            showCompactNavTitle={showCompactNavTitle}
+            navDrawerId="customer-app-nav-drawer"
+          />
           <Box
             component="nav"
             aria-label="Primary"
@@ -265,7 +234,7 @@ function CustomerDashboardChrome() {
                   handleMenuClose();
                   navigate(CUSTOMER_ROUTES.profile);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Profile</Typography>
@@ -275,7 +244,7 @@ function CustomerDashboardChrome() {
                   handleMenuClose();
                   navigate(CUSTOMER_ROUTES.preferences);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <SettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Preferences</Typography>
@@ -285,7 +254,7 @@ function CustomerDashboardChrome() {
                   handleMenuClose();
                   navigate(CUSTOMER_ROUTES.help);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <HelpIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Help</Typography>
@@ -296,7 +265,7 @@ function CustomerDashboardChrome() {
                   const p = getPrivacyPolicyLink();
                   openLegal(p.href, p.external);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <Typography sx={{ pl: 0.5 }}>Privacy Policy</Typography>
               </MuiMenuItem>
@@ -305,12 +274,12 @@ function CustomerDashboardChrome() {
                   const t = getTermsOfServiceLink();
                   openLegal(t.href, t.external);
                 }}
-                sx={{ py: 1.5 }}
+                sx={premiumMenuItemSx}
               >
                 <Typography sx={{ pl: 0.5 }}>Terms of Service</Typography>
               </MuiMenuItem>
               <Divider sx={{ my: 0.5 }} />
-              <MuiMenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+              <MuiMenuItem onClick={handleLogout} sx={premiumMenuItemSx}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Logout</Typography>
               </MuiMenuItem>

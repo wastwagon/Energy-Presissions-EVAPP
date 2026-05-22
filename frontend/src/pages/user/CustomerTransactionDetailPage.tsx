@@ -33,6 +33,7 @@ import {
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
+import { useCustomerNavBack } from '../../hooks/useCustomerNavBack';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerTransactionDetailSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
@@ -82,15 +83,18 @@ export function CustomerTransactionDetailPage() {
 
   useCustomerPullRefresh(useCallback(() => void loadTransaction(true), [loadTransaction]));
 
-  const backButton = (
+  const goBack = useCallback(() => navigate(CUSTOMER_ROUTES.sessionsHistory), [navigate]);
+  useCustomerNavBack(goBack, 'Back to session history');
+
+  const backButton = !isCompact ? (
     <Button
       startIcon={<ArrowBackIcon />}
-      onClick={() => navigate(CUSTOMER_ROUTES.sessionsHistory)}
+      onClick={goBack}
       sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
     >
       Back
     </Button>
-  );
+  ) : null;
 
   if (loading) {
     return <CustomerTransactionDetailSkeleton />;

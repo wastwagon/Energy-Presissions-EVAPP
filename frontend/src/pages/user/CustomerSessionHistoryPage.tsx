@@ -17,6 +17,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
@@ -49,29 +50,51 @@ export function CustomerSessionHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const limit = 20;
 
-  const loadHistory = useCallback(async (silent?: boolean) => {
-    await runWithRefresh(async () => {
-      try {
-        setError(null);
-        const user = getStoredUser();
-        if (typeof user?.id !== 'number') {
-          setError('User not logged in');
+  const fetchHistoryPage = useCallback(async (pageNum: number, append: boolean) => {
+    const user = getStoredUser();
+    if (typeof user?.id !== 'number') {
+      setError('User not logged in');
+      return false;
+    }
+    const offset = (pageNum - 1) * limit;
+    const response = await transactionsApi.getAll(limit, offset, undefined, undefined, user.id);
+    setTransactions((prev) => (append ? [...prev, ...response.transactions] : response.transactions));
+    setTotal(response.total);
+    setPage(pageNum);
+    return true;
+  }, []);
+
+  const loadHistory = useCallback(
+    async (silent?: boolean) => {
+      await runWithRefresh(async () => {
+        try {
+          setError(null);
+          return await fetchHistoryPage(1, false);
+        } catch (err: any) {
+          setError(err.message || 'Failed to load session history');
+          console.error('Error loading session history:', err);
           return false;
         }
-        const offset = (page - 1) * limit;
-        const response = await transactionsApi.getAll(limit, offset, undefined, undefined, user.id);
-        setTransactions(response.transactions);
-        setTotal(response.total);
-        return true;
-      } catch (err: any) {
-        setError(err.message || 'Failed to load session history');
-        console.error('Error loading session history:', err);
-        return false;
-      }
-    }, silent);
-  }, [page, runWithRefresh]);
+      }, silent);
+    },
+    [fetchHistoryPage, runWithRefresh],
+  );
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || page * limit >= total) return;
+    setLoadingMore(true);
+    try {
+      setError(null);
+      await fetchHistoryPage(page + 1, true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load more sessions');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchHistoryPage, loadingMore, page, total, limit]);
 
   useEffect(() => {
     void loadHistory();
@@ -154,17 +177,13 @@ export function CustomerSessionHistoryPage() {
               />
             ))}
           </GroupedListSection>
-          {total > limit && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Pagination
-                count={Math.ceil(total / limit)}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color="primary"
-                size="large"
-              />
-            </Box>
-          )}
+          <MobileListLoadMore
+            page={page}
+            totalCount={total}
+            pageSize={limit}
+            loading={loadingMore}
+            onLoadMore={() => void handleLoadMore()}
+          />
         </>
       ) : (
         <>

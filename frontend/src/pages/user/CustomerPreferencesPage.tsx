@@ -70,7 +70,7 @@ export function CustomerPreferencesPage() {
       <GroupedListSection title="Display">
         <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
           <ListItemText primary="Currency" primaryTypographyProps={{ fontWeight: 500, mb: 1 }} />
-          <FormControl fullWidth size="small" sx={(th) => sxObject(th, authFormFieldSx)}>
+          <FormControl fullWidth sx={(th) => sxObject(th, authFormFieldSx)}>
             <InputLabel id="pref-currency-label">Currency</InputLabel>
             <Select
               labelId="pref-currency-label"

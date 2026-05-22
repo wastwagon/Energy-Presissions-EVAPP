@@ -461,10 +461,10 @@ export function StationsPage() {
               pt: { xs: 0.5, sm: 0 },
               px: { xs: 2, sm: 2.25 },
               pb: { xs: 2, sm: 2.25 },
-              flex: 1,
+              flex: { xs: 'none', sm: 1 },
               minHeight: 180,
-              maxHeight: { xs: 'min(58dvh, 560px)', sm: 'none' },
-              overflow: 'auto',
+              maxHeight: { xs: 'none', sm: 'min(58dvh, 560px)' },
+              overflow: { xs: 'visible', sm: 'auto' },
               WebkitOverflowScrolling: 'touch',
               ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
             }}
@@ -488,7 +488,6 @@ export function StationsPage() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  size="small"
                   placeholder="Search city, address, or ID…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}

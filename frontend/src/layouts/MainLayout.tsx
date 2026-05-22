@@ -31,7 +31,7 @@ import {
   jampackFixedAppBarZIndexSx,
   mainLayoutFixedHeaderGapSx,
 } from '../theme/jampackShell';
-import { customerCompactNavTitleSx, customerFrostedAppBarSx } from '../theme/customerChrome';
+import { customerFrostedAppBarSx } from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
@@ -42,9 +42,9 @@ import {
   hasValidSession,
   isCustomerOrWalkInAccount,
 } from '../utils/authSession';
-import MenuIcon from '@mui/icons-material/Menu';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
-import { premiumIconButtonTouchSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
+import { CustomerToolbarLeading } from '../components/customer/CustomerToolbarLeading';
+import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 
@@ -127,43 +127,14 @@ function MainLayoutChrome() {
           }}
         >
           {usePremiumCustomerHeader && (
-            <IconButton
-              onClick={() => setNavDrawerOpen(true)}
-              aria-label="Open app menu"
-              aria-expanded={navDrawerOpen}
-              aria-controls="customer-app-nav-drawer-main"
-              edge="start"
-              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx), color: 'text.primary' })}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          {usePremiumCustomerHeader && !showCompactNavTitle && (
-            <Typography
-              component="div"
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                fontSize: { xs: '1rem', sm: '1.0625rem' },
-                color: 'primary.main',
-                mr: 0.5,
-                flexShrink: 0,
-                minWidth: 0,
-              }}
-            >
-              CleanMotion
-            </Typography>
-          )}
-          {showCompactNavTitle && (
-            <Typography
-              variant="subtitle1"
-              component="h1"
-              noWrap
-              sx={customerCompactNavTitleSx}
-            >
-              {pageChrome?.pageTitle}
-            </Typography>
+            <CustomerToolbarLeading
+              showBottomNav={showBottomNav}
+              isCustomer={isCustomer}
+              navDrawerOpen={navDrawerOpen}
+              onOpenNavDrawer={() => setNavDrawerOpen(true)}
+              showCompactNavTitle={showCompactNavTitle}
+              navDrawerId="customer-app-nav-drawer-main"
+            />
           )}
           {showDesktopHeaderNav && (
             <Box
@@ -268,7 +239,7 @@ function MainLayoutChrome() {
                     setAccountMenuAnchor(null);
                     navigate(CUSTOMER_ROUTES.profile);
                   }}
-                  sx={{ py: 1.5 }}
+                  sx={premiumMenuItemSx}
                 >
                   <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                   <Typography>Profile</Typography>
@@ -278,7 +249,7 @@ function MainLayoutChrome() {
                     setAccountMenuAnchor(null);
                     navigate(CUSTOMER_ROUTES.wallet);
                   }}
-                  sx={{ py: 1.5 }}
+                  sx={premiumMenuItemSx}
                 >
                   <AccountBalanceWalletIcon sx={{ mr: 1.5, fontSize: 20 }} />
                   <Typography>Wallet</Typography>
@@ -289,7 +260,7 @@ function MainLayoutChrome() {
                     setAccountMenuAnchor(null);
                     handleLogout();
                   }}
-                  sx={{ py: 1.5 }}
+                  sx={premiumMenuItemSx}
                 >
                   <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
                   <Typography>Log out</Typography>

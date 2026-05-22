@@ -54,6 +54,12 @@ export const premiumDialogPaperSx: SxProps<Theme> = (theme) => ({
   overflow: 'hidden',
 });
 
+/** App bar / overflow menu rows — HIG minimum tap height. */
+export const premiumMenuItemSx: SxProps<Theme> = {
+  minHeight: IOS_TOUCH_TARGET_PX,
+  py: 1.25,
+};
+
 /** App bar account menu — matches premium dialog border + shadow. */
 export const premiumMenuPaperSx: SxProps<Theme> = (theme) => ({
   mt: 1.5,
@@ -190,9 +196,13 @@ export const authFormFieldSx: SxProps<Theme> = (theme) => ({
   '& .MuiInputLabel-root': {
     fontSize: '0.8125rem',
   },
+  /** 16px on phones prevents iOS Safari / WebView zoom on focus */
   '& .MuiOutlinedInput-input': {
     py: 0.875,
-    fontSize: '0.875rem',
+    fontSize: { xs: '1rem', sm: '0.875rem' },
+  },
+  '& .MuiSelect-select': {
+    fontSize: { xs: '1rem', sm: '0.875rem' },
   },
   '& .MuiFormHelperText-root': {
     mt: 0.5,

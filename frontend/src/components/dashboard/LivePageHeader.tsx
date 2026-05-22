@@ -5,6 +5,7 @@ import { RefreshButton } from './RefreshButton';
 import { customerLargeSubtitleSx, customerLargeTitleSx } from '../../theme/customerChrome';
 import { dashboardPageSubtitleSx, dashboardPageTitleSx } from '../../theme/jampackShell';
 import { useCustomerPageChrome } from '../../contexts/CustomerPageChromeContext';
+import { useCustomerPullRefreshContext } from '../../contexts/CustomerPullRefreshContext';
 
 interface LivePageHeaderProps {
   title: string;
@@ -43,7 +44,10 @@ export function LivePageHeader({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const chrome = useCustomerPageChrome();
+  const pullRefresh = useCustomerPullRefreshContext();
   const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
+  const hideToolbarRefresh =
+    isMobile && Boolean(pullRefresh?.hasRefreshHandler) && !refreshDisabled;
 
   const titleSentinelRef = useCallback(
     (node: HTMLElement | null) => {
@@ -90,15 +94,19 @@ export function LivePageHeader({
           </Typography>
           <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
-          <RefreshButton
-            refreshing={refreshing}
-            disabled={refreshDisabled}
-            onClick={onRefresh}
-            sx={refreshSx ?? { width: { xs: '100%', sm: 'auto' } }}
-          />
-          {actions}
-        </Box>
+        {(actions || !hideToolbarRefresh) && (
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+            {!hideToolbarRefresh && (
+              <RefreshButton
+                refreshing={refreshing}
+                disabled={refreshDisabled}
+                onClick={onRefresh}
+                sx={refreshSx ?? { width: { xs: '100%', sm: 'auto' } }}
+              />
+            )}
+            {actions}
+          </Box>
+        )}
       </Box>
     </>
   );

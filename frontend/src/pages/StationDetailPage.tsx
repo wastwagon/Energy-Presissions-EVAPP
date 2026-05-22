@@ -35,6 +35,7 @@ import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
 import { GroupedListSection } from '../components/ios/GroupedListSection';
 import { GroupedDetailRow } from '../components/ios/GroupedDetailRow';
 import { triggerHaptic } from '../utils/haptics';
+import { useCustomerNavBack } from '../hooks/useCustomerNavBack';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -83,6 +84,9 @@ export function StationDetailPage() {
 
   useCustomerPullRefresh(useCallback(() => void loadStation(), [loadStation]));
 
+  const goBack = useCallback(() => navigate(CUSTOMER_ROUTES.stations), [navigate]);
+  useCustomerNavBack(goBack, 'Back to stations');
+
   const handleGetDirections = () => {
     if (!station) return;
     triggerHaptic('light');
@@ -96,10 +100,10 @@ export function StationDetailPage() {
     }
   };
 
-  const backButton = (
+  const backButton = !isCompact ? (
     <Button
       startIcon={<ArrowBackIcon />}
-      onClick={() => navigate(CUSTOMER_ROUTES.stations)}
+      onClick={goBack}
       variant="outlined"
       color="primary"
       sx={(th) => ({
@@ -109,7 +113,7 @@ export function StationDetailPage() {
     >
       Back
     </Button>
-  );
+  ) : null;
 
   if (loading) {
     return <StationDetailPageSkeleton />;

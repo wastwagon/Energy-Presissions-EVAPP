@@ -17,6 +17,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
@@ -41,25 +42,47 @@ export function CustomerPaymentHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPayments, setTotalPayments] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const limit = 20;
 
-  const loadPayments = useCallback(async (silent?: boolean) => {
-    await runWithRefresh(async () => {
-      try {
-        setError(null);
-        const response = await paymentsApi.getUserPayments(limit, (page - 1) * limit);
-        const paymentsList = Array.isArray(response) ? response : response.payments || [];
-        const total = Array.isArray(response) ? paymentsList.length : response.total || paymentsList.length;
-        setPayments(paymentsList);
-        setTotalPayments(total);
-        return true;
-      } catch (err: any) {
-        setError(err.message || 'Failed to load payment history');
-        console.error('Error loading payments:', err);
-        return false;
-      }
-    }, silent);
-  }, [page, runWithRefresh]);
+  const fetchPaymentsPage = useCallback(async (pageNum: number, append: boolean) => {
+    const response = await paymentsApi.getUserPayments(limit, (pageNum - 1) * limit);
+    const paymentsList = Array.isArray(response) ? response : response.payments || [];
+    const total = Array.isArray(response) ? paymentsList.length : response.total || paymentsList.length;
+    setPayments((prev) => (append ? [...prev, ...paymentsList] : paymentsList));
+    setTotalPayments(total);
+    setPage(pageNum);
+    return true;
+  }, []);
+
+  const loadPayments = useCallback(
+    async (silent?: boolean) => {
+      await runWithRefresh(async () => {
+        try {
+          setError(null);
+          return await fetchPaymentsPage(1, false);
+        } catch (err: any) {
+          setError(err.message || 'Failed to load payment history');
+          console.error('Error loading payments:', err);
+          return false;
+        }
+      }, silent);
+    },
+    [fetchPaymentsPage, runWithRefresh],
+  );
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || page * limit >= totalPayments) return;
+    setLoadingMore(true);
+    try {
+      setError(null);
+      await fetchPaymentsPage(page + 1, true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load more payments');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPaymentsPage, loadingMore, page, totalPayments, limit]);
 
   useEffect(() => {
     void loadPayments();
@@ -137,17 +160,13 @@ export function CustomerPaymentHistoryPage() {
               />
             ))}
           </GroupedListSection>
-          {totalPayments > limit && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Pagination
-                count={Math.ceil(totalPayments / limit)}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color="primary"
-                size="large"
-              />
-            </Box>
-          )}
+          <MobileListLoadMore
+            page={page}
+            totalCount={totalPayments}
+            pageSize={limit}
+            loading={loadingMore}
+            onLoadMore={() => void handleLoadMore()}
+          />
         </>
       ) : (
         <>

@@ -14,6 +14,7 @@ type RefreshHandler = () => void | Promise<void>;
 type CustomerPullRefreshContextValue = {
   register: (handler: RefreshHandler | null) => void;
   getHandler: () => RefreshHandler | null;
+  hasRefreshHandler: boolean;
   pulling: boolean;
   setPulling: (v: boolean) => void;
 };
@@ -24,8 +25,11 @@ export function CustomerPullRefreshProvider({ children }: { children: ReactNode 
   const handlerRef = useRef<RefreshHandler | null>(null);
   const [pulling, setPulling] = useState(false);
 
+  const [hasRefreshHandler, setHasRefreshHandler] = useState(false);
+
   const register = useCallback((handler: RefreshHandler | null) => {
     handlerRef.current = handler;
+    setHasRefreshHandler(handler != null);
   }, []);
 
   const getHandler = useCallback(() => handlerRef.current, []);
@@ -34,10 +38,11 @@ export function CustomerPullRefreshProvider({ children }: { children: ReactNode 
     () => ({
       register,
       getHandler,
+      hasRefreshHandler,
       pulling,
       setPulling,
     }),
-    [register, getHandler, pulling],
+    [register, getHandler, hasRefreshHandler, pulling],
   );
 
   return (

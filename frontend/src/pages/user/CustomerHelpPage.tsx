@@ -107,12 +107,18 @@ export function CustomerHelpPage() {
           >
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
-              sx={{ minHeight: 48, px: 2, '& .MuiAccordionSummary-content': { my: 1 } }}
+              sx={{
+                minHeight: 44,
+                px: 2,
+                '&.Mui-expanded': { minHeight: 44 },
+                '& .MuiAccordionSummary-content': { my: 1 },
+                '& .MuiAccordionSummary-content.Mui-expanded': { my: 1 },
+              }}
             >
               <Typography
                 fontWeight={500}
-                variant="body2"
-                sx={{ fontFamily: iosFontStacks.ui, letterSpacing: '-0.01em' }}
+                variant="body1"
+                sx={{ fontFamily: iosFontStacks.ui, letterSpacing: '-0.01em', fontSize: '1rem' }}
               >
                 {faq.q}
               </Typography>
