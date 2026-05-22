@@ -1116,33 +1116,60 @@ export function DevicesPage() {
                 </Alert>
               )}
 
-              {/* Connection Logs Table */}
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Recent Connection Events
               </Typography>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Timestamp</TableCell>
-                      <TableCell>Event Type</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Error Code</TableCell>
-                      <TableCell>Error Message</TableCell>
-                      <TableCell>Close Code</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {connectionLogs.length === 0 ? (
+              {connectionLogs.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                  No connection logs found
+                </Typography>
+              ) : useGroupedList ? (
+                <GroupedListSection>
+                  {connectionLogs.map((log, index) => (
+                    <GroupedListRow
+                      key={log.id}
+                      divider={index < connectionLogs.length - 1}
+                      showChevron={false}
+                      primary={log.eventType.replace(/_/g, ' ')}
+                      secondary={[
+                        new Date(log.createdAt).toLocaleString(),
+                        log.errorCode ? `Code ${log.errorCode}` : null,
+                        log.errorMessage || null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                      end={
+                        log.status ? (
+                          <Chip
+                            label={log.status}
+                            color={getConnectionStatusColor(log.status)}
+                            size="small"
+                            sx={{ height: 22 }}
+                          />
+                        ) : log.closeCode ? (
+                          <Tooltip title={log.closeReason || ''}>
+                            <Chip label={log.closeCode} size="small" color="error" sx={{ height: 22 }} />
+                          </Tooltip>
+                        ) : undefined
+                      }
+                    />
+                  ))}
+                </GroupedListSection>
+              ) : (
+                <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                            No connection logs found
-                          </Typography>
-                        </TableCell>
+                        <TableCell>Timestamp</TableCell>
+                        <TableCell>Event Type</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Error Code</TableCell>
+                        <TableCell>Error Message</TableCell>
+                        <TableCell>Close Code</TableCell>
                       </TableRow>
-                    ) : (
-                      connectionLogs.map((log) => (
+                    </TableHead>
+                    <TableBody>
+                      {connectionLogs.map((log) => (
                         <TableRow key={log.id}>
                           <TableCell>
                             {new Date(log.createdAt).toLocaleString()}
@@ -1179,11 +1206,11 @@ export function DevicesPage() {
                             )}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Box>
           )}
         </DialogContent>

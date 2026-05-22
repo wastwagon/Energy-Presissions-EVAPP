@@ -115,7 +115,15 @@ Use when touching a screen after the design-system rollout.
 - [x] **Admin tariffs** — grouped list on mobile (tap row → edit dialog).
 - [x] **Stations map sheet** — tap drag handle cycles peek / half / full height on `xs` (authenticated).
 
+## Safe mobile polish — phase 9 (2026-05)
+
+- [x] **`SettingsCategoryPanel`** — reusable grouped settings list + inline edit panel on mobile; desktop table unchanged.
+- [x] **SuperAdmin settings** — OCPP, notification, and Paystack tabs use `SettingsCategoryPanel`; tariffs tab grouped list on mobile (tap → edit dialog).
+- [x] **Devices connection logs dialog** — grouped event rows on mobile instead of wide table.
+
 ## Verification (manual)
+
+See step-by-step scenarios in [`MOBILE_QA.md`](./MOBILE_QA.md).
 
 - [ ] Staff pages on phone width: search/filter inputs do not zoom on focus.
 - [ ] Admin/superadmin Sessions → All sessions: load more on phone, pagination on desktop.
@@ -128,6 +136,8 @@ Use when touching a screen after the design-system rollout.
 - [ ] Charge point detail: connector actions and session stop work on grouped rows.
 - [ ] Tariffs: tap row opens edit on phone.
 - [ ] Stations map: drag handle cycles sheet height (peek → half → full).
+- [ ] SuperAdmin settings: grouped OCPP/notification/Paystack rows + inline edit on phone; tariffs tap → edit.
+- [ ] Devices connection logs dialog: grouped events on phone.
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).

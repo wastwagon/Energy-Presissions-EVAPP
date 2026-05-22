@@ -26,6 +26,8 @@ import {
   Alert,
   Divider,
   InputAdornment,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -55,6 +57,9 @@ import {
 import { getStoredAccountType } from '../../utils/authSession';
 import { StaffChromeTabPanelSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { FormBrandingTwoColumnSkeleton } from '../../components/dashboard/BlockContentSkeletons';
+import { SettingsCategoryPanel, type SettingRecord } from '../../components/settings/SettingsCategoryPanel';
+import { GroupedListSection } from '../../components/ios/GroupedListSection';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -80,6 +85,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 function SuperAdminSettingsPage() {
+  const theme = useTheme();
+  const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -290,6 +297,15 @@ function SuperAdminSettingsPage() {
     }
   };
 
+  const beginEditSetting = (setting: SettingRecord) => {
+    setEditingSetting(setting.key);
+    if (setting.dataType === 'boolean') {
+      setSettingValue(setting.value === 'true' || setting.value === '1' ? 'true' : 'false');
+    } else {
+      setSettingValue(setting.value || '');
+    }
+  };
+
   const getSettingsByCategory = (category: string) => {
     return systemSettings.filter((s: any) => s.category === category);
   };
@@ -353,174 +369,27 @@ function SuperAdminSettingsPage() {
             <StaffChromeTabPanelSkeleton rows={10} ariaLabel="Loading system settings" />
           ) : (
             <Box>
-              {/* OCPP Settings */}
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                OCPP Configuration
-              </Typography>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Setting</TableCell>
-                      <TableCell>Value</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {getSettingsByCategory('ocpp').map((setting: any) => (
-                      <TableRow key={setting.key}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {setting.key}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            <TextField
-                              type={setting.dataType === 'number' ? 'number' : 'text'}
-                              value={settingValue}
-                              onChange={(e) => setSettingValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveSetting(setting.key);
-                                }
-                              }}
-                              autoFocus
-                              sx={(th) => sxObject(th, authFormFieldSx)}
-                            />
-                          ) : (
-                            <Typography variant="body2">{setting.value || '-'}</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {setting.description || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              color="primary"
-                              onClick={() => handleSaveSetting(setting.key)}
-                              aria-label={`Save setting ${setting.key}`}
-                            >
-                              <SaveIcon fontSize="small" />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              onClick={() => {
-                                setEditingSetting(setting.key);
-                                setSettingValue(setting.value || '');
-                              }}
-                              aria-label={`Edit setting ${setting.key}`}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
+              <SettingsCategoryPanel
+                title="OCPP Configuration"
+                settings={getSettingsByCategory('ocpp')}
+                useGroupedList={useGroupedList}
+                editingSetting={editingSetting}
+                settingValue={settingValue}
+                onBeginEdit={beginEditSetting}
+                onSave={(key) => void handleSaveSetting(key)}
+                onValueChange={setSettingValue}
+              />
               <Divider sx={{ my: 3 }} />
-
-              {/* Notification Settings */}
-              <Typography variant="h6" gutterBottom>
-                Notification Settings
-              </Typography>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Setting</TableCell>
-                      <TableCell>Value</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {getSettingsByCategory('notification').map((setting: any) => (
-                      <TableRow key={setting.key}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {setting.key}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            setting.dataType === 'boolean' ? (
-                              <Switch
-                                checked={settingValue === 'true' || settingValue === true}
-                                onChange={(e) => setSettingValue(e.target.checked.toString())}
-                              />
-                            ) : (
-                              <TextField
-                                type={setting.dataType === 'number' ? 'number' : setting.key.includes('password') ? 'password' : 'text'}
-                                value={settingValue}
-                                onChange={(e) => setSettingValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleSaveSetting(setting.key);
-                                  }
-                                }}
-                                autoFocus
-                                sx={(th) => sxObject(th, authFormFieldSx)}
-                              />
-                            )
-                          ) : (
-                            <Typography variant="body2">
-                              {setting.dataType === 'boolean'
-                                ? setting.value === 'true' || setting.value === '1'
-                                  ? 'Enabled'
-                                  : 'Disabled'
-                                : setting.key.includes('password')
-                                ? '••••••••'
-                                : setting.value || '-'}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {setting.description || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              color="primary"
-                              onClick={() => handleSaveSetting(setting.key)}
-                              aria-label={`Save setting ${setting.key}`}
-                            >
-                              <SaveIcon fontSize="small" />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              onClick={() => {
-                                setEditingSetting(setting.key);
-                                setSettingValue(setting.value || '');
-                              }}
-                              aria-label={`Edit setting ${setting.key}`}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <SettingsCategoryPanel
+                title="Notification Settings"
+                settings={getSettingsByCategory('notification')}
+                useGroupedList={useGroupedList}
+                editingSetting={editingSetting}
+                settingValue={settingValue}
+                onBeginEdit={beginEditSetting}
+                onSave={(key) => void handleSaveSetting(key)}
+                onValueChange={setSettingValue}
+              />
             </Box>
           )}
           </TabPanel>
@@ -560,6 +429,35 @@ function SuperAdminSettingsPage() {
 
           {loading ? (
             <StaffChromeTabPanelSkeleton rows={8} ariaLabel="Loading tariffs" />
+          ) : tariffs.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No tariffs found. Create your first tariff.
+            </Typography>
+          ) : useGroupedList ? (
+            <GroupedListSection>
+              {tariffs.map((tariff, index) => (
+                <GroupedListRow
+                  key={tariff.id}
+                  divider={index < tariffs.length - 1}
+                  primary={tariff.name}
+                  secondary={
+                    tariff.energyRate
+                      ? `${tariff.energyRate} ${tariff.currency}/kWh`
+                      : 'No energy rate'
+                  }
+                  end={
+                    <Chip
+                      label={tariff.isActive ? 'Active' : 'Inactive'}
+                      color={tariff.isActive ? 'success' : 'default'}
+                      size="small"
+                      sx={{ height: 24 }}
+                    />
+                  }
+                  onClick={() => handleEditTariff(tariff)}
+                  aria-label={`Edit tariff ${tariff.name}`}
+                />
+              ))}
+            </GroupedListSection>
           ) : (
             <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table stickyHeader size="small">
@@ -575,16 +473,7 @@ function SuperAdminSettingsPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tariffs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                          No tariffs found. Create your first tariff.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    tariffs.map((tariff) => (
+                    {tariffs.map((tariff) => (
                       <TableRow key={tariff.id}>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
@@ -638,8 +527,7 @@ function SuperAdminSettingsPage() {
                           </IconButton>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -897,91 +785,16 @@ function SuperAdminSettingsPage() {
             <StaffChromeTabPanelSkeleton rows={10} ariaLabel="Loading payment settings" />
           ) : (
             <Box>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Paystack Configuration
-              </Typography>
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Setting</TableCell>
-                      <TableCell>Value</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {getSettingsByCategory('payment').map((setting: any) => (
-                      <TableRow key={setting.key}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {setting.key}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            <TextField
-                              type={setting.key.includes('key') || setting.key.includes('secret') ? 'password' : 'text'}
-                              fullWidth
-                              value={settingValue}
-                              onChange={(e) => setSettingValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveSetting(setting.key);
-                                }
-                              }}
-                              autoFocus
-                              sx={(th) => sxObject(th, authFormFieldSx)}
-                            />
-                          ) : (
-                            <Typography variant="body2">
-                              {setting.key.includes('key') || setting.key.includes('secret')
-                                ? setting.value
-                                  ? '••••••••'
-                                  : 'Not set'
-                                : setting.dataType === 'boolean'
-                                ? setting.value === 'true' || setting.value === '1'
-                                  ? 'Enabled'
-                                  : 'Disabled'
-                                : setting.value || '-'}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {setting.description || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingSetting === setting.key ? (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              color="primary"
-                              onClick={() => handleSaveSetting(setting.key)}
-                              aria-label={`Save setting ${setting.key}`}
-                            >
-                              <SaveIcon fontSize="small" />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              size="small"
-                              sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                              onClick={() => {
-                                setEditingSetting(setting.key);
-                                setSettingValue(setting.value || '');
-                              }}
-                              aria-label={`Edit setting ${setting.key}`}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <SettingsCategoryPanel
+                title="Paystack Configuration"
+                settings={getSettingsByCategory('payment')}
+                useGroupedList={useGroupedList}
+                editingSetting={editingSetting}
+                settingValue={settingValue}
+                onBeginEdit={beginEditSetting}
+                onSave={(key) => void handleSaveSetting(key)}
+                onValueChange={setSettingValue}
+              />
             </Box>
           )}
           </TabPanel>
