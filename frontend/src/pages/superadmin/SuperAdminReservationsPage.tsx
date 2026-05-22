@@ -24,7 +24,7 @@ import {
   premiumTableSurfaceSx,
 } from '../../theme/jampackShell';
 import {
-  authFormFieldSx,
+  staffFilterFieldSx,
   compactOutlinedCtaSx,
   premiumIconButtonTouchSx,
   sxObject,
@@ -100,7 +100,7 @@ export function SuperAdminReservationsPage() {
         })}
         actions={
           <TextField
-            size="small"
+            fullWidth
             placeholder="Filter by charge point"
             value={filterChargePoint}
             onChange={(e) => setFilterChargePoint(e.target.value)}
@@ -112,7 +112,7 @@ export function SuperAdminReservationsPage() {
               ),
             }}
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               width: { xs: '100%', sm: 260 },
             })}
           />

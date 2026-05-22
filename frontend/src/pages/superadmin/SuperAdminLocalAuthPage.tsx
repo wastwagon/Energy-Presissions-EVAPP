@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Alert } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { localAuthListApi } from '../../services/localAuthListApi';
-import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
+import { staffFilterFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { dashboardPageSubtitleSx, dashboardPageTitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 
 export function SuperAdminLocalAuthPage() {
@@ -49,13 +49,12 @@ export function SuperAdminLocalAuthPage() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, alignItems: { sm: 'flex-end' } }}>
           <TextField
             label="Charge point ID"
-            size="small"
             value={chargePointId}
             onChange={(e) => setChargePointId(e.target.value)}
             fullWidth
             margin="none"
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               flex: 1,
               maxWidth: { sm: 420 },
             })}

@@ -82,7 +82,21 @@ Use when touching a screen after the design-system rollout.
 - [x] Admin user search: full-width field with `authFormFieldSx` (no `size="small"`).
 - [x] Customer app drawer list hover limited to fine pointers.
 
+## Safe mobile polish — phase 4 (2026-05)
+
+- [x] `staffFilterFieldSx` / `staffFilterFormControlSx` for admin/ops/superadmin search and filter inputs (no `size="small"` zoom trap).
+- [x] Staff filter fields applied across payments, users, wallets, devices, connection logs, reservations, local auth, smart charging.
+
+## Safe mobile polish — phase 5 (2026-05)
+
+- [x] Ops/admin/superadmin **Sessions** list: `MobileListLoadMore` on mobile + `Pagination` on desktop for “All sessions” tab (20 per page).
+- [x] WebViewGold haptics setup notes: `frontend/docs/WEBVIEW_HAPTICS.md`.
+
 ## Verification (manual)
+
+- [ ] Staff pages on phone width: search/filter inputs do not zoom on focus.
+- [ ] Admin/superadmin Sessions → All sessions: load more on phone, pagination on desktop.
+- [ ] WebViewGold: configure haptic bridge per `WEBVIEW_HAPTICS.md` (optional).
 
 - [ ] Detail screens (transaction, station, top-up): tab bar hidden; AppBar back returns to parent.
 

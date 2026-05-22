@@ -33,6 +33,7 @@ import { usersApi, User } from '../../services/usersApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
+  staffFilterFieldSx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
@@ -294,7 +295,7 @@ export function UserManagementPage() {
             ),
           }}
           sx={(th) => ({
-            ...sxObject(th, authFormFieldSx),
+            ...sxObject(th, staffFilterFieldSx),
             width: { xs: '100%', sm: 320 },
             maxWidth: '100%',
           })}

@@ -41,6 +41,7 @@ import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../se
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
+  staffFilterFieldSx,
   compactOutlinedCtaSx,
   premiumDialogPaperSx,
   premiumIconButtonTouchSx,
@@ -475,7 +476,6 @@ export function DevicesPage() {
             </Box>
             <TextField
               placeholder="Search devices..."
-              size="small"
               fullWidth
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -506,7 +506,7 @@ export function DevicesPage() {
                 ),
               }}
               sx={(th) => ({
-                ...sxObject(th, authFormFieldSx),
+                ...sxObject(th, staffFilterFieldSx),
                 minWidth: { xs: 0, sm: 260 },
                 flex: { sm: 1 },
                 maxWidth: { sm: 400 },

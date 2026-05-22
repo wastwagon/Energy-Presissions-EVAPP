@@ -10,7 +10,7 @@ import {
 import { smartChargingApi } from '../../services/smartChargingApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import {
-  authFormFieldSx,
+  staffFilterFieldSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   sxObject,
@@ -93,34 +93,31 @@ export function SuperAdminSmartChargingPage() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flexWrap: 'wrap' }}>
           <TextField
             label="Charge point ID"
-            size="small"
             value={chargePointId}
             onChange={(e) => setChargePointId(e.target.value)}
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               minWidth: { sm: 200 },
               flex: { sm: 1 },
             })}
           />
           <TextField
             label="Connector ID"
-            size="small"
             type="number"
             value={connectorId}
             onChange={(e) => setConnectorId(e.target.value)}
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               width: { xs: '100%', sm: 120 },
             })}
           />
           <TextField
             label="Duration (sec)"
-            size="small"
             type="number"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               width: { xs: '100%', sm: 140 },
             })}
           />
@@ -164,12 +161,11 @@ export function SuperAdminSmartChargingPage() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'center' } }}>
           <TextField
             label="Charge point ID"
-            size="small"
             value={profilesCpId}
             onChange={(e) => setProfilesCpId(e.target.value)}
             fullWidth
             sx={(th) => ({
-              ...sxObject(th, authFormFieldSx),
+              ...sxObject(th, staffFilterFieldSx),
               maxWidth: { sm: 400 },
             })}
           />

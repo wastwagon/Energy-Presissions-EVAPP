@@ -60,6 +60,16 @@ export const premiumMenuItemSx: SxProps<Theme> = {
   py: 1.25,
 };
 
+/** Staff/ops list filters and search bars — same 16px-on-xs behavior as `authFormFieldSx`. */
+export const staffFilterFieldSx: SxProps<Theme> = (theme) => ({
+  ...sxObject(theme, authFormFieldSx),
+});
+
+/** Staff select filters paired with search (e.g. event type). */
+export const staffFilterFormControlSx: SxProps<Theme> = (theme) => ({
+  ...sxObject(theme, authFormFieldSx),
+});
+
 /** App bar account menu — matches premium dialog border + shadow. */
 export const premiumMenuPaperSx: SxProps<Theme> = (theme) => ({
   mt: 1.5,

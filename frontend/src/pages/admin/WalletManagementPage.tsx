@@ -33,6 +33,7 @@ import { walletApi, WalletTransaction } from '../../services/walletApi';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
+  staffFilterFieldSx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
@@ -282,11 +283,10 @@ export function WalletManagementPage() {
             <Box sx={{ px: { xs: 2, sm: 2.5 }, pt: 2 }}>
               <TextField
                 fullWidth
-                size="small"
                 placeholder="Search by name or email…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 2 })}
+                sx={(th) => ({ ...sxObject(th, staffFilterFieldSx), mb: 2 })}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">

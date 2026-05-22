@@ -27,7 +27,12 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatistics } from '../../services/connectionLogsApi';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { authFormFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
+import {
+  staffFilterFieldSx,
+  staffFilterFormControlSx,
+  premiumIconButtonTouchSx,
+  sxObject,
+} from '../../styles/authShell';
 import { getConnectionEventColor, getConnectionStatusColor } from '../../utils/statusColors';
 import {
   buildLinkStatusMap,
@@ -252,7 +257,6 @@ export function SuperAdminConnectionLogsPage() {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-start' } }}>
             <TextField
               fullWidth
-              size="small"
               placeholder="Charge point ID or search…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -284,13 +288,12 @@ export function SuperAdminConnectionLogsPage() {
                   </InputAdornment>
                 ) : null,
               }}
-              sx={(th) => sxObject(th, authFormFieldSx)}
+              sx={(th) => sxObject(th, staffFilterFieldSx)}
             />
             <FormControl
               fullWidth
-              size="small"
               sx={(th) => ({
-                ...sxObject(th, authFormFieldSx),
+                ...sxObject(th, staffFilterFormControlSx),
                 flexShrink: 0,
                 width: { xs: '100%', sm: 220 },
               })}

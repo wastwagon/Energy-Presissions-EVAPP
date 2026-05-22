@@ -22,7 +22,7 @@ import { getStoredAccountType } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { authFormFieldSx, sxObject } from '../../styles/authShell';
+import { staffFilterFieldSx, sxObject } from '../../styles/authShell';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
@@ -99,7 +99,6 @@ export function AdminPaymentsPage() {
           </Typography>
           <TextField
             fullWidth
-            size="small"
             placeholder="Search by ID, method, or status…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -110,7 +109,7 @@ export function AdminPaymentsPage() {
                 </InputAdornment>
               ),
             }}
-            sx={(th) => sxObject(th, authFormFieldSx)}
+            sx={(th) => sxObject(th, staffFilterFieldSx)}
           />
         </Box>
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
