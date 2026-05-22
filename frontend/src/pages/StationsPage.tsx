@@ -79,6 +79,10 @@ export function StationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const searchTermRef = useRef(searchTerm);
   searchTermRef.current = searchTerm;
+  /** Bumped on nearby/search loads so stale responses cannot overwrite the list. */
+  const stationsLoadEpochRef = useRef(0);
+  /** Viewport findInBounds only after the user pans/zooms the map (not programmatic fit). */
+  const userAdjustedMapViewRef = useRef(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -100,8 +104,14 @@ export function StationsPage() {
   }, []);
 
   const bumpMapFit = useCallback(() => {
+    userAdjustedMapViewRef.current = false;
     setMapFitToken((n) => n + 1);
-    setIgnoreViewportBoundsMoveEndsBefore(Date.now() + 1500);
+    setIgnoreViewportBoundsMoveEndsBefore(Date.now() + 2500);
+  }, []);
+
+  const applyStationsIfCurrent = useCallback((epoch: number, list: StationWithDistance[]) => {
+    if (epoch !== stationsLoadEpochRef.current) return;
+    setStations(list);
   }, []);
 
   /** Nearest-first (same as former default “Distance” sort). */
@@ -135,6 +145,10 @@ export function StationsPage() {
 
   const loadNearbyStations = useCallback(
     async (lat: number, lng: number) => {
+      if (searchTermRef.current.trim() !== '') {
+        return;
+      }
+      const epoch = ++stationsLoadEpochRef.current;
       try {
         setLoading(true);
         setError(null);
@@ -145,41 +159,65 @@ export function StationsPage() {
           status: ['Available', 'Charging', 'Preparing', 'Finishing'], // Only show active stations
           limit: 50,
         });
-        setStations(nearbyStations);
+        applyStationsIfCurrent(epoch, nearbyStations);
         bumpMapFit();
       } catch (err: unknown) {
-        setError(formatApiOrNetworkError(err));
+        if (epoch === stationsLoadEpochRef.current) {
+          setError(formatApiOrNetworkError(err));
+        }
         console.error('Error loading nearby stations:', err);
       } finally {
-        setLoading(false);
+        if (epoch === stationsLoadEpochRef.current) {
+          setLoading(false);
+        }
       }
     },
-    [bumpMapFit],
+    [applyStationsIfCurrent, bumpMapFit],
   );
 
   const loadNearbyStationsRef = useRef(loadNearbyStations);
   loadNearbyStationsRef.current = loadNearbyStations;
 
-  const handleViewportBoundsStable = useCallback(async (bounds: MapViewportBounds) => {
-    if (searchTermRef.current.trim() !== '') {
-      return;
-    }
-    const activeStatuses: string[] = ['Available', 'Charging', 'Preparing', 'Finishing'];
-    setViewportStationsLoading(true);
-    setError(null);
-    try {
-      const list = await stationsApi.findInBounds({
-        ...bounds,
-        status: activeStatuses,
-      });
-      if (searchTermRef.current.trim() === '') {
-        setStations(list);
+  const handleViewportBoundsStable = useCallback(
+    async (bounds: MapViewportBounds) => {
+      if (
+        searchTermRef.current.trim() !== '' ||
+        !mapExpanded ||
+        !userAdjustedMapViewRef.current
+      ) {
+        return;
       }
-    } catch (err: unknown) {
-      setError(formatApiOrNetworkError(err));
-    } finally {
-      setViewportStationsLoading(false);
-    }
+      const epoch = ++stationsLoadEpochRef.current;
+      const activeStatuses: string[] = ['Available', 'Charging', 'Preparing', 'Finishing'];
+      setViewportStationsLoading(true);
+      setError(null);
+      try {
+        const list = await stationsApi.findInBounds({
+          ...bounds,
+          status: activeStatuses,
+        });
+        if (
+          searchTermRef.current.trim() === '' &&
+          mapExpanded &&
+          userAdjustedMapViewRef.current
+        ) {
+          applyStationsIfCurrent(epoch, list);
+        }
+      } catch (err: unknown) {
+        if (epoch === stationsLoadEpochRef.current) {
+          setError(formatApiOrNetworkError(err));
+        }
+      } finally {
+        if (epoch === stationsLoadEpochRef.current) {
+          setViewportStationsLoading(false);
+        }
+      }
+    },
+    [applyStationsIfCurrent, mapExpanded],
+  );
+
+  const handleUserAdjustedMapView = useCallback(() => {
+    userAdjustedMapViewRef.current = true;
   }, []);
 
   useEffect(() => {
@@ -223,6 +261,8 @@ export function StationsPage() {
       return;
     }
 
+    const epoch = ++stationsLoadEpochRef.current;
+    userAdjustedMapViewRef.current = false;
     try {
       setLoading(true);
       setError(null);
@@ -231,14 +271,18 @@ export function StationsPage() {
         50,
         userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : undefined,
       );
-      setStations(results);
+      applyStationsIfCurrent(epoch, results);
       bumpMapFit();
     } catch (err: unknown) {
-      setError(formatApiOrNetworkError(err));
+      if (epoch === stationsLoadEpochRef.current) {
+        setError(formatApiOrNetworkError(err));
+      }
     } finally {
-      setLoading(false);
+      if (epoch === stationsLoadEpochRef.current) {
+        setLoading(false);
+      }
     }
-  }, [searchTerm, userLocation, loadNearbyStations, bumpMapFit]);
+  }, [searchTerm, userLocation, loadNearbyStations, bumpMapFit, applyStationsIfCurrent]);
 
   const refreshStations = useCallback(async () => {
     if (searchTerm.trim()) {
@@ -343,9 +387,8 @@ export function StationsPage() {
     };
 
   const handleChargingSuccess = () => {
-    // Reload stations to update availability
-    if (userLocation) {
-      loadNearbyStations(userLocation.lat, userLocation.lng);
+    if (userLocation && searchTermRef.current.trim() === '') {
+      void loadNearbyStations(userLocation.lat, userLocation.lng);
     }
   };
 
@@ -631,7 +674,7 @@ export function StationsPage() {
         </Box>
       </Paper>
 
-      <Collapse in={mapExpanded}>
+      <Collapse in={mapExpanded} unmountOnExit>
         <Box
           ref={mapSectionRef}
           component="section"
@@ -707,7 +750,10 @@ export function StationsPage() {
             mapFitToken={mapFitToken}
             ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
             onViewportBoundsStable={handleViewportBoundsStable}
-            viewportSearchEnabled={stations.length > 0 && !searchTerm.trim()}
+            onUserAdjustedMapView={handleUserAdjustedMapView}
+            viewportSearchEnabled={
+              mapExpanded && stations.length > 0 && searchTerm.trim() === ''
+            }
           />
         </Box>
         </Box>

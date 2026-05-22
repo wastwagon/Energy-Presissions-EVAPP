@@ -110,11 +110,13 @@ function MapViewportSearch({
   debounceMs,
   ignoreMoveEndsBefore,
   onBoundsStable,
+  onUserAdjustedMapView,
 }: {
   enabled: boolean;
   debounceMs: number;
   ignoreMoveEndsBefore: number;
   onBoundsStable: (b: MapViewportBounds) => void;
+  onUserAdjustedMapView?: () => void;
 }) {
   const map = useMap();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,6 +153,11 @@ function MapViewportSearch({
   };
 
   useMapEvents({
+    movestart: (e) => {
+      if ((e as { originalEvent?: Event }).originalEvent) {
+        onUserAdjustedMapView?.();
+      }
+    },
     moveend: () => {
       scheduleReport();
     },
@@ -232,6 +239,8 @@ export type StationsMapViewProps = {
   ignoreViewportBoundsMoveEndsBefore: number;
   /** Fires when the user has finished panning/zooming; load stations in view. */
   onViewportBoundsStable: (bounds: MapViewportBounds) => void;
+  /** Called when the user drags or pinch-zooms the map (not programmatic fit). */
+  onUserAdjustedMapView?: () => void;
   /** When false, viewport search is not requested (e.g. list view or no data yet) */
   viewportSearchEnabled: boolean;
 };
@@ -249,6 +258,7 @@ export function StationsMapView({
   mapFitToken,
   ignoreViewportBoundsMoveEndsBefore,
   onViewportBoundsStable,
+  onUserAdjustedMapView,
   viewportSearchEnabled,
 }: StationsMapViewProps) {
   const [mounted, setMounted] = useState(false);
@@ -307,6 +317,7 @@ export function StationsMapView({
         debounceMs={VIEWPORT_DEBOUNCE_MS}
         ignoreMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
         onBoundsStable={onViewportBoundsStable}
+        onUserAdjustedMapView={onUserAdjustedMapView}
       />
       <MapFlyToSelected
         dataRef={dataRef}
