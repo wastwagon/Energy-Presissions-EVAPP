@@ -29,11 +29,13 @@ import { triggerHaptic } from '../../utils/haptics';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { parseLatLng } from '../../utils/googleMapsDirections';
+import { buildStationCardAriaLabel } from '../../utils/stationA11y';
 
 export type StationListCardProps = {
   station: StationWithDistance;
   isAuthenticated: boolean;
   isFavorite: boolean;
+  selected?: boolean;
   onOpenDetails: (station: StationWithDistance) => void;
   onCardKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onDirections: (e: React.MouseEvent, station: StationWithDistance) => void;
@@ -51,6 +53,7 @@ export function StationListCard({
   station,
   isAuthenticated,
   isFavorite,
+  selected = false,
   onOpenDetails,
   onCardKeyDown,
   onDirections,
@@ -109,7 +112,8 @@ export function StationListCard({
       onKeyDown={onCardKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`Open details for ${title}`}
+      aria-label={buildStationCardAriaLabel(station, selected)}
+      aria-pressed={selected}
       sx={{
         ...sxObject(theme, premiumInteractiveCardSx),
         height: '100%',
@@ -118,6 +122,9 @@ export function StationListCard({
         overflow: 'hidden',
         cursor: 'pointer',
         fontFamily: iosFontStacks.ui,
+        outline: selected ? `2px solid ${primary}` : undefined,
+        outlineOffset: selected ? 2 : undefined,
+        borderColor: selected ? primary : undefined,
       }}
     >
       <Box
@@ -153,7 +160,7 @@ export function StationListCard({
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="subtitle1"
-                component="h2"
+                component="h3"
                 noWrap
                 sx={{
                   fontWeight: 700,
@@ -231,6 +238,7 @@ export function StationListCard({
           >
             <Chip
               label={station.status}
+              aria-label={`Connector status: ${station.status}`}
               color={getChargePointStatusColor(station.status)}
               size="small"
               sx={{ fontWeight: 700, fontSize: '0.7rem', height: 26, maxWidth: '100%' }}

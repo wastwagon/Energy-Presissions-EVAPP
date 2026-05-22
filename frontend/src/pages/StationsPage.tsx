@@ -11,6 +11,9 @@ import {
   TextField,
   InputAdornment,
   Button,
+  Collapse,
+  InputLabel,
+  Link,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -25,13 +28,10 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../styles/authShell';
-import { premiumEmptyStatePaperSx } from '../theme/jampackShell';
+import { premiumEmptyStatePaperSx, premiumPanelCardSx } from '../theme/jampackShell';
 import { LivePageHeader } from '../components/dashboard/LivePageHeader';
 import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
 import { triggerHaptic } from '../utils/haptics';
-import { chargingBottomSheetPremiumSx, chargingMapChromeSx } from '../theme/chargingPremiumShell';
-import { SheetDragHandle } from '../components/ios/SheetDragHandle';
-import { useMapSheetDragSnap } from '../hooks/useMapSheetDragSnap';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { StationListCard } from '../components/stations/StationListCard';
 import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
@@ -44,17 +44,22 @@ import {
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 import { formatApiOrNetworkError } from '../utils/apiErrors';
+import { visuallyHiddenSx } from '../styles/visuallyHidden';
 
 /** Server-side search radius (km) when loading by GPS; not shown in the UI. */
 const NEARBY_LOAD_RADIUS_KM = 50;
 
+const STATIONS_SEARCH_FIELD_ID = 'stations-search-field';
+const STATIONS_SEARCH_HINT_ID = 'stations-search-hint';
+const STATIONS_MAP_HINT_ID = 'stations-map-hint';
+const STATIONS_MAP_PANEL_ID = 'stations-map-panel';
+
 export function StationsPage() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMapSheetMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { resolvedMaxHeight, isDragging, sheetDragHandleProps } = useMapSheetDragSnap({
-    initialSnap: 'half',
-  });
+  const isNarrow = useMediaQuery(theme.breakpoints.down('sm'));
+  const mapSectionRef = useRef<HTMLDivElement>(null);
+  const [mapExpanded, setMapExpanded] = useState(() => !isNarrow);
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
   const [mapFitToken, setMapFitToken] = useState(0);
@@ -273,6 +278,26 @@ export function StationsPage() {
     [closeDetailsDialog, navigate],
   );
 
+  useEffect(() => {
+    if (isNarrow) {
+      setMapExpanded(false);
+    } else {
+      setMapExpanded(true);
+    }
+  }, [isNarrow]);
+
+  useEffect(() => {
+    if (!mapSelectionId) return;
+    setMapExpanded(true);
+    if (!mapSectionRef.current) return;
+    mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [mapSelectionId]);
+
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    handleSearch();
+  };
+
   const handleStationClick = (station: StationWithDistance) => {
     triggerHaptic('light');
     setMapSelectionId(station.chargePointId);
@@ -355,6 +380,22 @@ export function StationsPage() {
   };
 
   const listRefreshing = loading || viewportStationsLoading;
+  const liveStatusMessage = useMemo(() => {
+    if (loading && stations.length === 0) {
+      return 'Finding nearby charging stations.';
+    }
+    if (viewportStationsLoading) {
+      return 'Updating stations for the visible map area.';
+    }
+    if (!loading && stations.length === 0 && !error) {
+      return 'No charging stations found. Try another search or open the map to explore.';
+    }
+    if (sortedStations.length > 0) {
+      return `${sortedStations.length} charging station${sortedStations.length === 1 ? '' : 's'} listed, sorted by distance.`;
+    }
+    return '';
+  }, [loading, viewportStationsLoading, stations.length, sortedStations.length, error]);
+
   const stationsSubtitle = userAreaLabel
     ? `Near ${userAreaLabel}`
     : userLocation
@@ -390,225 +431,299 @@ export function StationsPage() {
       />
 
       {locationError && (
-        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLocationError(null)}>
+        <Alert severity="warning" sx={{ mb: 2 }} role="alert" onClose={() => setLocationError(null)}>
           {locationError}
         </Alert>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2 }} role="alert" onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      {/* Map + bottom sheet (trip-planner style) */}
+      <Box
+        component="p"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        sx={visuallyHiddenSx}
+      >
+        {liveStatusMessage}
+      </Box>
+
+      {/* List-first (Uber/Bolt): pick a station from cards, then use the map for context */}
+      <Paper
+        elevation={0}
+        component="section"
+        aria-labelledby="stations-list-heading"
+        sx={{ ...premiumPanelCardSx, mb: 2 }}
+      >
+        <Typography
+          id="stations-list-heading"
+          variant="subtitle1"
+          component="h2"
+          sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}
+        >
+          Nearby chargers
+        </Typography>
+        <Typography
+          id={STATIONS_SEARCH_HINT_ID}
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 2 }}
+        >
+          Search or browse available stations. The list is the easiest way to choose a charger; open the
+          map for a geographic view. Keyboard users: use Tab to move between station cards.
+        </Typography>
+        <Box
+          component="form"
+          onSubmit={handleSearchSubmit}
+          aria-describedby={STATIONS_SEARCH_HINT_ID}
+          sx={{ mb: 2 }}
+        >
+          <InputLabel htmlFor={STATIONS_SEARCH_FIELD_ID} sx={visuallyHiddenSx}>
+            Search stations by city, address, or charge point ID
+          </InputLabel>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
+            <Grid item xs={12}>
+              <TextField
+                id={STATIONS_SEARCH_FIELD_ID}
+                fullWidth
+                placeholder="Search city, address, or ID…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" color="action" aria-hidden />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={<SearchIcon />}
+                fullWidth
+                disableElevation
+                sx={compactContainedCtaSx}
+              >
+                Search stations
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+        {viewportStationsLoading && (
+          <LinearProgress
+            color="primary"
+            sx={{ mb: 1.5, borderRadius: 0.5, width: '100%' }}
+            aria-label="Loading stations in map area"
+          />
+        )}
+        {userLocation && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2" component="div">
+              Showing stations near{' '}
+              {userAreaLabel ? (
+                <Box component="span" sx={{ fontWeight: 600 }}>
+                  {userAreaLabel}
+                </Box>
+              ) : (
+                'your location'
+              )}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+              GPS: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+            </Typography>
+          </Alert>
+        )}
+        {loading && stations.length === 0 && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ py: 2, textAlign: 'center' }}
+            role="status"
+            aria-live="polite"
+          >
+            Finding stations…
+          </Typography>
+        )}
+        {!loading && stations.length === 0 && !error && (
+          <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2, mb: 0 }}>
+            <Typography variant="body2" color="text.secondary" align="center" component="div">
+              {userLocation
+                ? 'No stations found for this area. Try a different search or pan the map below.'
+                : 'Enable location or search by area or station ID.'}
+            </Typography>
+            {userLocation && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                align="center"
+                component="div"
+                sx={{ display: 'block', mt: 1.5, lineHeight: 1.5 }}
+              >
+                Operators: chargers only appear here when they have GPS coordinates, are in an active status
+                (Available, Charging, Preparing, or Finishing), and are within range.
+              </Typography>
+            )}
+          </Paper>
+        )}
+        {!loading && sortedStations.length > 0 ? (
+          <>
+            <Typography
+              id="stations-results-count"
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 1.5 }}
+              aria-live="polite"
+            >
+              {sortedStations.length} station{sortedStations.length === 1 ? '' : 's'} nearby, nearest
+              first
+            </Typography>
+            <Box
+              component="ul"
+              aria-labelledby="stations-results-count"
+              sx={{
+                listStyle: 'none',
+                m: 0,
+                p: 0,
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                },
+                gap: { xs: 1.5, sm: 2 },
+              }}
+            >
+              {sortedStations.map((station) => (
+                <Box component="li" key={station.chargePointId}>
+                  <StationListCard
+                    station={station}
+                    isAuthenticated={isAuthenticated}
+                    isFavorite={favoriteIds.includes(station.chargePointId)}
+                    selected={mapSelectionId === station.chargePointId}
+                    onOpenDetails={handleStationClick}
+                    onCardKeyDown={handleStationCardKeyDown(station)}
+                    onDirections={handleGetDirections}
+                    onStartCharging={handleStartCharging}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </>
+        ) : null}
+
+        <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            aria-expanded={mapExpanded}
+            aria-controls={STATIONS_MAP_PANEL_ID}
+            onClick={() => setMapExpanded((v) => !v)}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            {mapExpanded ? 'Hide map' : 'Show map'}
+          </Button>
+          {!mapExpanded ? (
+            <Link href={`#${STATIONS_MAP_PANEL_ID}`} underline="hover" variant="body2" sx={{ alignSelf: 'center' }}>
+              Skip to map section
+            </Link>
+          ) : null}
+        </Box>
+      </Paper>
+
+      <Box
+        ref={mapSectionRef}
+        component="section"
+        id={STATIONS_MAP_PANEL_ID}
+        aria-labelledby="stations-map-heading"
+        aria-describedby={STATIONS_MAP_HINT_ID}
+        sx={{ mb: 2 }}
+      >
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            minHeight: 0,
-            mb: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'baseline' },
+            justifyContent: 'space-between',
+            gap: 0.5,
+            mb: 1.25,
           }}
         >
-          <Box
-            sx={{
-              height: { xs: '38dvh', sm: 400 },
-              minHeight: 200,
-              position: 'relative',
-              borderRadius: { xs: 0, sm: 1 },
-              overflow: 'hidden',
-              mx: { xs: -2, sm: 0 },
-              ...(isAuthenticated
-                ? chargingMapChromeSx
-                : { border: (t) => `1px solid ${t.palette.divider}` }),
-            }}
-          >
-            {loading && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  zIndex: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: 2,
-                  bgcolor: 'rgba(255,255,255,0.6)',
-                }}
-                role="status"
-                aria-busy="true"
-                aria-label="Loading stations map"
-              >
-                <Skeleton
-                  variant="rounded"
-                  animation="wave"
-                  sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
-                />
-              </Box>
-            )}
-            <StationsMapView
-              stations={stations}
-              userLocation={userLocation}
-              selectedChargePointId={mapSelectionId}
-              onSelectStation={handleStationClick}
-              mapFitToken={mapFitToken}
-              ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
-              onViewportBoundsStable={handleViewportBoundsStable}
-              viewportSearchEnabled={stations.length > 0 && !searchTerm.trim()}
-            />
-          </Box>
-          <Paper
-            elevation={0}
-            role="region"
-            aria-label="Station search and list"
-            sx={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              mt: { xs: -0.5, sm: 0 },
-              pt: { xs: 0.5, sm: 0 },
-              px: { xs: 2, sm: 2.25 },
-              pb: { xs: 2, sm: 2.25 },
-              flex: { xs: 'none', sm: 1 },
-              minHeight: 180,
-              maxHeight:
-                isAuthenticated && isMapSheetMobile
-                  ? resolvedMaxHeight
-                  : { xs: 'none', sm: 'min(58dvh, 560px)' },
-              overflow:
-                isAuthenticated && isMapSheetMobile ? 'auto' : { xs: 'visible', sm: 'auto' },
-              WebkitOverflowScrolling: 'touch',
-              transition: isDragging
-                ? 'none'
-                : 'max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-              ...(isAuthenticated ? chargingBottomSheetPremiumSx : {}),
-            }}
-          >
-            {isAuthenticated ? (
-              <SheetDragHandle
-                onSnapToggle={isMapSheetMobile ? sheetDragHandleProps.onSnapToggle : undefined}
-                onPointerDown={isMapSheetMobile ? sheetDragHandleProps.onPointerDown : undefined}
-                onPointerMove={isMapSheetMobile ? sheetDragHandleProps.onPointerMove : undefined}
-                onPointerUp={isMapSheetMobile ? sheetDragHandleProps.onPointerUp : undefined}
-                onPointerCancel={isMapSheetMobile ? sheetDragHandleProps.onPointerCancel : undefined}
-                ariaLabel="Change stations list height"
-              />
-            ) : null}
-            <Typography
-              variant="caption"
-              component="h2"
-              sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mb: 1.5, px: 0.25 }}
-            >
-              Nearby & search
-            </Typography>
-            {viewportStationsLoading && (
-              <LinearProgress
-                color="primary"
-                sx={{ mb: 1.5, borderRadius: 0.5, width: '100%' }}
-                aria-label="Loading stations in map area"
-              />
-            )}
-            <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch" sx={{ mb: 2 }}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  placeholder="Search city, address, or ID…"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch();
-                    }
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSearch}
-                  startIcon={<SearchIcon />}
-                  fullWidth
-                  disableElevation
-                  sx={compactContainedCtaSx}
-                >
-                  Search
-                </Button>
-              </Grid>
-            </Grid>
-            {loading && stations.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                Finding stations…
-              </Typography>
-            )}
-            {!loading && stations.length === 0 && !error && (
-              <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2 }}>
-                <Typography variant="body2" color="text.secondary" align="center" component="div">
-                  {userLocation
-                    ? 'No stations found for this area. Try a different search or zoom the map.'
-                    : 'Enable location or search by area or station ID.'}
-                </Typography>
-                {userLocation && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    align="center"
-                    component="div"
-                    sx={{ display: 'block', mt: 1.5, lineHeight: 1.5 }}
-                  >
-                    Operators: chargers only appear here when they have GPS coordinates, are in an active status
-                    (Available, Charging, Preparing, or Finishing), and are within range.
-                  </Typography>
-                )}
-              </Paper>
-            )}
-            {!loading && sortedStations.length > 0 ? (
-              <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                {sortedStations.map((station) => (
-                  <Grid item xs={12} sm={6} key={station.chargePointId}>
-                    <StationListCard
-                      station={station}
-                      isAuthenticated={isAuthenticated}
-                      isFavorite={favoriteIds.includes(station.chargePointId)}
-                      onOpenDetails={handleStationClick}
-                      onCardKeyDown={handleStationCardKeyDown(station)}
-                      onDirections={handleGetDirections}
-                      onStartCharging={handleStartCharging}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            ) : null}
-          </Paper>
+          <Typography id="stations-map-heading" variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
+            Map view
+          </Typography>
+          <Typography id={STATIONS_MAP_HINT_ID} variant="caption" color="text.secondary" component="p">
+            Pan and zoom to explore. Markers are not fully keyboard-accessible; use the station list
+            above to select a charger.
+          </Typography>
         </Box>
-
-      {/* User Location Info */}
-      {userLocation && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2" component="div">
-            Showing stations near{' '}
-            {userAreaLabel ? (
-              <Box component="span" sx={{ fontWeight: 600 }}>
-                {userAreaLabel}
-              </Box>
-            ) : (
-              'your location'
-            )}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-            GPS: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-          </Typography>
-        </Alert>
-      )}
+        <Collapse in={mapExpanded}>
+        <Box
+          role="application"
+          aria-label="Map of nearby charging stations"
+          tabIndex={0}
+          sx={{
+            height: { xs: 260, sm: 320, md: 380 },
+            minHeight: 200,
+            position: 'relative',
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: (t) => `1px solid ${t.palette.divider}`,
+            bgcolor: 'background.paper',
+            '&:focus-visible': {
+              outline: (t) => `2px solid ${t.palette.primary.main}`,
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {loading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+                bgcolor: (t) => t.palette.action.hover,
+              }}
+              role="status"
+              aria-busy="true"
+              aria-label="Loading stations map"
+            >
+              <Skeleton
+                variant="rounded"
+                animation="wave"
+                sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
+              />
+            </Box>
+          )}
+          <StationsMapView
+            stations={stations}
+            userLocation={userLocation}
+            selectedChargePointId={mapSelectionId}
+            onSelectStation={handleStationClick}
+            mapFitToken={mapFitToken}
+            ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
+            onViewportBoundsStable={handleViewportBoundsStable}
+            viewportSearchEnabled={stations.length > 0 && !searchTerm.trim()}
+          />
+        </Box>
+        </Collapse>
+      </Box>
 
       {/* Start Charging Dialog */}
       <StartChargingDialog

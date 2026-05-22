@@ -17,13 +17,11 @@ import {
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import HomeIcon from '@mui/icons-material/Home';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { BottomNav, isBottomNavItemActive, type BottomNavRouteItem } from '../components/BottomNav';
+import { BottomNav } from '../components/BottomNav';
 import { customerBottomNavItems, mainLayoutBottomNavItems } from '../config/menu.config';
-import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from '../config/customerNav.paths';
+import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { brandColors } from '../theme';
 import {
   jampackAppBarSx,
@@ -45,6 +43,7 @@ import {
 } from '../utils/authSession';
 import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
 import { CustomerToolbarLeading } from '../components/customer/CustomerToolbarLeading';
+import { CustomerDesktopNavCards } from '../components/customer/CustomerDesktopNavCards';
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
@@ -84,23 +83,8 @@ function MainLayoutChrome() {
     usePremiumCustomerHeader && pageChrome?.showCompactNavTitle && pageChrome.pageTitle,
   );
 
-  const desktopHeaderNavItems: BottomNavRouteItem[] = useMemo(() => {
-    if (!isAuthenticated || !user) return [];
-    if (isCustomer) return customerBottomNavItems;
-    return [
-      { id: 'home', label: 'Home', icon: <HomeIcon />, path: '/' },
-      {
-        id: 'stations',
-        label: 'Find Stations',
-        icon: <LocationOnIcon />,
-        path: CUSTOMER_ROUTES.stations,
-        matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
-      },
-      { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: getDashboardPath() },
-    ];
-  }, [isAuthenticated, user, isCustomer]);
-
-  const showDesktopHeaderNav = !showBottomNav && isAuthenticated && desktopHeaderNavItems.length > 0;
+  const showCustomerDesktopNav =
+    !showBottomNav && isAuthenticated && isCustomer && usePremiumCustomerHeader;
 
   return (
     <Box sx={dashboardViewportColumnSx}>
@@ -138,60 +122,7 @@ function MainLayoutChrome() {
               navDrawerId="customer-app-nav-drawer-main"
             />
           )}
-          {showDesktopHeaderNav && (
-            <Box
-              component="nav"
-              aria-label="Primary"
-              sx={{
-                flex: 1,
-                display: { xs: 'none', lg: 'flex' },
-                alignItems: 'center',
-                gap: 0.25,
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                minWidth: 0,
-                py: 0.5,
-                mr: 1,
-                WebkitOverflowScrolling: 'touch',
-                '&::-webkit-scrollbar': { height: 4 },
-              }}
-            >
-              {desktopHeaderNavItems.map((item) => {
-                const active = isBottomNavItemActive(location.pathname, item);
-                return (
-                  <Button
-                    key={item.id}
-                    color="inherit"
-                    onClick={() => navigate(item.path)}
-                    startIcon={item.icon}
-                    aria-current={active ? 'page' : undefined}
-                    sx={{
-                      flexShrink: 0,
-                      minHeight: 44,
-                      px: { lg: 1.25, xl: 1.5 },
-                      py: 0.75,
-                      color: active ? 'primary.main' : 'text.secondary',
-                      fontWeight: active ? 600 : 500,
-                      fontSize: { lg: '0.8125rem', xl: '0.875rem' },
-                      borderRadius: 1,
-                      borderBottom: '2px solid',
-                      borderColor: active ? 'primary.main' : 'transparent',
-                      '& .MuiButton-startIcon': { mr: 0.75 },
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Box>
-          )}
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: showDesktopHeaderNav ? { xs: 'flex', lg: 'none' } : 'flex',
-              minWidth: 0,
-            }}
-          />
+          <Box sx={{ flexGrow: 1, minWidth: 0 }} />
           {isAuthenticated && user && usePremiumCustomerHeader ? (
             <>
               <IconButton
@@ -314,6 +245,18 @@ function MainLayoutChrome() {
         />
       )}
       <Box sx={mainLayoutFixedHeaderGapSx} aria-hidden />
+      {showCustomerDesktopNav && (
+        <Container
+          maxWidth="lg"
+          sx={{
+            flexShrink: 0,
+            px: { xs: 2, sm: 3 },
+            width: '100%',
+          }}
+        >
+          <CustomerDesktopNavCards items={customerBottomNavItems} />
+        </Container>
+      )}
       <Box
         sx={{
           flex: 1,

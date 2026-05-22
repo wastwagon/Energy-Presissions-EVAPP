@@ -18,21 +18,22 @@ Run on **375–430px** width (or a real device). Check items off in `UI_MIGRATIO
 9. Enter detail with motion enabled: light **push-in** on forward; **pop-in** when AppBar back returns to parent; with `prefers-reduced-motion: reduce`, no animation.
 10. **Admin/superadmin ops** charge point or session detail: AppBar **back** on phone; no duplicate Back button in page header below `md`.
 11. **Billing** invoices and sessions: load more on phone.
-12. **Stations map** (`xs`): drag sheet handle up/down — list resizes; release snaps; tap still cycles **peek → half → full**.
-13. **Pull-to-refresh** on wallet, history, stations (top of scroll). With reduced motion, PTR should not run.
+12. **Stations**: cards above map; **Show map** / **Hide map** toggles map (`aria-expanded`); search field has a screen-reader label; selecting a card shows selected state and opens map.
+13. **Desktop (`lg+`)**: primary nav is **cards below header**, not tabs in the AppBar.
+14. **Pull-to-refresh** on wallet, history, stations (top of scroll). With reduced motion, PTR should not run.
 
 ## Cross-cutting
 
-14. Skip link → `#main-content` lands in main content.
-15. Frosted AppBar + customer bottom nav over scrolling content.
-16. Large-title customer page: scroll until compact title appears in AppBar.
-17. List taps give **light haptic** where WebViewGold bridge is configured (`WEBVIEW_HAPTICS.md`).
-18. Auth/legal pages: SF stack typography; light chrome on login and legal routes.
+15. Skip link → `#main-content` lands in main content.
+16. Frosted AppBar + customer bottom nav over scrolling content.
+17. Large-title customer page: scroll until compact title appears in AppBar.
+18. List taps give **light haptic** where WebViewGold bridge is configured (`WEBVIEW_HAPTICS.md`).
+19. Auth/legal pages: SF stack typography; light chrome on login and legal routes.
 
 ## WebViewGold smoke
 
-19. Build wrapped app; open customer home, stations map, wallet, one staff route if applicable.
-20. Safe areas: bottom nav and notched devices — no content under home indicator.
+20. Build wrapped app; open customer home, stations map, wallet, one staff route if applicable.
+21. Safe areas: bottom nav and notched devices — no content under home indicator.
 
 ## Out of scope
 

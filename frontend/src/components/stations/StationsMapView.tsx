@@ -265,6 +265,8 @@ export function StationsMapView({
   if (!mounted) {
     return (
       <Box
+        role="status"
+        aria-live="polite"
         sx={{
           height: '100%',
           minHeight: 200,

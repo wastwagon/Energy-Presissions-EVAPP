@@ -113,7 +113,7 @@ Use when touching a screen after the design-system rollout.
 - [x] **Charge point detail** — connectors, active sessions, firmware/diagnostics jobs as grouped lists on mobile; firmware form fields without `size="small"`.
 - [x] **Transaction detail (ops)** — meter values grouped list on mobile.
 - [x] **Admin tariffs** — grouped list on mobile (tap row → edit dialog).
-- [x] **Stations map sheet** — tap drag handle cycles peek / half / full height on `xs` (authenticated).
+- [x] **Stations map sheet** — tap drag handle cycles peek / half / full height on `xs` (superseded: list-first layout with map below cards).
 
 ## Safe mobile polish — phase 9 (2026-05)
 
@@ -126,6 +126,12 @@ Use when touching a screen after the design-system rollout.
 - [x] **Customer stack pop** — `CustomerStackTransition` slides parent in from the left on history `POP` (push-in on forward unchanged).
 - [x] **Stations map sheet drag** — pointer drag on sheet handle resizes list; release snaps to peek / half / full (tap still cycles).
 - [x] **Staff ops detail AppBar back** — `useStaffNavBack` on charge point + transaction detail; inline Back hidden below `md`.
+
+## Stations page — list-first layout (2026-05)
+
+- [x] **List before map** — search + station cards first; map section below for spatial context (Uber/Bolt-style).
+- [x] **Desktop customer nav** — menu shortcut cards below AppBar (`lg+`), not inline header tabs.
+- [x] **Stations a11y** — labeled search form, live result announcements, semantic station list, map show/hide with `aria-expanded`, selected card state, keyboard map hint.
 
 ## Out of scope (decided)
 
