@@ -54,10 +54,7 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      disable: true
     logging:
       driver: json-file
       options:
@@ -103,7 +100,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 5
-      start_period: 25s
+      start_period: 90s
     logging:
       driver: json-file
       options:
@@ -115,7 +112,7 @@ services:
       redis:
         condition: service_healthy
       minio:
-        condition: service_healthy
+        condition: service_started
     networks:
       - ev-billing-network
     restart: unless-stopped
