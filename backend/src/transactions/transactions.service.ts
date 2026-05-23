@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, FindOptionsWhere } from 'typeorm';
+import { Repository, IsNull, In, FindOptionsWhere, SelectQueryBuilder } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { MeterSample } from '../entities/meter-sample.entity';
 import { Connector } from '../entities/connector.entity';
@@ -274,10 +274,183 @@ export class TransactionsService {
     return null;
   }
 
+  private applyTransactionFilters(
+    queryBuilder: SelectQueryBuilder<Transaction>,
+    filters: {
+      chargePointId?: string;
+      vendorId?: number;
+      userId?: number;
+      status?: string;
+    },
+  ): void {
+    if (filters.status) {
+      queryBuilder.andWhere('tx.status = :status', { status: filters.status });
+    }
+    if (filters.chargePointId) {
+      queryBuilder.andWhere('tx.charge_point_id = :chargePointId', {
+        chargePointId: filters.chargePointId,
+      });
+    }
+    if (filters.vendorId) {
+      queryBuilder
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
+        .andWhere('cp.vendor_id = :vendorId', { vendorId: filters.vendorId });
+    }
+    if (filters.userId) {
+      queryBuilder.andWhere('tx.user_id = :userId', { userId: filters.userId });
+    }
+  }
+
+  private async filterTransactionsByVendor(
+    rows: Transaction[],
+    vendorId: number,
+  ): Promise<Transaction[]> {
+    try {
+      const chargePoints = await this.chargePointRepository.find({
+        select: ['chargePointId', 'vendorId'],
+      });
+      const allowedIds = new Set(
+        chargePoints.filter((cp) => cp.vendorId === vendorId).map((cp) => cp.chargePointId),
+      );
+      return rows.filter((t) => allowedIds.has(t.chargePointId));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Vendor filter skipped for vendor ${vendorId}: ${message}`);
+      return rows;
+    }
+  }
+
+  /** Loads rows without user join when relations or QB joins fail on legacy DBs. */
+  private async loadTransactionsFallback(
+    filters: {
+      status?: string;
+      chargePointId?: string;
+      vendorId?: number;
+      userId?: number;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<Transaction[]> {
+    const where: FindOptionsWhere<Transaction> = {};
+    if (filters.status) where.status = filters.status;
+    if (filters.chargePointId) where.chargePointId = filters.chargePointId;
+    if (filters.userId) where.userId = filters.userId;
+
+    const findOpts = {
+      where: Object.keys(where).length > 0 ? where : undefined,
+      order: { startTime: 'DESC' as const },
+      ...(filters.limit != null ? { take: filters.limit, skip: filters.offset ?? 0 } : {}),
+    };
+
+    try {
+      let rows = await this.transactionRepository.find({
+        ...findOpts,
+        relations: ['user'],
+      });
+      if (filters.vendorId != null) {
+        rows = await this.filterTransactionsByVendor(rows, filters.vendorId);
+      }
+      return rows;
+    } catch (err: unknown) {
+      this.logSchemaMismatch('loadTransactionsFallback', err);
+      let rows = await this.transactionRepository.find(findOpts);
+      if (filters.vendorId != null) {
+        rows = await this.filterTransactionsByVendor(rows, filters.vendorId);
+      }
+      return rows;
+    }
+  }
+
+  private async countTransactionsFallback(
+    filters: {
+      chargePointId?: string;
+      vendorId?: number;
+      userId?: number;
+      status?: string;
+    },
+  ): Promise<number> {
+    const where: FindOptionsWhere<Transaction> = {};
+    if (filters.status) where.status = filters.status;
+    if (filters.chargePointId) where.chargePointId = filters.chargePointId;
+    if (filters.userId) where.userId = filters.userId;
+
+    try {
+      if (filters.vendorId == null) {
+        return this.transactionRepository.count({
+          where: Object.keys(where).length > 0 ? where : undefined,
+        });
+      }
+      const rows = await this.transactionRepository.find({
+        where: Object.keys(where).length > 0 ? where : undefined,
+        select: ['id', 'chargePointId'],
+      });
+      const filtered = await this.filterTransactionsByVendor(rows as Transaction[], filters.vendorId);
+      return filtered.length;
+    } catch (err: unknown) {
+      this.logSchemaMismatch('countTransactionsFallback', err);
+      return 0;
+    }
+  }
+
+  private async findBusyConnectorsForSynthetic(
+    vendorId?: number,
+  ): Promise<Connector[]> {
+    const busyStatuses = ['Charging', 'Finishing'];
+    try {
+      const connQ = this.connectorRepository
+        .createQueryBuilder('c')
+        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = c.charge_point_id')
+        .where('c.status IN (:...busy)', { busy: busyStatuses });
+
+      if (vendorId) {
+        connQ.andWhere('cp.vendor_id = :vendorId', { vendorId });
+      }
+
+      return connQ.getMany();
+    } catch (err: unknown) {
+      this.logSchemaMismatch('findBusyConnectorsForSynthetic', err);
+      try {
+        const connectors = await this.connectorRepository.find({
+          where: { status: In(busyStatuses) },
+        });
+        if (vendorId == null) {
+          return connectors;
+        }
+        return this.filterConnectorsByVendor(connectors, vendorId);
+      } catch (fallbackErr: unknown) {
+        const message =
+          fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+        this.logger.warn(`Synthetic busy-connector lookup skipped: ${message}`);
+        return [];
+      }
+    }
+  }
+
+  private async filterConnectorsByVendor(
+    connectors: Connector[],
+    vendorId: number,
+  ): Promise<Connector[]> {
+    const chargePoints = await this.chargePointRepository.find({
+      select: ['chargePointId', 'vendorId'],
+    });
+    const allowedIds = new Set(
+      chargePoints.filter((cp) => cp.vendorId === vendorId).map((cp) => cp.chargePointId),
+    );
+    return connectors.filter((c) => allowedIds.has(c.chargePointId));
+  }
+
   private async enrichActiveSession(
     tx: Transaction & { recordPending?: boolean; user?: User },
   ): Promise<ActiveTransactionView> {
-    const walletReserved = await this.resolveWalletReservedAmount(tx);
+    let walletReserved: number | null = null;
+    try {
+      walletReserved = await this.resolveWalletReservedAmount(tx);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `Wallet hold lookup skipped for transaction ${tx.transactionId}: ${message}`,
+      );
+    }
     let liveEnergyKwh: number | null = null;
     let liveCostSoFar: number | null = null;
 
@@ -441,45 +614,25 @@ export class TransactionsService {
     vendorId?: number,
     userId?: number,
   ): Promise<{ transactions: TransactionApiView[]; total: number }> {
-    const queryBuilder = this.transactionRepository
+    const filters = { chargePointId, vendorId, userId };
+    const listQb = this.transactionRepository
       .createQueryBuilder('tx')
       .leftJoinAndSelect('tx.user', 'user');
+    this.applyTransactionFilters(listQb, filters);
+    listQb.orderBy('tx.start_time', 'DESC').take(limit).skip(offset);
 
-    if (chargePointId) {
-      queryBuilder.where('tx.charge_point_id = :chargePointId', { chargePointId });
-    }
-
-    if (vendorId) {
-      queryBuilder
-        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
-        .andWhere('cp.vendor_id = :vendorId', { vendorId });
-    }
-
-    if (userId) {
-      queryBuilder.andWhere('tx.user_id = :userId', { userId });
-    }
-
-    queryBuilder.orderBy('tx.startTime', 'DESC').take(limit).skip(offset);
+    const countQb = this.transactionRepository.createQueryBuilder('tx');
+    this.applyTransactionFilters(countQb, filters);
 
     let rows: Transaction[];
     let total: number;
     try {
-      [rows, total] = await queryBuilder.getManyAndCount();
+      rows = await listQb.getMany();
+      total = await countQb.getCount();
     } catch (err: unknown) {
       this.logSchemaMismatch('findAll', err);
-      if (vendorId != null) {
-        throw err;
-      }
-      const where: FindOptionsWhere<Transaction> = {};
-      if (chargePointId) where.chargePointId = chargePointId;
-      if (userId) where.userId = userId;
-      [rows, total] = await this.transactionRepository.findAndCount({
-        where: Object.keys(where).length > 0 ? where : undefined,
-        take: limit,
-        skip: offset,
-        order: { startTime: 'DESC' },
-        relations: ['user'],
-      });
+      rows = await this.loadTransactionsFallback({ ...filters, limit, offset });
+      total = await this.countTransactionsFallback(filters);
     }
     const mapped: TransactionApiView[] = [];
     for (const tx of rows) {
@@ -556,43 +709,19 @@ export class TransactionsService {
       );
     }
 
+    const filters = { status: 'Active', vendorId, userId };
     const queryBuilder = this.transactionRepository
       .createQueryBuilder('tx')
-      .leftJoinAndSelect('tx.user', 'user')
-      .where('tx.status = :status', { status: 'Active' });
-
-    // Filter by vendorId via charge point relationship
-    if (vendorId) {
-      queryBuilder
-        .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
-        .andWhere('cp.vendor_id = :vendorId', { vendorId });
-    }
-
-    if (userId) {
-      queryBuilder.andWhere('tx.user_id = :userId', { userId });
-    }
-
-    queryBuilder.orderBy('tx.startTime', 'DESC');
+      .leftJoinAndSelect('tx.user', 'user');
+    this.applyTransactionFilters(queryBuilder, filters);
+    queryBuilder.orderBy('tx.start_time', 'DESC');
 
     let fromDb: Transaction[];
     try {
       fromDb = await queryBuilder.getMany();
     } catch (err: unknown) {
       this.logSchemaMismatch('findActive', err);
-      fromDb = await this.transactionRepository.find({
-        where: { status: 'Active', ...(userId != null ? { userId } : {}) },
-        relations: ['user'],
-        order: { startTime: 'DESC' },
-      });
-      if (vendorId != null) {
-        const chargePoints = await this.chargePointRepository.find({
-          select: ['chargePointId', 'vendorId'],
-        });
-        const allowedIds = new Set(
-          chargePoints.filter((cp) => cp.vendorId === vendorId).map((cp) => cp.chargePointId),
-        );
-        fromDb = fromDb.filter((t) => allowedIds.has(t.chargePointId));
-      }
+      fromDb = await this.loadTransactionsFallback(filters);
     }
 
     if (userId != null) {
@@ -601,17 +730,7 @@ export class TransactionsService {
     }
 
     // When OCPP reports Charging but CSMS missed StartTransaction (service token/network), show a placeholder row.
-    const busyStatuses = ['Charging', 'Finishing'];
-    const connQ = this.connectorRepository
-      .createQueryBuilder('c')
-      .innerJoin('charge_points', 'cp', 'cp.charge_point_id = c.charge_point_id')
-      .where('c.status IN (:...busy)', { busy: busyStatuses });
-
-    if (vendorId) {
-      connQ.andWhere('cp.vendor_id = :vendorId', { vendorId });
-    }
-
-    const busyConnectors = await connQ.getMany();
+    const busyConnectors = await this.findBusyConnectorsForSynthetic(vendorId);
 
     const synthetic: Transaction[] = [];
     for (const conn of busyConnectors) {
