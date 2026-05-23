@@ -83,8 +83,13 @@ api.interceptors.request.use(
       typeof window !== 'undefined' ? window.location.pathname : '';
     const isSuperAdminOps = pathname.startsWith('/superadmin/ops');
     const isImpersonating = localStorage.getItem('isImpersonating') === 'true';
-    if (vendorId && !(isSuperAdminOps && !isImpersonating)) {
-      config.headers['X-Vendor-Id'] = vendorId;
+    const parsedVendorId = vendorId ? Number.parseInt(vendorId, 10) : NaN;
+    if (
+      Number.isFinite(parsedVendorId) &&
+      parsedVendorId > 0 &&
+      !(isSuperAdminOps && !isImpersonating)
+    ) {
+      config.headers['X-Vendor-Id'] = String(parsedVendorId);
     }
     
     return config;

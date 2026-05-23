@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { parseOptionalPositiveInt, isPositiveInt } from '../common/utils/parse-id';
 
 type RequestUser = {
   id: number;
@@ -27,9 +28,9 @@ export class TransactionsController {
 
   private resolveUserIdFilter(user: RequestUser, queryUserId?: number): number | undefined {
     if (user.accountType === 'Customer' || user.accountType === 'WalkIn') {
-      return user.id;
+      return isPositiveInt(user.id) ? user.id : undefined;
     }
-    return queryUserId != null ? parseInt(String(queryUserId), 10) : undefined;
+    return parseOptionalPositiveInt(queryUserId);
   }
 
   private resolveVendorIdFilter(
@@ -37,13 +38,11 @@ export class TransactionsController {
     queryVendorId?: number,
     vendorIdHeader?: string,
   ): number | undefined {
-    if (user.accountType === 'Admin' && user.vendorId) {
+    if (user.accountType === 'Admin' && isPositiveInt(user.vendorId)) {
       return user.vendorId;
     }
     if (user.accountType === 'SuperAdmin') {
-      const fromQuery = queryVendorId != null ? parseInt(String(queryVendorId), 10) : undefined;
-      const fromHeader = vendorIdHeader ? parseInt(vendorIdHeader, 10) : undefined;
-      return fromQuery ?? (Number.isFinite(fromHeader) ? fromHeader : undefined);
+      return parseOptionalPositiveInt(queryVendorId) ?? parseOptionalPositiveInt(vendorIdHeader);
     }
     return undefined;
   }

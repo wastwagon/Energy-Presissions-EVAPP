@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
+import { isPositiveInt } from '../common/utils/parse-id';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In, FindOptionsWhere, SelectQueryBuilder } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
@@ -244,7 +245,7 @@ export class TransactionsService {
   private async resolveWalletReservedAmount(tx: Transaction): Promise<number | null> {
     const onRow = this.parseDecimal(tx.walletReservedAmount);
     if (onRow > 0) return onRow;
-    if (!tx.userId || tx.transactionId <= 0) return null;
+    if (!isPositiveInt(tx.userId) || tx.transactionId <= 0) return null;
 
     const linked = await this.walletTransactionRepository.findOne({
       where: {
@@ -291,12 +292,12 @@ export class TransactionsService {
         chargePointId: filters.chargePointId,
       });
     }
-    if (filters.vendorId) {
+    if (isPositiveInt(filters.vendorId)) {
       queryBuilder
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = tx.charge_point_id')
         .andWhere('cp.vendor_id = :vendorId', { vendorId: filters.vendorId });
     }
-    if (filters.userId) {
+    if (isPositiveInt(filters.userId)) {
       queryBuilder.andWhere('tx.user_id = :userId', { userId: filters.userId });
     }
   }
@@ -334,7 +335,7 @@ export class TransactionsService {
     const where: FindOptionsWhere<Transaction> = {};
     if (filters.status) where.status = filters.status;
     if (filters.chargePointId) where.chargePointId = filters.chargePointId;
-    if (filters.userId) where.userId = filters.userId;
+    if (isPositiveInt(filters.userId)) where.userId = filters.userId;
 
     const findOpts = {
       where: Object.keys(where).length > 0 ? where : undefined,
@@ -347,14 +348,14 @@ export class TransactionsService {
         ...findOpts,
         relations: ['user'],
       });
-      if (filters.vendorId != null) {
+      if (isPositiveInt(filters.vendorId)) {
         rows = await this.filterTransactionsByVendor(rows, filters.vendorId);
       }
       return rows;
     } catch (err: unknown) {
       this.logSchemaMismatch('loadTransactionsFallback', err);
       let rows = await this.transactionRepository.find(findOpts);
-      if (filters.vendorId != null) {
+      if (isPositiveInt(filters.vendorId)) {
         rows = await this.filterTransactionsByVendor(rows, filters.vendorId);
       }
       return rows;
@@ -372,10 +373,10 @@ export class TransactionsService {
     const where: FindOptionsWhere<Transaction> = {};
     if (filters.status) where.status = filters.status;
     if (filters.chargePointId) where.chargePointId = filters.chargePointId;
-    if (filters.userId) where.userId = filters.userId;
+    if (isPositiveInt(filters.userId)) where.userId = filters.userId;
 
     try {
-      if (filters.vendorId == null) {
+      if (!isPositiveInt(filters.vendorId)) {
         return this.transactionRepository.count({
           where: Object.keys(where).length > 0 ? where : undefined,
         });
@@ -402,7 +403,7 @@ export class TransactionsService {
         .innerJoin('charge_points', 'cp', 'cp.charge_point_id = c.charge_point_id')
         .where('c.status IN (:...busy)', { busy: busyStatuses });
 
-      if (vendorId) {
+      if (isPositiveInt(vendorId)) {
         connQ.andWhere('cp.vendor_id = :vendorId', { vendorId });
       }
 
@@ -413,7 +414,7 @@ export class TransactionsService {
         const connectors = await this.connectorRepository.find({
           where: { status: In(busyStatuses) },
         });
-        if (vendorId == null) {
+        if (!isPositiveInt(vendorId)) {
           return connectors;
         }
         return this.filterConnectorsByVendor(connectors, vendorId);
@@ -493,7 +494,10 @@ export class TransactionsService {
     }
 
     const userEntity =
-      tx.user ?? (tx.userId ? await this.userRepository.findOne({ where: { id: tx.userId } }) : null);
+      tx.user ??
+      (isPositiveInt(tx.userId)
+        ? await this.userRepository.findOne({ where: { id: tx.userId } })
+        : null);
     const { customerName, customerEmail } = this.formatUserDisplay(userEntity);
     const cpMeta = await this.attachChargePointMeta(tx);
 
@@ -724,7 +728,7 @@ export class TransactionsService {
       fromDb = await this.loadTransactionsFallback(filters);
     }
 
-    if (userId != null) {
+    if (isPositiveInt(userId)) {
       const walletSynthetic = await this.syntheticActiveSessionsForWalletUser(userId, fromDb);
       return this.enrichActiveSessions([...fromDb, ...walletSynthetic]);
     }
