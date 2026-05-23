@@ -12,6 +12,7 @@ import { BrandingAsset } from '../entities/branding-asset.entity';
 import Decimal from 'decimal.js';
 import { StorageService } from '../storage/storage.service';
 import { InvoicePdfService, type InvoicePdfLogo } from './invoice-pdf.service';
+import { PLATFORM_CURRENCY } from '../common/constants/currency';
 
 @Injectable()
 export class BillingService {
@@ -95,10 +96,10 @@ export class BillingService {
     energyKwh: number,
     durationMinutes: number,
     transactionDate: Date,
-    currency: string = 'GHS',
+    _currency: string = PLATFORM_CURRENCY,
     vendorId?: number,
   ): Promise<{ totalCost: number; breakdown: any }> {
-    const tariff = await this.getActiveTariff(transactionDate, currency, vendorId);
+    const tariff = await this.getActiveTariff(transactionDate, PLATFORM_CURRENCY, vendorId);
 
     if (!tariff) {
       throw new NotFoundException('No active tariff found');
@@ -133,7 +134,7 @@ export class BillingService {
         timeRate: parseFloat(timeRate.toFixed(4)),
         timeCost: parseFloat(timeCost.toFixed(2)),
         baseFee: parseFloat(baseFee.toFixed(2)),
-        currency: tariff.currency,
+        currency: PLATFORM_CURRENCY,
       },
     };
   }
@@ -143,13 +144,13 @@ export class BillingService {
    */
   async getActiveTariff(
     date: Date,
-    currency: string = 'GHS',
+    _currency: string = PLATFORM_CURRENCY,
     vendorId?: number,
   ): Promise<Tariff | null> {
     const qb = this.tariffRepository
       .createQueryBuilder('t')
       .where('t.is_active = true')
-      .andWhere('t.currency = :currency', { currency });
+      .andWhere('t.currency = :currency', { currency: PLATFORM_CURRENCY });
 
     if (vendorId != null) {
       qb.andWhere('(t.vendor_id = :vendorId OR t.vendor_id IS NULL)', { vendorId });
@@ -229,10 +230,11 @@ export class BillingService {
       transaction.totalEnergyKwh,
       transaction.durationMinutes || 0,
       transaction.startTime,
-      transaction.currency,
+      PLATFORM_CURRENCY,
       vendorId,
     );
 
+    transaction.currency = PLATFORM_CURRENCY;
     transaction.totalCost = totalCost;
     await this.transactionRepository.save(transaction);
 
@@ -301,7 +303,7 @@ export class BillingService {
       subtotal: parseFloat(subtotal.toFixed(2)),
       tax: parseFloat(tax.toFixed(2)),
       total: parseFloat(total.toFixed(2)),
-      currency: transaction.currency,
+      currency: PLATFORM_CURRENCY,
       status: 'Generated',
     });
 

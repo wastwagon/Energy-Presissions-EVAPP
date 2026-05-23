@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Tariff } from '../entities/tariff.entity';
+import { PLATFORM_CURRENCY } from '../common/constants/currency';
 
 @Injectable()
 export class TariffsService {
@@ -43,7 +44,7 @@ export class TariffsService {
     validTo?: Date;
     vendorId?: number | null;
   }): Promise<Tariff> {
-    const currency = data.currency || 'GHS';
+    const currency = PLATFORM_CURRENCY;
     const vendorId = data.vendorId ?? null;
 
     if (data.validFrom && (!data.validTo || new Date(data.validTo) > new Date())) {
@@ -92,6 +93,7 @@ export class TariffsService {
     }
 
     Object.assign(tariff, data);
+    tariff.currency = PLATFORM_CURRENCY;
     return this.tariffRepository.save(tariff);
   }
 
@@ -100,11 +102,11 @@ export class TariffsService {
     await this.tariffRepository.remove(tariff);
   }
 
-  async getActiveTariff(currency: string = 'GHS', vendorId?: number): Promise<Tariff | null> {
+  async getActiveTariff(_currency: string = PLATFORM_CURRENCY, vendorId?: number): Promise<Tariff | null> {
     const qb = this.tariffRepository
       .createQueryBuilder('t')
       .where('t.is_active = true')
-      .andWhere('t.currency = :currency', { currency });
+      .andWhere('t.currency = :currency', { currency: PLATFORM_CURRENCY });
 
     if (vendorId != null) {
       qb.andWhere('(t.vendor_id = :vendorId OR t.vendor_id IS NULL)', { vendorId });

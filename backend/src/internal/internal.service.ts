@@ -17,6 +17,7 @@ import { User } from '../entities/user.entity';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { ConnectionEventType, ConnectionStatus } from '../entities/connection-log.entity';
 import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
+import { PLATFORM_CURRENCY } from '../common/constants/currency';
 
 @Injectable()
 export class InternalService {
@@ -388,6 +389,7 @@ export class InternalService {
       meterStart: data.meterStart,
       startTime: new Date(data.startTime),
       status: 'Active',
+      currency: PLATFORM_CURRENCY,
       reservationId: data.reservationId,
     });
 
@@ -512,6 +514,7 @@ export class InternalService {
     transaction.durationMinutes = durationMinutes;
     transaction.status = 'Completed';
     transaction.reason = data.reason;
+    transaction.currency = PLATFORM_CURRENCY;
 
     // Calculate cost based on tariff or charge point price
     let finalCost = 0;
@@ -530,7 +533,7 @@ export class InternalService {
           energyKwh,
           durationMinutes,
           startTime,
-          transaction.currency,
+          PLATFORM_CURRENCY,
           chargePoint?.vendorId ?? undefined,
         );
         finalCost = totalCost;

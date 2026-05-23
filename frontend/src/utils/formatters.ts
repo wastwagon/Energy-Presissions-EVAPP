@@ -1,10 +1,13 @@
-export function formatCurrency(amount?: number | null, currency: string = 'GHS'): string {
+import { PLATFORM_CURRENCY } from '../constants/platform';
+
+/** Formats amounts in platform currency (GHS). The optional second argument is ignored for display consistency. */
+export function formatCurrency(amount?: number | null, _currency?: string): string {
   if (amount === undefined || amount === null || Number.isNaN(Number(amount))) {
     return '-';
   }
   return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency,
+    currency: PLATFORM_CURRENCY,
   }).format(Number(amount));
 }
 

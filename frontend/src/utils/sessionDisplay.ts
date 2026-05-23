@@ -1,9 +1,10 @@
 import type { Transaction } from '../services/transactionsApi';
+import { PLATFORM_CURRENCY } from '../constants/platform';
 import { formatCurrency, formatDurationMinutes, formatEnergyKwh } from './formatters';
 import { formatActiveSessionCost, formatActiveSessionEnergy } from './activeSessionMetrics';
 
-export function sessionCurrency(tx: Transaction): string {
-  return tx.currency || 'GHS';
+export function sessionCurrency(_tx?: Transaction): string {
+  return PLATFORM_CURRENCY;
 }
 
 export function formatSessionEnergy(tx: Transaction): string {

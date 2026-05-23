@@ -1,4 +1,5 @@
 import type { WalletTransaction } from '../services/walletApi';
+import { PLATFORM_CURRENCY } from '../constants/platform';
 import { formatCurrency } from './formatters';
 
 /** Wallet ledger rows that reduce spendable balance (holds and debits). */
@@ -8,7 +9,7 @@ export function isWalletLedgerDebit(type: string): boolean {
 }
 
 export function formatWalletLedgerAmount(tx: WalletTransaction): string {
-  const currency = tx.currency || 'GHS';
+  const currency = PLATFORM_CURRENCY;
   const abs = formatCurrency(Math.abs(tx.amount), currency);
   return isWalletLedgerDebit(tx.type) ? `−${abs}` : `+${abs}`;
 }

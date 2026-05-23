@@ -74,12 +74,11 @@ export function CustomerPreferencesPage() {
             <InputLabel id="pref-currency-label">Currency</InputLabel>
             <Select
               labelId="pref-currency-label"
-              value={currency}
+              value="GHS"
               label="Currency"
-              onChange={(e) => setCurrency(e.target.value)}
+              disabled
             >
               <MenuItem value="GHS">GHS (Ghana Cedis)</MenuItem>
-              <MenuItem value="USD">USD</MenuItem>
             </Select>
           </FormControl>
         </ListItem>
