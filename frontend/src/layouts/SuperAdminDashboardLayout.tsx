@@ -341,8 +341,8 @@ function SuperAdminDashboardChrome() {
             tabIndex={-1}
             sx={dashboardScrollMainSx({ headerVariant: 'appBar', reserveBottomNav: showDockedBottomNav })}
           >
+            <Box {...fixedHeaderSpacerProps} />
             <StaffScrollProviders scrollTargetId={APP_MAIN_CONTENT_ID}>
-              <Box {...fixedHeaderSpacerProps} />
               <Outlet />
             </StaffScrollProviders>
           </Box>

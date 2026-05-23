@@ -30,8 +30,10 @@ export function dashboardScrollMainSx(options: {
     maxWidth: '100%',
     minWidth: 0,
     bgcolor: 'background.default',
-    [`& > [data-fixed-header-spacer="true"]`]: {
+    /** Descendant selector: PTR wrapper may sit between `main` and the spacer. */
+    [`& [data-fixed-header-spacer="true"]`]: {
       ...headerSpacer,
+      flexShrink: 0,
     },
   };
 }
