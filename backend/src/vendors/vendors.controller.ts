@@ -103,6 +103,14 @@ export class VendorsController {
     return this.vendorsService.findOne(id);
   }
 
+  @Get(':id/portal-admin')
+  @Roles('SuperAdmin')
+  @SkipVendorCheck()
+  @ApiOperation({ summary: 'Get vendor portal admin login (Super Admin)' })
+  async getPortalAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.vendorsService.getPortalAdmin(id);
+  }
+
   @Get(':id/status')
   @Roles('SuperAdmin')
   @SkipVendorCheck()
@@ -138,7 +146,12 @@ export class VendorsController {
     contactPhone?: string;
     address?: string;
     metadata?: Record<string, any>;
+    adminEmail?: string;
+    adminPassword: string;
   }): Promise<Vendor> {
+    if (!createVendorDto.adminPassword?.trim()) {
+      throw new BadRequestException('Vendor admin password is required');
+    }
     return this.vendorsService.create(createVendorDto);
   }
 
@@ -149,14 +162,20 @@ export class VendorsController {
   @ApiResponse({ status: 403, description: 'Forbidden - can only update own vendor' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateVendorDto: Partial<Vendor>,
+    @Body()
+    body: Partial<Vendor> & { adminEmail?: string; adminPassword?: string },
     @Request() req: any,
   ): Promise<Vendor> {
     // SuperAdmin can update any vendor, Admin can only update their own
     if (req.user?.accountType !== 'SuperAdmin' && req.user?.vendorId !== id) {
       throw new HttpException('Forbidden - can only update own vendor', HttpStatus.FORBIDDEN);
     }
-    return this.vendorsService.update(id, updateVendorDto);
+    const { adminEmail, adminPassword, ...updateVendorDto } = body;
+    const portalAdmin =
+      req.user?.accountType === 'SuperAdmin' && (adminEmail || adminPassword)
+        ? { adminEmail, adminPassword }
+        : undefined;
+    return this.vendorsService.update(id, updateVendorDto, portalAdmin);
   }
 
   @Put(':id/status')

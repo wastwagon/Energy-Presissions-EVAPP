@@ -7,12 +7,13 @@ import { VendorsService } from './vendors.service';
 import { VendorStatusService } from './vendor-status.service';
 import { Vendor } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
+import { User } from '../entities/user.entity';
 import { StorageModule } from '../storage/storage.module';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vendor, VendorDisablement]),
+    TypeOrmModule.forFeature([Vendor, VendorDisablement, User]),
     StorageModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

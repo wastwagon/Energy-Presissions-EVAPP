@@ -74,6 +74,8 @@ export function VendorManagementPage() {
   const [history, setHistory] = useState<VendorDisablement[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   
+  const MIN_ADMIN_PASSWORD_LENGTH = 8;
+
   // Form state for create/edit
   const [formData, setFormData] = useState({
     name: '',
@@ -82,6 +84,9 @@ export function VendorManagementPage() {
     contactEmail: '',
     contactPhone: '',
     address: '',
+    adminEmail: '',
+    password: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -138,19 +143,24 @@ export function VendorManagementPage() {
     }
   };
 
+  const emptyFormData = () => ({
+    name: '',
+    slug: '',
+    domain: '',
+    contactEmail: '',
+    contactPhone: '',
+    address: '',
+    adminEmail: '',
+    password: '',
+    confirmPassword: '',
+  });
+
   const handleCreateVendor = () => {
-    setFormData({
-      name: '',
-      slug: '',
-      domain: '',
-      contactEmail: '',
-      contactPhone: '',
-      address: '',
-    });
+    setFormData(emptyFormData());
     setCreateDialogOpen(true);
   };
 
-  const handleEditVendor = (vendor: Vendor) => {
+  const handleEditVendor = async (vendor: Vendor) => {
     setSelectedVendor(vendor);
     setFormData({
       name: vendor.name,
@@ -159,8 +169,46 @@ export function VendorManagementPage() {
       contactEmail: vendor.contactEmail || '',
       contactPhone: vendor.contactPhone || '',
       address: vendor.address || '',
+      adminEmail: '',
+      password: '',
+      confirmPassword: '',
     });
     setEditDialogOpen(true);
+    try {
+      const portal = await vendorApi.getPortalAdmin(vendor.id);
+      setFormData((prev) => ({
+        ...prev,
+        adminEmail: portal.email || vendor.contactEmail || '',
+      }));
+    } catch {
+      setFormData((prev) => ({
+        ...prev,
+        adminEmail: vendor.contactEmail || '',
+      }));
+    }
+  };
+
+  const resolveAdminLoginEmail = () =>
+    (formData.adminEmail || formData.contactEmail).trim();
+
+  const validatePortalPassword = (requirePassword: boolean): string | null => {
+    const loginEmail = resolveAdminLoginEmail();
+    if (!loginEmail) {
+      return 'Vendor admin login email is required (set login email or contact email)';
+    }
+    if (!requirePassword && !formData.password) {
+      return null;
+    }
+    if (!formData.password) {
+      return 'Vendor admin password is required';
+    }
+    if (formData.password.length < MIN_ADMIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_ADMIN_PASSWORD_LENGTH} characters`;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      return 'Passwords do not match';
+    }
+    return null;
   };
 
   const handleDeleteVendor = (vendor: Vendor) => {
@@ -184,9 +232,20 @@ export function VendorManagementPage() {
   };
 
   const confirmCreateVendor = async () => {
+    const passwordError = validatePortalPassword(true);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     try {
       setError(null);
-      await vendorApi.create(formData);
+      const { password, confirmPassword: _confirm, adminEmail, ...vendorFields } = formData;
+      await vendorApi.create({
+        ...vendorFields,
+        adminEmail: adminEmail.trim() || undefined,
+        adminPassword: password,
+      });
       setSuccess('Vendor created successfully');
       setCreateDialogOpen(false);
       loadVendors();
@@ -199,9 +258,23 @@ export function VendorManagementPage() {
   const confirmEditVendor = async () => {
     if (!selectedVendor) return;
 
+    const passwordError = validatePortalPassword(false);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     try {
       setError(null);
-      await vendorApi.update(selectedVendor.id, formData);
+      const { password, confirmPassword: _confirm, adminEmail, ...vendorFields } = formData;
+      const payload: Parameters<typeof vendorApi.update>[1] = { ...vendorFields };
+      if (adminEmail.trim()) {
+        payload.adminEmail = adminEmail.trim();
+      }
+      if (password) {
+        payload.adminPassword = password;
+      }
+      await vendorApi.update(selectedVendor.id, payload);
       setSuccess('Vendor updated successfully');
       setEditDialogOpen(false);
       loadVendors();
@@ -621,6 +694,52 @@ export function VendorManagementPage() {
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
+                  Vendor portal login
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Credentials for the vendor admin to sign in to their dashboard.
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Admin login email"
+                  fullWidth
+                  type="email"
+                  value={formData.adminEmail}
+                  onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                  helperText={
+                    formData.contactEmail && !formData.adminEmail
+                      ? `Uses contact email (${formData.contactEmail}) if left blank`
+                      : 'Used to sign in to the vendor admin portal'
+                  }
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Admin password"
+                  fullWidth
+                  required
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  helperText={`At least ${MIN_ADMIN_PASSWORD_LENGTH} characters`}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Confirm password"
+                  fullWidth
+                  required
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
             </Grid>
           </Box>
         </DialogContent>
@@ -632,7 +751,12 @@ export function VendorManagementPage() {
             onClick={confirmCreateVendor}
             variant="contained"
             disableElevation
-            disabled={!formData.name || !formData.slug}
+            disabled={
+              !formData.name ||
+              !formData.slug ||
+              !formData.password ||
+              !resolveAdminLoginEmail()
+            }
             sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
             Create vendor
@@ -714,6 +838,52 @@ export function VendorManagementPage() {
                     sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
+                    Vendor portal login
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Update sign-in email or set a new password for the vendor admin account.
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Admin login email"
+                    fullWidth
+                    type="email"
+                    value={formData.adminEmail}
+                    onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                    helperText="Email used to sign in to the vendor admin portal"
+                    sx={(th) => sxObject(th, authFormFieldSx)}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="New password (leave blank to keep current)"
+                    fullWidth
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    helperText={
+                      formData.password
+                        ? `At least ${MIN_ADMIN_PASSWORD_LENGTH} characters`
+                        : undefined
+                    }
+                    sx={(th) => sxObject(th, authFormFieldSx)}
+                  />
+                </Grid>
+                {formData.password ? (
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Confirm new password"
+                      fullWidth
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      sx={(th) => sxObject(th, authFormFieldSx)}
+                    />
+                  </Grid>
+                ) : null}
               </Grid>
             </Box>
           )}

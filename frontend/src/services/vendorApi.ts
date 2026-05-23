@@ -49,6 +49,11 @@ export interface ChangeStatusRequest {
   reason?: string;
 }
 
+export interface VendorPortalAdmin {
+  userId: number | null;
+  email: string | null;
+}
+
 export const vendorApi = {
   /**
    * Get all vendors (Super Admin only)
@@ -75,6 +80,14 @@ export const vendorApi = {
   },
 
   /**
+   * Vendor portal admin login (Super Admin)
+   */
+  getPortalAdmin: async (id: number): Promise<VendorPortalAdmin> => {
+    const response = await api.get(`/admin/vendors/${id}/portal-admin`);
+    return response.data;
+  },
+
+  /**
    * Create a new vendor
    */
   create: async (data: {
@@ -85,6 +98,8 @@ export const vendorApi = {
     contactPhone?: string;
     address?: string;
     metadata?: Record<string, any>;
+    adminEmail?: string;
+    adminPassword: string;
   }): Promise<Vendor> => {
     const response = await api.post('/admin/vendors', data);
     return response.data;
@@ -93,7 +108,10 @@ export const vendorApi = {
   /**
    * Update vendor
    */
-  update: async (id: number, data: Partial<Vendor>): Promise<Vendor> => {
+  update: async (
+    id: number,
+    data: Partial<Vendor> & { adminEmail?: string; adminPassword?: string },
+  ): Promise<Vendor> => {
     const response = await api.put(`/admin/vendors/${id}`, data);
     return response.data;
   },

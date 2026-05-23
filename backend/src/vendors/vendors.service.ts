@@ -1,10 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { Vendor, VendorStatus } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
+import { User } from '../entities/user.entity';
 import { VendorStatusService } from './vendor-status.service';
 import { StorageService } from '../storage/storage.service';
+
+const MIN_VENDOR_ADMIN_PASSWORD_LENGTH = 8;
+
+export type VendorPortalAdminInfo = {
+  userId: number | null;
+  email: string | null;
+};
 
 @Injectable()
 export class VendorsService {
@@ -15,9 +24,129 @@ export class VendorsService {
     private vendorRepository: Repository<Vendor>,
     @InjectRepository(VendorDisablement)
     private disablementRepository: Repository<VendorDisablement>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private vendorStatusService: VendorStatusService,
     private readonly storageService: StorageService,
   ) {}
+
+  private assertPasswordStrength(password: string): void {
+    if (!password || password.length < MIN_VENDOR_ADMIN_PASSWORD_LENGTH) {
+      throw new BadRequestException(
+        `Password must be at least ${MIN_VENDOR_ADMIN_PASSWORD_LENGTH} characters`,
+      );
+    }
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private async findPrimaryPortalAdmin(vendorId: number): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.vendor_id = :vendorId', { vendorId })
+      .andWhere('user.account_type = :accountType', { accountType: 'Admin' })
+      .orderBy('user.created_at', 'ASC')
+      .getOne();
+  }
+
+  async getPortalAdmin(vendorId: number): Promise<VendorPortalAdminInfo> {
+    await this.findOne(vendorId);
+    const admin = await this.findPrimaryPortalAdmin(vendorId);
+    return {
+      userId: admin?.id ?? null,
+      email: admin?.email ?? null,
+    };
+  }
+
+  private async ensureEmailAvailable(email: string, exceptUserId?: number): Promise<void> {
+    const existing = await this.userRepository.findOne({ where: { email } });
+    if (existing && existing.id !== exceptUserId) {
+      throw new ConflictException(`Email ${email} is already in use`);
+    }
+  }
+
+  private resolveAdminEmail(adminEmail: string | undefined, contactEmail: string | undefined): string {
+    const raw = (adminEmail || contactEmail || '').trim();
+    if (!raw) {
+      throw new BadRequestException('Vendor admin login email is required');
+    }
+    return this.normalizeEmail(raw);
+  }
+
+  private async createPortalAdminUser(
+    vendorId: number,
+    email: string,
+    password: string,
+    vendorName: string,
+  ): Promise<User> {
+    this.assertPasswordStrength(password);
+    await this.ensureEmailAvailable(email);
+
+    const user = this.userRepository.create({
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      firstName: vendorName,
+      lastName: 'Admin',
+      accountType: 'Admin',
+      balance: 0,
+      currency: 'GHS',
+      status: 'Active',
+      emailVerified: true,
+      vendorId,
+    });
+
+    const saved = await this.userRepository.save(user);
+    this.logger.log(`Created vendor portal admin user ${saved.id} for vendor ${vendorId}`);
+    return saved;
+  }
+
+  private async upsertPortalAdminPassword(
+    vendor: Vendor,
+    adminEmail: string | undefined,
+    adminPassword: string | undefined,
+  ): Promise<void> {
+    if (!adminPassword?.trim()) {
+      return;
+    }
+
+    this.assertPasswordStrength(adminPassword);
+    const admin = await this.findPrimaryPortalAdmin(vendor.id);
+
+    if (admin) {
+      admin.passwordHash = await bcrypt.hash(adminPassword, 10);
+      admin.passwordResetToken = null;
+      admin.passwordResetExpiresAt = null;
+      await this.userRepository.save(admin);
+      this.logger.log(`Updated portal admin password for vendor ${vendor.id} (user ${admin.id})`);
+      return;
+    }
+
+    const email = this.resolveAdminEmail(adminEmail, vendor.contactEmail);
+    await this.createPortalAdminUser(vendor.id, email, adminPassword, vendor.name);
+  }
+
+  private async updatePortalAdminEmail(vendor: Vendor, adminEmail: string | undefined): Promise<void> {
+    if (!adminEmail?.trim()) {
+      return;
+    }
+
+    const email = this.normalizeEmail(adminEmail);
+    const admin = await this.findPrimaryPortalAdmin(vendor.id);
+    if (!admin) {
+      return;
+    }
+
+    if (admin.email === email) {
+      return;
+    }
+
+    await this.ensureEmailAvailable(email, admin.id);
+    admin.email = email;
+    await this.userRepository.save(admin);
+    this.logger.log(`Updated portal admin email for vendor ${vendor.id} (user ${admin.id})`);
+  }
 
   /**
    * Get all vendors
@@ -70,6 +199,8 @@ export class VendorsService {
     contactPhone?: string;
     address?: string;
     metadata?: Record<string, any>;
+    adminEmail?: string;
+    adminPassword: string;
   }): Promise<Vendor> {
     // Check if domain already exists
     if (createVendorDto.domain) {
@@ -105,6 +236,17 @@ export class VendorsService {
 
     const saved = await this.vendorRepository.save(vendor);
 
+    const adminEmail = this.resolveAdminEmail(
+      createVendorDto.adminEmail,
+      createVendorDto.contactEmail,
+    );
+    await this.createPortalAdminUser(
+      saved.id,
+      adminEmail,
+      createVendorDto.adminPassword,
+      saved.name,
+    );
+
     // Update cache
     await this.vendorStatusService.updateVendorStatus(saved.id, 'active');
 
@@ -115,7 +257,11 @@ export class VendorsService {
   /**
    * Update vendor
    */
-  async update(id: number, updateVendorDto: Partial<Vendor>): Promise<Vendor> {
+  async update(
+    id: number,
+    updateVendorDto: Partial<Vendor>,
+    portalAdmin?: { adminEmail?: string; adminPassword?: string },
+  ): Promise<Vendor> {
     const vendor = await this.findOne(id);
 
     // If domain is being changed, check for conflicts
@@ -127,7 +273,20 @@ export class VendorsService {
     }
 
     Object.assign(vendor, updateVendorDto);
-    return this.vendorRepository.save(vendor);
+    const saved = await this.vendorRepository.save(vendor);
+
+    if (portalAdmin?.adminEmail) {
+      await this.updatePortalAdminEmail(saved, portalAdmin.adminEmail);
+    }
+    if (portalAdmin?.adminPassword) {
+      await this.upsertPortalAdminPassword(
+        saved,
+        portalAdmin.adminEmail,
+        portalAdmin.adminPassword,
+      );
+    }
+
+    return saved;
   }
 
   /**
