@@ -191,7 +191,7 @@ export class ChargePointsController {
   @ApiResponse({ status: 400, description: 'Invalid request or insufficient balance' })
   async startWalletBasedCharging(
     @Param('id') id: string,
-    @Body() body: { connectorId: number; userId: number; amount: number },
+    @Body() body: { connectorId: number; userId: number; amount?: number },
   ) {
     return this.chargePointsService.startWalletBasedCharging(
       id,

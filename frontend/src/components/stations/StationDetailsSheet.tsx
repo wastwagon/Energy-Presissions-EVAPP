@@ -10,17 +10,17 @@ import {
   useTheme,
 } from '@mui/material';
 import DirectionsIcon from '@mui/icons-material/Directions';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import LoginIcon from '@mui/icons-material/Login';
 import type { StationWithDistance } from '../../services/stationsApi';
+import type { Transaction } from '../../services/transactionsApi';
 import { AdaptiveSheet } from '../ios/AdaptiveSheet';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
 import { GroupedListRow } from '../ios/GroupedListRow';
-import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { triggerHaptic } from '../../utils/haptics';
+import { StationChargingButton } from './StationChargingButton';
 
 export type StationDetailsSheetProps = {
   open: boolean;
@@ -31,6 +31,8 @@ export type StationDetailsSheetProps = {
   onStartCharging: (e: React.MouseEvent, station: StationWithDistance) => void;
   onLoginPrompt: (station: StationWithDistance) => void;
   onViewFullDetails?: (station: StationWithDistance) => void;
+  activeSession?: Transaction | null;
+  onChargingStopped?: () => void;
 };
 
 export function StationDetailsSheet({
@@ -42,6 +44,8 @@ export function StationDetailsSheet({
   onStartCharging,
   onLoginPrompt,
   onViewFullDetails,
+  activeSession = null,
+  onChargingStopped,
 }: StationDetailsSheetProps) {
   const theme = useTheme();
   const useGrouped = useMediaQuery(theme.breakpoints.down('md'));
@@ -172,24 +176,15 @@ export function StationDetailsSheet({
               Directions
             </Button>
           )}
-          {['Available', 'Preparing'].includes(station.status) && (station.availableConnectors ?? 0) > 0 && (
-            <Button
-              variant="contained"
-              disableElevation
-              startIcon={isAuthenticated ? <PlayArrowIcon /> : <LoginIcon />}
-              onClick={(e) => {
-                triggerHaptic('light');
-                if (isAuthenticated) {
-                  onStartCharging(e, station);
-                } else {
-                  onLoginPrompt(station);
-                }
-              }}
-              sx={(th) => sxObject(th, compactContainedCtaSx)}
-            >
-              {isAuthenticated ? 'Start charging' : 'Log in to start'}
-            </Button>
-          )}
+          <StationChargingButton
+            station={station}
+            isAuthenticated={isAuthenticated}
+            activeSession={activeSession}
+            onStart={(e) => onStartCharging(e, station)}
+            onLoginPrompt={() => onLoginPrompt(station)}
+            onStopped={onChargingStopped}
+            fullWidth={false}
+          />
         </>
       }
     >

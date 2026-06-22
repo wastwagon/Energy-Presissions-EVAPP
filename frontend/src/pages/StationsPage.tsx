@@ -42,7 +42,12 @@ import {
 } from '../utils/googleMapsDirections';
 import { reverseGeocodeAreaLabel } from '../services/reverseGeocodeApi';
 import { formatApiOrNetworkError } from '../utils/apiErrors';
+import { formatUserFacingErrorMessage, UserMessages } from '../utils/userFriendlyErrors';
 import { visuallyHiddenSx } from '../styles/visuallyHidden';
+import { useCustomerActiveSessions } from '../hooks/useCustomerActiveSessions';
+import { useWalletAvailableBalance } from '../hooks/useWalletAvailableBalance';
+import { WalletTopUpAlert } from '../components/WalletTopUpAlert';
+import { UserErrorAlert } from '../components/UserErrorAlert';
 
 /** Server-side search radius (km) when loading by GPS; not shown in the UI. */
 const NEARBY_LOAD_RADIUS_KM = 50;
@@ -88,6 +93,12 @@ export function StationsPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [pendingStationForLogin, setPendingStationForLogin] = useState<StationWithDistance | null>(null);
+
+  const { byChargePointId: activeSessionsByStation, reload: reloadActiveSessions } =
+    useCustomerActiveSessions(isAuthenticated);
+
+  const { isBelowMinimum: walletBelowMinimum } = useWalletAvailableBalance(isAuthenticated);
+  const hasActiveChargingSession = activeSessionsByStation.size > 0;
 
   // Check authentication status and load favorites
   useEffect(() => {
@@ -163,7 +174,7 @@ export function StationsPage() {
         bumpMapFit();
       } catch (err: unknown) {
         if (epoch === stationsLoadEpochRef.current) {
-          setError(formatApiOrNetworkError(err));
+          setError(formatApiOrNetworkError(err, 'stations'));
         }
         console.error('Error loading nearby stations:', err);
       } finally {
@@ -205,7 +216,7 @@ export function StationsPage() {
         }
       } catch (err: unknown) {
         if (epoch === stationsLoadEpochRef.current) {
-          setError(formatApiOrNetworkError(err));
+          setError(formatApiOrNetworkError(err, 'stations'));
         }
       } finally {
         if (epoch === stationsLoadEpochRef.current) {
@@ -236,8 +247,8 @@ export function StationsPage() {
         (err) => {
           setLocationError(
             err.message === 'User denied Geolocation'
-              ? 'Location access denied. Please enable location services to find nearby stations.'
-              : 'Unable to get your location. Please search for stations manually.',
+              ? 'Location access is off. Enable location in your browser settings to find nearby chargers, or search by name.'
+              : 'We could not get your location. Search for a station by name or open the map.',
           );
           setLoading(false);
         },
@@ -248,7 +259,9 @@ export function StationsPage() {
         },
       );
     } else {
-      setLocationError('Geolocation is not supported by your browser.');
+      setLocationError(
+        'Your browser does not support location. Search for a station by name or browse the map.',
+      );
     }
   }, []);
 
@@ -387,6 +400,7 @@ export function StationsPage() {
     };
 
   const handleChargingSuccess = () => {
+    void reloadActiveSessions();
     if (userLocation && searchTermRef.current.trim() === '') {
       void loadNearbyStations(userLocation.lat, userLocation.lng);
     }
@@ -406,7 +420,7 @@ export function StationsPage() {
         setFavoriteIds((prev) => [...prev, chargePointId]);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to update favorites');
+      setError(formatUserFacingErrorMessage(err, 'stations') || UserMessages.favoritesFailed);
     }
   };
 
@@ -469,9 +483,14 @@ export function StationsPage() {
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} role="alert" onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="stations" sx={{ mb: 2 }} onClose={() => setError(null)} />
+      )}
+
+      {isAuthenticated && walletBelowMinimum && (
+        <WalletTopUpAlert
+          variant={hasActiveChargingSession ? 'duringCharging' : 'belowMinimum'}
+          sx={{ mb: 2 }}
+        />
       )}
 
       <Box
@@ -646,6 +665,12 @@ export function StationsPage() {
                     onDirections={handleGetDirections}
                     onStartCharging={handleStartCharging}
                     onToggleFavorite={handleToggleFavorite}
+                    activeSession={activeSessionsByStation.get(station.chargePointId) ?? null}
+                    onChargingStopped={() => {
+                      void reloadActiveSessions();
+                      void refreshStations();
+                    }}
+                    onLoginPrompt={(_, s) => openLoginPrompt(s)}
                   />
                 </Box>
               ))}
@@ -780,6 +805,15 @@ export function StationsPage() {
         onStartCharging={handleStartCharging}
         onLoginPrompt={openLoginPrompt}
         onViewFullDetails={handleViewFullStationDetails}
+        activeSession={
+          selectedStation
+            ? activeSessionsByStation.get(selectedStation.chargePointId) ?? null
+            : null
+        }
+        onChargingStopped={() => {
+          void reloadActiveSessions();
+          void refreshStations();
+        }}
       />
       <LoginPromptSheet
         open={loginPromptOpen}

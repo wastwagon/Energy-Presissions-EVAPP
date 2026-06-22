@@ -40,6 +40,8 @@ import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContex
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 
 export function CustomerTransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -57,19 +59,19 @@ export function CustomerTransactionDetailPage() {
         setError(null);
         const txId = Number(id);
         if (!Number.isFinite(txId)) {
-          setError('Transaction not found');
+          setError(UserMessages.loadTransactionFailed);
           return false;
         }
         const tx = await transactionsApi.getById(txId);
         const user = getStoredUser();
         if (typeof user?.id !== 'number' || tx.userId !== user.id) {
-          setError('Transaction not found');
+          setError(UserMessages.loadTransactionFailed);
           return false;
         }
         setTransaction(tx);
         return true;
       } catch (err: unknown) {
-        setError((err as Error).message || 'Failed to load transaction');
+        setError(formatUserFacingErrorMessage(err, 'sessions'));
         console.error('Error loading transaction:', err);
         return false;
       }
@@ -113,9 +115,11 @@ export function CustomerTransactionDetailPage() {
           containerSx={{ mb: 2 }}
           actions={backButton}
         />
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error || 'Transaction not found'}
-        </Alert>
+        <UserErrorAlert
+          error={error || UserMessages.loadTransactionFailed}
+          context="sessions"
+          sx={{ mb: 3 }}
+        />
       </Box>
     );
   }

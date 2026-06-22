@@ -21,8 +21,10 @@ export type ActiveTransactionView = Transaction & {
   recordPending?: boolean;
   /** Energy consumed so far from latest meter register (not persisted until stop). */
   liveEnergyKwh?: number | null;
-  /** Estimated cost from kWh × tariff, capped at wallet hold (not final until stop). */
+  /** Estimated cost from kWh × tariff (metered: already billed amount when available). */
   liveCostSoFar?: number | null;
+  billingMode?: string | null;
+  billedCostSoFar?: number | null;
   customerName?: string | null;
   customerEmail?: string | null;
   locationName?: string | null;
@@ -485,7 +487,13 @@ export class TransactionsService {
           : 0;
         if (pricePerKwh > 0 && liveEnergyKwh > 0) {
           let cost = liveEnergyKwh * pricePerKwh;
-          if (walletReserved != null && walletReserved > 0) {
+          const isMetered =
+            tx.billingMode === 'metered' ||
+            (!tx.billingMode && !(walletReserved != null && walletReserved > 0));
+          const billedSoFar = this.parseDecimal(tx.billedCostSoFar);
+          if (isMetered && billedSoFar > 0) {
+            cost = billedSoFar;
+          } else if (!isMetered && walletReserved != null && walletReserved > 0) {
             cost = Math.min(cost, walletReserved);
           }
           liveCostSoFar = Math.round(cost * 100) / 100;
@@ -503,6 +511,8 @@ export class TransactionsService {
 
     return this.buildTransactionApiPayload(tx, {
       walletReservedAmount: walletReserved ?? tx.walletReservedAmount ?? null,
+      billingMode: tx.billingMode ?? null,
+      billedCostSoFar: tx.billedCostSoFar ?? null,
       liveEnergyKwh,
       liveCostSoFar,
       customerName,

@@ -32,6 +32,8 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 export function CustomerPaymentHistoryPage() {
   const navigate = useNavigate();
@@ -61,8 +63,8 @@ export function CustomerPaymentHistoryPage() {
         try {
           setError(null);
           return await fetchPaymentsPage(1, false);
-        } catch (err: any) {
-          setError(err.message || 'Failed to load payment history');
+        } catch (err: unknown) {
+          setError(formatUserFacingErrorMessage(err, 'payments'));
           console.error('Error loading payments:', err);
           return false;
         }
@@ -77,8 +79,8 @@ export function CustomerPaymentHistoryPage() {
     try {
       setError(null);
       await fetchPaymentsPage(page + 1, true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load more payments');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'payments'));
     } finally {
       setLoadingMore(false);
     }
@@ -107,9 +109,7 @@ export function CustomerPaymentHistoryPage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="payments" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       {payments.length === 0 ? (

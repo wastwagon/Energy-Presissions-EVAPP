@@ -32,6 +32,8 @@ import { formatCurrency } from '../../utils/formatters';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 
 export function CustomerTopUpPage() {
   const navigate = useNavigate();
@@ -48,14 +50,14 @@ export function CustomerTopUpPage() {
         setError(null);
         const user = getStoredUser();
         if (typeof user?.id !== 'number') {
-          setError('User not logged in');
+          setError(UserMessages.notSignedIn);
           return false;
         }
         const balanceData = await walletApi.getBalance(user.id);
         setBalance(balanceData);
         return true;
-      } catch (err: any) {
-        setError(err.message || 'Failed to load wallet balance');
+      } catch (err: unknown) {
+        setError(formatUserFacingErrorMessage(err, 'wallet'));
         console.error('Error loading balance:', err);
         return false;
       }
@@ -80,11 +82,11 @@ export function CustomerTopUpPage() {
   const handleTopUp = () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount <= 0) {
-      setError('Please enter a valid amount');
+      setError(UserMessages.topUpInvalidAmount);
       return;
     }
     if (numAmount < 1) {
-      setError('Minimum top-up amount is GHS 1.00');
+      setError(UserMessages.topUpInvalidAmount);
       return;
     }
     setError(null);
@@ -118,9 +120,7 @@ export function CustomerTopUpPage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="payments" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>

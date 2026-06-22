@@ -1,3 +1,8 @@
+import {
+  formatUserFacingError,
+  type UserErrorContext,
+} from './userFriendlyErrors';
+
 type ErrLike = {
   message?: string;
   code?: string;
@@ -19,35 +24,44 @@ function isCrossOriginApiFromEnv(): boolean {
   }
 }
 
-/**
- * User-facing copy for API failures. Network errors in production with a cross-origin
- * VITE_API_URL are often CORS (browser blocks) or an unreachable API, not the user’s Wi‑Fi.
- */
 function nestMessage(data: { message?: string | string[]; error?: string } | undefined): string | null {
   if (!data) return null;
   if (typeof data.message === 'string' && data.message.trim()) {
-    return data.message;
+    return data.message.trim();
   }
   if (Array.isArray(data.message) && data.message.length > 0) {
-    return data.message.join(', ');
+    return data.message.join(', ').trim();
   }
   if (typeof data.error === 'string' && data.error.trim()) {
-    return data.error;
+    return data.error.trim();
   }
   return null;
 }
 
-export function formatApiOrNetworkError(err: unknown): string {
+/**
+ * User-facing copy for API / network failures (maps known backend messages to plain language).
+ */
+export function formatApiOrNetworkError(
+  err: unknown,
+  context: UserErrorContext = 'general',
+): string {
   const e = err as ErrLike;
   const fromBody = nestMessage(e.response?.data);
   if (fromBody) {
-    return fromBody;
+    return formatUserFacingError({ message: fromBody }, context).message;
   }
   if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
-    if (import.meta.env.PROD && isCrossOriginApiFromEnv()) {
-      return 'Cannot reach the API. The browser may be blocking requests to a different host (CORS), or the API is temporarily unavailable. Your host should allow this site in the API CORS settings, or use one domain for the app and API (for example /api through the same reverse proxy) so the app does not call a separate API origin.';
-    }
-    return 'Cannot reach the server. Check your connection, VPN, or try again shortly. If this persists, the API may be unavailable.';
+    return formatUserFacingError(
+      {
+        message:
+          import.meta.env.PROD && isCrossOriginApiFromEnv()
+            ? 'Cannot reach the server. Check your internet connection and try again.'
+            : 'Connection problem. Check your internet and try again.',
+      },
+      context,
+    ).message;
   }
-  return e.message || 'Request failed';
+  return formatUserFacingError(err, context).message;
 }
+
+export type { UserErrorContext };

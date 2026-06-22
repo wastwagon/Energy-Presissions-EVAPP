@@ -91,6 +91,20 @@ export class Transaction {
   })
   walletReservedAmount: number;
 
+  /** `reserved` = upfront hold; `metered` = pay-as-you-charge from wallet. */
+  @Column({ name: 'billing_mode', length: 20, nullable: true, default: 'metered' })
+  billingMode: string;
+
+  @Column({
+    name: 'billed_cost_so_far',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
+  billedCostSoFar: number;
+
   @OneToMany(() => MeterSample, (meterSample) => meterSample.transaction)
   meterSamples: MeterSample[];
 

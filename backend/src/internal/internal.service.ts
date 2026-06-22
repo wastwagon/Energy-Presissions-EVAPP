@@ -18,6 +18,10 @@ import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity
 import { ConnectionEventType, ConnectionStatus } from '../entities/connection-log.entity';
 import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
 import { PLATFORM_CURRENCY } from '../common/constants/currency';
+import {
+  METERED_BALANCE_STOP_KWH_BUFFER,
+  MIN_WALLET_START_BALANCE,
+} from '../common/constants/charging-wallet';
 
 @Injectable()
 export class InternalService {
@@ -412,17 +416,15 @@ export class InternalService {
           .getOne();
 
         if (pendingReservation) {
-          // Update transaction with reserved amount
           saved.walletReservedAmount = pendingReservation.amount;
+          saved.billingMode = 'reserved';
           await this.transactionRepository.save(saved);
 
-          // Link the reservation to this transaction
           pendingReservation.transactionId = saved.transactionId;
           await this.walletTransactionRepository.save(pendingReservation);
 
           this.logger.log(`Linked wallet reservation ${pendingReservation.id} (${pendingReservation.amount} GHS) to transaction ${saved.transactionId}`);
         } else {
-          // Also check for reservations without transactionId (created before transaction)
           const unlinkedReservation = await this.walletTransactionRepository
             .createQueryBuilder('wt')
             .where('wt.userId = :userId', { userId: saved.userId })
@@ -435,10 +437,15 @@ export class InternalService {
 
           if (unlinkedReservation) {
             saved.walletReservedAmount = unlinkedReservation.amount;
+            saved.billingMode = 'reserved';
             await this.transactionRepository.save(saved);
             unlinkedReservation.transactionId = saved.transactionId;
             await this.walletTransactionRepository.save(unlinkedReservation);
             this.logger.log(`Linked unlinked wallet reservation ${unlinkedReservation.id} (${unlinkedReservation.amount} GHS) to transaction ${saved.transactionId}`);
+          } else if (saved.idTag?.startsWith('USER_')) {
+            saved.billingMode = 'metered';
+            saved.billedCostSoFar = 0;
+            await this.transactionRepository.save(saved);
           }
         }
       } catch (error) {
@@ -554,7 +561,35 @@ export class InternalService {
     }
 
     // Handle wallet-based transaction finalization
-    if (transaction.walletReservedAmount && transaction.userId) {
+    const billingMode =
+      transaction.billingMode ||
+      (transaction.walletReservedAmount ? 'reserved' : 'metered');
+
+    if (billingMode === 'metered' && transaction.userId) {
+      try {
+        const billedSoFar = this.parseWalletDecimal(transaction.billedCostSoFar);
+        const roundedFinal = Math.round(finalCost * 100) / 100;
+        transaction.totalCost = roundedFinal;
+        const remaining = Math.round((roundedFinal - billedSoFar) * 100) / 100;
+
+        if (remaining > 0) {
+          await this.walletService.deduct(
+            transaction.userId,
+            remaining,
+            `Charging session completed - ${energyKwh.toFixed(2)} kWh at ${transaction.chargePointId}`,
+            undefined,
+            transaction.transactionId,
+          );
+        }
+
+        transaction.billedCostSoFar = roundedFinal;
+        this.logger.log(
+          `Finalized metered wallet session ${transactionId}. Energy: ${energyKwh.toFixed(2)} kWh, Total: ${roundedFinal.toFixed(2)} GHS`,
+        );
+      } catch (error) {
+        this.logger.error(`Failed to finalize metered wallet session ${transactionId}:`, error);
+      }
+    } else if (transaction.walletReservedAmount && transaction.userId) {
       try {
         // Find the wallet reservation for this transaction
         const walletReservations = await this.walletTransactionRepository.find({
@@ -624,8 +659,8 @@ export class InternalService {
           vendorId: chargePoint?.vendorId || undefined,
         });
 
-        // Broadcast wallet balance update if wallet-based transaction
-        if (savedTransaction.userId && savedTransaction.walletReservedAmount) {
+        // Broadcast wallet balance update for wallet-based transactions
+        if (savedTransaction.userId && (savedTransaction.walletReservedAmount || billingMode === 'metered')) {
           try {
             const user = await this.userRepository.findOne({
               where: { id: savedTransaction.userId },
@@ -708,9 +743,9 @@ export class InternalService {
 
     const savedSamples = await this.meterSampleRepository.save(samples);
 
-    // Check for wallet-based transactions and stop if amount exhausted
+    // Bill metered sessions or auto-stop reserved-cap sessions
     if (data.transactionId) {
-      await this.checkAndStopWalletBasedTransaction(data.transactionId, data.chargePointId);
+      await this.processWalletMeterBilling(data.transactionId, data.chargePointId);
     }
 
     // Broadcast meter value (only for latest sample to avoid spam)
@@ -733,28 +768,48 @@ export class InternalService {
     return savedSamples;
   }
 
+  private parseWalletDecimal(value: unknown): number {
+    if (value === undefined || value === null) return 0;
+    const n = typeof value === 'number' ? value : parseFloat(String(value));
+    return Number.isFinite(n) ? n : 0;
+  }
+
   /**
-   * Check if wallet-based transaction should be stopped due to amount exhaustion
+   * Metered: deduct wallet per kWh; reserved: auto-stop when hold is exhausted.
    */
-  private async checkAndStopWalletBasedTransaction(transactionId: number, chargePointId: string): Promise<void> {
+  private async processWalletMeterBilling(transactionId: number, chargePointId: string): Promise<void> {
     try {
       const transaction = await this.transactionRepository.findOne({
         where: { transactionId },
         relations: ['chargePoint'],
       });
 
-      if (!transaction || transaction.status !== 'Active' || !transaction.walletReservedAmount) {
-        return; // Not a wallet-based transaction or already stopped
+      if (!transaction || transaction.status !== 'Active' || !transaction.userId) {
+        return;
       }
 
-      const chargePoint = transaction.chargePoint;
-      const pricePerKwh = chargePoint?.pricePerKwh || 0;
+      const billingMode =
+        transaction.billingMode ||
+        (this.parseWalletDecimal(transaction.walletReservedAmount) > 0 ? 'reserved' : 'metered');
+
+      if (billingMode === 'reserved') {
+        await this.checkAndStopReservedWalletTransaction(transactionId, chargePointId, transaction);
+        return;
+      }
+
+      const chargePoint =
+        transaction.chargePoint ??
+        (await this.chargePointRepository.findOne({
+          where: { chargePointId: transaction.chargePointId },
+        }));
+      const pricePerKwh = chargePoint?.pricePerKwh
+        ? parseFloat(chargePoint.pricePerKwh.toString())
+        : 0;
 
       if (!pricePerKwh || pricePerKwh <= 0) {
-        return; // Cannot calculate without price
+        return;
       }
 
-      // Get latest energy meter value
       const latestEnergySample = await this.meterSampleRepository.findOne({
         where: {
           transactionId,
@@ -764,34 +819,114 @@ export class InternalService {
       });
 
       if (!latestEnergySample) {
-        return; // No energy meter values yet
+        return;
       }
 
-      // Calculate energy consumed (in kWh)
+      const energyWh = Math.max(0, latestEnergySample.value - transaction.meterStart);
+      const energyKwh = energyWh / 1000;
+      const totalCostSoFar = Math.round(energyKwh * pricePerKwh * 100) / 100;
+      const alreadyBilled = this.parseWalletDecimal(transaction.billedCostSoFar);
+      const increment = Math.round((totalCostSoFar - alreadyBilled) * 100) / 100;
+
+      if (increment >= 0.01) {
+        const canPay = await this.walletService.hasSufficientBalance(transaction.userId, increment);
+        if (!canPay) {
+          if (this.chargePointsService) {
+            await this.chargePointsService.remoteStopTransaction(chargePointId, transactionId);
+            this.logger.log(
+              `Stopped metered transaction ${transactionId} — insufficient balance for ${increment.toFixed(2)} GHS`,
+            );
+          }
+          return;
+        }
+
+        await this.walletService.deduct(
+          transaction.userId,
+          increment,
+          `Charging session - ${energyKwh.toFixed(2)} kWh at ${chargePointId}`,
+          undefined,
+          transactionId,
+        );
+
+        transaction.billedCostSoFar = totalCostSoFar;
+        transaction.totalCost = totalCostSoFar;
+        await this.transactionRepository.save(transaction);
+
+        if (this.websocketGateway) {
+          try {
+            const user = await this.userRepository.findOne({ where: { id: transaction.userId } });
+            if (user) {
+              this.websocketGateway.broadcastWalletBalanceUpdate({
+                userId: user.id,
+                balance: user.balance,
+                currency: user.currency,
+                transactionId,
+              });
+            }
+          } catch (error) {
+            this.logger.error(`Error broadcasting wallet balance during metered billing:`, error);
+          }
+        }
+      }
+
+      const { balance } = await this.walletService.getBalance(transaction.userId);
+      const minContinue = pricePerKwh * METERED_BALANCE_STOP_KWH_BUFFER;
+      if (balance < minContinue && this.chargePointsService) {
+        await this.chargePointsService.remoteStopTransaction(chargePointId, transactionId);
+        this.logger.log(
+          `Stopped metered transaction ${transactionId} — balance below ${minContinue.toFixed(2)} GHS minimum`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error processing metered wallet billing for ${transactionId}:`, error);
+    }
+  }
+
+  /**
+   * Legacy reserved-cap sessions: stop when hold is nearly exhausted.
+   */
+  private async checkAndStopReservedWalletTransaction(
+    transactionId: number,
+    chargePointId: string,
+    transaction: Transaction,
+  ): Promise<void> {
+      const chargePoint = transaction.chargePoint;
+      const pricePerKwh = chargePoint?.pricePerKwh || 0;
+
+      if (!pricePerKwh || pricePerKwh <= 0) {
+        return;
+      }
+
+      const latestEnergySample = await this.meterSampleRepository.findOne({
+        where: {
+          transactionId,
+          measurand: 'Energy.Active.Import.Register',
+        },
+        order: { timestamp: 'DESC' },
+      });
+
+      if (!latestEnergySample) {
+        return;
+      }
+
       const energyWh = latestEnergySample.value - transaction.meterStart;
       const energyKwh = energyWh / 1000;
-
-      // Calculate cost so far
       const costSoFar = energyKwh * pricePerKwh;
+      const reserved = this.parseWalletDecimal(transaction.walletReservedAmount);
 
-      // Check if reserved amount is exhausted (stop at 98% to avoid overcharging, accounting for processing delay)
-      const stopThreshold = transaction.walletReservedAmount * 0.98;
-      if (costSoFar >= stopThreshold) {
-        // Stop the transaction
+      const stopThreshold = reserved * 0.98;
+      if (reserved > 0 && costSoFar >= stopThreshold) {
         if (this.chargePointsService) {
           try {
             await this.chargePointsService.remoteStopTransaction(chargePointId, transactionId);
             this.logger.log(
-              `Stopped wallet-based transaction ${transactionId} - Amount threshold reached. Energy: ${energyKwh.toFixed(2)} kWh, Cost: ${costSoFar.toFixed(2)} GHS, Reserved: ${transaction.walletReservedAmount} GHS`,
+              `Stopped reserved-cap transaction ${transactionId}. Energy: ${energyKwh.toFixed(2)} kWh, Cost: ${costSoFar.toFixed(2)} GHS, Reserved: ${reserved} GHS`,
             );
           } catch (error) {
             this.logger.error(`Failed to stop transaction ${transactionId}:`, error);
           }
         }
       }
-    } catch (error) {
-      this.logger.error(`Error checking wallet-based transaction ${transactionId}:`, error);
-    }
   }
 
   async createReservation(data: {

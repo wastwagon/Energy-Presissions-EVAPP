@@ -14,6 +14,8 @@ import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity
 import { Vendor } from '../entities/vendor.entity';
 import { assertChargePointRegistrationAllowed } from '../common/charge-point-registration-block';
 import { computeChargePointLinkInfo } from '../common/charge-point-link-status';
+import { MIN_WALLET_START_BALANCE } from '../common/constants/charging-wallet';
+import { CustomerErrors } from '../common/messages/customer-facing';
 
 @Injectable()
 export class ChargePointsService {
@@ -557,9 +559,8 @@ export class ChargePointsService {
     if (connector) {
       const startable = ['Available', 'Preparing'];
       if (!startable.includes(connector.status)) {
-        const hint = connector.errorCode ? ` (${connector.errorCode})` : '';
         throw new BadRequestException(
-          `Connector ${connectorId} is ${connector.status}${hint}. Remote start is only offered when the connector is Available or Preparing.`,
+          CustomerErrors.connectorNotReady(connectorId, connector.status),
         );
       }
     }
@@ -580,75 +581,80 @@ export class ChargePointsService {
     if (status !== 'Accepted') {
       throw new BadRequestException(
         status === 'Rejected'
-          ? 'Charge point rejected remote start. Plug in the connector cable, then try again.'
-          : `Remote start was not accepted by the charge point (${status || 'no status'}).`,
+          ? CustomerErrors.remoteStartRejected
+          : CustomerErrors.remoteStartNotAccepted(status),
       );
     }
     return { success: true };
   }
 
   /**
-   * Start wallet-based charging transaction
-   * Reserves amount from wallet and starts charging session
+   * Start wallet-based charging (metered by default — pay as you charge).
+   * Optional `amount` keeps legacy upfront-reserve behaviour for older clients.
    */
   async startWalletBasedCharging(
     chargePointId: string,
     connectorId: number,
     userId: number,
-    amount: number,
+    amount?: number,
   ): Promise<{
     success: boolean;
     pendingSession?: boolean;
     transactionId?: number;
     message: string;
   }> {
-    // Verify charge point exists
     await this.findOne(chargePointId);
 
     if (connectorId === 0) {
       throw new BadRequestException('Connector ID 0 is not valid for transactions');
     }
 
-    // Verify user exists
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`User ${userId} not found`);
     }
 
-    // Check wallet balance
-    const hasBalance = await this.walletService.hasSufficientBalance(userId, amount);
-    if (!hasBalance) {
-      throw new BadRequestException('Insufficient wallet balance');
+    const useReservedMode = amount != null && amount > 0;
+
+    if (useReservedMode) {
+      const hasBalance = await this.walletService.hasSufficientBalance(userId, amount);
+      if (!hasBalance) {
+        throw new BadRequestException(CustomerErrors.insufficientWallet);
+      }
+    } else {
+      const hasBalance = await this.walletService.hasSufficientBalance(userId, MIN_WALLET_START_BALANCE);
+      if (!hasBalance) {
+        throw new BadRequestException(
+          CustomerErrors.insufficientWalletToStart(MIN_WALLET_START_BALANCE),
+        );
+      }
     }
 
-    // Reserve amount from wallet (create a pending transaction)
-    // We'll deduct it when the transaction actually starts
     const idTag = await this.ensureWalletIdTag(userId);
 
-    // Reserve the amount from wallet FIRST (before starting transaction)
-    // This ensures the reservation exists when the transaction is created
-    const walletReservation = await this.walletService.reserve(
-      userId,
-      amount,
-      `Charging session at ${chargePointId} - Reserved amount`,
-      undefined, // transactionId will be set later
-    );
-
-    // Start the remote transaction
-    const startResult = await this.remoteStartTransaction(chargePointId, connectorId, idTag);
-    
-    if (!startResult.success) {
-      // If remote start failed, cancel the reservation
-      try {
-        await this.walletService.cancelReservation(walletReservation.id);
-      } catch (error) {
-        this.logger.error(`Failed to cancel reservation after remote start failure:`, error);
-      }
-      throw new BadRequestException('Failed to start charging session');
+    let walletReservation: { id: number } | null = null;
+    if (useReservedMode) {
+      walletReservation = await this.walletService.reserve(
+        userId,
+        amount!,
+        `Charging session at ${chargePointId} - Reserved amount`,
+        undefined,
+      );
     }
 
-    // Find the active transaction that was just created (with retry logic)
-    // The transaction is created asynchronously when the device sends StartTransaction
+    const startResult = await this.remoteStartTransaction(chargePointId, connectorId, idTag);
+
+    if (!startResult.success) {
+      if (walletReservation) {
+        try {
+          await this.walletService.cancelReservation(walletReservation.id);
+        } catch (error) {
+          this.logger.error(`Failed to cancel reservation after remote start failure:`, error);
+        }
+      }
+      throw new BadRequestException(CustomerErrors.failedToStartCharging);
+    }
+
     let activeTransaction = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       activeTransaction = await this.transactionRepository.findOne({
@@ -665,31 +671,31 @@ export class ChargePointsService {
         break;
       }
 
-      // Wait a bit before retrying (transaction creation is async)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (activeTransaction) {
-      // Store the reserved amount in the transaction
-      activeTransaction.walletReservedAmount = amount;
+      if (useReservedMode) {
+        activeTransaction.walletReservedAmount = amount!;
+        activeTransaction.billingMode = 'reserved';
+      } else {
+        activeTransaction.billingMode = 'metered';
+        activeTransaction.billedCostSoFar = 0;
+      }
       await this.transactionRepository.save(activeTransaction);
 
-      // Link the reservation to this transaction
-      // Note: walletReservation is already saved, we need to update it via walletService
-      // The reservation will be linked automatically when the transaction is created
-      // via the check in createTransaction method
-      
       return {
         success: true,
         pendingSession: false,
         transactionId: activeTransaction.transactionId,
-        message: `Charging started. Amount ${amount} GHS reserved. Session will stop automatically when amount is exhausted.`,
+        message: useReservedMode
+          ? `Charging started. Amount ${amount} GHS reserved.`
+          : 'Charging started. Your wallet is charged as energy is delivered.',
       };
     }
 
-    // Remote start accepted but StartTransaction not received yet (cable not plugged, etc.)
     this.logger.warn(
-      `Transaction not found after wallet-start for ${chargePointId}, reservation ${walletReservation.id} — waiting for StartTransaction`,
+      `Transaction not found after wallet-start for ${chargePointId}${walletReservation ? `, reservation ${walletReservation.id}` : ''} — waiting for StartTransaction`,
     );
 
     return {
@@ -830,9 +836,9 @@ export class ChargePointsService {
       );
       const hint =
         link.linkStatus === 'stale'
-          ? 'The charger was online recently but the WebSocket is closed. Wait for reconnect or reboot the station.'
-          : 'The charger must be online (CSMS link: Online) before remote commands can run.';
-      throw new BadRequestException(`Charge point is not connected. ${hint}`);
+          ? CustomerErrors.chargerOfflineStale
+          : CustomerErrors.chargerNotConnected;
+      throw new BadRequestException(hint);
     }
   }
 
@@ -909,19 +915,17 @@ export class ChargePointsService {
         }
         if (error.response?.status === 503) {
           throw new BadRequestException(
-            apiMsg || 'Charge point is not connected to the OCPP gateway',
+            apiMsg || CustomerErrors.chargerNotConnected,
           );
         }
         if (error.response?.status === 504) {
-          throw new BadRequestException(
-            apiMsg || 'Command timeout — the charge point did not respond in time',
-          );
+          throw new BadRequestException(apiMsg || CustomerErrors.commandTimeout);
         }
         if (apiMsg) {
           throw new BadRequestException(apiMsg);
         }
       }
-      throw new BadRequestException(`Failed to send command: ${(error as Error).message}`);
+      throw new BadRequestException(CustomerErrors.commandFailed);
     }
   }
 

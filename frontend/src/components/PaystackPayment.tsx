@@ -19,7 +19,9 @@ import { walletApi, WalletBalance } from '../services/walletApi';
 import { formatCurrency } from '../utils/formatters';
 import { authFormFieldSx, compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { UserErrorAlert } from './UserErrorAlert';
 import { triggerHaptic } from '../utils/haptics';
+import { formatUserFacingErrorMessage, UserMessages } from '../utils/userFriendlyErrors';
 
 interface PaystackPaymentProps {
   open: boolean;
@@ -83,7 +85,7 @@ export function PaystackPayment({
 
   const handleWalletPayment = async () => {
     if (!userId) {
-      setError('User ID is required for wallet payment');
+      setError(UserMessages.notSignedIn);
       return;
     }
 
@@ -102,10 +104,7 @@ export function PaystackPayment({
       triggerHaptic('success');
       onSuccess?.();
     } catch (err: unknown) {
-      const errorMessage =
-        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
-        (err as Error)?.message ||
-        'Failed to process wallet payment';
+      const errorMessage = formatUserFacingErrorMessage(err, 'payments');
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
@@ -115,24 +114,24 @@ export function PaystackPayment({
 
   const handlePaystackPayment = async () => {
     if (!email) {
-      setError('Email is required');
+      setError('Enter your email address to continue.');
       return;
     }
 
     if (!email.includes('@')) {
-      setError('Please enter a valid email address');
+      setError('Enter a valid email address.');
       return;
     }
 
     if (paymentChannel === 'mobile_money') {
       if (!mobileMoneyPhone.trim()) {
-        setError('Please enter your mobile money phone number');
+        setError('Enter the mobile money number linked to your wallet.');
         return;
       }
       const phoneRegex = /^(\+233|0)[0-9]{9}$/;
       const cleanPhone = mobileMoneyPhone.replace(/\s+/g, '');
       if (!phoneRegex.test(cleanPhone)) {
-        setError('Please enter a valid Ghana phone number (e.g., +233XXXXXXXXX or 0XXXXXXXXX)');
+        setError('Enter a valid Ghana mobile number (for example 024XXXXXXX or +233XXXXXXXXX).');
         return;
       }
     }
@@ -172,10 +171,7 @@ export function PaystackPayment({
         throw new Error('Payment URL not received');
       }
     } catch (err: unknown) {
-      const errorMessage =
-        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
-        (err as Error)?.message ||
-        'Failed to initialize payment';
+      const errorMessage = formatUserFacingErrorMessage(err, 'payments');
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
@@ -232,9 +228,7 @@ export function PaystackPayment({
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="payments" sx={{ mb: 2 }} onClose={() => setError(null)} />
       )}
 
       {canUseWallet && (

@@ -1,17 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Button,
-  TextField,
   Typography,
   Box,
   Alert,
   CircularProgress,
   Skeleton,
-  Grid,
   Paper,
   Divider,
-  InputAdornment,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { StationDetails, StationWithDistance } from '../services/stationsApi';
@@ -20,18 +17,18 @@ import { chargePointsApi } from '../services/chargePointsApi';
 import { requireStoredUserId } from '../utils/authSession';
 import { formatCurrency } from '../utils/formatters';
 import {
-  authFormFieldSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   sxObject,
 } from '../styles/authShell';
-import { premiumPanelCardSx } from '../theme/jampackShell';
-import { GroupedListSection } from './ios/GroupedListSection';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { WalletTopUpAlert } from './WalletTopUpAlert';
+import { UserErrorAlert } from './UserErrorAlert';
 import { triggerHaptic } from '../utils/haptics';
+import { UserMessages, formatUserFacingErrorMessage } from '../utils/userFriendlyErrors';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
+import { MIN_WALLET_START_BALANCE } from '../constants/chargingWallet';
 import BoltIcon from '@mui/icons-material/Bolt';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 interface StartChargingDialogProps {
@@ -43,7 +40,6 @@ interface StartChargingDialogProps {
 
 export function StartChargingDialog({ open, onClose, station, onSuccess }: StartChargingDialogProps) {
   const theme = useTheme();
-  const [amount, setAmount] = useState('');
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
   const [reservedBalance, setReservedBalance] = useState<number>(0);
@@ -51,16 +47,8 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [quickAmount, setQuickAmount] = useState<number | null>(null);
-
-  const QUICK_AMOUNTS = [25, 50, 100, 200] as const;
 
   const pricePerKwh = station?.pricePerKwh ? parseFloat(station.pricePerKwh.toString()) : 0;
-  const capacityKw = station?.totalCapacityKw ? parseFloat(station.totalCapacityKw.toString()) : 0;
-  const amountNum = parseFloat(amount) || 0;
-  const capacityKwh = pricePerKwh > 0 ? amountNum / pricePerKwh : 0;
-  const estimatedHours = capacityKw > 0 ? capacityKwh / capacityKw : 0;
-
   const displayPricePerKwh =
     typeof pricePerKwh === 'number' && !isNaN(pricePerKwh)
       ? pricePerKwh
@@ -69,21 +57,12 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
         : 0;
 
   const holdBalance = availableBalance ?? walletBalance;
-  const insufficientFunds = useMemo(
-    () => holdBalance !== null && amountNum > 0 && amountNum > holdBalance,
-    [holdBalance, amountNum],
-  );
-  const canStartSession =
-    !starting &&
-    amountNum > 0 &&
-    holdBalance !== null &&
-    amountNum <= holdBalance;
+  const insufficientFunds = holdBalance !== null && holdBalance < MIN_WALLET_START_BALANCE;
+  const canStartSession = !starting && holdBalance !== null && holdBalance >= MIN_WALLET_START_BALANCE;
 
   useEffect(() => {
     if (open && station) {
       void loadWalletBalance();
-      setAmount('');
-      setQuickAmount(null);
       setError(null);
       setInfoMessage(null);
     }
@@ -103,7 +82,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
         setAvailableBalance(balance.balance);
         setReservedBalance(0);
       } catch {
-        setError('Failed to load wallet balance. Please try again.');
+        setError(UserMessages.loadWalletFailed);
       }
     } finally {
       setLoadingBalance(false);
@@ -113,24 +92,14 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
   const handleStart = async () => {
     if (!station) return;
 
-    if (!amount || parseFloat(amount) <= 0) {
-      setError('Please enter a valid amount');
-      return;
-    }
-
-    const parsed = parseFloat(amount);
     const balanceToCheck = availableBalance !== null ? availableBalance : walletBalance;
-    if (balanceToCheck !== null && parsed > balanceToCheck) {
-      const balanceText =
-        reservedBalance > 0
-          ? `Available: ${formatCurrency(availableBalance, 'GHS')} (${formatCurrency(reservedBalance, 'GHS')} reserved)`
-          : `${formatCurrency(walletBalance, 'GHS')}`;
-      setError(`Insufficient available balance. Your ${balanceText}`);
+    if (balanceToCheck !== null && balanceToCheck < MIN_WALLET_START_BALANCE) {
+      setError(UserMessages.walletMinToStart);
       return;
     }
 
     if (!station.chargePointId) {
-      setError('Invalid charge point');
+      setError(UserMessages.invalidChargePoint);
       return;
     }
 
@@ -140,7 +109,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       setError(null);
       setInfoMessage(null);
       const userId = requireStoredUserId();
-      const result = await chargePointsApi.walletStart(station.chargePointId, 1, userId, parsed);
+      const result = await chargePointsApi.walletStart(station.chargePointId, 1, userId);
 
       if (result.success) {
         if (result.pendingSession) {
@@ -157,8 +126,8 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
       } else {
         throw new Error(result.message || 'Failed to start charging session');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to start charging session');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'charging'));
       setStarting(false);
     }
   };
@@ -184,7 +153,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
           Start charging
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Wallet hold · session starts when confirmed
+          Pay as you charge from your wallet
         </Typography>
       </Box>
     </Box>
@@ -231,7 +200,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
               startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
               sx={(th) => sxObject(th, compactContainedCtaSx)}
             >
-              {starting ? 'Starting…' : 'Start session'}
+              {starting ? 'Starting…' : 'Start charging'}
             </Button>
           )}
         </>
@@ -247,9 +216,13 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
         }}
       />
       {error && (
-        <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert
+          error={error}
+          context="charging"
+          sx={{ mb: 1.5 }}
+          onClose={() => setError(null)}
+          onAction={onClose}
+        />
       )}
       {infoMessage && (
         <Alert severity="info" sx={{ mb: 1.5 }}>
@@ -296,26 +269,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
               </Typography>
             </Box>
             {!loadingBalance && insufficientFunds && (
-              <Alert
-                severity="warning"
-                sx={{ mt: 1.5 }}
-                action={
-                  <Button
-                    component={RouterLink}
-                    to={CUSTOMER_ROUTES.walletTopUp}
-                    size="small"
-                    color="inherit"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      onClose();
-                    }}
-                  >
-                    Top up
-                  </Button>
-                }
-              >
-                Add funds to cover {formatCurrency(amountNum, 'GHS')} before starting a session.
-              </Alert>
+              <WalletTopUpAlert variant="belowMinimum" sx={{ mt: 1.5 }} onTopUpClick={onClose} />
             )}
             {reservedBalance > 0 && (
               <Box
@@ -337,92 +291,9 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
             )}
           </Paper>
 
-          <GroupedListSection title="Session amount" sx={{ mb: 1.5 }}>
-            <Grid container spacing={1.25} sx={{ p: 2, pt: 1 }}>
-              {QUICK_AMOUNTS.map((value) => (
-                <Grid item xs={6} key={value}>
-                  <Button
-                    fullWidth
-                    disableElevation
-                    variant={quickAmount === value ? 'contained' : 'outlined'}
-                    onClick={() => {
-                      triggerHaptic('light');
-                      setQuickAmount(value);
-                      setAmount(String(value));
-                      setError(null);
-                    }}
-                    sx={(th) =>
-                      quickAmount === value
-                        ? { ...sxObject(th, compactContainedCtaSx), minHeight: 48 }
-                        : { ...sxObject(th, compactOutlinedCtaSx), minHeight: 48 }
-                    }
-                  >
-                    {formatCurrency(value, 'GHS')}
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
-          </GroupedListSection>
-
-          <TextField
-            label="Custom amount (GHS)"
-            type="number"
-            fullWidth
-            value={amount}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === '' || (!isNaN(parseFloat(value)) && parseFloat(value) >= 0)) {
-                setAmount(value);
-                setQuickAmount(null);
-                setError(null);
-              }
-            }}
-            inputProps={{ min: 0, step: 0.01 }}
-            helperText={amountNum > 0 ? undefined : 'Enter amount to reserve for this session'}
-            sx={(th) => ({ ...sxObject(th, authFormFieldSx), mb: 1.5 })}
-            size="small"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
-            }}
-          />
-
-          {amountNum > 0 && pricePerKwh > 0 && (
-            <Paper elevation={0} sx={{ ...premiumPanelCardSx, mb: 1, p: 2 }}>
-              <Grid container spacing={1.5} sx={{ mb: 1 }}>
-                <Grid item xs={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <BoltIcon color="primary" fontSize="small" />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Capacity
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold">
-                        {capacityKwh.toFixed(2)} kWh
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <AccessTimeIcon color="primary" fontSize="small" />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Time
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold">
-                        {estimatedHours >= 1
-                          ? `${Math.floor(estimatedHours)}h ${Math.round((estimatedHours % 1) * 60)}m`
-                          : `${Math.round(estimatedHours * 60)}m`}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              </Grid>
-              <Alert severity="info" sx={{ py: 0.5 }}>
-                Auto-stops when amount is exhausted
-              </Alert>
-            </Paper>
-          )}
+          <Alert severity="info" sx={{ py: 0.75 }}>
+            Your wallet is charged as energy is delivered. Charging stops when you tap Stop, your balance runs low, or your vehicle finishes.
+          </Alert>
         </Box>
       )}
     </AdaptiveSheet>

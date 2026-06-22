@@ -18,6 +18,7 @@ import { authFormFieldSx, compactContainedCtaSx, sxObject } from '../../styles/a
 import { iosGroupedListRowSx } from '../../theme/iosGroupedList';
 import { triggerHaptic } from '../../utils/haptics';
 import { USER_PREF_KEYS } from '../../constants/userPreferences';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
 
 export function CustomerPreferencesPage() {
   const [currency, setCurrency] = useState('GHS');
@@ -39,7 +40,7 @@ export function CustomerPreferencesPage() {
       setError(null);
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      setError('Failed to save preferences');
+      setError('We could not save your preferences. Try again.');
     }
   };
 
@@ -62,9 +63,7 @@ export function CustomerPreferencesPage() {
         </Alert>
       )}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="profile" sx={{ mb: 2 }} onClose={() => setError(null)} />
       )}
 
       <GroupedListSection title="Display">

@@ -2,7 +2,9 @@
 -- Apply on cleanmotion.energyprecisions.com PostgreSQL if Super Admin APIs return 500.
 
 ALTER TABLE transactions
-  ADD COLUMN IF NOT EXISTS wallet_reserved_amount DECIMAL(10, 2) NULL;
+  ADD COLUMN IF NOT EXISTS wallet_reserved_amount DECIMAL(10, 2) NULL,
+  ADD COLUMN IF NOT EXISTS billing_mode VARCHAR(20) NULL DEFAULT 'metered',
+  ADD COLUMN IF NOT EXISTS billed_cost_so_far DECIMAL(10, 2) NULL DEFAULT 0;
 
 ALTER TABLE charge_points
   ADD COLUMN IF NOT EXISTS cellular_provider VARCHAR(32) NULL,

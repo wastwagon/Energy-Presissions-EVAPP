@@ -48,6 +48,11 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { WalletTopUpAlert } from '../../components/WalletTopUpAlert';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { useWalletAvailableBalance } from '../../hooks/useWalletAvailableBalance';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
+import { MIN_WALLET_START_BALANCE } from '../../constants/chargingWallet';
 
 export function CustomerActiveSessionsPage() {
   const navigate = useNavigate();
@@ -61,6 +66,9 @@ export function CustomerActiveSessionsPage() {
   const [stoppingTransactionId, setStoppingTransactionId] = useState<number | null>(null);
   const [stopDialogOpen, setStopDialogOpen] = useState(false);
   const [pendingStopTransaction, setPendingStopTransaction] = useState<Transaction | null>(null);
+  const [showStoppedLowBalanceAlert, setShowStoppedLowBalanceAlert] = useState(false);
+
+  const { isBelowMinimum, reload: reloadWalletBalance } = useWalletAvailableBalance(true);
 
   const getCurrentUserId = () => {
     const user = getStoredUser();
@@ -81,7 +89,7 @@ export function CustomerActiveSessionsPage() {
         setTransactions(active);
         return true;
       } catch (err: any) {
-        setError(err.message || 'Failed to load active sessions');
+        setError(formatUserFacingErrorMessage(err, 'sessions'));
         console.error('Error loading active sessions:', err);
         return false;
       }
@@ -107,7 +115,11 @@ export function CustomerActiveSessionsPage() {
       }
 
       void loadActiveSessions(true).then(() => {
-        // Show summary dialog for completed transaction belonging to current user.
+        void reloadWalletBalance().then((balance) => {
+          if (balance != null && balance < MIN_WALLET_START_BALANCE) {
+            setShowStoppedLowBalanceAlert(true);
+          }
+        });
         setCompletedTransactionId(event.data.transactionId);
         setSummaryDialogOpen(true);
       });
@@ -149,7 +161,7 @@ export function CustomerActiveSessionsPage() {
         setStoppingTransactionId(null);
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to stop charging session');
+      setError(formatUserFacingErrorMessage(err, 'charging') || UserMessages.stopChargingFailed);
       setStoppingTransactionId(null);
       console.error('Error stopping transaction:', err);
     }
@@ -163,7 +175,7 @@ export function CustomerActiveSessionsPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Active Charging Sessions"
-        subtitle="Monitor your current charging sessions in real-time"
+        subtitle="Monitor your current charging sessions — cost updates as energy is delivered"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.session}
         showSeconds
@@ -173,9 +185,23 @@ export function CustomerActiveSessionsPage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="sessions" sx={{ mb: 3 }} onClose={() => setError(null)} />
+      )}
+
+      {showStoppedLowBalanceAlert && isBelowMinimum && (
+        <WalletTopUpAlert
+          variant="sessionStopped"
+          sx={{ mb: 3 }}
+          onTopUpClick={() => setShowStoppedLowBalanceAlert(false)}
+        />
+      )}
+
+      {!showStoppedLowBalanceAlert && transactions.length > 0 && isBelowMinimum && (
+        <WalletTopUpAlert variant="duringCharging" sx={{ mb: 3 }} />
+      )}
+
+      {!showStoppedLowBalanceAlert && transactions.length === 0 && isBelowMinimum && (
+        <WalletTopUpAlert variant="belowMinimum" sx={{ mb: 3 }} />
       )}
 
       {transactions.some((t) => t.recordPending) && (
@@ -300,7 +326,7 @@ export function CustomerActiveSessionsPage() {
                     </Grid>
                     <Grid item xs={6} sm={3}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                        Cost
+                        Cost so far
                       </Typography>
                       <Typography variant="body1" fontWeight={500} sx={{ mt: 0.25 }}>
                         {formatActiveSessionCost(tx)}

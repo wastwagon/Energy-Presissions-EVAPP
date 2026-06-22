@@ -32,6 +32,8 @@ import {
 } from '../../styles/authShell';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
 import { LegalAuthNotice, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 declare global {
   interface Window {
@@ -113,7 +115,7 @@ export function LoginPage() {
       localStorage.setItem('user', JSON.stringify(response.user));
       navigate(resolvePostLoginPath(response.user.accountType), { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,7 @@ export function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(resolvePostLoginPath(data.user.accountType), { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Sign in with Google failed. Please try email/password.');
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoading(false);
     }
@@ -177,7 +179,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       if (!window.AppleID) {
-        setError('Sign in with Apple is loading. Please try again in a moment.');
+        setError('Sign in with Apple is still loading. Wait a moment and try again.');
         setLoading(false);
         return;
       }
@@ -191,7 +193,7 @@ export function LoginPage() {
       const response = await window.AppleID.auth.signIn();
       const idToken = response.authorization?.id_token;
       if (!idToken) {
-        setError('Sign in with Apple was cancelled or failed.');
+        setError('Sign in with Apple was cancelled. Try again or use email and password.');
         setLoading(false);
         return;
       }
@@ -200,7 +202,7 @@ export function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(resolvePostLoginPath(data.user.accountType), { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Sign in with Apple failed. Please try email/password.');
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoading(false);
     }
@@ -225,9 +227,7 @@ export function LoginPage() {
             </Alert>
           )}
           {error && (
-            <Alert severity="error" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
+            <UserErrorAlert error={error} context="auth" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)} />
           )}
 
           <form onSubmit={handlePasswordLogin}>

@@ -115,11 +115,11 @@ export const chargePointsApi = {
     return response.data;
   },
 
-  walletStart: async (id: string, connectorId: number, userId: number, amount: number) => {
+  walletStart: async (id: string, connectorId: number, userId: number, amount?: number) => {
     const response = await api.post(`/charge-points/${id}/wallet-start`, {
       connectorId,
       userId,
-      amount,
+      ...(amount != null ? { amount } : {}),
     });
     return response.data;
   },

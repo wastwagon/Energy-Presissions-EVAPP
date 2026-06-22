@@ -73,7 +73,7 @@ export function ActiveSessionListItem({
           <Stat label="Duration" value={formatElapsedDurationFromStart(tx.startTime)} />
           <Stat label="Started" value={new Date(tx.startTime).toLocaleTimeString()} />
           <Stat label="Energy" value={formatActiveSessionEnergy(tx)} />
-          <Stat label="Cost" value={formatActiveSessionCost(tx)} />
+          <Stat label="Cost so far" value={formatActiveSessionCost(tx)} />
           {activeSessionHasWalletHold(tx) ? (
             <Box sx={{ gridColumn: '1 / -1' }}>
               <Stat label="Purchased (max)" value={formatActiveSessionPurchased(tx)} />

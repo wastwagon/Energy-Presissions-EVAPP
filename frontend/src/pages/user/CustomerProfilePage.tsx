@@ -44,6 +44,8 @@ import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 
 export function CustomerProfilePage() {
@@ -82,8 +84,8 @@ export function CustomerProfilePage() {
           phone: userData.phone || '',
         });
         return true;
-      } catch {
-        setError('Failed to load user data');
+      } catch (err: unknown) {
+        setError(formatUserFacingErrorMessage(err, 'profile'));
         return false;
       }
     }, silent);
@@ -118,13 +120,13 @@ export function CustomerProfilePage() {
       setEditing(false);
       setSuccess('Profile updated successfully');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to update profile');
+      setError(formatUserFacingErrorMessage(err, 'profile'));
     }
   };
 
   const handleDeleteAccount = async () => {
     if (!deletePassword.trim()) {
-      setError('Enter your password to confirm account deletion.');
+      setError('Enter your password to confirm you want to delete your account.');
       return;
     }
     try {
@@ -134,7 +136,7 @@ export function CustomerProfilePage() {
       authApi.logout();
       navigate('/login', { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to delete account');
+      setError(formatUserFacingErrorMessage(err, 'profile'));
       setDeleting(false);
     }
   };
@@ -152,9 +154,7 @@ export function CustomerProfilePage() {
 
   if (!user) {
     return (
-      <Alert severity="error">
-        User data not found. Please log in again.
-      </Alert>
+      <UserErrorAlert error={UserMessages.notSignedIn} context="profile" />
     );
   }
 
@@ -187,9 +187,7 @@ export function CustomerProfilePage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="profile" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       {success && (

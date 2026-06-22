@@ -43,6 +43,8 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { triggerHaptic } from '../../utils/haptics';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 
 const WALLET_TX_PAGE_SIZE = 20;
 
@@ -76,7 +78,7 @@ export function CustomerWalletPage() {
           setError(null);
           const user = getStoredUser();
           if (typeof user?.id !== 'number') {
-            setError('User not logged in');
+            setError(UserMessages.notSignedIn);
             return false;
           }
           const [balanceData, availableData] = await Promise.all([
@@ -88,8 +90,8 @@ export function CustomerWalletPage() {
           setTxPage(1);
           await fetchTransactionsPage(user.id, 1, false);
           return true;
-        } catch (err: any) {
-          setError(err.message || 'Failed to load wallet data');
+        } catch (err: unknown) {
+          setError(formatUserFacingErrorMessage(err, 'wallet'));
           console.error('Error loading wallet data:', err);
           return false;
         }
@@ -107,8 +109,8 @@ export function CustomerWalletPage() {
     try {
       setError(null);
       await fetchTransactionsPage(user.id, txPage + 1, true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load more transactions');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'wallet'));
     } finally {
       setLoadingMoreTx(false);
     }
@@ -122,8 +124,8 @@ export function CustomerWalletPage() {
       try {
         setError(null);
         await fetchTransactionsPage(user.id, value, false);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load transactions');
+      } catch (err: unknown) {
+        setError(formatUserFacingErrorMessage(err, 'wallet'));
       }
     },
     [fetchTransactionsPage],
@@ -169,9 +171,7 @@ export function CustomerWalletPage() {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="wallet" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       {balance && funds && (

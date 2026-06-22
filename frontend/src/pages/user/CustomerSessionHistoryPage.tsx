@@ -40,6 +40,8 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 
 export function CustomerSessionHistoryPage() {
   const navigate = useNavigate();
@@ -56,7 +58,7 @@ export function CustomerSessionHistoryPage() {
   const fetchHistoryPage = useCallback(async (pageNum: number, append: boolean) => {
     const user = getStoredUser();
     if (typeof user?.id !== 'number') {
-      setError('User not logged in');
+      setError(UserMessages.notSignedIn);
       return false;
     }
     const offset = (pageNum - 1) * limit;
@@ -73,8 +75,8 @@ export function CustomerSessionHistoryPage() {
         try {
           setError(null);
           return await fetchHistoryPage(1, false);
-        } catch (err: any) {
-          setError(err.message || 'Failed to load session history');
+        } catch (err: unknown) {
+          setError(formatUserFacingErrorMessage(err, 'sessions'));
           console.error('Error loading session history:', err);
           return false;
         }
@@ -89,8 +91,8 @@ export function CustomerSessionHistoryPage() {
     try {
       setError(null);
       await fetchHistoryPage(page + 1, true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load more sessions');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'sessions'));
     } finally {
       setLoadingMore(false);
     }
@@ -119,9 +121,7 @@ export function CustomerSessionHistoryPage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="sessions" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       {transactions.length === 0 ? (

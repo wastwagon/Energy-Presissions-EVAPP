@@ -29,7 +29,9 @@ import { premiumPanelCardSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
 import { TransactionSummaryBodySkeleton } from './dashboard/BlockContentSkeletons';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
+import { WalletTopUpAlert } from './WalletTopUpAlert';
 import { triggerHaptic } from '../utils/haptics';
+import { MIN_WALLET_START_BALANCE } from '../constants/chargingWallet';
 
 interface TransactionSummaryDialogProps {
   open: boolean;
@@ -218,7 +220,7 @@ export function TransactionSummaryDialog({
           </Paper>
 
           {walletBalance !== null && (
-            <Paper sx={{ ...premiumPanelCardSx, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+            <Paper sx={{ ...premiumPanelCardSx, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AccountBalanceWalletIcon fontSize="small" />
@@ -231,6 +233,10 @@ export function TransactionSummaryDialog({
                 </Typography>
               </Box>
             </Paper>
+          )}
+
+          {walletBalance !== null && walletBalance < MIN_WALLET_START_BALANCE && (
+            <WalletTopUpAlert variant="sessionStopped" onTopUpClick={onClose} />
           )}
         </>
       )}

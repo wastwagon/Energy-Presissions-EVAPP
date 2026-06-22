@@ -44,6 +44,8 @@ import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 export function CustomerPaymentMethodsPage() {
   const theme = useTheme();
@@ -73,8 +75,8 @@ export function CustomerPaymentMethodsPage() {
         const data = await paymentMethodsApi.getByUser(userId);
         setMethods(data);
         return true;
-      } catch (err: any) {
-        setError(err.message || 'Failed to load payment methods');
+      } catch (err: unknown) {
+        setError(formatUserFacingErrorMessage(err, 'payments'));
         return false;
       }
     }, silent);
@@ -104,8 +106,8 @@ export function CustomerPaymentMethodsPage() {
       setNewPhone('');
       setNewLastFour('');
       void loadMethods(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to add payment method');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'payments'));
     } finally {
       setSaving(false);
     }
@@ -118,8 +120,8 @@ export function CustomerPaymentMethodsPage() {
       await paymentMethodsApi.setDefault(userId, id);
       triggerHaptic('light');
       void loadMethods(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to set default');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'payments'));
     }
   };
 
@@ -138,8 +140,8 @@ export function CustomerPaymentMethodsPage() {
       setDeleteDialogOpen(false);
       setPendingDeleteId(null);
       void loadMethods(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to remove');
+    } catch (err: unknown) {
+      setError(formatUserFacingErrorMessage(err, 'payments'));
     }
   };
 
@@ -181,9 +183,7 @@ export function CustomerPaymentMethodsPage() {
       />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="payments" sx={{ mb: 3 }} onClose={() => setError(null)} />
       )}
 
       {methods.length === 0 ? (

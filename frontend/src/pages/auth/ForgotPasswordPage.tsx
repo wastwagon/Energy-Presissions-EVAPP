@@ -24,6 +24,8 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -46,7 +48,7 @@ export function ForgotPasswordPage() {
       setInfo(res.message);
       setRequestDone(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Something went wrong. Try again in a moment.');
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoadingRequest(false);
     }
@@ -66,7 +68,7 @@ export function ForgotPasswordPage() {
       setInfo(res.message);
       setTimeout(() => navigate('/login', { replace: true }), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "We couldn't update your password. Check the code and try again.");
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoadingReset(false);
     }
@@ -85,9 +87,7 @@ export function ForgotPasswordPage() {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
+            <UserErrorAlert error={error} context="auth" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)} />
           )}
           {info && (
             <Alert severity="success" sx={{ mb: 1, py: 0 }} onClose={() => setInfo(null)}>

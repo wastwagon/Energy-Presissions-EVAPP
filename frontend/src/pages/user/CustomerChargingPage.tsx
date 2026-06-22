@@ -30,6 +30,10 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { DashboardPageLoading } from '../../components/dashboard/DashboardPageLoading';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
+import { WalletTopUpAlert } from '../../components/WalletTopUpAlert';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { useWalletAvailableBalance } from '../../hooks/useWalletAvailableBalance';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 type NavItem = {
   id: string;
@@ -97,6 +101,8 @@ export function CustomerChargingPage() {
   const [lastSession, setLastSession] = useState<Transaction | null>(null);
   const [activeCount, setActiveCount] = useState(0);
 
+  const { isBelowMinimum } = useWalletAvailableBalance(true);
+
   const loadChargingData = useCallback(async (silent?: boolean) => {
     await runWithRefresh(async () => {
       try {
@@ -119,7 +125,7 @@ export function CustomerChargingPage() {
           setActiveCount(active?.length ?? 0);
           return true;
         } catch (e: unknown) {
-          setError((e as Error)?.message || 'Could not load charging data');
+          setError(formatUserFacingErrorMessage(e, 'charging'));
           return false;
         }
       } finally {
@@ -148,9 +154,14 @@ export function CustomerChargingPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', position: 'relative', ...mobileMainLayoutBottomMarginSx }}>
       <TableSurfaceProgress active={loading && chargingDataReady} ariaLabel="Loading charging hub" />
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <UserErrorAlert error={error} context="charging" sx={{ mb: 2 }} onClose={() => setError(null)} />
+      )}
+
+      {isBelowMinimum && (
+        <WalletTopUpAlert
+          variant={activeCount > 0 ? 'duringCharging' : 'belowMinimum'}
+          sx={{ mb: 2 }}
+        />
       )}
 
       <LivePageHeader

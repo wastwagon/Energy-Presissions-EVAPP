@@ -10,15 +10,14 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsIcon from '@mui/icons-material/Directions';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import BoltIcon from '@mui/icons-material/Bolt';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import type { StationWithDistance } from '../../services/stationsApi';
+import type { Transaction } from '../../services/transactionsApi';
 import {
-  compactContainedCtaSx,
   compactOutlinedCtaSx,
   premiumIconButtonTouchSx,
   premiumInteractiveCardSx,
@@ -30,6 +29,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 import { parseLatLng } from '../../utils/googleMapsDirections';
 import { buildStationCardAriaLabel } from '../../utils/stationA11y';
+import { StationChargingButton } from './StationChargingButton';
 
 export type StationListCardProps = {
   station: StationWithDistance;
@@ -41,6 +41,9 @@ export type StationListCardProps = {
   onDirections: (e: React.MouseEvent, station: StationWithDistance) => void;
   onStartCharging: (e: React.MouseEvent, station: StationWithDistance) => void;
   onToggleFavorite: (e: React.MouseEvent, chargePointId: string) => void;
+  activeSession?: Transaction | null;
+  onChargingStopped?: () => void;
+  onLoginPrompt?: (e: React.MouseEvent, station: StationWithDistance) => void;
 };
 
 function parsePrice(value: StationWithDistance['pricePerKwh']): number | null {
@@ -59,6 +62,9 @@ export function StationListCard({
   onDirections,
   onStartCharging,
   onToggleFavorite,
+  activeSession = null,
+  onChargingStopped,
+  onLoginPrompt,
 }: StationListCardProps) {
   const theme = useTheme();
   const primary = theme.palette.primary.main;
@@ -70,9 +76,6 @@ export function StationListCard({
     [station.locationCity, station.locationRegion].filter(Boolean).join(', ') || null;
   const canNavigate =
     parseLatLng(station.locationLatitude, station.locationLongitude) != null;
-  /** Matches backend remote-start: Available or Preparing with a startable connector. */
-  const canStart =
-    ['Available', 'Preparing'].includes(station.status) && (station.availableConnectors ?? 0) > 0;
 
   const ac = station.availableConnectors ?? 0;
   const tc = station.totalConnectors ?? 0;
@@ -392,22 +395,16 @@ export function StationListCard({
           >
             Directions
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
+          <StationChargingButton
+            station={station}
+            isAuthenticated={isAuthenticated}
+            activeSession={activeSession}
+            onStart={(e) => onStartCharging(e, station)}
+            onLoginPrompt={onLoginPrompt ? (e) => onLoginPrompt(e, station) : undefined}
+            onStopped={onChargingStopped}
             fullWidth
             size="medium"
-            disableElevation
-            startIcon={<PlayArrowIcon />}
-            onClick={(e) => {
-              triggerHaptic('light');
-              onStartCharging(e, station);
-            }}
-            disabled={!canStart}
-            sx={(th) => sxObject(th, compactContainedCtaSx)}
-          >
-            Start charging
-          </Button>
+          />
         </Stack>
       </Box>
     </Box>

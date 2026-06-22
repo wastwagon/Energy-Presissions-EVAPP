@@ -14,29 +14,43 @@ export function formatActiveSessionEnergy(tx: Transaction): string {
   return 'Waiting for meter';
 }
 
-/** Display cost: estimated spend so far, or wallet hold, or dash. */
+function isLegacyReservedSession(tx: Transaction): boolean {
+  return (
+    tx.billingMode === 'reserved' ||
+    (tx.walletReservedAmount != null && Number(tx.walletReservedAmount) > 0 && tx.billingMode !== 'metered')
+  );
+}
+
+/** Display cost: amount charged so far (metered) or estimate / legacy hold. */
 export function formatActiveSessionCost(tx: Transaction): string {
   const currency = PLATFORM_CURRENCY;
   const reserved = tx.walletReservedAmount;
-  const hasHold = reserved != null && Number(reserved) > 0;
+  const hasLegacyHold = isLegacyReservedSession(tx);
+
+  if (tx.billedCostSoFar != null && Number.isFinite(Number(tx.billedCostSoFar)) && Number(tx.billedCostSoFar) > 0) {
+    return formatCurrency(tx.billedCostSoFar, currency);
+  }
 
   if (tx.liveCostSoFar != null && Number.isFinite(Number(tx.liveCostSoFar))) {
-    const est = `${formatCurrency(tx.liveCostSoFar, currency)} est.`;
-    if (hasHold) {
+    const est = formatCurrency(tx.liveCostSoFar, currency);
+    if (hasLegacyHold && reserved != null && Number(reserved) > 0) {
       return `${est} / ${formatCurrency(reserved, currency)} max`;
     }
     return est;
   }
-  if (hasHold) {
+
+  if (hasLegacyHold && reserved != null && Number.isFinite(Number(reserved))) {
     return `${formatCurrency(reserved, currency)} reserved`;
   }
+
   if (tx.totalCost != null && Number.isFinite(Number(tx.totalCost))) {
     return formatCurrency(tx.totalCost, currency);
   }
+
   return '—';
 }
 
-/** Amount purchased (wallet hold) for this session. */
+/** @deprecated Legacy reserved-cap sessions only */
 export function formatActiveSessionPurchased(tx: Transaction): string {
   const currency = PLATFORM_CURRENCY;
   const reserved = tx.walletReservedAmount;
@@ -46,6 +60,7 @@ export function formatActiveSessionPurchased(tx: Transaction): string {
   return formatCurrency(reserved, currency);
 }
 
+/** @deprecated Legacy reserved-cap sessions only */
 export function activeSessionHasWalletHold(tx: Transaction): boolean {
-  return tx.walletReservedAmount != null && Number(tx.walletReservedAmount) > 0;
+  return isLegacyReservedSession(tx);
 }

@@ -32,6 +32,8 @@ import {
 } from '../../styles/authShell';
 import { LegalDocLink, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
+import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
 function phoneHasMinDigits(value: string, min: number): boolean {
   const digits = value.replace(/\D/g, '');
@@ -58,20 +60,20 @@ export function RegisterPage() {
     setError(null);
 
     if (!agreedToLegal) {
-      setError('Please agree to the Terms of Service and Privacy Policy to create an account.');
+      setError('Agree to the Terms of Service and Privacy Policy to create your account.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('The passwords you entered do not match.');
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError('Choose a password with at least 6 characters.');
       return;
     }
     if (!phoneHasMinDigits(phone, 8)) {
-      setError('Please enter a valid phone number (at least 8 digits).');
+      setError('Enter a valid phone number with at least 8 digits.');
       return;
     }
 
@@ -86,7 +88,7 @@ export function RegisterPage() {
       });
       navigate('/login', { state: { message: 'Account created. Please sign in.' } });
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
+      setError(formatUserFacingErrorMessage(err, 'auth'));
     } finally {
       setLoading(false);
     }
@@ -102,9 +104,7 @@ export function RegisterPage() {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
+            <UserErrorAlert error={error} context="auth" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)} />
           )}
 
           <form onSubmit={handleRegister}>

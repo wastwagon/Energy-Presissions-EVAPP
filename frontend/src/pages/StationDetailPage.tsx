@@ -15,10 +15,11 @@ import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsIcon from '@mui/icons-material/Directions';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import BoltIcon from '@mui/icons-material/Bolt';
 import { stationsApi, StationDetails } from '../services/stationsApi';
 import { StartChargingDialog } from '../components/StartChargingDialog';
+import { StationChargingButton } from '../components/stations/StationChargingButton';
+import { useCustomerActiveSessions } from '../hooks/useCustomerActiveSessions';
 import { LivePageHeader } from '../components/dashboard/LivePageHeader';
 import { premiumPanelCardSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
@@ -36,6 +37,8 @@ import { GroupedListSection } from '../components/ios/GroupedListSection';
 import { GroupedDetailRow } from '../components/ios/GroupedDetailRow';
 import { triggerHaptic } from '../utils/haptics';
 import { useCustomerNavBack } from '../hooks/useCustomerNavBack';
+import { UserErrorAlert } from '../components/UserErrorAlert';
+import { formatUserFacingErrorMessage, UserMessages } from '../utils/userFriendlyErrors';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -65,6 +68,9 @@ export function StationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [startChargingDialogOpen, setStartChargingDialogOpen] = useState(false);
 
+  const { byChargePointId: activeSessionsByStation, reload: reloadActiveSessions } =
+    useCustomerActiveSessions(Boolean(id));
+
   const loadStation = useCallback(async () => {
     if (!id) return;
     try {
@@ -72,7 +78,7 @@ export function StationDetailPage() {
       const data = await stationsApi.getDetails(id);
       setStation(data);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to load station');
+      setError(formatUserFacingErrorMessage(err, 'stations'));
     } finally {
       setLoading(false);
     }
@@ -132,9 +138,7 @@ export function StationDetailPage() {
           containerSx={{ mb: 2 }}
           actions={backButton}
         />
-        <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
-          {error || 'Station not found'}
-        </Alert>
+        <UserErrorAlert error={error || UserMessages.stationNotFound} context="stations" sx={{ borderRadius: 2, mb: 2 }} />
       </Box>
     );
   }
@@ -148,22 +152,23 @@ export function StationDetailPage() {
     <Chip label={station.status} color={getChargePointStatusColor(station.status)} sx={{ fontWeight: 700 }} />
   );
 
+  const activeSession = station ? activeSessionsByStation.get(station.chargePointId) ?? null : null;
+
   const startChargingButton = (
-    <Button
-      variant="contained"
-      color="primary"
-      fullWidth
-      disableElevation
-      startIcon={<PlayArrowIcon />}
-      onClick={() => {
+    <StationChargingButton
+      station={station}
+      isAuthenticated
+      activeSession={activeSession}
+      onStart={() => {
         triggerHaptic('light');
         setStartChargingDialogOpen(true);
       }}
-      disabled={station.status !== 'Available' || station.availableConnectors === 0}
-      sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-    >
-      Start charging
-    </Button>
+      onStopped={() => {
+        void reloadActiveSessions();
+        void loadStation();
+      }}
+      fullWidth
+    />
   );
 
   return (
@@ -382,6 +387,7 @@ export function StationDetailPage() {
         station={station}
         onSuccess={() => {
           setStartChargingDialogOpen(false);
+          void reloadActiveSessions();
           void loadStation();
         }}
       />

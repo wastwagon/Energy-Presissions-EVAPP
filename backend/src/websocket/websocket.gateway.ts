@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from '../common/cors-origins';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
+import { MIN_WALLET_START_BALANCE } from '../common/constants/charging-wallet';
 
 type SocketUser = {
   userId: number;
@@ -243,10 +244,16 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     balance: number;
     currency: string;
     transactionId?: number;
+    belowMinimum?: boolean;
   }) {
     const payload = {
       type: 'walletBalanceUpdate',
-      data,
+      data: {
+        ...data,
+        belowMinimum:
+          data.belowMinimum ??
+          (Number.isFinite(data.balance) && data.balance < MIN_WALLET_START_BALANCE),
+      },
       timestamp: new Date().toISOString(),
     };
     this.server.to(this.roomForUser(data.userId)).emit('walletBalanceUpdate', payload);

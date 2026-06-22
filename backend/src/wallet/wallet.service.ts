@@ -16,6 +16,7 @@ import {
 import { Payment } from '../entities/payment.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Transaction } from '../entities/transaction.entity';
+import { CustomerErrors } from '../common/messages/customer-facing';
 
 @Injectable()
 export class WalletService {
@@ -132,7 +133,7 @@ export class WalletService {
       const amountDecimal = new Decimal(amount);
 
       if (balanceBefore.lessThan(amountDecimal)) {
-        throw new BadRequestException('Insufficient wallet balance');
+        throw new BadRequestException(CustomerErrors.insufficientWallet);
       }
 
       const balanceAfter = balanceBefore.minus(amountDecimal);
@@ -346,7 +347,7 @@ export class WalletService {
       const amountDecimal = new Decimal(amount);
 
       if (balanceBefore.lessThan(amountDecimal)) {
-        throw new BadRequestException('Insufficient wallet balance');
+        throw new BadRequestException(CustomerErrors.insufficientWallet);
       }
 
       // Reserve amount (deduct from available balance)
