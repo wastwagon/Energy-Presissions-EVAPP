@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Button,
   Dialog,
   DialogTitle,
@@ -33,7 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LoginIcon from '@mui/icons-material/Login';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
@@ -45,6 +44,10 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
@@ -319,29 +322,29 @@ export function VendorManagementPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Vendor Management
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage vendor accounts, status, and impersonation access.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={handleCreateVendor}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'auto' },
-          })}
-        >
-          Create vendor
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="Vendor Management"
+        subtitle="Manage vendor accounts, status, and impersonation access."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={handleCreateVendor}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Create vendor
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -363,11 +366,17 @@ export function VendorManagementPage() {
           </Typography>
         </Box>
         {vendors.length === 0 ? (
-          <Box sx={{ py: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No vendors found
-            </Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<StorefrontIcon />}
+            title="No vendors yet"
+            description="Create a vendor to onboard operators and assign charge points."
+            primaryAction={{
+              label: 'Create vendor',
+              onClick: handleCreateVendor,
+              startIcon: <AddIcon />,
+            }}
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -378,10 +387,9 @@ export function VendorManagementPage() {
                   primary={vendor.name}
                   secondary={vendor.contactEmail || vendor.domain || '—'}
                   end={
-                    <Chip
+                    <AppBadge
                       label={vendor.status}
-                      color={getVendorStatusColor(vendor.status)}
-                      size="small"
+                      tone={chipColorToBadgeTone(getVendorStatusColor(vendor.status))}
                       sx={{ height: 24 }}
                     />
                   }
@@ -418,10 +426,9 @@ export function VendorManagementPage() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={vendor.status}
-                        color={getVendorStatusColor(vendor.status)}
-                        size="small"
+                        tone={chipColorToBadgeTone(getVendorStatusColor(vendor.status))}
                       />
                     </TableCell>
                     <TableCell>
@@ -587,10 +594,9 @@ export function VendorManagementPage() {
                   {history.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <Chip
+                        <AppBadge
                           label={item.status}
-                          color={getVendorStatusColor(item.status)}
-                          size="small"
+                          tone={chipColorToBadgeTone(getVendorStatusColor(item.status))}
                         />
                       </TableCell>
                       <TableCell>{item.reason || '-'}</TableCell>

@@ -4,7 +4,6 @@ import {
   AccordionSummary,
   Alert,
   Box,
-  Chip,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -13,6 +12,7 @@ import {
   CELLULAR_OPS_SUMMARY,
   CELLULAR_PROVIDER_OPTIONS,
 } from '../../constants/chargerCellularGhana';
+import { AppBadge } from '../ui/AppBadge';
 
 interface ChargerCellularGuideProps {
   /** Show compact single-line alert only */
@@ -46,7 +46,7 @@ export function ChargerCellularGuide({ compact = false }: ChargerCellularGuidePr
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Cellular SIM (MTN recommended)
           </Typography>
-          <Chip label="Not Telecel" size="small" variant="outlined" sx={{ ml: 0.5 }} />
+          <AppBadge label="Not Telecel" tone="neutral" size="small" sx={{ ml: 0.5 }} />
         </Box>
       </AccordionSummary>
       <AccordionDetails sx={{ pt: 0 }}>
@@ -70,9 +70,7 @@ export function ChargerCellularGuide({ compact = false }: ChargerCellularGuidePr
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {preset.label}
               </Typography>
-              {preset.recommended && (
-                <Chip label="Recommended" size="small" color="primary" />
-              )}
+              {preset.recommended && <AppBadge label="Recommended" tone="brand" size="small" />}
               <Typography variant="caption" color="text.secondary">
                 APN: <strong>{preset.apn || '—'}</strong>
               </Typography>

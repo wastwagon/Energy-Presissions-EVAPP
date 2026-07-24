@@ -22,13 +22,11 @@ import { iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
 import { AdaptiveSheet } from '../../components/ios/AdaptiveSheet';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { triggerHaptic } from '../../utils/haptics';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { paymentMethodsApi, PaymentMethod } from '../../services/paymentMethodsApi';
-import { premiumEmptyStatePaperSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   authPageBodySx,
@@ -46,6 +44,8 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 export function CustomerPaymentMethodsPage() {
   const theme = useTheme();
@@ -187,39 +187,17 @@ export function CustomerPaymentMethodsPage() {
       )}
 
       {methods.length === 0 ? (
-        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
-          <Box
-            sx={(t) => ({
-              width: 72,
-              height: 72,
-              mx: 'auto',
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: t.palette.action.hover,
-              color: 'text.secondary',
-            })}
-          >
-            <CreditCardIcon sx={{ fontSize: 36 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-            No payment methods saved
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Add a mobile money number or card for faster wallet top-ups.
-          </Typography>
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
-            sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          >
-            Add payment method
-          </Button>
-        </Paper>
+        <AppEmptyState
+          illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
+          illustrationAlt="Wallet payments"
+          title="No payment methods yet"
+          description="Save mobile money or a card for faster top-ups."
+          primaryAction={{
+            label: 'Add payment method',
+            onClick: () => setDialogOpen(true),
+            startIcon: <AddIcon />,
+          }}
+        />
       ) : useGroupedList ? (
         <Box sx={{ position: 'relative' }}>
           <TableSurfaceProgress active={loading && methods.length > 0} ariaLabel="Loading payment methods" />

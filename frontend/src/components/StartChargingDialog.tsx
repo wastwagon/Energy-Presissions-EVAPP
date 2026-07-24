@@ -18,7 +18,7 @@ import { requireStoredUserId } from '../utils/authSession';
 import { formatCurrency } from '../utils/formatters';
 import {
   compactContainedCtaSx,
-  compactOutlinedCtaSx,
+  compactTertiaryCtaSx,
   sxObject,
 } from '../styles/authShell';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
@@ -172,9 +172,9 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
         <>
           <Button
             onClick={onClose}
-            variant="outlined"
+            variant="text"
             disabled={starting}
-            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+            sx={(th) => sxObject(th, compactTertiaryCtaSx)}
           >
             Cancel
           </Button>
@@ -197,6 +197,7 @@ export function StartChargingDialog({ open, onClose, station, onSuccess }: Start
               variant="contained"
               disableElevation
               disabled={!canStartSession}
+              aria-busy={starting || undefined}
               startIcon={starting ? <CircularProgress size={16} color="inherit" /> : <BoltIcon sx={{ fontSize: 18 }} />}
               sx={(th) => sxObject(th, compactContainedCtaSx)}
             >

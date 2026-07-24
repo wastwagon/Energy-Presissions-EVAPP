@@ -20,24 +20,21 @@ import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { reservationsApi, Reservation } from '../../services/reservationsApi';
 import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
-  premiumEmptyStatePaperSx,
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
-import {
   staffFilterFieldSx,
-  compactOutlinedCtaSx,
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 
 export function SuperAdminReservationsPage() {
   const theme = useTheme();
@@ -98,32 +95,29 @@ export function SuperAdminReservationsPage() {
         refreshing={refreshing}
         refreshDisabled={loading}
         onRefresh={() => void loadReservations(true)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
-        refreshSx={(th) => ({
-          ...sxObject(th, compactOutlinedCtaSx),
-          width: { xs: '100%', sm: 'auto' },
-        })}
-        actions={
-          <TextField
-            fullWidth
-            placeholder="Filter by charge point"
-            value={filterChargePoint}
-            onChange={(e) => setFilterChargePoint(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={(th) => ({
-              ...sxObject(th, staffFilterFieldSx),
-              width: { xs: '100%', sm: 260 },
-            })}
-          />
-        }
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
       />
+
+      <StaffFilterBar aria-label="Reservation filters">
+        <TextField
+          fullWidth
+          placeholder="Filter by charge point"
+          value={filterChargePoint}
+          onChange={(e) => setFilterChargePoint(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            width: { xs: '100%', sm: 280 },
+            maxWidth: '100%',
+          })}
+        />
+      </StaffFilterBar>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -139,9 +133,12 @@ export function SuperAdminReservationsPage() {
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && reservations.length > 0} ariaLabel="Loading reservations" />
         {reservations.length === 0 ? (
-          <Box sx={premiumEmptyStatePaperSx}>
-            <Typography color="text.secondary">No active reservations</Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<EventBusyIcon />}
+            title="No active reservations"
+            description="Connector reservations will appear here when customers or operators hold a bay."
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>

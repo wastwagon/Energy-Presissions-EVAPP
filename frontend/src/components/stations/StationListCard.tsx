@@ -1,7 +1,6 @@
 import {
   Box,
   Typography,
-  Chip,
   IconButton,
   Tooltip,
   Button,
@@ -27,6 +26,7 @@ import { iosFontStacks } from '../../theme/iosMobileTokens';
 import { triggerHaptic } from '../../utils/haptics';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
 import { parseLatLng } from '../../utils/googleMapsDirections';
 import { buildStationCardAriaLabel } from '../../utils/stationA11y';
 import { StationChargingButton } from './StationChargingButton';
@@ -239,12 +239,10 @@ export function StationListCard({
               flexWrap: 'wrap',
             }}
           >
-            <Chip
+            <AppBadge
               label={station.status}
               aria-label={`Connector status: ${station.status}`}
-              color={getChargePointStatusColor(station.status)}
-              size="small"
-              sx={{ fontWeight: 700, fontSize: '0.7rem', height: 26, maxWidth: '100%' }}
+              tone={chipColorToBadgeTone(getChargePointStatusColor(station.status))}
             />
             {isAuthenticated ? (
               <Tooltip title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}>
@@ -364,16 +362,12 @@ export function StationListCard({
         {station.amenities && station.amenities.length > 0 ? (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
             {station.amenities.slice(0, 4).map((amenity, idx) => (
-              <Chip
+              <AppBadge
                 key={`${amenity}-${idx}`}
                 label={amenity}
                 size="small"
-                variant="outlined"
-                sx={{
-                  borderColor: alpha(theme.palette.text.primary, 0.12),
-                  fontSize: '0.7rem',
-                  height: 24,
-                }}
+                tone="neutral"
+                sx={{ fontSize: '0.7rem' }}
               />
             ))}
           </Box>

@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Tabs,
   Tab,
@@ -25,7 +24,6 @@ import { openPrintableReceipt, receiptBrandingFromTransaction } from '../../util
 import { billingApi, Invoice } from '../../services/billingApi';
 import { transactionsApi, type Transaction } from '../../services/transactionsApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getInvoiceStatusColor } from '../../utils/statusColors';
@@ -36,6 +34,9 @@ import {
   sessionStatusChipColor,
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -160,18 +161,19 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Billing & Invoices
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            {variant === 'admin'
-              ? 'Vendor-scoped completed sessions and invoices. Network-wide tariffs may apply when no vendor tariff is active.'
-              : 'Completed session billing and invoice generation. Active sessions show live estimates until stop.'}
-          </Typography>
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Billing & Invoices"
+        subtitle={
+          variant === 'admin'
+            ? 'Vendor-scoped completed sessions and invoices. Network-wide tariffs may apply when no vendor tariff is active.'
+            : 'Completed session billing and invoice generation. Active sessions show live estimates until stop.'
+        }
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -208,9 +210,12 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
 
         <TabPanel value={tab} index={0}>
           {invoices.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No invoices yet. Generate one from a completed session.
-            </Typography>
+            <AppEmptyState
+              sx={{ border: 0, boxShadow: 'none', borderRadius: 0, m: 0 }}
+              icon={<ReceiptIcon />}
+              title="No invoices yet"
+              description="Generate an invoice from a completed session on the Sessions tab."
+            />
           ) : useGroupedList ? (
             <>
             <GroupedListSection>
@@ -226,11 +231,10 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {formatCurrency(inv.total, inv.currency || 'GHS')}
                       </Typography>
-                      <Chip
+                      <AppBadge
                         label={inv.status}
-                        color={getInvoiceStatusColor(inv.status)}
-                        size="small"
-                        sx={{ mt: 0.5, height: 22, display: 'block', ml: 'auto' }}
+                        tone={chipColorToBadgeTone(getInvoiceStatusColor(inv.status))}
+                        sx={{ mt: 0.5, height: 22, display: 'flex', ml: 'auto' }}
                       />
                     </Box>
                   }
@@ -266,7 +270,7 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                       <TableCell>{inv.userId}</TableCell>
                       <TableCell>{formatCurrency(inv.total, inv.currency || 'GHS')}</TableCell>
                       <TableCell>
-                        <Chip label={inv.status} color={getInvoiceStatusColor(inv.status)} size="small" />
+                        <AppBadge label={inv.status} tone={chipColorToBadgeTone(getInvoiceStatusColor(inv.status))} />
                       </TableCell>
                       <TableCell>{new Date(inv.createdAt).toLocaleString()}</TableCell>
                       <TableCell align="right">
@@ -323,9 +327,11 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
 
         <TabPanel value={tab} index={1}>
           {transactions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No transactions
-            </Typography>
+            <AppEmptyState
+              sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+              title="No transactions"
+              description="Completed sessions ready for invoicing will appear here."
+            />
           ) : useGroupedList ? (
             <>
             <GroupedListSection>
@@ -352,11 +358,11 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                           Invoice
                         </Button>
                       )}
-                      <Chip
+                      <AppBadge
                         label={sessionStatusLabel(tx)}
-                        color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                        tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                         size="small"
-                        sx={{ mt: 0.5, height: 22, display: 'block', ml: 'auto' }}
+                        sx={{ mt: 0.5 }}
                       />
                     </Box>
                   }
@@ -394,10 +400,9 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
                       <TableCell>{formatSessionCost(tx)}</TableCell>
                       <TableCell>{formatSessionEnergy(tx)}</TableCell>
                       <TableCell>
-                        <Chip
+                        <AppBadge
                           label={sessionStatusLabel(tx)}
-                          color={sessionStatusChipColor(sessionStatusLabel(tx))}
-                          size="small"
+                          tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                         />
                       </TableCell>
                       <TableCell>{tx.startTime ? new Date(tx.startTime).toLocaleString() : '—'}</TableCell>

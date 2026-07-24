@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Button,
   Dialog,
@@ -30,7 +29,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
 import { getStoredUser } from '../../utils/authSession';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
@@ -41,6 +40,9 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge } from '../../components/ui/AppBadge';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -173,29 +175,29 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Tariffs & Pricing
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage pricing and tariff plans for charging sessions
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-          })}
-        >
-          New tariff
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="Tariffs & Pricing"
+        subtitle="Manage pricing and tariff plans for charging sessions"
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            New tariff
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -217,20 +219,18 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
           </Typography>
         </Box>
         {tariffs.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <AttachMoneyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="body2" color="text.secondary">
-              No tariffs configured yet
-            </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), mt: 2 })}
-            >
-              Create first tariff
-            </Button>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<AttachMoneyIcon />}
+            title="No tariffs configured yet"
+            description="Create a tariff plan to set per-kWh pricing for charging sessions."
+            primaryAction={{
+              label: 'Create first tariff',
+              onClick: () => handleOpenDialog(),
+              startIcon: <AddIcon />,
+              variant: 'secondary',
+            }}
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -247,11 +247,9 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                         : ''
                     }`}
                     end={
-                      <Chip
+                      <AppBadge
                         label={tariff.isActive ? 'Active' : 'Inactive'}
-                        color={tariff.isActive ? 'success' : 'default'}
-                        size="small"
-                        sx={{ height: 24 }}
+                        tone={tariff.isActive ? 'success' : 'neutral'}
                       />
                     }
                     onClick={mutable ? () => handleOpenDialog(tariff) : undefined}
@@ -293,11 +291,10 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                   </TableCell>
                   {variant === 'superadmin' && (
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={tariff.vendorId ? `Vendor #${tariff.vendorId}` : 'Network'}
                         size="small"
-                        variant={tariff.vendorId ? 'outlined' : 'filled'}
-                        color={tariff.vendorId ? 'primary' : 'default'}
+                        tone={tariff.vendorId ? 'brand' : 'neutral'}
                       />
                     </TableCell>
                   )}
@@ -316,11 +313,10 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                   </TableCell>
                   <TableCell>{tariff.currency}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={tariff.isActive ? 'Active' : 'Inactive'}
-                      color={tariff.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
+                    <AppBadge
+                        label={tariff.isActive ? 'Active' : 'Inactive'}
+                        tone={tariff.isActive ? 'success' : 'neutral'}
+                      />
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>

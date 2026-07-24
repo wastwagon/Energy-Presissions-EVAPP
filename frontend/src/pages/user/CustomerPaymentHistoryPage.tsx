@@ -10,8 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  Alert,
   Pagination,
   useTheme,
   useMediaQuery,
@@ -21,8 +19,7 @@ import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
-import PaymentIcon from '@mui/icons-material/Payment';
-import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { triggerHaptic } from '../../utils/haptics';
@@ -34,6 +31,9 @@ import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChrom
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 export function CustomerPaymentHistoryPage() {
   const navigate = useNavigate();
@@ -113,30 +113,27 @@ export function CustomerPaymentHistoryPage() {
       )}
 
       {payments.length === 0 ? (
-        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
-          <Box
-            sx={(theme) => ({
-              width: 72,
-              height: 72,
-              mx: 'auto',
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: theme.palette.action.hover,
-              color: 'text.secondary',
-            })}
-          >
-            <PaymentIcon sx={{ fontSize: 36 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-            No payment history
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            You have not made any payments yet.
-          </Typography>
-        </Paper>
+        <AppEmptyState
+          illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
+          illustrationAlt="Wallet payments"
+          title="No payments yet"
+          description="Top-ups and wallet payments will list here."
+          primaryAction={{
+            label: 'Top up wallet',
+            onClick: () => {
+              triggerHaptic('light');
+              navigate(CUSTOMER_ROUTES.walletTopUp);
+            },
+          }}
+          secondaryAction={{
+            label: 'View wallet',
+            onClick: () => {
+              triggerHaptic('light');
+              navigate(CUSTOMER_ROUTES.wallet);
+            },
+            variant: 'secondary',
+          }}
+        />
       ) : useGroupedList ? (
         <>
           <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payment history" />
@@ -148,7 +145,7 @@ export function CustomerPaymentHistoryPage() {
                 showChevron={Boolean(payment.transactionId)}
                 primary={formatCurrency(payment.amount, payment.currency)}
                 secondary={`${payment.paymentMethod} · ${new Date(payment.createdAt).toLocaleDateString()}`}
-                end={<Chip label={payment.status} color={getPaymentStatusColor(payment.status)} size="small" sx={{ height: 24 }} />}
+                end={<AppBadge label={payment.status} tone={chipColorToBadgeTone(getPaymentStatusColor(payment.status))} />}
                 onClick={
                   payment.transactionId
                     ? () => {
@@ -199,10 +196,9 @@ export function CustomerPaymentHistoryPage() {
                     </TableCell>
                     <TableCell>{payment.paymentMethod}</TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={payment.status}
-                        color={getPaymentStatusColor(payment.status)}
-                        size="small"
+                        tone={chipColorToBadgeTone(getPaymentStatusColor(payment.status))}
                       />
                     </TableCell>
                     <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>

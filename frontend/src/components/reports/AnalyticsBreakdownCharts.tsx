@@ -144,7 +144,7 @@ export function AnalyticsBreakdownCharts({ stats }: AnalyticsBreakdownChartsProp
 
   if (!hasAnyChart) return null;
 
-  const pieColors = [theme.palette.success.main, theme.palette.warning.main];
+  const pieColors = [theme.palette.primary.main, theme.palette.warning.main];
 
   return (
     <Grid container spacing={2} sx={{ mt: 1 }}>

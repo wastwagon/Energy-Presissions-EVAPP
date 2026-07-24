@@ -10,7 +10,6 @@ import {
   Avatar,
   Alert,
   Divider,
-  Chip,
   ListItem,
   useTheme,
   useMediaQuery,
@@ -41,6 +40,7 @@ import {
 import { triggerHaptic } from '../../utils/haptics';
 import { getStoredUser } from '../../utils/authSession';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppBadge } from '../../components/ui/AppBadge';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
@@ -163,13 +163,13 @@ export function CustomerProfilePage() {
       <TableSurfaceProgress active={Boolean(loading && user)} ariaLabel="Refreshing profile" />
       <LivePageHeader
         title="Profile"
-        subtitle="Manage your account information and preferences"
+        subtitle="Name, contact details, and account security"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.profile}
         refreshing={refreshing}
         onRefresh={() => void loadUserData(true)}
         titleVariant="large"
-        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
         actions={
           <Button
             variant={editing ? 'contained' : 'outlined'}
@@ -219,7 +219,7 @@ export function CustomerProfilePage() {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {user.email}
               </Typography>
-              <Chip label={user.accountType} sx={{ mt: 2 }} color="primary" size="small" />
+              <AppBadge label={user.accountType} tone="brand" size="small" sx={{ mt: 2 }} />
             </Paper>
           </Grid>
         )}
@@ -249,7 +249,7 @@ export function CustomerProfilePage() {
                     <Typography variant="body2" color="text.secondary" noWrap>
                       {user.email}
                     </Typography>
-                    <Chip label={user.accountType} size="small" color="primary" sx={{ mt: 0.75, height: 22 }} />
+                    <AppBadge label={user.accountType} tone="brand" size="small" sx={{ mt: 0.75 }} />
                   </Box>
                 </ListItem>
               </GroupedListSection>

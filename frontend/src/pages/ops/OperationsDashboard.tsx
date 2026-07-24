@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Button,
   Dialog,
@@ -31,7 +30,7 @@ import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { transactionsApi } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
-import { DashboardStatTile } from '../../components/dashboard/DashboardStatTile';
+import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { DashboardOperationsSkeleton } from '../../components/dashboard/DashboardOperationsSkeleton';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
@@ -44,6 +43,8 @@ import { getChargePointStatusColor } from '../../utils/statusColors';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
@@ -211,12 +212,7 @@ export function OperationsDashboard() {
       />
       <Box sx={{ mb: 3 }}>
         {isImpersonating && vendorName && (
-          <Chip
-            label={`Viewing as: ${vendorName}`}
-            color="info"
-            size="small"
-            sx={{ mt: 1 }}
-          />
+          <AppBadge label={`Viewing as: ${vendorName}`} tone="info" size="small" sx={{ mt: 1 }} />
         )}
       </Box>
 
@@ -226,42 +222,39 @@ export function OperationsDashboard() {
         </Alert>
       )}
 
-      {/* Stats — shared iOS-native-style tiles */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} lg={3}>
-          <DashboardStatTile
-            accent="primary"
-            kicker="Stations"
+          <StaffMetricCard
+            label="Stations"
             value={chargePoints.length}
-            caption="Total charge points"
-            icon={<EvStationIcon sx={{ color: 'primary.main', fontSize: 24 }} />}
+            hint="Total charge points"
+            icon={<EvStationIcon />}
+            tone="brand"
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <DashboardStatTile
-            accent="success"
-            kicker="Active"
+          <StaffMetricCard
+            label="Active"
             value={activeSessions}
-            caption="Currently charging"
-            icon={<BatteryChargingFullIcon sx={{ color: 'success.main', fontSize: 24 }} />}
+            hint="Currently charging"
+            icon={<BatteryChargingFullIcon />}
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <DashboardStatTile
-            accent="info"
-            kicker="Available"
+          <StaffMetricCard
+            label="Available"
             value={availableCount}
-            caption="Connectors available"
-            icon={<CheckCircleIcon sx={{ color: 'info.main', fontSize: 24 }} />}
+            hint="Connectors available"
+            icon={<CheckCircleIcon />}
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <DashboardStatTile
-            accent="secondary"
-            kicker="Offline"
+          <StaffMetricCard
+            label="Offline"
             value={offlineCount}
-            caption="Stations offline"
-            icon={<ErrorIcon sx={{ color: 'secondary.main', fontSize: 24 }} />}
+            hint="Stations offline"
+            icon={<ErrorIcon />}
+            tone={offlineCount > 0 ? 'warning' : 'default'}
           />
         </Grid>
       </Grid>
@@ -274,11 +267,12 @@ export function OperationsDashboard() {
           </Typography>
         </Box>
         {chargePoints.length === 0 ? (
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 3, sm: 4 }, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No charge points yet. They appear here after connecting and sending BootNotification.
-            </Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<EvStationIcon />}
+            title="No charge points yet"
+            description="They appear here after connecting and sending BootNotification."
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -293,11 +287,10 @@ export function OperationsDashboard() {
                       : cp.locationAddress || 'Unknown'
                   }
                   end={
-                    <Chip
+                    <AppBadge
                       label={cp.status}
-                      color={getChargePointStatusColor(cp.status)}
+                      tone={chipColorToBadgeTone(getChargePointStatusColor(cp.status))}
                       size="small"
-                      sx={{ height: 24 }}
                     />
                   }
                   onClick={() => navigate(`${opsBase}/devices/${encodeURIComponent(cp.chargePointId)}`)}
@@ -340,11 +333,10 @@ export function OperationsDashboard() {
                       {(cp.vendorName || cp.vendor) && cp.model ? `${cp.vendorName || cp.vendor} ${cp.model}` : 'Unknown'}
                     </TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={cp.status}
-                        color={getChargePointStatusColor(cp.status)}
+                        tone={chipColorToBadgeTone(getChargePointStatusColor(cp.status))}
                         size="small"
-                        sx={{ fontWeight: 600 }}
                       />
                     </TableCell>
                     <TableCell>

@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   Alert,
-  Chip,
   Typography,
   Button,
 } from '@mui/material';
@@ -16,6 +15,7 @@ import { maintenanceApi, type OpsMaintenanceResult } from '../../services/mainte
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppBadge } from '../../components/ui/AppBadge';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -92,9 +92,9 @@ export function SuperAdminHealthPage() {
           <MemoryIcon color="action" />
           <Typography variant="h6">API Status</Typography>
           {health ? (
-            <Chip icon={<CheckCircleIcon />} label="Healthy" color="success" size="small" />
+            <AppBadge icon={<CheckCircleIcon />} label="Healthy" tone="success" size="small" />
           ) : (
-            <Chip icon={<ErrorIcon />} label="Unreachable" color="error" size="small" />
+            <AppBadge icon={<ErrorIcon />} label="Unreachable" tone="error" size="small" />
           )}
         </Box>
         {health && (

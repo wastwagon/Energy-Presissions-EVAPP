@@ -60,11 +60,14 @@ export function SettingsCategoryPanel({
   if (useGroupedList) {
     return (
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ mt: 2, mb: 1.5, fontWeight: 600, letterSpacing: '-0.01em' }}
+        >
           {title}
         </Typography>
         {settings.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
             No settings in this category.
           </Typography>
         ) : (
@@ -140,7 +143,10 @@ export function SettingsCategoryPanel({
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{ mt: 2, mb: 1.5, fontWeight: 600, letterSpacing: '-0.01em' }}
+      >
         {title}
       </Typography>
       <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>

@@ -16,7 +16,7 @@ import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import {
   authFormFieldSx,
   authPagePaperSx,
-  authPageRootSx,
+  authPageRootAtmosphereSx,
   authPageTitleSx,
   authPageBodySx,
   authPageLinkSx,
@@ -24,6 +24,7 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 
@@ -75,7 +76,7 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <Box sx={authPageRootSx}>
+    <Box sx={authPageRootAtmosphereSx(CUSTOMER_IMAGES.authAtmosphere)}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
           <AuthBrandHeader compact />
@@ -83,7 +84,7 @@ export function ForgotPasswordPage() {
             Reset your password
           </Typography>
           <Typography component="p" sx={{ ...authPageBodySx, display: 'block', mb: 1, textAlign: 'left' }}>
-            Enter the email you used to register. After you continue, you can enter your code and pick a new password below.
+            Enter your account email. Then add the code and choose a new password.
           </Typography>
 
           {error && (

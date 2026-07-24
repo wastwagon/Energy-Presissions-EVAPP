@@ -1,5 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -10,27 +9,29 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { GroupedExpandableRow } from '../../components/ios/GroupedExpandableRow';
 import { authPageBodySx } from '../../styles/authShell';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import { iosRadii } from '../../theme/iosMobileTokens';
 
 const faqs = [
   {
-    q: 'How do I start charging my EV?',
-    a: 'Find a station using "Find Stations", select a station, and tap "Start Charging". Ensure your wallet has sufficient balance. You can top up via mobile money or card.',
+    q: 'How do I start charging?',
+    a: 'Open Find chargers, pick a station, then Start charging. Keep a wallet balance ready — top up with mobile money or card if needed.',
   },
   {
-    q: 'How do I add funds to my wallet?',
-    a: 'Go to Wallet > Top Up. You can pay with mobile money (MTN, Vodafone, AirtelTigo) or card via Paystack.',
+    q: 'How do I add wallet funds?',
+    a: 'Wallet → Top up. Pay with MTN, Vodafone, AirtelTigo, or card via Paystack.',
   },
   {
-    q: 'What if my charging session is interrupted?',
-    a: 'You are only charged for the energy consumed. If the session stops unexpectedly, check the transaction details. Contact support if you believe you were overcharged.',
+    q: 'What if a session stops early?',
+    a: 'You only pay for energy used. Check the session details; contact support if the charge looks wrong.',
   },
   {
-    q: 'How do I find charging stations near me?',
-    a: 'Enable location services and use "Find Stations" to see nearby stations. You can also search by city or region.',
+    q: 'How do I find nearby stations?',
+    a: 'Allow location, then use Find chargers. You can also search by city or region.',
   },
   {
-    q: 'What payment methods are accepted?',
-    a: 'We accept mobile money (MTN, Vodafone, AirtelTigo) and card payments via Paystack. All prices are in Ghana Cedis (GHS).',
+    q: 'What payments are accepted?',
+    a: 'Mobile money (MTN, Vodafone, AirtelTigo) and cards via Paystack. Prices are in GHS.',
   },
 ];
 
@@ -41,47 +42,68 @@ export function CustomerHelpPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Help & Support"
-        subtitle="Frequently asked questions and how to get in touch"
+        title="Help"
+        subtitle="Answers and ways to reach us"
         updatedAt={null}
         refreshing={false}
         onRefresh={() => {}}
         refreshDisabled
+        showRefresh={false}
+        showLiveMeta={false}
         titleVariant="large"
-        containerSx={{ mb: 2 }}
+        containerSx={{ mb: 1.5 }}
       />
 
-      <GroupedListSection title="Privacy & terms">
-        <GroupedListRow
-          primary="Privacy Policy"
-          showChevron={false}
-          divider
-          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
-          onClick={() => {
-            if (privacy.external) window.open(privacy.href, '_blank', 'noopener,noreferrer');
-            else window.location.href = privacy.href;
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: { xs: 2, sm: 2.5 },
+          mb: { xs: 2.5, sm: 3 },
+          mx: { xs: -2, sm: 0 },
+          px: { xs: 2, sm: 0 },
+        }}
+      >
+        <Box
+          component="img"
+          src={CUSTOMER_IMAGES.helpSupport}
+          alt="Help and support"
+          loading="lazy"
+          decoding="async"
+          sx={{
+            width: { xs: '100%', sm: 148 },
+            maxWidth: { xs: 220, sm: 148 },
+            height: { xs: 160, sm: 148 },
+            objectFit: 'cover',
+            borderRadius: `${iosRadii.lg}px`,
+            mx: { xs: 'auto', sm: 0 },
+            flexShrink: 0,
+            bgcolor: 'primary.dark',
           }}
         />
-        <GroupedListRow
-          primary="Terms of Service"
-          showChevron={false}
-          divider
-          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
-          onClick={() => {
-            if (terms.external) window.open(terms.href, '_blank', 'noopener,noreferrer');
-            else window.location.href = terms.href;
-          }}
-        />
-        <GroupedListRow
-          primary="Help & support (web)"
-          showChevron={false}
-          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
-          onClick={() => {
-            if (support.external) window.open(support.href, '_blank', 'noopener,noreferrer');
-            else window.location.href = support.href;
-          }}
-        />
-      </GroupedListSection>
+        <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+          <Typography
+            component="p"
+            sx={{
+              m: 0,
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              fontSize: { xs: '1.15rem', sm: '1.25rem' },
+              lineHeight: 1.25,
+            }}
+          >
+            We're here when charging gets stuck
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.75, lineHeight: 1.45, maxWidth: 420, mx: { xs: 'auto', sm: 0 } }}
+          >
+            Browse common questions below, or email and call support directly.
+          </Typography>
+        </Box>
+      </Box>
 
       <GroupedListSection title="FAQ">
         {faqs.map((faq, idx) => (
@@ -113,12 +135,41 @@ export function CustomerHelpPage() {
         />
       </GroupedListSection>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5, pt: 1 }}>
-        <SupportAgentIcon fontSize="small" color="primary" />
-        <Typography component="p" sx={{ ...authPageBodySx, fontSize: '0.75rem' }}>
-          App Store and Play Store use the same legal links as above.
-        </Typography>
-      </Box>
+      <GroupedListSection title="Privacy & terms">
+        <GroupedListRow
+          primary="Privacy Policy"
+          showChevron={false}
+          divider
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (privacy.external) window.open(privacy.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = privacy.href;
+          }}
+        />
+        <GroupedListRow
+          primary="Terms of Service"
+          showChevron={false}
+          divider
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (terms.external) window.open(terms.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = terms.href;
+          }}
+        />
+        <GroupedListRow
+          primary="Help on the web"
+          showChevron={false}
+          end={<ChevronRightIcon sx={{ color: 'text.disabled' }} />}
+          onClick={() => {
+            if (support.external) window.open(support.href, '_blank', 'noopener,noreferrer');
+            else window.location.href = support.href;
+          }}
+        />
+      </GroupedListSection>
+
+      <Typography component="p" sx={{ ...authPageBodySx, fontSize: '0.75rem', px: 0.5, pt: 0.5 }}>
+        App Store and Play Store use the same legal links as above.
+      </Typography>
     </Box>
   );
 }

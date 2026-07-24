@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Button,
   useMediaQuery,
@@ -29,7 +28,6 @@ import { transactionsApi, Transaction, MeterSample } from '../../services/transa
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { paymentsApi } from '../../services/paymentsApi';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -57,6 +55,7 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
 
@@ -165,9 +164,9 @@ export function TransactionDetailPage() {
                 Back
               </Button>
             ) : null}
-            <Chip
+            <AppBadge
               label={sessionStatusLabel(transaction)}
-              color={sessionStatusChipColor(sessionStatusLabel(transaction))}
+              tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(transaction)))}
               sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
             />
           </>
@@ -366,9 +365,9 @@ export function TransactionDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     Status
                   </Typography>
-                  <Chip
+                  <AppBadge
                     label={sessionStatusLabel(transaction)}
-                    color={sessionStatusChipColor(sessionStatusLabel(transaction))}
+                    tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(transaction)))}
                     size="small"
                   />
                 </Grid>
@@ -430,7 +429,6 @@ export function TransactionDetailPage() {
                       </Button>
                       <Button
                         variant="outlined"
-                        color="success"
                         startIcon={<AttachMoneyIcon />}
                         onClick={() => {
                           setCashAmount(transaction.totalCost || 0);
@@ -438,16 +436,8 @@ export function TransactionDetailPage() {
                         }}
                         sx={(th) => ({
                           ...sxObject(th, compactOutlinedCtaSx),
-                          borderColor: alpha(th.palette.success.main, 0.45),
-                          color: 'success.main',
                           minWidth: { xs: '100%', sm: 150 },
                           width: { xs: '100%', sm: 'auto' },
-                          '&:hover': {
-                            borderWidth: 1,
-                            borderColor: 'success.main',
-                            bgcolor: alpha(th.palette.success.main, 0.06),
-                            boxShadow: 'none',
-                          },
                         })}
                       >
                         Cash Payment

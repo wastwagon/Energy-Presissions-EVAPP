@@ -156,7 +156,7 @@ function AdminDashboardChrome() {
                 p: 0,
                 border: '2px solid',
                 borderColor: 'divider',
-                '&:hover': { borderColor: 'secondary.main' },
+                '&:hover': { borderColor: 'primary.main' },
               }}
             >
               <Avatar
@@ -164,7 +164,7 @@ function AdminDashboardChrome() {
                 sx={{
                   width: 40,
                   height: 40,
-                  bgcolor: 'secondary.main',
+                  bgcolor: 'primary.main',
                   fontSize: '0.875rem',
                   fontWeight: 600,
                 }}

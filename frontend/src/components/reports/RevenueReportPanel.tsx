@@ -19,6 +19,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { isNoEnergyCompleted } from '../../utils/sessionDisplay';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
+import { StaffMetricCard } from '../dashboard/StaffMetricCard';
 import { RevenueTrendChart } from './RevenueTrendChart';
 
 function downloadRevenueCsv(rows: { label: string; count: number; amount: number }[]) {
@@ -148,28 +149,20 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
         <>
           <Grid container spacing={{ xs: 2, sm: 2 }} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={6}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total revenue (completed)
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                  {formatCurrency(totalRevenue)}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total revenue (completed)"
+                value={formatCurrency(totalRevenue)}
+                tone="brand"
+              />
             </Grid>
             {pendingHolds > 0 && (
               <Grid item xs={12} sm={6}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Pending wallet holds
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                    {formatCurrency(pendingHolds)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                    Not counted in revenue until sessions complete
-                  </Typography>
-                </Paper>
+                <StaffMetricCard
+                  label="Pending wallet holds"
+                  value={formatCurrency(pendingHolds)}
+                  hint="Not counted in revenue until sessions complete"
+                  tone="warning"
+                />
               </Grid>
             )}
           </Grid>

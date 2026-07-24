@@ -8,10 +8,8 @@ import {
   TextField,
   Button,
   Grid,
-  Alert,
   InputAdornment,
 } from '@mui/material';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { walletApi, WalletBalance } from '../../services/walletApi';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
@@ -34,6 +32,8 @@ import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
+import { CustomerHeroBanner } from '../../components/customer/CustomerHeroBanner';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 export function CustomerTopUpPage() {
   const navigate = useNavigate();
@@ -110,13 +110,22 @@ export function CustomerTopUpPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Top Up Wallet"
-        subtitle="Add funds to your wallet for seamless charging"
+        title="Top up"
+        subtitle="Mobile money or card — funds land in your wallet"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.wallet}
         refreshing={refreshing}
         onRefresh={() => void loadBalance(true)}
         titleVariant="large"
+        containerSx={{ mb: 1.5 }}
+      />
+
+      <CustomerHeroBanner
+        src={CUSTOMER_IMAGES.topUpHero}
+        alt="Adding funds for EV charging"
+        title="Fuel your wallet"
+        subtitle="Pay once, charge without re-entering details."
+        sx={{ height: { xs: 148, sm: 176, md: 196 } }}
       />
 
       {error && (
@@ -203,38 +212,37 @@ export function CustomerTopUpPage() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={premiumPanelCardSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 2 }}>
-              <Box
-                sx={(theme) => ({
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: 'primary.main',
-                })}
-              >
-                <AccountBalanceWalletIcon sx={{ fontSize: 24 }} />
-              </Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Why top up?
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, overflow: 'hidden', p: 0 }}>
+            <Box
+              component="img"
+              src={CUSTOMER_IMAGES.walletEnergy}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              decoding="async"
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                width: '100%',
+                height: 120,
+                objectFit: 'cover',
+              }}
+            />
+            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.25 }}>
+                How it works
               </Typography>
+              <Box component="ul" sx={{ m: 0, pl: 2.25, color: 'text.secondary' }}>
+                <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
+                  Pick an amount or enter your own (min GHS 1)
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
+                  Pay with mobile money or card
+                </Typography>
+                <Typography component="li" variant="body2">
+                  Balance updates instantly for charging
+                </Typography>
+              </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
-              • Instant payments for charging sessions
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
-              • No need to enter payment details each time
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
-              • Secure and convenient
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              • Support for mobile money and cards
-            </Typography>
           </Paper>
         </Grid>
       </Grid>

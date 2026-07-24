@@ -1,6 +1,7 @@
 import { Button, CircularProgress, SxProps, Theme } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { triggerHaptic } from '../../utils/haptics';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 
 interface RefreshButtonProps {
   refreshing: boolean;
@@ -10,6 +11,7 @@ interface RefreshButtonProps {
   sx?: SxProps<Theme>;
 }
 
+/** Secondary outlined refresh — always uses compact CTA chrome (Untitled UI secondary). */
 export function RefreshButton({
   refreshing,
   onClick,
@@ -25,10 +27,14 @@ export function RefreshButton({
         onClick();
       }}
       disabled={disabled || refreshing}
-      startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
-      sx={sx}
+      startIcon={refreshing ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />}
+      aria-busy={refreshing || undefined}
+      sx={(theme) => ({
+        ...sxObject(theme, compactOutlinedCtaSx),
+        ...(sx ? sxObject(theme, sx) : {}),
+      })}
     >
-      {label}
+      {refreshing ? 'Refreshing…' : label}
     </Button>
   );
 }

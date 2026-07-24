@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Chip,
   CircularProgress,
   Alert,
   Button,
@@ -24,9 +23,8 @@ import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { chargePointsApi } from '../../services/chargePointsApi';
 import { websocketService } from '../../services/websocket';
 import { TransactionSummaryDialog } from '../../components/TransactionSummaryDialog';
-import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
-import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authPageBodySx,
   compactContainedCtaSx,
@@ -34,6 +32,9 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatElapsedDurationFromStart } from '../../utils/formatters';
@@ -212,38 +213,16 @@ export function CustomerActiveSessionsPage() {
       )}
 
       {transactions.length === 0 ? (
-        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
-          <Box
-            sx={(theme) => ({
-              width: 72,
-              height: 72,
-              mx: 'auto',
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: theme.palette.action.hover,
-              color: 'text.secondary',
-            })}
-          >
-            <BatteryChargingFullIcon sx={{ fontSize: 36 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-            No active sessions
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            You do not have any active charging sessions at the moment.
-          </Typography>
-          <Button
-            variant="contained"
-            disableElevation
-            onClick={() => navigate(CUSTOMER_ROUTES.stations)}
-            sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-          >
-            Find stations
-          </Button>
-        </Paper>
+        <AppEmptyState
+          illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
+          illustrationAlt="Ready to charge"
+          title="No active sessions"
+          description="Find a charger when you're ready — live sessions show here."
+          primaryAction={{
+            label: 'Find chargers',
+            onClick: () => navigate(CUSTOMER_ROUTES.stations),
+          }}
+        />
       ) : useGroupedList ? (
         <Box sx={{ position: 'relative' }}>
           <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading active sessions" />
@@ -292,9 +271,9 @@ export function CustomerActiveSessionsPage() {
                         {tx.recordPending ? ' · session sync pending' : ''}
                       </Typography>
                     </Box>
-                    <Chip
+                    <AppBadge
                       label={tx.recordPending ? 'Active (syncing)' : tx.status}
-                      color={getTransactionStatusColor(tx.status)}
+                      tone={chipColorToBadgeTone(getTransactionStatusColor(tx.status))}
                       size="small"
                       sx={{ flexShrink: 0 }}
                     />

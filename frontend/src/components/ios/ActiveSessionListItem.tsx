@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Box, Typography, Chip, Button, Divider, ListItem, CircularProgress, Tooltip } from '@mui/material';
+import { Box, Typography, Button, Divider, ListItem, CircularProgress, Tooltip } from '@mui/material';
 import StopIcon from '@mui/icons-material/Stop';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import type { Transaction } from '../../services/transactionsApi';
@@ -11,6 +11,7 @@ import {
   formatActiveSessionPurchased,
 } from '../../utils/activeSessionMetrics';
 import { getTransactionStatusColor } from '../../utils/statusColors';
+import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
 import { iosGroupedRowDividerSx } from '../../theme/iosGroupedList';
 import { compactContainedCtaSx, compactErrorContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 
@@ -55,11 +56,11 @@ export function ActiveSessionListItem({
               {tx.recordPending ? ' · syncing' : ''}
             </Typography>
           </Box>
-          <Chip
+          <AppBadge
             label={tx.recordPending ? 'Syncing' : tx.status}
-            color={getTransactionStatusColor(tx.status)}
+            tone={chipColorToBadgeTone(getTransactionStatusColor(tx.status))}
             size="small"
-            sx={{ flexShrink: 0, height: 24 }}
+            sx={{ flexShrink: 0 }}
           />
         </Box>
         <Box

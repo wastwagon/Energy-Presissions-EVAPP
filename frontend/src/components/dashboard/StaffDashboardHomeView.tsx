@@ -88,11 +88,11 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
                 <DashboardMetricCard
                   value={stats.overview.totalVendors || 0}
                   label="Vendors"
-                  icon={<BusinessIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />}
+                  icon={<BusinessIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />}
                   ariaLabel="Open vendors"
                   onClick={() => navigate(SUPERADMIN_ROUTES.vendors)}
                   onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.vendors)}
-                  hoverAccent="secondary"
+                  hoverAccent="primary"
                 />
               </Grid>
             ) : null}
@@ -109,6 +109,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
                 onKeyDown={createKeyboardNavHandler(
                   variant === 'admin' ? ADMIN_ROUTES.opsDevices : SUPERADMIN_ROUTES.opsDevices
                 )}
+                hoverAccent="primary"
               />
             </Grid>
 
@@ -116,7 +117,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
               <DashboardMetricCard
                 value={stats.overview.activeSessions || 0}
                 label="Active sessions"
-                icon={<BatteryChargingFullIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />}
+                icon={<BatteryChargingFullIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />}
                 ariaLabel="Open sessions"
                 onClick={() =>
                   navigate(variant === 'admin' ? ADMIN_ROUTES.opsSessions : SUPERADMIN_ROUTES.opsSessions)
@@ -124,7 +125,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
                 onKeyDown={createKeyboardNavHandler(
                   variant === 'admin' ? ADMIN_ROUTES.opsSessions : SUPERADMIN_ROUTES.opsSessions
                 )}
-                hoverAccent="info"
+                hoverAccent="primary"
               />
             </Grid>
 
@@ -132,19 +133,13 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
               <DashboardMetricCard
                 value={formatCurrency(stats.overview.totalRevenue ?? 0, 'GHS')}
                 label={variant === 'admin' ? 'Revenue (completed)' : 'Total revenue'}
-                icon={
-                  variant === 'admin' ? (
-                    <AttachMoneyIcon sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.7 }} />
-                  ) : (
-                    <AttachMoneyIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.7 }} />
-                  )
-                }
+                icon={<AttachMoneyIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.7 }} />}
                 ariaLabel="Open revenue reports"
                 onClick={() => navigate(variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports)}
                 onKeyDown={createKeyboardNavHandler(
                   variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports
                 )}
-                hoverAccent={variant === 'admin' ? 'secondary' : 'info'}
+                hoverAccent="primary"
                 valueSx={currencyValueSx}
               />
             </Grid>

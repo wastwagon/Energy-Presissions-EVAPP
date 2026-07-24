@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Chip,
   List,
   ListItem,
   ListItemText,
@@ -16,6 +15,7 @@ import { AdaptiveSheet } from '../ios/AdaptiveSheet';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
 import { GroupedListRow } from '../ios/GroupedListRow';
+import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { getChargePointStatusColor } from '../../utils/statusColors';
@@ -54,7 +54,11 @@ export function StationDetailsSheet({
 
   const title = station.locationName || station.chargePointId;
   const statusChip = (
-    <Chip label={station.status} color={getChargePointStatusColor(station.status)} size="small" />
+    <AppBadge
+      label={station.status}
+      tone={chipColorToBadgeTone(getChargePointStatusColor(station.status))}
+      size="small"
+    />
   );
 
   const header = (

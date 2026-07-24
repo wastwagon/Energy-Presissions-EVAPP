@@ -1,15 +1,4 @@
-import { useState, useEffect } from 'react';
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  Alert,
-  ListItem,
-  ListItemText,
-} from '@mui/material';
+import { Box, FormControl, InputLabel, Select, MenuItem, Button, Alert, ListItem, ListItemText } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -19,6 +8,7 @@ import { iosGroupedListRowSx } from '../../theme/iosGroupedList';
 import { triggerHaptic } from '../../utils/haptics';
 import { USER_PREF_KEYS } from '../../constants/userPreferences';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
+import { useState, useEffect } from 'react';
 
 export function CustomerPreferencesPage() {
   const [currency, setCurrency] = useState('GHS');
@@ -48,18 +38,19 @@ export function CustomerPreferencesPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Preferences"
-        subtitle="Customize your experience"
+        subtitle="Currency and notifications"
         updatedAt={null}
         refreshing={false}
-        onRefresh={() => {}}
-        refreshDisabled
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
         titleVariant="large"
         containerSx={{ mb: 2 }}
       />
 
       {saved && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSaved(false)}>
-          Preferences saved successfully
+          Preferences saved
         </Alert>
       )}
       {error && (
@@ -68,15 +59,15 @@ export function CustomerPreferencesPage() {
 
       <GroupedListSection title="Display">
         <ListItem sx={{ ...iosGroupedListRowSx, display: 'block', py: 1.5 }} disablePadding>
-          <ListItemText primary="Currency" primaryTypographyProps={{ fontWeight: 500, mb: 1 }} />
+          <ListItemText
+            primary="Currency"
+            secondary="Wallet and session amounts use Ghana Cedis (GHS)."
+            primaryTypographyProps={{ fontWeight: 500, mb: 0.5 }}
+            secondaryTypographyProps={{ mb: 1.25 }}
+          />
           <FormControl fullWidth sx={(th) => sxObject(th, authFormFieldSx)}>
             <InputLabel id="pref-currency-label">Currency</InputLabel>
-            <Select
-              labelId="pref-currency-label"
-              value="GHS"
-              label="Currency"
-              disabled
-            >
+            <Select labelId="pref-currency-label" value="GHS" label="Currency" disabled>
               <MenuItem value="GHS">GHS (Ghana Cedis)</MenuItem>
             </Select>
           </FormControl>
@@ -86,7 +77,7 @@ export function CustomerPreferencesPage() {
       <GroupedListSection title="Notifications">
         <GroupedSwitchRow
           label="Session emails"
-          secondary="Email notifications for charging sessions"
+          secondary="Get email when a charging session starts or ends, and for important wallet alerts."
           checked={notifications}
           onChange={(e) => setNotifications(e.target.checked)}
         />
@@ -97,7 +88,11 @@ export function CustomerPreferencesPage() {
         disableElevation
         startIcon={<SaveIcon />}
         onClick={handleSave}
-        sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        sx={(th) => ({
+          ...sxObject(th, compactContainedCtaSx),
+          mt: 1,
+          width: { xs: '100%', sm: 'auto' },
+        })}
       >
         Save preferences
       </Button>

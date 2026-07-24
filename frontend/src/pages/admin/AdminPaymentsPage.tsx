@@ -9,15 +9,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   TextField,
   InputAdornment,
+  IconButton,
   Pagination,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
 import { getStoredAccountType } from '../../utils/authSession';
@@ -26,8 +27,11 @@ import { getPaymentStatusColor } from '../../utils/statusColors';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
-import { staffFilterFieldSx, sxObject } from '../../styles/authShell';
+import { staffFilterFieldSx, premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -133,15 +137,6 @@ export function AdminPaymentsPage() {
     return <DashboardStaffChromeSkeleton preset="adminPayments" />;
   }
 
-  const emptyState = (
-    <Box sx={{ py: 4, textAlign: 'center' }}>
-      <PaymentIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-      <Typography variant="body2" color="text.secondary">
-        {searchTerm ? 'No payments found matching your search' : 'No payments yet'}
-      </Typography>
-    </Box>
-  );
-
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
@@ -164,30 +159,58 @@ export function AdminPaymentsPage() {
         </Alert>
       )}
 
+      <StaffFilterBar aria-label="Payment search">
+        <TextField
+          fullWidth
+          placeholder="Search by ID, method, or status…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm ? (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear payment search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
+          }}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            width: { xs: '100%', sm: 320 },
+            maxWidth: '100%',
+          })}
+        />
+      </StaffFilterBar>
+
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
         <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payments" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-            Payments
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Payments ({filteredPayments.length}
+            {showStaffPaging ? ` of ${totalPayments}` : ''})
           </Typography>
-          <TextField
-            fullWidth
-            placeholder="Search by ID, method, or status…"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-            sx={(th) => sxObject(th, staffFilterFieldSx)}
-          />
         </Box>
 
         {filteredPayments.length === 0 ? (
-          emptyState
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<PaymentIcon />}
+            title={searchTerm ? 'No payments match your search' : 'No payments yet'}
+            description={
+              searchTerm
+                ? 'Try another ID, method, or status, or clear the search.'
+                : 'Payment transactions will appear here once customers start charging.'
+            }
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -199,11 +222,10 @@ export function AdminPaymentsPage() {
                   primary={formatCurrency(payment.amount, payment.currency)}
                   secondary={`#${payment.id} · ${payment.paymentMethod} · ${new Date(payment.createdAt).toLocaleDateString()}`}
                   end={
-                    <Chip
+                    <AppBadge
                       label={payment.status}
-                      color={getPaymentStatusColor(payment.status)}
+                      tone={chipColorToBadgeTone(getPaymentStatusColor(payment.status))}
                       size="small"
-                      sx={{ height: 24 }}
                     />
                   }
                 />
@@ -260,9 +282,9 @@ export function AdminPaymentsPage() {
                       ) : null}
                     </TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={payment.status}
-                        color={getPaymentStatusColor(payment.status)}
+                        tone={chipColorToBadgeTone(getPaymentStatusColor(payment.status))}
                         size="small"
                       />
                     </TableCell>

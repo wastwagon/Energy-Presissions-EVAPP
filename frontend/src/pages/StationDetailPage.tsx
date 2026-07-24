@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Chip,
   Alert,
   Button,
   Stack,
@@ -21,6 +20,9 @@ import { StartChargingDialog } from '../components/StartChargingDialog';
 import { StationChargingButton } from '../components/stations/StationChargingButton';
 import { useCustomerActiveSessions } from '../hooks/useCustomerActiveSessions';
 import { LivePageHeader } from '../components/dashboard/LivePageHeader';
+import { AppBadge, chipColorToBadgeTone } from '../components/ui/AppBadge';
+import { CustomerHeroBanner } from '../components/customer/CustomerHeroBanner';
+import { CUSTOMER_IMAGES } from '../config/customerImagery';
 import { premiumPanelCardSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../styles/authShell';
 import { formatCurrency } from '../utils/formatters';
@@ -149,7 +151,12 @@ export function StationDetailPage() {
       : null;
 
   const statusChip = (
-    <Chip label={station.status} color={getChargePointStatusColor(station.status)} sx={{ fontWeight: 700 }} />
+    <AppBadge
+      label={station.status}
+      tone={chipColorToBadgeTone(getChargePointStatusColor(station.status))}
+      size="small"
+      sx={{ fontWeight: 700 }}
+    />
   );
 
   const activeSession = station ? activeSessionsByStation.get(station.chargePointId) ?? null : null;
@@ -188,6 +195,11 @@ export function StationDetailPage() {
             {statusChip}
           </Box>
         }
+      />
+
+      <CustomerHeroBanner
+        src={CUSTOMER_IMAGES.stationHero}
+        alt="Electric vehicle charging station"
       />
 
       {isCompact ? (
@@ -238,7 +250,11 @@ export function StationDetailPage() {
                 label={`Connector ${conn.connectorId}`}
                 value={
                   <Box sx={{ textAlign: 'right' }}>
-                    <Chip label={conn.status} size="small" color={getChargePointStatusColor(conn.status)} />
+                    <AppBadge
+                      label={conn.status}
+                      size="small"
+                      tone={chipColorToBadgeTone(getChargePointStatusColor(conn.status))}
+                    />
                     {conn.connectorType ? (
                       <Typography variant="caption" display="block" color="text.secondary">
                         {conn.connectorType}
@@ -342,7 +358,12 @@ export function StationDetailPage() {
                       </Typography>
                     ) : null}
                   </Box>
-                  <Chip label={conn.status} size="small" color={getChargePointStatusColor(conn.status)} sx={{ fontWeight: 600 }} />
+                  <AppBadge
+                    label={conn.status}
+                    size="small"
+                    tone={chipColorToBadgeTone(getChargePointStatusColor(conn.status))}
+                    sx={{ fontWeight: 600 }}
+                  />
                 </Box>
               ))}
             </Stack>

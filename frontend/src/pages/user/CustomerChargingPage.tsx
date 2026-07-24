@@ -13,7 +13,6 @@ import { transactionsApi, type Transaction } from '../../services/transactionsAp
 import { pickLastEndedChargingSession } from '../../utils/chargingSession';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
-import { formatCurrency } from '../../utils/formatters';
 import {
   formatSessionCost,
   formatSessionEnergy,
@@ -34,6 +33,11 @@ import { WalletTopUpAlert } from '../../components/WalletTopUpAlert';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { useWalletAvailableBalance } from '../../hooks/useWalletAvailableBalance';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge } from '../../components/ui/AppBadge';
+import { CustomerHeroBanner } from '../../components/customer/CustomerHeroBanner';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import { iosRadii } from '../../theme/iosMobileTokens';
 
 type NavItem = {
   id: string;
@@ -47,34 +51,35 @@ const NAV: NavItem[] = [
   {
     id: 'find',
     primary: 'Find chargers',
-    secondary: 'Map and search nearby chargers',
+    secondary: 'Map & nearby search',
     to: CUSTOMER_ROUTES.stations,
     Icon: LocationOnIcon,
   },
   {
     id: 'stats',
-    primary: 'Charge stats',
-    secondary: 'Session history and costs',
+    primary: 'Charge history',
+    secondary: 'Past sessions & costs',
     to: CUSTOMER_ROUTES.sessionsHistory,
     Icon: BarChartIcon,
   },
   {
     id: 'live',
     primary: 'Live charging',
-    secondary: 'Active sessions and stop',
+    secondary: 'Active sessions',
     to: CUSTOMER_ROUTES.sessionsActive,
     Icon: BatteryChargingFullIcon,
   },
   {
     id: 'wallet',
-    primary: 'Wallet & top up',
+    primary: 'Wallet',
+    secondary: 'Balance & top up',
     to: CUSTOMER_ROUTES.wallet,
     Icon: AccountBalanceWalletIcon,
   },
   {
     id: 'pay',
-    primary: 'Manage payment',
-    secondary: 'Payment methods',
+    primary: 'Payment methods',
+    secondary: 'Cards & mobile money',
     to: CUSTOMER_ROUTES.paymentMethods,
     Icon: CreditCardIcon,
   },
@@ -168,17 +173,49 @@ export function CustomerChargingPage() {
         title="Charging"
         subtitle={
           activeCount > 0
-            ? `${activeCount} live session${activeCount === 1 ? '' : 's'} — open Live charging below to manage`
-            : 'Find chargers, manage sessions, and wallet'
+            ? `${activeCount} live session${activeCount === 1 ? '' : 's'} in progress`
+            : 'Charge, pay, and go'
         }
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.charging}
         refreshing={refreshing}
         onRefresh={() => void loadChargingData(true)}
         titleVariant="large"
-        containerSx={{ mb: 2 }}
-        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        containerSx={{ mb: 1.5 }}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
+        actions={
+          activeCount > 0 ? (
+            <AppBadge label={`${activeCount} live`} tone="info" sx={{ alignSelf: 'center' }} />
+          ) : undefined
+        }
       />
+
+      <CustomerHeroBanner
+        src={CUSTOMER_IMAGES.chargingHubHero}
+        alt="Electric vehicle charging at a modern station"
+        title="Power when you need it"
+        subtitle="Find a charger, start a session, and pay from your wallet."
+      />
+
+      {activeCount === 0 && !lastSession ? (
+        <AppEmptyState
+          sx={{ mb: 2 }}
+          illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
+          illustrationAlt="Ready to charge"
+          title="Ready when you are"
+          description="Find a nearby charger to start. Your last session will show here."
+          primaryAction={{
+            label: 'Find chargers',
+            onClick: () => navigate(CUSTOMER_ROUTES.stations),
+            startIcon: <LocationOnIcon />,
+          }}
+          secondaryAction={{
+            label: 'Top up wallet',
+            onClick: () => navigate(CUSTOMER_ROUTES.walletTopUp),
+            variant: 'secondary',
+          }}
+        />
+      ) : null}
 
       <GroupedListSection title="Shortcuts" sx={{ mb: 2 }}>
         {NAV.map((item, index) => {
@@ -205,8 +242,21 @@ export function CustomerChargingPage() {
       </GroupedListSection>
 
       {lastSession && lastLine && (
-        <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 } }}>
-          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.12em' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            ...premiumPanelCardSx,
+            p: { xs: 2, sm: 2.25 },
+            background: (t) =>
+              `linear-gradient(165deg, ${alpha(t.palette.primary.main, 0.08)} 0%, ${t.palette.background.paper} 48%)`,
+            borderColor: (t) => alpha(t.palette.primary.main, 0.16),
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={{ fontWeight: 600, letterSpacing: '-0.01em', mb: 0.5 }}
+          >
             Last charge
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
@@ -219,7 +269,7 @@ export function CustomerChargingPage() {
             </Typography>
           )}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 1, mb: 1.5 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}>
               {formatSessionCost(lastSession)}
             </Typography>
             <Typography variant="body2" component="span" color="text.secondary">
@@ -233,7 +283,7 @@ export function CustomerChargingPage() {
               variant="outlined"
               size="medium"
               fullWidth
-              sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), borderRadius: `${iosRadii.sm}px` })}
             >
               Details
             </Button>

@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   TextField,
   InputAdornment,
@@ -26,6 +25,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import HubIcon from '@mui/icons-material/Hub';
 import { connectionLogsApi, ConnectionLog, ConnectionEventType, ConnectionStatistics } from '../../services/connectionLogsApi';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -50,6 +50,9 @@ import {
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -246,10 +249,10 @@ export function SuperAdminConnectionLogsPage() {
         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mr: 0.5 }}>
           Fleet CSMS link
         </Typography>
-        <Chip label={`${linkCounts.online} online`} color="success" size="small" variant="outlined" />
-        <Chip label={`${linkCounts.stale} recent off`} color="warning" size="small" variant="outlined" />
-        <Chip label={`${linkCounts.offline} offline`} color="error" size="small" variant="outlined" />
-        <Chip label={`${linkCounts.never_seen} never`} size="small" variant="outlined" />
+        <AppBadge label={`${linkCounts.online} online`} tone="success" size="small" />
+        <AppBadge label={`${linkCounts.stale} recent off`} tone="warning" size="small" />
+        <AppBadge label={`${linkCounts.offline} offline`} tone="error" size="small" />
+        <AppBadge label={`${linkCounts.never_seen} never`} tone="neutral" size="small" />
       </Box>
 
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
@@ -262,14 +265,14 @@ export function SuperAdminConnectionLogsPage() {
                   {stat.chargePointId}
                 </Typography>
                 {link?.linkStatus ? (
-                  <Chip
+                  <AppBadge
                     label={getLinkStatusLabel(link.linkStatus)}
-                    color={getLinkStatusChipColor(link.linkStatus)}
+                    tone={chipColorToBadgeTone(getLinkStatusChipColor(link.linkStatus))}
                     size="small"
                     sx={{ mt: 0.75, mb: 0.5 }}
                   />
                 ) : (
-                  <Chip label="No link data" size="small" sx={{ mt: 0.75, mb: 0.5 }} />
+                  <AppBadge label="No link data" tone="neutral" size="small" sx={{ mt: 0.75, mb: 0.5 }} />
                 )}
                 <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5 }}>
                   {stat.successfulConnections} / {stat.totalAttempts}
@@ -292,6 +295,73 @@ export function SuperAdminConnectionLogsPage() {
         })}
       </Grid>
 
+      <StaffFilterBar aria-label="Connection log filters">
+        <TextField
+          fullWidth
+          placeholder="Charge point ID or search…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              setPage(1);
+              void loadData();
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm ? (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => {
+                    setSearchTerm('');
+                    setPage(1);
+                    void loadData();
+                  }}
+                  aria-label="Clear connection log search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+          }}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            width: { xs: '100%', sm: 280 },
+            maxWidth: '100%',
+          })}
+        />
+        <FormControl
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFormControlSx),
+            flexShrink: 0,
+            width: { xs: '100%', sm: 220 },
+          })}
+        >
+          <InputLabel>Event type</InputLabel>
+          <Select
+            value={eventTypeFilter}
+            label="Event type"
+            onChange={(e) => {
+              setEventTypeFilter(e.target.value as ConnectionEventType | '');
+              setPage(1);
+            }}
+          >
+            <MenuItem value="">All events</MenuItem>
+            <MenuItem value="connection_attempt">Connection attempt</MenuItem>
+            <MenuItem value="connection_success">Connection success</MenuItem>
+            <MenuItem value="connection_failed">Connection failed</MenuItem>
+            <MenuItem value="connection_closed">Connection closed</MenuItem>
+            <MenuItem value="error">Error</MenuItem>
+            <MenuItem value="message_error">Message error</MenuItem>
+          </Select>
+        </FormControl>
+      </StaffFilterBar>
+
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
         <TableSurfaceProgress active={refreshing && logs.length > 0} ariaLabel="Updating connection logs" />
         <Box
@@ -302,79 +372,17 @@ export function SuperAdminConnectionLogsPage() {
             borderColor: 'divider',
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-            Filters
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Connection events
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-start' } }}>
-            <TextField
-              fullWidth
-              placeholder="Charge point ID or search…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setPage(1);
-                  void loadData();
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => {
-                        setSearchTerm('');
-                        setPage(1);
-                        void loadData();
-                      }}
-                      aria-label="Clear connection log search"
-                      sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                    >
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
-              }}
-              sx={(th) => sxObject(th, staffFilterFieldSx)}
-            />
-            <FormControl
-              fullWidth
-              sx={(th) => ({
-                ...sxObject(th, staffFilterFormControlSx),
-                flexShrink: 0,
-                width: { xs: '100%', sm: 220 },
-              })}
-            >
-              <InputLabel>Event type</InputLabel>
-              <Select
-                value={eventTypeFilter}
-                label="Event type"
-                onChange={(e) => {
-                  setEventTypeFilter(e.target.value as ConnectionEventType | '');
-                  setPage(1);
-                }}
-              >
-                <MenuItem value="">All events</MenuItem>
-                <MenuItem value="connection_attempt">Connection attempt</MenuItem>
-                <MenuItem value="connection_success">Connection success</MenuItem>
-                <MenuItem value="connection_failed">Connection failed</MenuItem>
-                <MenuItem value="connection_closed">Connection closed</MenuItem>
-                <MenuItem value="error">Error</MenuItem>
-                <MenuItem value="message_error">Message error</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
         </Box>
         {logs.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No connection logs found
-            </Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<HubIcon />}
+            title="No connection logs found"
+            description="Try another charge point ID or event type filter."
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -388,21 +396,19 @@ export function SuperAdminConnectionLogsPage() {
                     primary={log.chargePointId}
                     secondary={`${log.eventType.replace(/_/g, ' ')} · ${new Date(log.createdAt).toLocaleString()}`}
                     end={
-                      <Box sx={{ textAlign: 'right' }}>
+                      <Box sx={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
                         {log.status && (
-                          <Chip
+                          <AppBadge
                             label={log.status}
-                            color={getConnectionStatusColor(log.status)}
+                            tone={chipColorToBadgeTone(getConnectionStatusColor(log.status))}
                             size="small"
-                            sx={{ mb: 0.5, height: 22 }}
                           />
                         )}
                         {link?.linkStatus && (
-                          <Chip
+                          <AppBadge
                             label={getLinkStatusLabel(link.linkStatus)}
-                            color={getLinkStatusChipColor(link.linkStatus)}
+                            tone={chipColorToBadgeTone(getLinkStatusChipColor(link.linkStatus))}
                             size="small"
-                            sx={{ height: 22, display: 'block', ml: 'auto' }}
                           />
                         )}
                       </Box>
@@ -439,11 +445,11 @@ export function SuperAdminConnectionLogsPage() {
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                           {new Date(log.createdAt).toLocaleString()}
                         </Typography>
-                        <Chip
+                        <AppBadge
                           label={log.eventType.replace(/_/g, ' ')}
-                          color={getConnectionEventColor(log.eventType)}
+                          tone={chipColorToBadgeTone(getConnectionEventColor(log.eventType))}
                           size="small"
-                          sx={{ mt: 0.5, height: 22 }}
+                          sx={{ mt: 0.5 }}
                         />
                       </TableCell>
                       <TableCell>
@@ -458,12 +464,14 @@ export function SuperAdminConnectionLogsPage() {
                                 : `Last heartbeat ${formatSecondsSinceHeartbeat(link.secondsSinceHeartbeat ?? null)}`
                             }
                           >
-                            <Chip
-                              label={getLinkStatusLabel(link.linkStatus)}
-                              color={getLinkStatusChipColor(link.linkStatus)}
-                              size="small"
-                              sx={{ mt: 0.5, height: 22 }}
-                            />
+                            <span>
+                              <AppBadge
+                                label={getLinkStatusLabel(link.linkStatus)}
+                                tone={chipColorToBadgeTone(getLinkStatusChipColor(link.linkStatus))}
+                                size="small"
+                                sx={{ mt: 0.5 }}
+                              />
+                            </span>
                           </Tooltip>
                         ) : (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -473,9 +481,9 @@ export function SuperAdminConnectionLogsPage() {
                       </TableCell>
                       <TableCell>
                         {log.status ? (
-                          <Chip
+                          <AppBadge
                             label={log.status}
-                            color={getConnectionStatusColor(log.status)}
+                            tone={chipColorToBadgeTone(getConnectionStatusColor(log.status))}
                             size="small"
                           />
                         ) : (

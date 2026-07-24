@@ -21,6 +21,10 @@ interface LivePageHeaderProps {
   refreshDisabled?: boolean;
   /** Keep the Refresh button visible on phone widths even when pull-to-refresh is registered. */
   showToolbarRefreshOnMobile?: boolean;
+  /** When false, hides the Refresh control (CRUD / static pages). Default true. */
+  showRefresh?: boolean;
+  /** When false, hides the “live · updated” caption. Default true. */
+  showLiveMeta?: boolean;
   titleSx?: SxProps<Theme>;
   subtitleSx?: SxProps<Theme>;
   containerSx?: SxProps<Theme>;
@@ -38,6 +42,8 @@ export function LivePageHeader({
   onRefresh,
   refreshDisabled = false,
   showToolbarRefreshOnMobile = false,
+  showRefresh = true,
+  showLiveMeta = true,
   titleVariant = 'compact',
   titleSx,
   subtitleSx,
@@ -53,10 +59,11 @@ export function LivePageHeader({
   const pullRefresh = useCustomerPullRefreshContext();
   const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
   const hideToolbarRefresh =
-    isMobile &&
-    Boolean(pullRefresh?.hasRefreshHandler) &&
-    !refreshDisabled &&
-    !showToolbarRefreshOnMobile;
+    !showRefresh ||
+    (isMobile &&
+      Boolean(pullRefresh?.hasRefreshHandler) &&
+      !refreshDisabled &&
+      !showToolbarRefreshOnMobile);
 
   const titleSentinelRef = useCallback(
     (node: HTMLElement | null) => {
@@ -77,7 +84,7 @@ export function LivePageHeader({
 
   return (
     <>
-      {refreshing && (
+      {refreshing && showRefresh && (
         <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label={`Updating ${title.toLowerCase()}`} />
       )}
       <Box
@@ -101,7 +108,9 @@ export function LivePageHeader({
           <Typography variant="body2" sx={resolvedSubtitleSx}>
             {subtitle}
           </Typography>
-          <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />
+          {showLiveMeta ? (
+            <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />
+          ) : null}
         </Box>
         {(actions || !hideToolbarRefresh) && (
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>

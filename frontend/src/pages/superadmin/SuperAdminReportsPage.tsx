@@ -15,7 +15,6 @@ import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
-  premiumPanelCardSx,
   premiumTableSurfaceSx,
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
@@ -28,6 +27,7 @@ import { ReportSessionAverages } from '../../components/reports/ReportSessionAve
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
@@ -167,59 +167,39 @@ export function SuperAdminReportsPage() {
         <>
           <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Revenue
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                  {formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
-                  Completed sessions only — excludes wallet holds
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Revenue"
+                value={formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
+                hint="Completed sessions only — excludes wallet holds"
+                tone="brand"
+              />
             </Grid>
             {(stats.overview?.pendingWalletReserved ?? 0) > 0 && (
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Wallet holds (pending)
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                    {formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
-                  </Typography>
-                </Paper>
+                <StaffMetricCard
+                  label="Wallet holds (pending)"
+                  value={formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
+                  tone="warning"
+                />
               </Grid>
             )}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Sessions
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Sessions"
+                value={stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
+              />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Vendors
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.overview?.totalVendors ?? stats.totalVendors ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Vendors"
+                value={stats.overview?.totalVendors ?? stats.totalVendors ?? 0}
+              />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Users"
+                value={stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
+              />
             </Grid>
           </Grid>
 
@@ -244,33 +224,24 @@ export function SuperAdminReportsPage() {
                   {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0 && (
                     <Grid container spacing={2} sx={{ mb: 2 }}>
                       <Grid item xs={12} md={6}>
-                        <Paper sx={premiumPanelCardSx}>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            Average revenue per vendor
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                            {formatCurrency(
-                              (stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0) /
-                                Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
-                            )}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Network total ÷ vendor count
-                          </Typography>
-                        </Paper>
+                        <StaffMetricCard
+                          label="Average revenue per vendor"
+                          value={formatCurrency(
+                            (stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0) /
+                              Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
+                          )}
+                          hint="Network total ÷ vendor count"
+                          tone="brand"
+                        />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Paper sx={premiumPanelCardSx}>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            Average sessions per vendor
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                            {Math.round(
-                              (stats.overview?.totalTransactions ?? stats.totalSessions ?? 0) /
-                                Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
-                            )}
-                          </Typography>
-                        </Paper>
+                        <StaffMetricCard
+                          label="Average sessions per vendor"
+                          value={Math.round(
+                            (stats.overview?.totalTransactions ?? stats.totalSessions ?? 0) /
+                              Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
+                          )}
+                        />
                       </Grid>
                     </Grid>
                   )}

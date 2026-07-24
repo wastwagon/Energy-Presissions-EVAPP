@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Box, Typography } from '@mui/material';
 import type { StationWithDistance } from '../../services/stationsApi';
+import { iosBrandColors } from '../../theme/iosMobileTokens';
 import './stationsMap.css';
 
 const ACCRA: L.LatLngTuple = [5.6037, -0.187];
@@ -14,10 +15,16 @@ const GHANA_BOUNDS = L.latLngBounds(
   [11.19, 1.29] as L.LatLngTuple,
 );
 
+/** Brand teal station pins (not Material red/blue). */
+const STATION_MARKER = iosBrandColors.primary;
+const STATION_SELECTED_RING = 'rgba(10, 101, 112, 0.55)';
+/** Distinct “you are here” — theme info blue, separate from station teal. */
+const USER_MARKER = '#0284c7';
+
 function evDivHtml(selected: boolean): string {
   const size = selected ? 34 : 28;
-  const ring = selected ? '0 0 0 3px rgba(25, 118, 210, 0.55)' : 'none';
-  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#e53935;box-shadow:${ring},0 2px 8px rgba(0,0,0,0.35);border:2px solid #fff;display:flex;align-items:center;justify-content:center">
+  const ring = selected ? `0 0 0 3px ${STATION_SELECTED_RING}` : 'none';
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${STATION_MARKER};box-shadow:${ring},0 2px 8px rgba(0,0,0,0.35);border:2px solid #fff;display:flex;align-items:center;justify-content:center">
     <span style="font-size:${selected ? 16 : 14}px;line-height:1">⚡</span>
   </div>`;
 }
@@ -34,7 +41,7 @@ function makeEvIcon(selected: boolean) {
 
 const userIcon = L.divIcon({
   className: 'stations-map-marker-wrap',
-  html: `<div style="width:18px;height:18px;border-radius:50%;background:#1976d2;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:${USER_MARKER};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
   iconSize: L.point(18, 18),
   iconAnchor: L.point(9, 9),
 });

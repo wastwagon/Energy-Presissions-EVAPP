@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Paper, Typography, useTheme } from '@mui/material';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import {
   Bar,
   BarChart,
@@ -13,6 +14,7 @@ import { dashboardApi, type RevenueTrendPoint } from '../../services/dashboardAp
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { usePrefersReducedMotion } from '../../utils/motionPreference';
+import { AppEmptyState } from '../ui/AppEmptyState';
 
 function formatAxisDate(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00`);
@@ -87,9 +89,12 @@ export function RevenueTrendChart({ days = 30, title = 'Revenue trend' }: Revenu
       )}
 
       {!loading && !error && !hasRevenue && (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-          No billed revenue in this period yet.
-        </Typography>
+        <AppEmptyState
+          sx={{ border: 0, boxShadow: 'none', borderRadius: 0, py: 2 }}
+          icon={<ShowChartIcon />}
+          title="No billed revenue yet"
+          description={`No completed paid sessions in the last ${days} days.`}
+        />
       )}
 
       {!loading && hasRevenue && (
@@ -124,7 +129,7 @@ export function RevenueTrendChart({ days = 30, title = 'Revenue trend' }: Revenu
                 />
                 <Bar
                   dataKey="revenue"
-                  fill={theme.palette.success.main}
+                  fill={theme.palette.primary.main}
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={!reducedMotion}
                 />

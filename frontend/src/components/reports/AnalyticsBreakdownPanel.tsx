@@ -1,9 +1,11 @@
-import { Box, Chip, Grid, Paper, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Grid, Paper, Typography, useMediaQuery, useTheme } from '@mui/material';
 import type { DashboardStats } from '../../services/dashboardApi';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
+import { AppBadge } from '../ui/AppBadge';
+import { StaffMetricCard } from '../dashboard/StaffMetricCard';
 import { AnalyticsBreakdownCharts } from './AnalyticsBreakdownCharts';
 
 interface AnalyticsBreakdownPanelProps {
@@ -38,7 +40,7 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
             <GroupedDetailRow
               label="Pending wallet holds"
               value={
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.dark' }}>
                   {formatCurrency(pendingHolds)}
                 </Typography>
               }
@@ -90,17 +92,12 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
     <Grid container spacing={2} sx={{ mt: 1 }}>
       {pendingHolds > 0 && (
         <Grid item xs={12} sm={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Pending wallet holds
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: 'warning.main', mt: 0.5 }}>
-              {formatCurrency(pendingHolds)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Not included in revenue until sessions complete
-            </Typography>
-          </Paper>
+          <StaffMetricCard
+            label="Pending wallet holds"
+            value={formatCurrency(pendingHolds)}
+            hint="Not included in revenue until sessions complete"
+            tone="warning"
+          />
         </Grid>
       )}
       <Grid item xs={12} md={6}>
@@ -115,7 +112,7 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
               </Typography>
             ) : (
               usersByType.map((row) => (
-                <Chip key={row.type} label={`${row.type}: ${row.count}`} variant="outlined" />
+                <AppBadge key={row.type} label={`${row.type}: ${row.count}`} tone="neutral" size="small" />
               ))
             )}
           </Box>
@@ -133,7 +130,12 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
               </Typography>
             ) : (
               cpByStatus.map((row) => (
-                <Chip key={row.status} label={`${row.status}: ${row.count}`} variant="outlined" />
+                <AppBadge
+                  key={row.status}
+                  label={`${row.status}: ${row.count}`}
+                  tone="neutral"
+                  size="small"
+                />
               ))
             )}
           </Box>

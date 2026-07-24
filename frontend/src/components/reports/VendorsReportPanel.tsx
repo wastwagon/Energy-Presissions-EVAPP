@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Chip,
   Table,
   TableBody,
   TableCell,
@@ -13,9 +12,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { vendorApi, type Vendor } from '../../services/vendorApi';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedListRow } from '../ios/GroupedListRow';
+import { AppBadge } from '../ui/AppBadge';
+import { AppEmptyState } from '../ui/AppEmptyState';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 
 export function VendorsReportPanel() {
@@ -67,9 +69,12 @@ export function VendorsReportPanel() {
       </Typography>
 
       {vendors.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-          No vendors found.
-        </Typography>
+        <AppEmptyState
+          sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+          icon={<StorefrontIcon />}
+          title="No vendors found"
+          description="Vendor accounts will appear here once they are created."
+        />
       ) : useGroupedList ? (
         <GroupedListSection>
           {vendors.map((v, index) => (
@@ -80,11 +85,12 @@ export function VendorsReportPanel() {
               primary={v.name}
               secondary={v.contactEmail || v.slug || `ID ${v.id}`}
               end={
-                <Chip
+                <AppBadge
                   label={v.status}
                   size="small"
-                  color={v.status === 'active' ? 'success' : v.status === 'suspended' ? 'warning' : 'default'}
-                  sx={{ height: 22 }}
+                  tone={
+                    v.status === 'active' ? 'success' : v.status === 'suspended' ? 'warning' : 'neutral'
+                  }
                 />
               }
             />
@@ -107,10 +113,16 @@ export function VendorsReportPanel() {
                   <TableRow key={v.id} hover>
                     <TableCell>{v.name}</TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={v.status}
                         size="small"
-                        color={v.status === 'active' ? 'success' : v.status === 'suspended' ? 'warning' : 'default'}
+                        tone={
+                          v.status === 'active'
+                            ? 'success'
+                            : v.status === 'suspended'
+                              ? 'warning'
+                              : 'neutral'
+                        }
                       />
                     </TableCell>
                     <TableCell>{v.contactEmail || '—'}</TableCell>

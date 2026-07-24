@@ -12,7 +12,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Pagination,
   useTheme,
   useMediaQuery,
@@ -45,6 +44,9 @@ import { triggerHaptic } from '../../utils/haptics';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 const WALLET_TX_PAGE_SIZE = 20;
 
@@ -145,7 +147,7 @@ export function CustomerWalletPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Wallet"
-        subtitle="Manage your wallet balance and view transaction history"
+        subtitle="Balance and history"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.wallet}
         refreshing={refreshing}
@@ -181,6 +183,8 @@ export function CustomerWalletPage() {
             sx={(th) => ({
               ...premiumPanelCardSx,
               mb: 2,
+              overflow: 'hidden',
+              p: 0,
               background: `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.07)} 0%, ${alpha(
                 th.palette.primary.main,
                 0.02,
@@ -188,43 +192,76 @@ export function CustomerWalletPage() {
               borderColor: alpha(th.palette.primary.main, 0.18),
             })}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: 'stretch',
+                minHeight: { sm: 132 },
+              }}
+            >
               <Box
-                sx={(th) => ({
-                  width: 52,
-                  height: 52,
-                  borderRadius: 2,
+                component="img"
+                src={CUSTOMER_IMAGES.walletEnergy}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                decoding="async"
+                sx={{
+                  width: { xs: '100%', sm: 168 },
+                  height: { xs: 96, sm: 'auto' },
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                }}
+              />
+              <Box
+                sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  bgcolor: alpha(th.palette.primary.main, 0.12),
-                  color: 'primary.main',
-                })}
+                  gap: 2,
+                  flexWrap: 'wrap',
+                  p: { xs: 2, sm: 2.25 },
+                  flex: 1,
+                  minWidth: 0,
+                }}
               >
-                <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                <Box
+                  sx={(th) => ({
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    bgcolor: alpha(th.palette.primary.main, 0.12),
+                    color: 'primary.main',
+                  })}
                 >
-                  Available to spend
-                </Typography>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    color: 'text.primary',
-                    fontSize: { xs: '1.75rem', sm: '2.25rem' },
-                    wordBreak: 'break-word',
-                    lineHeight: 1.2,
-                    mt: 0.25,
-                  }}
-                >
-                  {formatCurrency(funds.available, funds.currency)}
-                </Typography>
+                  <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                  >
+                    Available to spend
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      fontSize: { xs: '1.75rem', sm: '2.25rem' },
+                      wordBreak: 'break-word',
+                      lineHeight: 1.2,
+                      mt: 0.25,
+                    }}
+                  >
+                    {formatCurrency(funds.available, funds.currency)}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Paper>
@@ -263,9 +300,29 @@ export function CustomerWalletPage() {
         <Box sx={{ position: 'relative' }}>
           <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
           {transactions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No transactions yet
-            </Typography>
+            <AppEmptyState
+              sx={{ mb: 0 }}
+              illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
+              illustrationAlt="Wallet energy"
+              title="No transactions yet"
+              description="Top up to start charging. Your ledger appears here."
+              primaryAction={{
+                label: 'Top up wallet',
+                onClick: () => {
+                  triggerHaptic('light');
+                  navigate(CUSTOMER_ROUTES.walletTopUp);
+                },
+                startIcon: <AddIcon />,
+              }}
+              secondaryAction={{
+                label: 'Find stations',
+                onClick: () => {
+                  triggerHaptic('light');
+                  navigate(CUSTOMER_ROUTES.stations);
+                },
+                variant: 'secondary',
+              }}
+            />
           ) : (
             <GroupedListSection title="Transaction history">
               {transactions.map((tx, index) => (
@@ -326,10 +383,30 @@ export function CustomerWalletPage() {
               <TableBody>
                 {transactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        No transactions yet
-                      </Typography>
+                    <TableCell colSpan={6} sx={{ border: 0, p: 0 }}>
+                      <AppEmptyState
+                        sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+                        illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
+                        illustrationAlt="Wallet energy"
+                        title="No transactions yet"
+                        description="Top up to start charging. Your ledger appears here."
+                        primaryAction={{
+                          label: 'Top up wallet',
+                          onClick: () => {
+                            triggerHaptic('light');
+                            navigate(CUSTOMER_ROUTES.walletTopUp);
+                          },
+                          startIcon: <AddIcon />,
+                        }}
+                        secondaryAction={{
+                          label: 'Find stations',
+                          onClick: () => {
+                            triggerHaptic('light');
+                            navigate(CUSTOMER_ROUTES.stations);
+                          },
+                          variant: 'secondary',
+                        }}
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -337,10 +414,9 @@ export function CustomerWalletPage() {
                     <TableRow key={tx.id}>
                       <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Chip
+                        <AppBadge
                           label={formatWalletLedgerTypeLabel(tx.type)}
-                          color={getWalletTransactionTypeColor(tx.type)}
-                          size="small"
+                          tone={chipColorToBadgeTone(getWalletTransactionTypeColor(tx.type))}
                         />
                       </TableCell>
                       <TableCell>{tx.description || '-'}</TableCell>
@@ -354,7 +430,7 @@ export function CustomerWalletPage() {
                       </TableCell>
                       <TableCell>{formatCurrency(tx.balanceAfter)}</TableCell>
                       <TableCell>
-                        <Chip label={tx.status} color={getPaymentStatusColor(tx.status)} size="small" />
+                        <AppBadge label={tx.status} tone={chipColorToBadgeTone(getPaymentStatusColor(tx.status))} />
                       </TableCell>
                     </TableRow>
                   ))

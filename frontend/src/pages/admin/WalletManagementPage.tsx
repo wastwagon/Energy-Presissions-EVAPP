@@ -17,7 +17,6 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  Chip,
   Grid,
   InputAdornment,
   MenuItem,
@@ -31,9 +30,11 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PeopleIcon from '@mui/icons-material/People';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   staffFilterFieldSx,
@@ -43,6 +44,10 @@ import {
   premiumDialogPaperSx,
   sxObject,
 } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { formatCurrency } from '../../utils/formatters';
 import { getWalletTransactionTypeColor } from '../../utils/statusColors';
 import {
@@ -279,29 +284,30 @@ export function WalletManagementPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Wallet Management
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage customer wallet balances, credits, debts, and transactions.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<PersonAddIcon />}
-          onClick={() => setCreateUserDialogOpen(true)}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            minWidth: { sm: 140 },
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          Create user
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="Wallet Management"
+        subtitle="Manage customer wallet balances, credits, debts, and transactions."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<PersonAddIcon />}
+            onClick={() => setCreateUserDialogOpen(true)}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              minWidth: { sm: 140 },
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Create user
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -315,6 +321,27 @@ export function WalletManagementPage() {
         </Alert>
       )}
 
+      <StaffFilterBar aria-label="User search">
+        <TextField
+          fullWidth
+          placeholder="Search by name or email…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            width: { xs: '100%', sm: 320 },
+            maxWidth: '100%',
+          })}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </StaffFilterBar>
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
@@ -324,29 +351,18 @@ export function WalletManagementPage() {
                 Users ({filteredUsers.length})
               </Typography>
             </Box>
-            <Box sx={{ px: { xs: 2, sm: 2.5 }, pt: 2 }}>
-              <TextField
-                fullWidth
-                placeholder="Search by name or email…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={(th) => ({ ...sxObject(th, staffFilterFieldSx), mb: 2 })}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
 
             {filteredUsers.length === 0 ? (
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                  {searchQuery ? 'No users found matching your search' : 'No users found'}
-                </Typography>
-              </Box>
+              <AppEmptyState
+                sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+                icon={<PeopleIcon />}
+                title={searchQuery ? 'No users match your search' : 'No users found'}
+                description={
+                  searchQuery
+                    ? 'Try another name or email, or clear the search.'
+                    : 'Create a user to start managing wallet balances.'
+                }
+              />
             ) : useGroupedList ? (
               <Box sx={{ pb: 1 }}>
                 <GroupedListSection>
@@ -526,11 +542,12 @@ export function WalletManagementPage() {
 
             {selectedUser ? (
               walletTransactions.length === 0 ? (
-                <Box sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No transactions found
-                  </Typography>
-                </Box>
+                <AppEmptyState
+                  sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+                  icon={<AccountBalanceWalletIcon />}
+                  title="No transactions found"
+                  description="Wallet ledger entries for this user will appear here."
+                />
               ) : useGroupedList ? (
                 <Box sx={{ py: 1 }}>
                   <GroupedListSection>
@@ -584,9 +601,9 @@ export function WalletManagementPage() {
                               {new Date(tx.createdAt).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
-                              <Chip
+                              <AppBadge
                                 label={formatWalletLedgerTypeLabel(tx.type)}
-                                color={getWalletTransactionTypeColor(tx.type)}
+                                tone={chipColorToBadgeTone(getWalletTransactionTypeColor(tx.type))}
                                 size="small"
                               />
                             </TableCell>
@@ -616,9 +633,12 @@ export function WalletManagementPage() {
                 </>
               )
             ) : (
-              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4, px: 2 }}>
-                Select a user to view wallet transactions
-              </Typography>
+              <AppEmptyState
+                sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+                icon={<AccountBalanceWalletIcon />}
+                title="Select a user"
+                description="Choose a customer on the left to view wallet transactions."
+              />
             )}
           </Paper>
         </Grid>

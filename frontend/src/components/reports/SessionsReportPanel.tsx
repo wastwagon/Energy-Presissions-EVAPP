@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Table,
   TableBody,
   TableCell,
@@ -15,10 +14,13 @@ import {
   useTheme,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import EvStationIcon from '@mui/icons-material/EvStation';
 import { reportsApi } from '../../services/dashboardApi';
 import type { Transaction } from '../../services/transactionsApi';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedListRow } from '../ios/GroupedListRow';
+import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
+import { AppEmptyState } from '../ui/AppEmptyState';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import {
@@ -104,9 +106,12 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
           Loading sessions…
         </Typography>
       ) : rows.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-          No sessions found.
-        </Typography>
+        <AppEmptyState
+          sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+          icon={<EvStationIcon />}
+          title="No sessions found"
+          description="Recent charging sessions will appear here once drivers start charging."
+        />
       ) : useGroupedList ? (
         <GroupedListSection title="Recent sessions">
           {rows.map((tx, index) => (
@@ -121,11 +126,11 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {formatSessionCost(tx)}
                   </Typography>
-                  <Chip
+                  <AppBadge
                     label={sessionStatusLabel(tx)}
-                    color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                    tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                     size="small"
-                    sx={{ mt: 0.5, height: 22 }}
+                    sx={{ mt: 0.5 }}
                   />
                 </Box>
               }
@@ -158,9 +163,9 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
                     <TableCell>{formatSessionDuration(tx)}</TableCell>
                     <TableCell>{formatSessionCost(tx)}</TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={sessionStatusLabel(tx)}
-                        color={sessionStatusChipColor(sessionStatusLabel(tx))}
+                        tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                         size="small"
                       />
                     </TableCell>

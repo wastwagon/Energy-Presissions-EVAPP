@@ -15,7 +15,6 @@ import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
-  premiumPanelCardSx,
   premiumTableSurfaceSx,
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
@@ -31,6 +30,7 @@ import { getStoredUser } from '../../utils/authSession';
 import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 import { Link as RouterLink } from 'react-router-dom';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
@@ -185,59 +185,39 @@ export function AdminReportsPage() {
         <>
           <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Revenue
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                  {formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
-                  Completed sessions only — excludes wallet holds
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Revenue"
+                value={formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
+                hint="Completed sessions only — excludes wallet holds"
+                tone="brand"
+              />
             </Grid>
             {(stats.overview?.pendingWalletReserved ?? 0) > 0 && (
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={premiumPanelCardSx}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Wallet holds (pending)
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                    {formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
-                  </Typography>
-                </Paper>
+                <StaffMetricCard
+                  label="Wallet holds (pending)"
+                  value={formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
+                  tone="warning"
+                />
               </Grid>
             )}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Sessions
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Sessions"
+                value={stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
+              />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Active Sessions
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                  {stats.overview?.activeSessions ?? stats.activeSessions ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Active Sessions"
+                value={stats.overview?.activeSessions ?? stats.activeSessions ?? 0}
+              />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={premiumPanelCardSx}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
-                </Typography>
-              </Paper>
+              <StaffMetricCard
+                label="Total Users"
+                value={stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
+              />
             </Grid>
           </Grid>
 

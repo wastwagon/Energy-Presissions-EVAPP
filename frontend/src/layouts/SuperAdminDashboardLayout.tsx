@@ -10,7 +10,6 @@ import {
   Menu,
   MenuItem as MuiMenuItem,
   IconButton,
-  Chip,
   Button,
   useTheme,
   useMediaQuery,
@@ -28,6 +27,7 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
 import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
+import { AppBadge } from '../components/ui/AppBadge';
 import { superAdminBottomNavItems } from '../config/menu.config';
 import { SUPERADMIN_ROUTES } from '../config/staffNav.paths';
 import { brandColors } from '../theme';
@@ -184,9 +184,9 @@ function SuperAdminDashboardChrome() {
             }}
           >
             {isImpersonating && vendorName && (
-              <Chip
+              <AppBadge
                 label={`Viewing: ${vendorName}`}
-                color="error"
+                tone="error"
                 size="small"
                 sx={{ fontWeight: 600, flexShrink: 0, maxWidth: { xs: '40vw', sm: 'none' } }}
               />

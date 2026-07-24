@@ -28,6 +28,34 @@ export const authPageRootSx: SxProps<Theme> = {
   },
 };
 
+/**
+ * Auth shell with atmospheric photography — keeps the card readable on mobile and desktop.
+ */
+export function authPageRootAtmosphereSx(imageUrl: string): SxProps<Theme> {
+  return {
+    width: '100%',
+    flex: 1,
+    alignSelf: 'stretch',
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    isolation: 'isolate',
+    px: { xs: 3, sm: 4 },
+    py: { xs: 'max(env(safe-area-inset-top), env(safe-area-inset-bottom), 16px)', sm: 3 },
+    boxSizing: 'border-box',
+    backgroundColor: '#074854',
+    backgroundImage: `linear-gradient(180deg, rgba(7, 72, 84, 0.5) 0%, rgba(10, 101, 112, 0.68) 42%, rgba(244, 247, 249, 0.96) 100%), url(${imageUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    '@supports (min-height: 100dvh)': {
+      minHeight: '100dvh',
+    },
+  };
+}
+
 export const authPagePaperSx: SxProps<Theme> = {
   p: { xs: 1.75, sm: 2.75 },
   borderRadius: `${iosRadii.lg}px`,
@@ -312,6 +340,55 @@ export const compactWarningContainedCtaSx: SxProps<Theme> = (theme) => ({
       theme.palette.mode === 'light'
         ? `0 4px 14px ${alpha(theme.palette.warning.main, 0.32)}`
         : undefined,
+  },
+});
+
+/**
+ * Tertiary / ghost CTA — low emphasis (cancel-adjacent, “skip”, toolbar text actions).
+ * Pairs with Primary (contained) and Secondary (outlined).
+ */
+export const compactTertiaryCtaSx: SxProps<Theme> = (theme) => ({
+  py: 1,
+  px: 1.5,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  borderRadius: `${iosRadii.sm}px`,
+  fontWeight: 600,
+  fontSize: '0.875rem',
+  letterSpacing: '-0.01em',
+  textTransform: 'none',
+  boxShadow: 'none',
+  color: theme.palette.text.secondary,
+  bgcolor: 'transparent',
+  '&:hover': {
+    bgcolor: alpha(theme.palette.text.primary, 0.06),
+    color: theme.palette.text.primary,
+    boxShadow: 'none',
+  },
+  '&:disabled': {
+    color: theme.palette.text.disabled,
+  },
+});
+
+/** Link-style CTA — inline emphasis without a chrome box. */
+export const compactLinkCtaSx: SxProps<Theme> = (theme) => ({
+  py: 0.75,
+  px: 0.5,
+  minHeight: IOS_TOUCH_TARGET_PX,
+  borderRadius: `${iosRadii.sm}px`,
+  fontWeight: 600,
+  fontSize: '0.875rem',
+  letterSpacing: '-0.01em',
+  textTransform: 'none',
+  boxShadow: 'none',
+  color: theme.palette.primary.main,
+  bgcolor: 'transparent',
+  '&:hover': {
+    bgcolor: alpha(theme.palette.primary.main, 0.06),
+    textDecoration: 'underline',
+    boxShadow: 'none',
+  },
+  '&:disabled': {
+    color: theme.palette.text.disabled,
   },
 });
 

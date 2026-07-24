@@ -3,7 +3,8 @@ import { Box, Typography, Paper, TextField, Button, Alert } from '@mui/material'
 import { alpha } from '@mui/material/styles';
 import { localAuthListApi } from '../../services/localAuthListApi';
 import { staffFilterFieldSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
-import { dashboardPageSubtitleSx, dashboardPageTitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx } from '../../theme/jampackShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 
 export function SuperAdminLocalAuthPage() {
   const [chargePointId, setChargePointId] = useState('');
@@ -32,12 +33,15 @@ export function SuperAdminLocalAuthPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-        Local authorization list
-      </Typography>
-      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
-        Read local list version from a charge point. Sending list updates is done via the API from trusted operators.
-      </Typography>
+      <LivePageHeader
+        title="Local authorization list"
+        subtitle="Read local list version from a charge point. List updates are sent via the API by trusted operators."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2, py: 0.5 }} onClose={() => setError(null)}>

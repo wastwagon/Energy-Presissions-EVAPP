@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
-  Typography,
-  Paper,
   Grid,
   Alert,
   Button,
@@ -15,12 +13,12 @@ import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
   dashboardPageTitleSx,
   dashboardPageSubtitleSx,
-  premiumPanelCardSx,
 } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
@@ -153,70 +151,37 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
       {stats && (
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingUpIcon sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="body2" color="text.secondary">
-                  Total Revenue
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                {formatCurrency(stats.overview?.totalRevenue || 0)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                Completed sessions only
-              </Typography>
-            </Paper>
+            <StaffMetricCard
+              label="Total Revenue"
+              value={formatCurrency(stats.overview?.totalRevenue || 0)}
+              hint="Completed sessions only"
+              icon={<TrendingUpIcon />}
+              tone="brand"
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Sessions
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {stats.overview?.totalTransactions || 0}
-              </Typography>
-            </Paper>
+            <StaffMetricCard
+              label="Total Sessions"
+              value={stats.overview?.totalTransactions || 0}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Active Sessions
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                {stats.overview?.activeSessions || 0}
-              </Typography>
-            </Paper>
+            <StaffMetricCard
+              label="Active Sessions"
+              value={stats.overview?.activeSessions || 0}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {stats.overview?.totalUsers || 0}
-              </Typography>
-            </Paper>
+            <StaffMetricCard label="Total Users" value={stats.overview?.totalUsers || 0} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Vendors
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {stats.overview?.totalVendors || 0}
-              </Typography>
-            </Paper>
+            <StaffMetricCard label="Total Vendors" value={stats.overview?.totalVendors || 0} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={premiumPanelCardSx}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Charge Points
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {stats.overview?.totalChargePoints || 0}
-              </Typography>
-            </Paper>
+            <StaffMetricCard
+              label="Total Charge Points"
+              value={stats.overview?.totalChargePoints || 0}
+            />
           </Grid>
           <Grid item xs={12}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>

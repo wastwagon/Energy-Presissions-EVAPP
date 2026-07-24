@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   CircularProgress,
   Alert,
   Button,
@@ -22,6 +21,8 @@ import {
   DialogActions,
   TextField,
   Tooltip,
+  Tabs,
+  Tab,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -35,6 +36,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import HealingIcon from '@mui/icons-material/Healing';
+import CableIcon from '@mui/icons-material/Cable';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { useStaffNavBack } from '../../hooks/useStaffNavBack';
 import { chargePointsApi, ChargePoint, Connector } from '../../services/chargePointsApi';
@@ -55,6 +57,8 @@ import {
 import { formatCurrency, formatEnergyKwh } from '../../utils/formatters';
 import { formatApiOrNetworkError } from '../../utils/apiErrors';
 import { getChargePointStatusColor } from '../../utils/statusColors';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import {
   formatSecondsSinceHeartbeat,
   getLinkStatusChipColor,
@@ -117,6 +121,7 @@ export function ChargePointDetailPage() {
   const [confirmAction, setConfirmAction] = useState<
     { type: 'reset'; resetType: 'Hard' | 'Soft' } | { type: 'clearCache' } | null
   >(null);
+  const [detailTab, setDetailTab] = useState(0);
   const [clearStaleSubmitting, setClearStaleSubmitting] = useState(false);
   const [configurationDialogOpen, setConfigurationDialogOpen] = useState(false);
   const [configurationPayload, setConfigurationPayload] = useState<unknown>(null);
@@ -424,7 +429,7 @@ export function ChargePointDetailPage() {
         titleSx={dashboardPageTitleSx}
         subtitleSx={dashboardPageSubtitleSx}
         containerSx={{ mb: 2 }}
-        refreshSx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
         actions={
           <>
             {showInlineStaffBack ? (
@@ -437,16 +442,15 @@ export function ChargePointDetailPage() {
               </Button>
             ) : null}
             <Tooltip title={getLinkStatusTooltip(chargePoint)}>
-              <Chip
+              <AppBadge
                 label={getLinkStatusLabel(chargePoint.linkStatus)}
-                color={getLinkStatusChipColor(chargePoint.linkStatus)}
+                tone={chipColorToBadgeTone(getLinkStatusChipColor(chargePoint.linkStatus))}
                 sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
               />
             </Tooltip>
-            <Chip
+            <AppBadge
               label={chargePoint.status}
-              color={getChargePointStatusColor(chargePoint.status)}
-              variant="outlined"
+              tone={chipColorToBadgeTone(getChargePointStatusColor(chargePoint.status))}
               sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
             />
           </>
@@ -465,27 +469,53 @@ export function ChargePointDetailPage() {
         </Alert>
       )}
 
-      <Alert severity="info" sx={{ mb: 2 }} variant="outlined">
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Production operations
-        </Typography>
-        <Typography variant="body2" color="text.secondary" component="div">
-          Connectors appear in this list when the charger reports them over OCPP (e.g. StatusNotification).
-          CSMS link (Online / Offline) is live WebSocket + heartbeat. OCPP status is what the charger last reported.
-          Set latitude and longitude in Settings for the public Stations map.
-        </Typography>
-      </Alert>
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3 }}>
+        <Tabs
+          value={detailTab}
+          onChange={(_, v) => setDetailTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label="Charge point sections"
+          sx={{
+            px: { xs: 1, sm: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
+          }}
+        >
+          <Tab label="Overview" id="cp-tab-0" aria-controls="cp-tabpanel-0" />
+          <Tab
+            label={`Connectors${connectors.length ? ` (${connectors.length})` : ''}`}
+            id="cp-tab-1"
+            aria-controls="cp-tabpanel-1"
+          />
+          <Tab label="Actions" id="cp-tab-2" aria-controls="cp-tabpanel-2" />
+          <Tab label="Maintenance" id="cp-tab-3" aria-controls="cp-tabpanel-3" />
+        </Tabs>
 
-      {chargePoint.linkStatus === 'offline' ? (
-        <ChargerCellularGuide compact />
-      ) : (
-        <ChargerCellularGuide />
-      )}
-
-      <Grid container spacing={3}>
-        {/* Charge Point Info */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={premiumPanelCardSx}>
+        <Box
+          role="tabpanel"
+          hidden={detailTab !== 0}
+          id="cp-tabpanel-0"
+          aria-labelledby="cp-tab-0"
+          sx={{ p: { xs: 2, sm: 2.5 } }}
+        >
+          {detailTab === 0 && (
+            <Grid container spacing={2}>
+              {chargePoint.linkStatus === 'offline' ? (
+                <Grid item xs={12}>
+                  <ChargerCellularGuide compact />
+                </Grid>
+              ) : null}
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.5 }}>
+                  CSMS link is live WebSocket + heartbeat. OCPP status is what the charger last reported. Connectors
+                  appear after StatusNotification. Set GPS in Settings for the public Stations map.
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Paper elevation={0} sx={{ ...premiumPanelCardSx, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                 Charge point information
               </Typography>
@@ -518,10 +548,10 @@ export function ChargePointDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     SIM operator
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     {chargePoint.cellularProvider || '—'}
                     {chargePoint.cellularProvider === 'MTN' && (
-                      <Chip label="Recommended" size="small" color="primary" sx={{ ml: 1, verticalAlign: 'middle' }} />
+                      <AppBadge label="Recommended" tone="brand" sx={{ height: 22 }} />
                     )}
                   </Typography>
                 </Grid>
@@ -607,12 +637,318 @@ export function ChargePointDetailPage() {
                   </Grid>
                 )}
               </Grid>
-          </Paper>
-        </Grid>
-
-        {/* Actions */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={premiumPanelCardSx}>
+                </Paper>
+              </Grid>
+            </Grid>
+          )}
+        </Box>
+        <Box
+          role="tabpanel"
+          hidden={detailTab !== 1}
+          id="cp-tabpanel-1"
+          aria-labelledby="cp-tab-1"
+          sx={{ p: { xs: 2, sm: 2.5 } }}
+        >
+          {detailTab === 1 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                        <Paper elevation={0} sx={premiumTableSurfaceSx}>
+                          <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              Connectors
+                            </Typography>
+                          </Box>
+                          {connectors.length === 0 ? (
+                            <AppEmptyState
+                              sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+                              icon={<CableIcon />}
+                              title="No connectors found"
+                              description="Connector status appears after the charger reports StatusNotification."
+                            />
+                          ) : useGroupedList ? (
+                            <Box sx={{ py: 1 }}>
+                              <GroupedListSection>
+                                {connectors.map((connector, index) => (
+                                  <GroupedListRow
+                                    key={connector.connectorId}
+                                    divider={index < connectors.length - 1}
+                                    showChevron={false}
+                                    primary={`Connector ${connector.connectorId}`}
+                                    secondary={`${connector.connectorType || '—'} · ${
+                                      connector.powerRatingKw ? `${connector.powerRatingKw} kW` : '—'
+                                    }`}
+                                    end={
+                                      <Box sx={{ textAlign: 'right', minWidth: 100 }}>
+                                        <AppBadge
+                                          label={connector.status}
+                                          tone={chipColorToBadgeTone(getChargePointStatusColor(connector.status))}
+                                          sx={{ height: 22, mb: 0.75, display: 'flex', ml: 'auto' }}
+                                        />
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          startIcon={<LockOpenIcon sx={{ fontSize: 16 }} />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void handleUnlockConnector(connector.connectorId);
+                                          }}
+                                          disabled={chargePoint.linkStatus !== 'online'}
+                                          sx={(th) => ({
+                                            ...sxObject(th, compactOutlinedCtaSx),
+                                            mb: 0.5,
+                                            minHeight: 32,
+                                            fontSize: '0.75rem',
+                                            width: '100%',
+                                          })}
+                                        >
+                                          Unlock
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void handleChangeAvailability(
+                                              connector.connectorId,
+                                              connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
+                                            );
+                                          }}
+                                          disabled={chargePoint.linkStatus !== 'online'}
+                                          sx={(th) => ({
+                                            ...sxObject(th, compactOutlinedCtaSx),
+                                            minHeight: 32,
+                                            fontSize: '0.75rem',
+                                            width: '100%',
+                                          })}
+                                        >
+                                          {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
+                                        </Button>
+                                      </Box>
+                                    }
+                                  />
+                                ))}
+                              </GroupedListSection>
+                            </Box>
+                          ) : (
+                            <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                              <Table size="small">
+                                <TableHead>
+                                  <TableRow>
+                                    <TableCell>Connector ID</TableCell>
+                                    <TableCell>Type</TableCell>
+                                    <TableCell>Power Rating</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Error Code</TableCell>
+                                    <TableCell>Last Update</TableCell>
+                                    <TableCell>Actions</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {connectors.map((connector) => (
+                                    <TableRow key={connector.connectorId}>
+                                      <TableCell>{connector.connectorId}</TableCell>
+                                      <TableCell>{connector.connectorType || '-'}</TableCell>
+                                      <TableCell>
+                                        {connector.powerRatingKw ? `${connector.powerRatingKw} kW` : '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        <AppBadge
+                                          label={connector.status}
+                                          tone={chipColorToBadgeTone(getChargePointStatusColor(connector.status))}
+                                          />
+                                      </TableCell>
+                                      <TableCell>{connector.errorCode || '-'}</TableCell>
+                                      <TableCell>
+                                        {connector.lastStatusUpdate
+                                          ? new Date(connector.lastStatusUpdate).toLocaleString()
+                                          : '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                          <Button
+                                            size="small"
+                                            variant="outlined"
+                                            startIcon={<LockOpenIcon />}
+                                            onClick={() => handleUnlockConnector(connector.connectorId)}
+                                            disabled={chargePoint.linkStatus !== 'online'}
+                                            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
+                                          >
+                                            Unlock
+                                          </Button>
+                                          <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() =>
+                                              handleChangeAvailability(
+                                                connector.connectorId,
+                                                connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
+                                              )
+                                            }
+                                            disabled={chargePoint.linkStatus !== 'online'}
+                                            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
+                                          >
+                                            {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
+                                          </Button>
+                                        </Box>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          )}
+                        </Paper>
+                      </Grid>
+              
+                      {/* Active Transactions */}
+                      {activeTransactions.length > 0 && (
+                        <Grid item xs={12}>
+                          <Paper elevation={0} sx={premiumTableSurfaceSx}>
+                            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                Active transactions
+                              </Typography>
+                            </Box>
+                            {useGroupedList ? (
+                              <Box sx={{ py: 1 }}>
+                                <GroupedListSection>
+                                  {activeTransactions.map((tx, index) => (
+                                    <GroupedListRow
+                                      key={tx.transactionId}
+                                      divider={index < activeTransactions.length - 1}
+                                      showChevron
+                                      primary={`Session #${tx.transactionId}`}
+                                      secondary={`Connector ${tx.connectorId} · ${formatEnergyKwh(tx.totalEnergyKwh, 3)}`}
+                                      end={
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          disableElevation
+                                          startIcon={<StopIcon sx={{ fontSize: 16 }} />}
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                              await chargePointsApi.remoteStop(id!, tx.transactionId);
+                                              loadData();
+                                            } catch (err: unknown) {
+                                              const errObj = err as {
+                                                response?: { data?: { message?: unknown } };
+                                                message?: string;
+                                              };
+                                              const raw = errObj.response?.data?.message;
+                                              const msg =
+                                                typeof raw === 'string'
+                                                  ? raw
+                                                  : Array.isArray(raw)
+                                                    ? raw.join(', ')
+                                                    : errObj.message || 'Failed to stop transaction';
+                                              setError(msg);
+                                            }
+                                          }}
+                                          sx={(th) => ({
+                                            ...sxObject(th, compactOutlinedCtaSx),
+                                            minHeight: 32,
+                                            fontSize: '0.75rem',
+                                            borderColor: 'error.main',
+                                            color: 'error.main',
+                                          })}
+                                        >
+                                          Stop
+                                        </Button>
+                                      }
+                                      onClick={() =>
+                                        navigate(`${opsBase}/sessions/${tx.transactionId}`)
+                                      }
+                                      aria-label={`Open session ${tx.transactionId}`}
+                                    />
+                                  ))}
+                                </GroupedListSection>
+                              </Box>
+                            ) : (
+                              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                <Table size="small">
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell>Transaction ID</TableCell>
+                                      <TableCell>Connector</TableCell>
+                                      <TableCell>IdTag</TableCell>
+                                      <TableCell>Start Time</TableCell>
+                                      <TableCell>Energy (kWh)</TableCell>
+                                      <TableCell>Actions</TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {activeTransactions.map((tx) => (
+                                      <TableRow key={tx.transactionId}>
+                                        <TableCell>{tx.transactionId}</TableCell>
+                                        <TableCell>{tx.connectorId}</TableCell>
+                                        <TableCell>{tx.idTag || '-'}</TableCell>
+                                        <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
+                                        <TableCell>{formatEnergyKwh(tx.totalEnergyKwh, 3)}</TableCell>
+                                        <TableCell>
+                                          <Button
+                                            size="small"
+                                            variant="outlined"
+                                            disableElevation
+                                            startIcon={<StopIcon />}
+                                            onClick={async () => {
+                                              try {
+                                                await chargePointsApi.remoteStop(id!, tx.transactionId);
+                                                loadData();
+                                              } catch (err: unknown) {
+                                                const e = err as {
+                                                  response?: { data?: { message?: unknown } };
+                                                  message?: string;
+                                                };
+                                                const raw = e.response?.data?.message;
+                                                const msg =
+                                                  typeof raw === 'string'
+                                                    ? raw
+                                                    : Array.isArray(raw)
+                                                      ? raw.join(', ')
+                                                      : e.message || 'Failed to stop transaction';
+                                                setError(msg);
+                                              }
+                                            }}
+                                            sx={(th) => ({
+                                              ...sxObject(th, compactOutlinedCtaSx),
+                                              py: 0.5,
+                                              minHeight: 36,
+                                              fontSize: '0.8125rem',
+                                              borderColor: 'error.main',
+                                              color: 'error.main',
+                                              '&:hover': {
+                                                borderColor: 'error.dark',
+                                                bgcolor: alpha(th.palette.error.main, 0.06),
+                                              },
+                                            })}
+                                          >
+                                            Stop
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                            )}
+                          </Paper>
+                        </Grid>
+                      )}
+            </Grid>
+          )}
+        </Box>
+        <Box
+          role="tabpanel"
+          hidden={detailTab !== 2}
+          id="cp-tabpanel-2"
+          aria-labelledby="cp-tab-2"
+          sx={{ p: { xs: 2, sm: 2.5 } }}
+        >
+          {detailTab === 2 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+<Paper elevation={0} sx={premiumPanelCardSx}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                 Actions
               </Typography>
@@ -713,445 +1049,171 @@ export function ChargePointDetailPage() {
                 </Button>
               </Box>
           </Paper>
-        </Grid>
-
-        {/* Connectors */}
-        <Grid item xs={12}>
-          <Paper elevation={0} sx={premiumTableSurfaceSx}>
-            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Connectors
-              </Typography>
-            </Box>
-            {connectors.length === 0 ? (
-              <Box sx={{ p: { xs: 2, sm: 3 } }}>
-                <Typography variant="body2" color="text.secondary">
-                  No connectors found
-                </Typography>
-              </Box>
-            ) : useGroupedList ? (
-              <Box sx={{ py: 1 }}>
-                <GroupedListSection>
-                  {connectors.map((connector, index) => (
-                    <GroupedListRow
-                      key={connector.connectorId}
-                      divider={index < connectors.length - 1}
-                      showChevron={false}
-                      primary={`Connector ${connector.connectorId}`}
-                      secondary={`${connector.connectorType || '—'} · ${
-                        connector.powerRatingKw ? `${connector.powerRatingKw} kW` : '—'
-                      }`}
-                      end={
-                        <Box sx={{ textAlign: 'right', minWidth: 100 }}>
-                          <Chip
-                            label={connector.status}
-                            color={getChargePointStatusColor(connector.status)}
-                            size="small"
-                            sx={{ height: 22, mb: 0.75, display: 'block', ml: 'auto' }}
-                          />
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<LockOpenIcon sx={{ fontSize: 16 }} />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleUnlockConnector(connector.connectorId);
-                            }}
-                            disabled={chargePoint.linkStatus !== 'online'}
-                            sx={(th) => ({
-                              ...sxObject(th, compactOutlinedCtaSx),
-                              mb: 0.5,
-                              minHeight: 32,
-                              fontSize: '0.75rem',
-                              width: '100%',
-                            })}
-                          >
-                            Unlock
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleChangeAvailability(
-                                connector.connectorId,
-                                connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
-                              );
-                            }}
-                            disabled={chargePoint.linkStatus !== 'online'}
-                            sx={(th) => ({
-                              ...sxObject(th, compactOutlinedCtaSx),
-                              minHeight: 32,
-                              fontSize: '0.75rem',
-                              width: '100%',
-                            })}
-                          >
-                            {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
-                          </Button>
-                        </Box>
-                      }
-                    />
-                  ))}
-                </GroupedListSection>
-              </Box>
-            ) : (
-              <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Connector ID</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Power Rating</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Error Code</TableCell>
-                      <TableCell>Last Update</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {connectors.map((connector) => (
-                      <TableRow key={connector.connectorId}>
-                        <TableCell>{connector.connectorId}</TableCell>
-                        <TableCell>{connector.connectorType || '-'}</TableCell>
-                        <TableCell>
-                          {connector.powerRatingKw ? `${connector.powerRatingKw} kW` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={connector.status}
-                            color={getChargePointStatusColor(connector.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{connector.errorCode || '-'}</TableCell>
-                        <TableCell>
-                          {connector.lastStatusUpdate
-                            ? new Date(connector.lastStatusUpdate).toLocaleString()
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<LockOpenIcon />}
-                              onClick={() => handleUnlockConnector(connector.connectorId)}
-                              disabled={chargePoint.linkStatus !== 'online'}
-                              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
-                            >
-                              Unlock
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() =>
-                                handleChangeAvailability(
-                                  connector.connectorId,
-                                  connector.status === 'Unavailable' ? 'Operative' : 'Inoperative',
-                                )
-                              }
-                              disabled={chargePoint.linkStatus !== 'online'}
-                              sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), py: 0.5, minHeight: 36, fontSize: '0.8125rem' })}
-                            >
-                              {connector.status === 'Unavailable' ? 'Enable' : 'Disable'}
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Active Transactions */}
-        {activeTransactions.length > 0 && (
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={premiumTableSurfaceSx}>
-              <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  Active transactions
-                </Typography>
-              </Box>
-              {useGroupedList ? (
-                <Box sx={{ py: 1 }}>
-                  <GroupedListSection>
-                    {activeTransactions.map((tx, index) => (
-                      <GroupedListRow
-                        key={tx.transactionId}
-                        divider={index < activeTransactions.length - 1}
-                        showChevron
-                        primary={`Session #${tx.transactionId}`}
-                        secondary={`Connector ${tx.connectorId} · ${formatEnergyKwh(tx.totalEnergyKwh, 3)}`}
-                        end={
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            disableElevation
-                            startIcon={<StopIcon sx={{ fontSize: 16 }} />}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                await chargePointsApi.remoteStop(id!, tx.transactionId);
-                                loadData();
-                              } catch (err: unknown) {
-                                const errObj = err as {
-                                  response?: { data?: { message?: unknown } };
-                                  message?: string;
-                                };
-                                const raw = errObj.response?.data?.message;
-                                const msg =
-                                  typeof raw === 'string'
-                                    ? raw
-                                    : Array.isArray(raw)
-                                      ? raw.join(', ')
-                                      : errObj.message || 'Failed to stop transaction';
-                                setError(msg);
-                              }
-                            }}
-                            sx={(th) => ({
-                              ...sxObject(th, compactOutlinedCtaSx),
-                              minHeight: 32,
-                              fontSize: '0.75rem',
-                              borderColor: 'error.main',
-                              color: 'error.main',
-                            })}
-                          >
-                            Stop
-                          </Button>
-                        }
-                        onClick={() =>
-                          navigate(`${opsBase}/sessions/${tx.transactionId}`)
-                        }
-                        aria-label={`Open session ${tx.transactionId}`}
-                      />
-                    ))}
-                  </GroupedListSection>
-                </Box>
-              ) : (
-                <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Transaction ID</TableCell>
-                        <TableCell>Connector</TableCell>
-                        <TableCell>IdTag</TableCell>
-                        <TableCell>Start Time</TableCell>
-                        <TableCell>Energy (kWh)</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {activeTransactions.map((tx) => (
-                        <TableRow key={tx.transactionId}>
-                          <TableCell>{tx.transactionId}</TableCell>
-                          <TableCell>{tx.connectorId}</TableCell>
-                          <TableCell>{tx.idTag || '-'}</TableCell>
-                          <TableCell>{new Date(tx.startTime).toLocaleString()}</TableCell>
-                          <TableCell>{formatEnergyKwh(tx.totalEnergyKwh, 3)}</TableCell>
-                          <TableCell>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              disableElevation
-                              startIcon={<StopIcon />}
-                              onClick={async () => {
-                                try {
-                                  await chargePointsApi.remoteStop(id!, tx.transactionId);
-                                  loadData();
-                                } catch (err: unknown) {
-                                  const e = err as {
-                                    response?: { data?: { message?: unknown } };
-                                    message?: string;
-                                  };
-                                  const raw = e.response?.data?.message;
-                                  const msg =
-                                    typeof raw === 'string'
-                                      ? raw
-                                      : Array.isArray(raw)
-                                        ? raw.join(', ')
-                                        : e.message || 'Failed to stop transaction';
-                                  setError(msg);
-                                }
-                              }}
-                              sx={(th) => ({
-                                ...sxObject(th, compactOutlinedCtaSx),
-                                py: 0.5,
-                                minHeight: 36,
-                                fontSize: '0.8125rem',
-                                borderColor: 'error.main',
-                                color: 'error.main',
-                                '&:hover': {
-                                  borderColor: 'error.dark',
-                                  bgcolor: alpha(th.palette.error.main, 0.06),
-                                },
-                              })}
-                            >
-                              Stop
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Paper>
-          </Grid>
-        )}
-
-        {/* Firmware & Diagnostics */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={premiumPanelCardSx}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CloudUploadIcon fontSize="small" color="primary" /> Firmware update
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                <TextField
-                  label="Firmware URL"
-                  placeholder="https://…"
-                  value={firmwareLocation}
-                  onChange={(e) => setFirmwareLocation(e.target.value)}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-                <TextField
-                  label="Retrieve date"
-                  type="datetime-local"
-                  value={firmwareRetrieveDate}
-                  onChange={(e) => setFirmwareRetrieveDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-                <Button
-                  variant="outlined"
-                  startIcon={<CloudUploadIcon />}
-                  onClick={handleFirmwareUpdate}
-                  disabled={chargePoint.linkStatus !== 'online' || firmwareLoading || !firmwareLocation}
-                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-                >
-                  {firmwareLoading ? 'Starting…' : 'Start update'}
-                </Button>
-              </Box>
-              {firmwareJobs.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Recent Jobs
-                  </Typography>
-                  {useGroupedList ? (
-                    <GroupedListSection>
-                      {firmwareJobs.slice(0, 5).map((j, index, arr) => (
-                        <GroupedListRow
-                          key={j.id}
-                          divider={index < arr.length - 1}
-                          showChevron={false}
-                          primary={j.status}
-                          secondary={
-                            j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : 'No date'
-                          }
-                        />
-                      ))}
-                    </GroupedListSection>
-                  ) : (
-                    <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Retrieve Date</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {firmwareJobs.slice(0, 5).map((j) => (
-                            <TableRow key={j.id}>
-                              <TableCell>
-                                <Chip label={j.status} size="small" />
-                              </TableCell>
-                              <TableCell>
-                                {j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
-                </Box>
-              )}
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={premiumPanelCardSx}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BugReportIcon fontSize="small" color="primary" /> Diagnostics
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                <TextField
-                  label="Upload URL"
-                  placeholder="https://…"
-                  value={diagnosticsLocation}
-                  onChange={(e) => setDiagnosticsLocation(e.target.value)}
-                  sx={(th) => sxObject(th, authFormFieldSx)}
-                />
-                <Button
-                  variant="outlined"
-                  startIcon={<BugReportIcon />}
-                  onClick={handleDiagnosticsGet}
-                  disabled={chargePoint.linkStatus !== 'online' || diagnosticsLoading || !diagnosticsLocation}
-                  sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
-                >
-                  {diagnosticsLoading ? 'Requesting…' : 'Get diagnostics'}
-                </Button>
-              </Box>
-              {diagnosticsJobs.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Recent Jobs
-                  </Typography>
-                  {useGroupedList ? (
-                    <GroupedListSection>
-                      {diagnosticsJobs.slice(0, 5).map((j, index, arr) => (
-                        <GroupedListRow
-                          key={j.id}
-                          divider={index < arr.length - 1}
-                          showChevron={false}
-                          primary={j.status}
-                          secondary={
-                            j.createdAt ? new Date(j.createdAt).toLocaleString() : 'No date'
-                          }
-                        />
-                      ))}
-                    </GroupedListSection>
-                  ) : (
-                    <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Created</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {diagnosticsJobs.slice(0, 5).map((j) => (
-                            <TableRow key={j.id}>
-                              <TableCell>
-                                <Chip label={j.status} size="small" />
-                              </TableCell>
-                              <TableCell>
-                                {j.createdAt ? new Date(j.createdAt).toLocaleString() : '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
-                </Box>
-              )}
-          </Paper>
-        </Grid>
-      </Grid>
+              </Grid>
+            </Grid>
+          )}
+        </Box>
+        <Box
+          role="tabpanel"
+          hidden={detailTab !== 3}
+          id="cp-tabpanel-3"
+          aria-labelledby="cp-tab-3"
+          sx={{ p: { xs: 2, sm: 2.5 } }}
+        >
+          {detailTab === 3 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                        <Paper elevation={0} sx={premiumPanelCardSx}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <CloudUploadIcon fontSize="small" color="primary" /> Firmware update
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                              <TextField
+                                label="Firmware URL"
+                                placeholder="https://…"
+                                value={firmwareLocation}
+                                onChange={(e) => setFirmwareLocation(e.target.value)}
+                                sx={(th) => sxObject(th, authFormFieldSx)}
+                              />
+                              <TextField
+                                label="Retrieve date"
+                                type="datetime-local"
+                                value={firmwareRetrieveDate}
+                                onChange={(e) => setFirmwareRetrieveDate(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                sx={(th) => sxObject(th, authFormFieldSx)}
+                              />
+                              <Button
+                                variant="outlined"
+                                startIcon={<CloudUploadIcon />}
+                                onClick={handleFirmwareUpdate}
+                                disabled={chargePoint.linkStatus !== 'online' || firmwareLoading || !firmwareLocation}
+                                sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+                              >
+                                {firmwareLoading ? 'Starting…' : 'Start update'}
+                              </Button>
+                            </Box>
+                            {firmwareJobs.length > 0 && (
+                              <Box>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                  Recent Jobs
+                                </Typography>
+                                {useGroupedList ? (
+                                  <GroupedListSection>
+                                    {firmwareJobs.slice(0, 5).map((j, index, arr) => (
+                                      <GroupedListRow
+                                        key={j.id}
+                                        divider={index < arr.length - 1}
+                                        showChevron={false}
+                                        primary={j.status}
+                                        secondary={
+                                          j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : 'No date'
+                                        }
+                                      />
+                                    ))}
+                                  </GroupedListSection>
+                                ) : (
+                                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>Status</TableCell>
+                                          <TableCell>Retrieve Date</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {firmwareJobs.slice(0, 5).map((j) => (
+                                          <TableRow key={j.id}>
+                                            <TableCell>
+                                              <AppBadge label={j.status} tone="neutral" />
+                                            </TableCell>
+                                            <TableCell>
+                                              {j.retrieveDate ? new Date(j.retrieveDate).toLocaleString() : '-'}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                )}
+                              </Box>
+                            )}
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Paper elevation={0} sx={premiumPanelCardSx}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <BugReportIcon fontSize="small" color="primary" /> Diagnostics
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                              <TextField
+                                label="Upload URL"
+                                placeholder="https://…"
+                                value={diagnosticsLocation}
+                                onChange={(e) => setDiagnosticsLocation(e.target.value)}
+                                sx={(th) => sxObject(th, authFormFieldSx)}
+                              />
+                              <Button
+                                variant="outlined"
+                                startIcon={<BugReportIcon />}
+                                onClick={handleDiagnosticsGet}
+                                disabled={chargePoint.linkStatus !== 'online' || diagnosticsLoading || !diagnosticsLocation}
+                                sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+                              >
+                                {diagnosticsLoading ? 'Requesting…' : 'Get diagnostics'}
+                              </Button>
+                            </Box>
+                            {diagnosticsJobs.length > 0 && (
+                              <Box>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                  Recent Jobs
+                                </Typography>
+                                {useGroupedList ? (
+                                  <GroupedListSection>
+                                    {diagnosticsJobs.slice(0, 5).map((j, index, arr) => (
+                                      <GroupedListRow
+                                        key={j.id}
+                                        divider={index < arr.length - 1}
+                                        showChevron={false}
+                                        primary={j.status}
+                                        secondary={
+                                          j.createdAt ? new Date(j.createdAt).toLocaleString() : 'No date'
+                                        }
+                                      />
+                                    ))}
+                                  </GroupedListSection>
+                                ) : (
+                                  <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>Status</TableCell>
+                                          <TableCell>Created</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {diagnosticsJobs.slice(0, 5).map((j) => (
+                                          <TableRow key={j.id}>
+                                            <TableCell>
+                                              <AppBadge label={j.status} tone="neutral" />
+                                            </TableCell>
+                                            <TableCell>
+                                              {j.createdAt ? new Date(j.createdAt).toLocaleString() : '-'}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                )}
+                              </Box>
+                            )}
+                        </Paper>
+              </Grid>
+            </Grid>
+          )}
+        </Box>
+      </Paper>
 
       {/* Remote Start Dialog */}
       <Dialog

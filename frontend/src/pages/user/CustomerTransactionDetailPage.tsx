@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Chip,
   Alert,
   Button,
   Divider,
@@ -19,6 +18,7 @@ import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { PaystackPayment } from '../../components/PaystackPayment';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
@@ -126,7 +126,11 @@ export function CustomerTransactionDetailPage() {
 
   const statusLabel = sessionStatusLabel(transaction);
   const statusChip = (
-    <Chip label={statusLabel} color={sessionStatusChipColor(statusLabel)} size="small" />
+    <AppBadge
+      label={statusLabel}
+      tone={chipColorToBadgeTone(sessionStatusChipColor(statusLabel))}
+      size="small"
+    />
   );
 
   const payCta =

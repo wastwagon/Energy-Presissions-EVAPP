@@ -10,13 +10,15 @@ import {
   TableHead,
   TableRow,
   Alert,
-  Chip,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import { auditApi, AuditLog } from '../../services/auditApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge } from '../../components/ui/AppBadge';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -58,16 +60,15 @@ export function SuperAdminSecurityLogsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Security & Logs
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Audit trail of system activity
-          </Typography>
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Security & Logs"
+        subtitle="Audit trail of system activity"
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -78,12 +79,12 @@ export function SuperAdminSecurityLogsPage() {
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Loading audit logs" />
         {logs.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <SecurityIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="body2" color="text.secondary">
-              No audit logs yet. Logs will appear as users perform actions.
-            </Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<SecurityIcon />}
+            title="No audit logs yet"
+            description="Logs will appear as users perform actions across the platform."
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -95,7 +96,7 @@ export function SuperAdminSecurityLogsPage() {
                   primary={log.action}
                   secondary={`${log.user?.email ?? (log.userId ? `User #${log.userId}` : 'System')} · ${new Date(log.createdAt).toLocaleString()}`}
                   end={
-                    <Chip label={log.entityType || '—'} size="small" variant="outlined" sx={{ height: 22, maxWidth: 96 }} />
+                    <AppBadge label={log.entityType || '—'} tone="neutral" sx={{ height: 22, maxWidth: 96 }} />
                   }
                 />
               ))}
@@ -118,7 +119,7 @@ export function SuperAdminSecurityLogsPage() {
                   <TableRow key={log.id}>
                     <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
                     <TableCell>
-                      <Chip label={log.action} size="small" variant="outlined" />
+                      <AppBadge label={log.action} tone="neutral" />
                     </TableCell>
                     <TableCell>
                       {log.user?.email ?? (log.userId ? `User #${log.userId}` : 'System')}

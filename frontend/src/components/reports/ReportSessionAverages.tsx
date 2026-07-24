@@ -1,7 +1,7 @@
-import { Grid, Paper, Typography } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
 import type { DashboardStats } from '../../services/dashboardApi';
-import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { formatCurrency } from '../../utils/formatters';
+import { StaffMetricCard } from '../dashboard/StaffMetricCard';
 
 interface ReportSessionAveragesProps {
   stats: DashboardStats;
@@ -26,32 +26,21 @@ export function ReportSessionAverages({ stats }: ReportSessionAveragesProps) {
     <Grid container spacing={2} sx={{ mb: 2 }}>
       {duration != null && (
         <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Average session duration
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {Math.round(duration)} min
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Completed billed sessions only
-            </Typography>
-          </Paper>
+          <StaffMetricCard
+            label="Average session duration"
+            value={`${Math.round(duration)} min`}
+            hint="Completed billed sessions only"
+          />
         </Grid>
       )}
       {revenue != null && (
         <Grid item xs={12} md={6}>
-          <Paper sx={premiumPanelCardSx}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Average revenue per session
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {formatCurrency(revenue)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Completed billed sessions only
-            </Typography>
-          </Paper>
+          <StaffMetricCard
+            label="Average revenue per session"
+            value={formatCurrency(revenue)}
+            hint="Completed billed sessions only"
+            tone="brand"
+          />
         </Grid>
       )}
     </Grid>

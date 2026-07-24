@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   CircularProgress,
   Alert,
   Grid,
@@ -32,11 +31,13 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EvStationIcon from '@mui/icons-material/EvStation';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import HealingIcon from '@mui/icons-material/Healing';
+import { alpha } from '@mui/material/styles';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
@@ -44,6 +45,7 @@ import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackSh
 import {
   authFormFieldSx,
   staffFilterFieldSx,
+  compactContainedCtaSx,
   compactOutlinedCtaSx,
   premiumDialogPaperSx,
   premiumIconButtonTouchSx,
@@ -67,6 +69,9 @@ import {
   useChargePointLinkRealtime,
 } from '../../hooks/useChargePointLinkRealtime';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { getStoredUser } from '../../utils/authSession';
@@ -444,93 +449,100 @@ export function DevicesPage() {
         titleSx={staffLargeTitleSx}
         subtitleSx={staffLargeSubtitleSx}
         showToolbarRefreshOnMobile
-        containerSx={{ mb: 3 }}
-        refreshSx={(th) => ({
-          ...sxObject(th, compactOutlinedCtaSx),
-          width: { xs: '100%', sm: 'auto' },
-          whiteSpace: { sm: 'nowrap' },
-        })}
-        actions={
-          <>
-            <Button
-              variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
-              startIcon={<FilterListIcon />}
-              onClick={() => setShowOnlyFieldProvisioned(!showOnlyFieldProvisioned)}
-              color={showOnlyFieldProvisioned ? 'primary' : 'inherit'}
-              sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
-            >
-              {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
-            </Button>
-            <Box
-              sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 0.75,
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            >
-              {(
-                [
-                  ['all', 'All links'],
-                  ['online', 'Online'],
-                  ['stale', 'Recent off'],
-                  ['offline', 'Offline'],
-                  ['never_seen', 'Never'],
-                ] as const
-              ).map(([value, label]) => (
-                <Chip
-                  key={value}
-                  label={label}
-                  size="small"
-                  clickable
-                  color={linkFilter === value ? 'primary' : 'default'}
-                  variant={linkFilter === value ? 'filled' : 'outlined'}
-                  onClick={() => setLinkFilter(value)}
-                  sx={{ minHeight: 36 }}
-                />
-              ))}
-            </Box>
-            <TextField
-              placeholder="Search devices..."
-              fullWidth
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => {
-                        setSearchTerm('');
-                        loadChargePoints();
-                      }}
-                      aria-label="Clear device search"
-                      sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                    >
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={(th) => ({
-                ...sxObject(th, staffFilterFieldSx),
-                minWidth: { xs: 0, sm: 260 },
-                flex: { sm: 1 },
-                maxWidth: { sm: 400 },
-              })}
-            />
-          </>
-        }
+        containerSx={{ mb: 2 }}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
       />
+
+      <StaffFilterBar aria-label="Device filters">
+        <TextField
+          placeholder="Search devices..."
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => {
+                    setSearchTerm('');
+                    loadChargePoints();
+                  }}
+                  aria-label="Clear device search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            minWidth: { xs: 0, sm: 260 },
+            flex: { sm: '1 1 240px' },
+            maxWidth: { sm: 400 },
+          })}
+        />
+        <Button
+          variant={showOnlyFieldProvisioned ? 'contained' : 'outlined'}
+          disableElevation={showOnlyFieldProvisioned}
+          startIcon={<FilterListIcon />}
+          onClick={() => setShowOnlyFieldProvisioned(!showOnlyFieldProvisioned)}
+          sx={(th) => ({
+            ...sxObject(th, showOnlyFieldProvisioned ? compactContainedCtaSx : compactOutlinedCtaSx),
+            width: { xs: '100%', sm: 'auto' },
+            whiteSpace: { sm: 'nowrap' },
+          })}
+        >
+          {showOnlyFieldProvisioned ? 'Show all' : 'Field devices only'}
+        </Button>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 0.75,
+            width: { xs: '100%', sm: 'auto' },
+            alignItems: 'center',
+          }}
+          role="group"
+          aria-label="CSMS link filter"
+        >
+          {(
+            [
+              ['all', 'All links'],
+              ['online', 'Online'],
+              ['stale', 'Recent off'],
+              ['offline', 'Offline'],
+              ['never_seen', 'Never'],
+            ] as const
+          ).map(([value, label]) => {
+            const selected = linkFilter === value;
+            return (
+              <AppBadge
+                key={value}
+                label={label}
+                size="small"
+                tone={selected ? 'brand' : 'neutral'}
+                clickable
+                onClick={() => setLinkFilter(value)}
+                sx={{
+                  minHeight: 36,
+                  cursor: 'pointer',
+                }}
+              />
+            );
+          })}
+        </Box>
+      </StaffFilterBar>
 
       {error && (
         <Alert severity="error" sx={{ mt: 2, mb: 2 }} onClose={() => setError(null)}>
@@ -575,22 +587,39 @@ export function DevicesPage() {
           {loading ? (
             <StaffChromeTabPanelSkeleton rows={8} ariaLabel="Loading devices" />
           ) : filteredChargePoints.length === 0 ? (
-            <Paper elevation={0} sx={{ ...premiumPanelCardSx, m: { xs: 2, sm: 2 } }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                {showOnlyFieldProvisioned
+            <AppEmptyState
+              sx={{ m: { xs: 2, sm: 2 }, boxShadow: 'none' }}
+              icon={<EvStationIcon />}
+              title={
+                showOnlyFieldProvisioned
                   ? 'No field devices in this list'
                   : searchTerm
                     ? 'No devices match your search'
-                    : 'No charge points yet'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {showOnlyFieldProvisioned
+                    : 'No charge points yet'
+              }
+              description={
+                showOnlyFieldProvisioned
                   ? 'Field-provisioned rows: vendor set, and either a serial from the station or a long numeric charge point id. The filter hides catalog import ids (CP-ACC-*, CP-ASH-*, CP-WES-*).'
                   : searchTerm
                     ? 'Try another term or clear search to see all devices.'
-                    : 'Devices appear after BootNotification or registration. Set coordinates so they also show on the public Stations map.'}
-              </Typography>
-            </Paper>
+                    : 'Devices appear after BootNotification or registration. Set coordinates so they also show on the public Stations map.'
+              }
+              primaryAction={
+                showOnlyFieldProvisioned || searchTerm
+                  ? {
+                      label: showOnlyFieldProvisioned ? 'Show all devices' : 'Clear search',
+                      onClick: () => {
+                        if (showOnlyFieldProvisioned) setShowOnlyFieldProvisioned(false);
+                        if (searchTerm) {
+                          setSearchTerm('');
+                          loadChargePoints();
+                        }
+                      },
+                      variant: 'secondary',
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <>
               {showOnlyFieldProvisioned && (
@@ -621,10 +650,10 @@ export function DevicesPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mr: 0.5 }}>
                   CSMS link
                 </Typography>
-                <Chip label={`${linkCounts.online} online`} color="success" size="small" variant="outlined" />
-                <Chip label={`${linkCounts.stale} recent off`} color="warning" size="small" variant="outlined" />
-                <Chip label={`${linkCounts.offline} offline`} color="error" size="small" variant="outlined" />
-                <Chip label={`${linkCounts.never_seen} never`} size="small" variant="outlined" />
+                <AppBadge label={`${linkCounts.online} online`} tone="success" />
+                <AppBadge label={`${linkCounts.stale} recent off`} tone="warning" />
+                <AppBadge label={`${linkCounts.offline} offline`} tone="error" />
+                <AppBadge label={`${linkCounts.never_seen} never`} tone="neutral" />
               </Box>
             {useGroupedList ? (
               <Box sx={{ mt: 1, py: 1 }}>
@@ -637,17 +666,15 @@ export function DevicesPage() {
                       secondary={`${cp.vendorName || cp.vendor || 'No vendor'} · ${cp.model || '—'}`}
                       end={
                         <Box sx={{ textAlign: 'right' }}>
-                          <Chip
+                          <AppBadge
                             label={getLinkStatusLabel(cp.linkStatus)}
-                            color={getLinkStatusChipColor(cp.linkStatus)}
-                            size="small"
+                            tone={chipColorToBadgeTone(getLinkStatusChipColor(cp.linkStatus))}
                             sx={{ height: 22, mb: 0.5 }}
                           />
-                          <Chip
+                          <AppBadge
                             label={cp.status}
-                            color={getChargePointStatusColor(cp.status)}
-                            size="small"
-                            sx={{ height: 22, display: 'block', ml: 'auto' }}
+                            tone={chipColorToBadgeTone(getChargePointStatusColor(cp.status))}
+                            sx={{ height: 22, display: 'flex', ml: 'auto' }}
                           />
                         </Box>
                       }
@@ -676,26 +703,15 @@ export function DevicesPage() {
                     const errorCount = getErrorCount(cp.chargePointId);
                     const isReal = isRealDevice(cp);
                     const onCustomerMap = chargePointHasMapCoords(cp);
-                    const linkRowTint =
-                      cp.linkStatus === 'online'
-                        ? 'rgba(76, 175, 80, 0.08)'
-                        : cp.linkStatus === 'stale'
-                          ? 'rgba(255, 152, 0, 0.08)'
-                          : cp.linkStatus === 'offline'
-                            ? 'rgba(244, 67, 54, 0.06)'
-                            : 'rgba(158, 158, 158, 0.05)';
 
                     return (
-                      <TableRow 
+                      <TableRow
                         key={cp.chargePointId}
+                        hover
                         sx={{
-                          backgroundColor: linkRowTint,
                           '&:hover': {
-                            backgroundColor:
-                              cp.linkStatus === 'online'
-                                ? 'rgba(76, 175, 80, 0.14)'
-                                : 'rgba(158, 158, 158, 0.1)',
-                          }
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                          },
                         }}
                       >
                         <TableCell>
@@ -725,10 +741,9 @@ export function DevicesPage() {
                         <TableCell>
                           <Tooltip title={getLinkStatusTooltip(cp)}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                              <Chip
+                              <AppBadge
                                 label={getLinkStatusLabel(cp.linkStatus)}
-                                color={getLinkStatusChipColor(cp.linkStatus)}
-                                size="small"
+                                tone={chipColorToBadgeTone(getLinkStatusChipColor(cp.linkStatus))}
                               />
                               {cp.lastHeartbeat ? (
                                 <Tooltip title={new Date(cp.lastHeartbeat).toLocaleString()}>
@@ -748,10 +763,9 @@ export function DevicesPage() {
                           </Tooltip>
                         </TableCell>
                         <TableCell>
-                          <Chip
+                          <AppBadge
                             label={cp.status}
-                            color={getChargePointStatusColor(cp.status)}
-                            size="small"
+                            tone={chipColorToBadgeTone(getChargePointStatusColor(cp.status))}
                           />
                         </TableCell>
                         <TableCell>
@@ -761,11 +775,9 @@ export function DevicesPage() {
                                 formatLatLngPair(cp.locationLatitude, cp.locationLongitude) ||
                                 '—'}
                             </Typography>
-                            <Chip
-                              size="small"
+                            <AppBadge
                               label={onCustomerMap ? 'On customer map' : 'Not on map (no GPS)'}
-                              color={onCustomerMap ? 'success' : 'default'}
-                              variant={onCustomerMap ? 'filled' : 'outlined'}
+                              tone={onCustomerMap ? 'success' : 'neutral'}
                               sx={{ height: 22, fontSize: '0.7rem', maxWidth: '100%' }}
                             />
                           </Box>
@@ -899,11 +911,10 @@ export function DevicesPage() {
                     primary={log.chargePointId}
                     secondary={`${log.eventType} · ${new Date(log.createdAt).toLocaleString()}`}
                     end={
-                      <Chip
+                      <AppBadge
                         label={log.errorCode || 'error'}
-                        color={getConnectionEventColor(log.eventType)}
+                        tone={chipColorToBadgeTone(getConnectionEventColor(log.eventType))}
                         size="small"
-                        sx={{ height: 22 }}
                       />
                     }
                     onClick={() => {
@@ -938,9 +949,9 @@ export function DevicesPage() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip
+                        <AppBadge
                           label={log.eventType}
-                          color={getConnectionEventColor(log.eventType)}
+                          tone={chipColorToBadgeTone(getConnectionEventColor(log.eventType))}
                           size="small"
                         />
                       </TableCell>
@@ -1111,9 +1122,11 @@ export function DevicesPage() {
                 Recent Connection Events
               </Typography>
               {connectionLogs.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                  No connection logs found
-                </Typography>
+                <AppEmptyState
+                  sx={{ border: 0, boxShadow: 'none', borderRadius: 0, py: 2 }}
+                  title="No connection logs found"
+                  description="Events for this charge point will appear here after connect attempts."
+                />
               ) : useGroupedList ? (
                 <GroupedListSection>
                   {connectionLogs.map((log, index) => (
@@ -1131,15 +1144,16 @@ export function DevicesPage() {
                         .join(' · ')}
                       end={
                         log.status ? (
-                          <Chip
+                          <AppBadge
                             label={log.status}
-                            color={getConnectionStatusColor(log.status)}
+                            tone={chipColorToBadgeTone(getConnectionStatusColor(log.status))}
                             size="small"
-                            sx={{ height: 22 }}
                           />
                         ) : log.closeCode ? (
                           <Tooltip title={log.closeReason || ''}>
-                            <Chip label={log.closeCode} size="small" color="error" sx={{ height: 22 }} />
+                            <span>
+                              <AppBadge label={log.closeCode} tone="error" size="small" />
+                            </span>
                           </Tooltip>
                         ) : undefined
                       }
@@ -1166,17 +1180,17 @@ export function DevicesPage() {
                             {new Date(log.createdAt).toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            <Chip
+                            <AppBadge
                               label={log.eventType}
-                              color={getConnectionEventColor(log.eventType)}
+                              tone={chipColorToBadgeTone(getConnectionEventColor(log.eventType))}
                               size="small"
                             />
                           </TableCell>
                           <TableCell>
                             {log.status && (
-                              <Chip
+                              <AppBadge
                                 label={log.status}
-                                color={getConnectionStatusColor(log.status)}
+                                tone={chipColorToBadgeTone(getConnectionStatusColor(log.status))}
                                 size="small"
                               />
                             )}
@@ -1190,7 +1204,9 @@ export function DevicesPage() {
                           <TableCell>
                             {log.closeCode ? (
                               <Tooltip title={log.closeReason || ''}>
-                                <Chip label={log.closeCode} size="small" color="error" />
+                                <span>
+                                  <AppBadge label={log.closeCode} tone="error" size="small" />
+                                </span>
                               </Tooltip>
                             ) : (
                               '-'

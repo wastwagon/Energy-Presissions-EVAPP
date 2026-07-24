@@ -9,7 +9,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Button,
   Dialog,
   DialogTitle,
@@ -32,7 +31,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { usersApi, User } from '../../services/usersApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
   staffFilterFieldSx,
@@ -43,6 +42,11 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import PeopleIcon from '@mui/icons-material/People';
 import { formatCurrency } from '../../utils/formatters';
 import { getUserAccountStatusColor } from '../../utils/statusColors';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
@@ -240,29 +244,29 @@ export function UserManagementPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, gap: 2 }}>
-        <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            User Management
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Manage user accounts, roles, and account status.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={handleCreate}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-          })}
-        >
-          Create user
-        </Button>
-      </Box>
+      <LivePageHeader
+        title="User Management"
+        subtitle="Manage user accounts, roles, and account status."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Create user
+          </Button>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -276,7 +280,7 @@ export function UserManagementPage() {
         </Alert>
       )}
 
-      <Box sx={{ mb: 2 }}>
+      <StaffFilterBar aria-label="User search">
         <TextField
           placeholder="Search users…"
           fullWidth
@@ -306,7 +310,7 @@ export function UserManagementPage() {
             maxWidth: '100%',
           })}
         />
-      </Box>
+      </StaffFilterBar>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && users.length > 0} ariaLabel="Loading users" />
@@ -316,11 +320,29 @@ export function UserManagementPage() {
           </Typography>
         </Box>
         {filteredUsers.length === 0 ? (
-          <Box sx={{ py: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-            </Typography>
-          </Box>
+          <AppEmptyState
+            sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+            icon={<PeopleIcon />}
+            title={searchTerm ? 'No users match your search' : 'No users found'}
+            description={
+              searchTerm
+                ? 'Try another name or email, or clear the search.'
+                : 'Create a user to grant portal access.'
+            }
+            primaryAction={
+              searchTerm
+                ? {
+                    label: 'Clear search',
+                    onClick: () => setSearchTerm(''),
+                    variant: 'secondary',
+                  }
+                : {
+                    label: 'Create user',
+                    onClick: handleCreate,
+                    startIcon: <AddIcon />,
+                  }
+            }
+          />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
@@ -335,10 +357,15 @@ export function UserManagementPage() {
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {formatCurrency(user.balance != null ? Number(user.balance) : 0, 'GHS')}
                       </Typography>
-                      <Chip
+                      <AppBadge
                         label={user.accountType}
-                        color={getAccountTypeColor(user.accountType) as 'default' | 'primary' | 'warning' | 'error'}
-                        size="small"
+                        tone={chipColorToBadgeTone(
+                          getAccountTypeColor(user.accountType) as
+                            | 'default'
+                            | 'primary'
+                            | 'warning'
+                            | 'error',
+                        )}
                         sx={{ mt: 0.5, height: 22 }}
                       />
                     </Box>
@@ -378,15 +405,19 @@ export function UserManagementPage() {
                     <TableCell>{user.phone || '—'}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                        <Chip
+                        <AppBadge
                           label={user.accountType}
-                          color={getAccountTypeColor(user.accountType) as any}
-                          size="small"
+                          tone={chipColorToBadgeTone(
+                            getAccountTypeColor(user.accountType) as
+                              | 'default'
+                              | 'primary'
+                              | 'warning'
+                              | 'error',
+                          )}
                         />
-                        <Chip
+                        <AppBadge
                           label={user.status}
-                          color={getUserAccountStatusColor(user.status)}
-                          size="small"
+                          tone={chipColorToBadgeTone(getUserAccountStatusColor(user.status))}
                         />
                       </Box>
                     </TableCell>

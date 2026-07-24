@@ -13,7 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   IconButton,
   Dialog,
   DialogTitle,
@@ -40,8 +39,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import { settingsApi } from '../../services/settingsApi';
 import { tariffsApi } from '../../services/tariffsApi';
 import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
   premiumPanelCardSx,
   premiumTableSurfaceSx,
 } from '../../theme/jampackShell';
@@ -54,6 +51,9 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge } from '../../components/ui/AppBadge';
 import { getStoredAccountType } from '../../utils/authSession';
 import { StaffChromeTabPanelSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { FormBrandingTwoColumnSkeleton } from '../../components/dashboard/BlockContentSkeletons';
@@ -325,16 +325,15 @@ function SuperAdminSettingsPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-            Platform Settings
-          </Typography>
-          <Typography variant="body2" sx={dashboardPageSubtitleSx}>
-            Configure system behavior, tariffs, branding, and payment settings.
-          </Typography>
-        </Box>
-      </Box>
+      <LivePageHeader
+        title="Platform Settings"
+        subtitle="Configure system behavior, tariffs, branding, and payment settings."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -349,7 +348,19 @@ function SuperAdminSettingsPage() {
       )}
 
       <Paper sx={premiumTableSurfaceSx}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 2 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
+          }}
+        >
           {isSuperAdmin && (
             <Tab label="System Settings" icon={<SettingsIcon />} iconPosition="start" />
           )}
@@ -430,9 +441,12 @@ function SuperAdminSettingsPage() {
           {loading ? (
             <StaffChromeTabPanelSkeleton rows={8} ariaLabel="Loading tariffs" />
           ) : tariffs.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No tariffs found. Create your first tariff.
-            </Typography>
+            <AppEmptyState
+              sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+              icon={<AttachMoneyIcon />}
+              title="No tariffs found"
+              description="Create your first tariff to set energy and time rates."
+            />
           ) : useGroupedList ? (
             <GroupedListSection>
               {tariffs.map((tariff, index) => (
@@ -446,11 +460,10 @@ function SuperAdminSettingsPage() {
                       : 'No energy rate'
                   }
                   end={
-                    <Chip
+                    <AppBadge
                       label={tariff.isActive ? 'Active' : 'Inactive'}
-                      color={tariff.isActive ? 'success' : 'default'}
+                      tone={tariff.isActive ? 'success' : 'neutral'}
                       size="small"
-                      sx={{ height: 24 }}
                     />
                   }
                   onClick={() => handleEditTariff(tariff)}
@@ -500,9 +513,9 @@ function SuperAdminSettingsPage() {
                         </TableCell>
                         <TableCell>{tariff.currency}</TableCell>
                         <TableCell>
-                          <Chip
+                          <AppBadge
                             label={tariff.isActive ? 'Active' : 'Inactive'}
-                            color={tariff.isActive ? 'success' : 'default'}
+                            tone={tariff.isActive ? 'success' : 'neutral'}
                             size="small"
                           />
                         </TableCell>

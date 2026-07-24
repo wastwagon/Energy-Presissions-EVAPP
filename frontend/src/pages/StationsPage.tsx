@@ -26,7 +26,7 @@ import {
   compactOutlinedCtaSx,
   sxObject,
 } from '../styles/authShell';
-import { premiumEmptyStatePaperSx, premiumPanelCardSx } from '../theme/jampackShell';
+import { premiumPanelCardSx } from '../theme/jampackShell';
 import { LivePageHeader } from '../components/dashboard/LivePageHeader';
 import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
 import { triggerHaptic } from '../utils/haptics';
@@ -35,6 +35,8 @@ import { StationListCard } from '../components/stations/StationListCard';
 import { StationDetailsSheet } from '../components/stations/StationDetailsSheet';
 import { LoginPromptSheet } from '../components/stations/LoginPromptSheet';
 import { StationsMapView, type MapViewportBounds } from '../components/stations/StationsMapView';
+import { AppEmptyState } from '../components/ui/AppEmptyState';
+import { CUSTOMER_IMAGES } from '../config/customerImagery';
 import { getStoredUser, hasValidSession } from '../utils/authSession';
 import {
   buildGoogleMapsDrivingDirectionsUrl,
@@ -605,25 +607,22 @@ export function StationsPage() {
           </Typography>
         )}
         {!loading && stations.length === 0 && !error && (
-          <Paper elevation={0} sx={{ ...premiumEmptyStatePaperSx, p: 2, mb: 0 }}>
-            <Typography variant="body2" color="text.secondary" align="center" component="div">
-              {userLocation
-                ? 'No stations found for this area. Try a different search or show the map to explore.'
-                : 'Enable location or search by area or station ID.'}
-            </Typography>
-            {userLocation && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                align="center"
-                component="div"
-                sx={{ display: 'block', mt: 1.5, lineHeight: 1.5 }}
-              >
-                Operators: chargers only appear here when they have GPS coordinates, are in an active status
-                (Available, Charging, Preparing, or Finishing), and are within range.
-              </Typography>
-            )}
-          </Paper>
+          <AppEmptyState
+            sx={{ p: 2, mb: 0 }}
+            illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
+            illustrationAlt="Ready to charge"
+            title="No chargers here"
+            description={
+              userLocation
+                ? 'Nothing in this area yet. Try another search or open the map.'
+                : 'Turn on location, or search by area or station ID.'
+            }
+            primaryAction={{
+              label: mapExpanded ? 'Hide map' : 'Show map',
+              onClick: () => setMapExpanded((v) => !v),
+              variant: 'secondary',
+            }}
+          />
         )}
         {!loading && sortedStations.length > 0 ? (
           <>

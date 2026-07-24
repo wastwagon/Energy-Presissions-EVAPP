@@ -21,7 +21,7 @@ import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import {
   authFormFieldSx,
   authPagePaperSx,
-  authPageRootSx,
+  authPageRootAtmosphereSx,
   authPageTitleSx,
   authPageLinkSx,
   authDividerSx,
@@ -30,6 +30,7 @@ import {
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 import { redirectAfterLogin } from '../../utils/redirectAfterLogin';
 import { LegalAuthNotice, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
@@ -209,7 +210,7 @@ export function LoginPage() {
   };
 
   return (
-    <Box sx={authPageRootSx}>
+    <Box sx={authPageRootAtmosphereSx(CUSTOMER_IMAGES.authAtmosphere)}>
       <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
         <Paper elevation={0} sx={authPagePaperSx}>
           <AuthBrandHeader compact />

@@ -8,6 +8,7 @@ import {
   Divider,
   IconButton,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BoltIcon from '@mui/icons-material/Bolt';
@@ -23,10 +24,12 @@ import {
   formatSessionEnergy,
   formatSessionReserved,
   isNoEnergyCompleted,
+  sessionStatusChipColor,
   sessionStatusLabel,
 } from '../utils/sessionDisplay';
 import { premiumPanelCardSx } from '../theme/jampackShell';
 import { compactContainedCtaSx, premiumIconButtonTouchSx, sxObject } from '../styles/authShell';
+import { AppBadge, chipColorToBadgeTone } from './ui/AppBadge';
 import { TransactionSummaryBodySkeleton } from './dashboard/BlockContentSkeletons';
 import { AdaptiveSheet } from './ios/AdaptiveSheet';
 import { WalletTopUpAlert } from './WalletTopUpAlert';
@@ -119,7 +122,7 @@ export function TransactionSummaryDialog({
   const sheetHeader = (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, width: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-        {!loading && transaction && <CheckCircleIcon color="success" sx={{ flexShrink: 0 }} />}
+        {!loading && transaction && <CheckCircleIcon color="primary" sx={{ flexShrink: 0 }} />}
         <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
           {loading ? 'Loading session…' : 'Session complete'}
         </Typography>
@@ -148,15 +151,32 @@ export function TransactionSummaryDialog({
         <TransactionSummaryBodySkeleton />
       ) : (
         <>
-          <Paper sx={{ p: 2, mb: 2, bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 2 }}>
+          <Paper
+            sx={(theme) => ({
+              p: 2,
+              mb: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              color: 'text.primary',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: alpha(theme.palette.primary.main, 0.22),
+            })}
+          >
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Transaction #{transaction.transactionId}
             </Typography>
-            <Typography variant="body2">
-              Status: <strong>{sessionStatusLabel(transaction)}</strong>
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="body2" color="text.secondary">
+                Status
+              </Typography>
+              <AppBadge
+                label={sessionStatusLabel(transaction)}
+                tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(transaction)))}
+                size="small"
+              />
+            </Box>
             {isNoEnergyCompleted(transaction) && (
-              <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.9 }}>
+              <Typography variant="caption" display="block" sx={{ mt: 0.5 }} color="text.secondary">
                 No meter energy was recorded for this session.
               </Typography>
             )}
@@ -209,7 +229,16 @@ export function TransactionSummaryDialog({
             <Divider sx={{ my: 1 }} />
             <SummaryRow label="Total cost" value={formatSessionCost(transaction)} bold />
             {refundAmount > 0 && (
-              <Box sx={{ mt: 1.5, p: 1.25, bgcolor: 'success.light', borderRadius: 1 }}>
+              <Box
+                sx={(theme) => ({
+                  mt: 1.5,
+                  p: 1.25,
+                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, 0.18),
+                })}
+              >
                 <SummaryRow
                   label="Refunded"
                   value={formatCurrency(refundAmount, transaction.currency || 'GHS')}
@@ -220,15 +249,24 @@ export function TransactionSummaryDialog({
           </Paper>
 
           {walletBalance !== null && (
-            <Paper sx={{ ...premiumPanelCardSx, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', mb: 2 }}>
+            <Paper
+              sx={(theme) => ({
+                ...premiumPanelCardSx,
+                p: 2,
+                mb: 2,
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                border: '1px solid',
+                borderColor: alpha(theme.palette.primary.main, 0.18),
+              })}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
                   <AccountBalanceWalletIcon fontSize="small" />
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={600} color="text.primary">
                     Wallet balance
                   </Typography>
                 </Box>
-                <Typography variant="h6" fontWeight="bold">
+                <Typography variant="h6" fontWeight="bold" color="primary.main">
                   {formatCurrency(walletBalance, 'GHS')}
                 </Typography>
               </Box>

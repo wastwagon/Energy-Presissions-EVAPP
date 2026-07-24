@@ -4,8 +4,10 @@ import { alpha } from '@mui/material/styles';
 import { IOS_TOUCH_TARGET_PX, iosMotion, iosRadii, iosSheetBlurBg } from './iosMobileTokens';
 
 /**
- * Tesla-style “charging” surface tokens: dark, high-contrast, mobile-first.
- * Used for the Charging hub, promos, and map chrome; keeps the rest of the app on the light Jampack shell.
+ * Charging / customer drawer surface tokens.
+ * Light drawer chrome is used by the signed-in customer shell.
+ * Legacy dark “premium” hero tokens remain for optional promo surfaces — prefer light
+ * `iosMobileTokens` + `jampackShell` for new work so branding stays teal and consistent.
  */
 
 const ink = '#0a0a0b';

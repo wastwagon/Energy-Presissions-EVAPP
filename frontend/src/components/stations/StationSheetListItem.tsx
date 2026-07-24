@@ -1,8 +1,9 @@
-import { Chip, IconButton, Stack } from '@mui/material';
+import { IconButton, Stack } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import type { StationWithDistance } from '../../services/stationsApi';
 import { GroupedListRow } from '../ios/GroupedListRow';
+import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
 import { premiumIconButtonTouchSx, sxObject } from '../../styles/authShell';
 import { getChargePointStatusColor } from '../../utils/statusColors';
 
@@ -47,11 +48,11 @@ export function StationSheetListItem({
       aria-label={`Open ${title}`}
       end={
         <Stack direction="row" alignItems="center" spacing={0.5} onClick={(e) => e.stopPropagation()}>
-          <Chip
+          <AppBadge
             label={station.status}
-            color={getChargePointStatusColor(station.status)}
+            tone={chipColorToBadgeTone(getChargePointStatusColor(station.status))}
             size="small"
-            sx={{ fontWeight: 700, fontSize: '0.65rem', height: 24 }}
+            sx={{ fontWeight: 700, fontSize: '0.65rem' }}
           />
           {isAuthenticated ? (
             <IconButton

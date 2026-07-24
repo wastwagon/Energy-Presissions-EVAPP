@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Tabs,
   Tab,
@@ -18,10 +17,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import EvStationIcon from '@mui/icons-material/EvStation';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { getTransactionStatusColor } from '../../utils/statusColors';
 import {
   formatCustomerDisplayName,
@@ -32,6 +32,8 @@ import {
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -160,11 +162,16 @@ export function SessionsPage() {
   const renderSessionRows = () => {
     if (transactions.length === 0) {
       return (
-        <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-          <Typography variant="body2" color="text.secondary">
-            {activeTab === 0 ? 'No active charging sessions.' : 'No transactions found.'}
-          </Typography>
-        </Box>
+        <AppEmptyState
+          sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+          icon={<EvStationIcon />}
+          title={activeTab === 0 ? 'No active charging sessions' : 'No transactions found'}
+          description={
+            activeTab === 0
+              ? 'Live sessions will appear here when drivers start charging.'
+              : 'Completed and historical sessions will show up once activity begins.'
+          }
+        />
       );
     }
 
@@ -183,15 +190,15 @@ export function SessionsPage() {
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {formatSessionCost(tx)}
                     </Typography>
-                    <Chip
+                    <AppBadge
                       label={tx.recordPending ? 'Active (connector)' : sessionStatusLabel(tx)}
-                      color={
+                      tone={chipColorToBadgeTone(
                         tx.recordPending
                           ? getTransactionStatusColor('Active')
-                          : sessionStatusChipColor(sessionStatusLabel(tx))
-                      }
+                          : sessionStatusChipColor(sessionStatusLabel(tx)),
+                      )}
                       size="small"
-                      sx={{ mt: 0.5, height: 22 }}
+                      sx={{ mt: 0.5 }}
                     />
                   </Box>
                 }
@@ -262,13 +269,13 @@ export function SessionsPage() {
                   <TableCell>{formatSessionEnergy(tx)}</TableCell>
                   <TableCell>{formatSessionCost(tx)}</TableCell>
                   <TableCell>
-                    <Chip
+                    <AppBadge
                       label={tx.recordPending ? 'Active (connector)' : sessionStatusLabel(tx)}
-                      color={
+                      tone={chipColorToBadgeTone(
                         tx.recordPending
                           ? getTransactionStatusColor('Active')
-                          : sessionStatusChipColor(sessionStatusLabel(tx))
-                      }
+                          : sessionStatusChipColor(sessionStatusLabel(tx)),
+                      )}
                       size="small"
                     />
                   </TableCell>

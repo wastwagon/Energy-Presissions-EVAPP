@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Chip,
   Table,
   TableBody,
   TableCell,
@@ -13,9 +12,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import PeopleIcon from '@mui/icons-material/People';
 import { usersApi, type User } from '../../services/usersApi';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedListRow } from '../ios/GroupedListRow';
+import { AppBadge } from '../ui/AppBadge';
+import { AppEmptyState } from '../ui/AppEmptyState';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 
 interface UsersReportPanelProps {
@@ -81,7 +83,14 @@ export function UsersReportPanel({ vendorId }: UsersReportPanelProps) {
         {vendorId != null ? ' (vendor scope)' : ''}
       </Typography>
 
-      {useGroupedList ? (
+      {users.length === 0 ? (
+        <AppEmptyState
+          sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
+          icon={<PeopleIcon />}
+          title="No users found"
+          description="User accounts will appear here once they are created."
+        />
+      ) : useGroupedList ? (
         <>
           <GroupedListSection title="By account type">
             {byType.map(([type, count], index) => (
@@ -103,11 +112,10 @@ export function UsersReportPanel({ vendorId }: UsersReportPanelProps) {
                 primary={`${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email}
                 secondary={u.email}
                 end={
-                  <Chip
+                  <AppBadge
                     label={u.accountType}
                     size="small"
-                    color={u.status === 'Active' ? 'success' : 'default'}
-                    sx={{ height: 22 }}
+                    tone={u.status === 'Active' ? 'success' : 'neutral'}
                   />
                 }
               />
@@ -118,7 +126,7 @@ export function UsersReportPanel({ vendorId }: UsersReportPanelProps) {
         <>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
             {byType.map(([type, count]) => (
-              <Chip key={type} label={`${type}: ${count}`} variant="outlined" />
+              <AppBadge key={type} label={`${type}: ${count}`} tone="neutral" size="small" />
             ))}
           </Box>
           <Box sx={premiumTableSurfaceSx}>
@@ -151,10 +159,10 @@ export function UsersReportPanel({ vendorId }: UsersReportPanelProps) {
                         <TableCell>{u.email}</TableCell>
                         <TableCell>{u.accountType}</TableCell>
                         <TableCell>
-                          <Chip
+                          <AppBadge
                             label={u.status}
                             size="small"
-                            color={u.status === 'Active' ? 'success' : 'default'}
+                            tone={u.status === 'Active' ? 'success' : 'neutral'}
                           />
                         </TableCell>
                         <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>

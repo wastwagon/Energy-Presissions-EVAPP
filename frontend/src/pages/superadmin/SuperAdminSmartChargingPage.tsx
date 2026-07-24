@@ -8,13 +8,14 @@ import {
   Alert,
 } from '@mui/material';
 import { smartChargingApi } from '../../services/smartChargingApi';
-import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx } from '../../theme/jampackShell';
+import { premiumPanelCardSx } from '../../theme/jampackShell';
 import {
   staffFilterFieldSx,
   compactContainedCtaSx,
   compactOutlinedCtaSx,
   sxObject,
 } from '../../styles/authShell';
+import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 
 export function SuperAdminSmartChargingPage() {
   const [chargePointId, setChargePointId] = useState('');
@@ -73,12 +74,15 @@ export function SuperAdminSmartChargingPage() {
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      <Typography variant="h6" component="h1" sx={dashboardPageTitleSx}>
-        Smart charging
-      </Typography>
-      <Typography variant="body2" sx={{ ...dashboardPageSubtitleSx, mb: 2 }}>
-        Inspect composite schedules and charging profiles via the CSMS API (OCPP smart charging).
-      </Typography>
+      <LivePageHeader
+        title="Smart charging"
+        subtitle="Inspect composite schedules and charging profiles via the CSMS API (OCPP smart charging)."
+        updatedAt={null}
+        refreshing={false}
+        onRefresh={() => undefined}
+        showRefresh={false}
+        showLiveMeta={false}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

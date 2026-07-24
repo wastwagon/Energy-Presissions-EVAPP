@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   Alert,
   Button,
   Pagination,
@@ -22,9 +21,8 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
-import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { premiumEmptyStatePaperSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
@@ -38,10 +36,14 @@ import {
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { AppEmptyState } from '../../components/ui/AppEmptyState';
+import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
+import { triggerHaptic } from '../../utils/haptics';
 
 export function CustomerSessionHistoryPage() {
   const navigate = useNavigate();
@@ -125,30 +127,19 @@ export function CustomerSessionHistoryPage() {
       )}
 
       {transactions.length === 0 ? (
-        <Paper elevation={0} sx={premiumEmptyStatePaperSx}>
-          <Box
-            sx={(theme) => ({
-              width: 72,
-              height: 72,
-              mx: 'auto',
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: theme.palette.action.hover,
-              color: 'text.secondary',
-            })}
-          >
-            <HistoryIcon sx={{ fontSize: 36 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-            No session history
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            You have not completed any charging sessions yet.
-          </Typography>
-        </Paper>
+        <AppEmptyState
+          illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
+          illustrationAlt="Ready to charge"
+          title="No sessions yet"
+          description="Completed charges appear here after your first plug-in."
+          primaryAction={{
+            label: 'Find chargers',
+            onClick: () => {
+              triggerHaptic('light');
+              navigate(CUSTOMER_ROUTES.stations);
+            },
+          }}
+        />
       ) : useGroupedList ? (
         <>
           <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading session history" />
@@ -164,10 +155,9 @@ export function CustomerSessionHistoryPage() {
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {formatSessionCost(tx)}
                     </Typography>
-                    <Chip
+                    <AppBadge
                       label={sessionStatusLabel(tx)}
-                      color={sessionStatusChipColor(sessionStatusLabel(tx))}
-                      size="small"
+                      tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                       sx={{ mt: 0.5, height: 22 }}
                     />
                   </Box>
@@ -217,10 +207,9 @@ export function CustomerSessionHistoryPage() {
                     <TableCell>{formatSessionDuration(tx)}</TableCell>
                     <TableCell>{formatSessionCost(tx)}</TableCell>
                     <TableCell>
-                      <Chip
+                      <AppBadge
                         label={sessionStatusLabel(tx)}
-                        color={sessionStatusChipColor(sessionStatusLabel(tx))}
-                        size="small"
+                        tone={chipColorToBadgeTone(sessionStatusChipColor(sessionStatusLabel(tx)))}
                       />
                     </TableCell>
                     <TableCell>{new Date(tx.startTime).toLocaleDateString()}</TableCell>
