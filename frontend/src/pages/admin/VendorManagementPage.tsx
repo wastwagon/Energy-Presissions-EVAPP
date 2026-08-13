@@ -384,6 +384,10 @@ export function VendorManagementPage() {
         }
       />
 
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontVariantNumeric: 'tabular-nums' }}>
+        {statusCounts.active} active · {statusCounts.suspended} suspended · {statusCounts.disabled} disabled
+      </Typography>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}

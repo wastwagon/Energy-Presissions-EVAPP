@@ -79,7 +79,7 @@ export const superAdminMenuConfig: MenuSection[] = [
     items: [
       {
         id: 'dashboard',
-        text: 'My Dashboard',
+        text: 'Dashboard',
         icon: <DashboardIcon />,
         path: SUPERADMIN_ROUTES.dashboard,
         roles: ['SuperAdmin'],
@@ -286,7 +286,7 @@ export const adminMenuConfig: MenuSection[] = [
     items: [
       {
         id: 'my-dashboard',
-        text: 'My Dashboard',
+        text: 'Dashboard',
         icon: <DashboardIcon />,
         path: ADMIN_ROUTES.dashboard,
         roles: ['Admin'],
@@ -329,10 +329,17 @@ export const adminMenuConfig: MenuSection[] = [
     defaultExpanded: false,
     items: [
       {
-        id: 'vendor-profile',
-        text: 'Vendor Profile',
+        id: 'vendor-home',
+        text: 'Vendor home',
         icon: <BusinessIcon />,
         path: ADMIN_ROUTES.vendorPortal,
+        roles: ['Admin'],
+      },
+      {
+        id: 'vendor-settings',
+        text: 'Vendor settings',
+        icon: <SettingsIcon />,
+        path: ADMIN_ROUTES.vendorSettings,
         roles: ['Admin'],
       },
       {
@@ -453,9 +460,9 @@ export const adminBottomNavItems = [
   },
 ];
 
-/** Mobile nav when focused on vendor settings (`/vendor`). */
+/** Mobile nav when focused on the vendor portal (`/vendor`). */
 export const vendorBottomNavItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: ADMIN_ROUTES.dashboard },
+  { id: 'home', label: 'Home', icon: <DashboardIcon />, path: ADMIN_ROUTES.vendorPortal },
   {
     id: 'ops',
     label: 'Operations',
@@ -464,11 +471,11 @@ export const vendorBottomNavItems = [
     matchPaths: [ADMIN_ROUTES.ops],
   },
   {
-    id: 'vendor',
-    label: 'Vendor',
-    icon: <BusinessIcon />,
-    path: ADMIN_ROUTES.vendorPortal,
-    matchPaths: [ADMIN_ROUTES.vendorPortal, `${ADMIN_ROUTES.vendorPortal}/`],
+    id: 'settings',
+    label: 'Settings',
+    icon: <SettingsIcon />,
+    path: ADMIN_ROUTES.vendorSettings,
+    matchPaths: [ADMIN_ROUTES.vendorSettings],
   },
 ];
 

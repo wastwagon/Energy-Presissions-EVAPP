@@ -177,7 +177,11 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Tariffs & Pricing"
-        subtitle="Manage pricing and tariff plans for charging sessions"
+        subtitle={
+          variant === 'admin'
+            ? 'Pricing for your charge points. Network defaults apply if you have no active vendor tariff.'
+            : 'Network-wide tariffs apply when a vendor has no plan of their own. Vendor tariffs override defaults.'
+        }
         updatedAt={null}
         refreshing={false}
         onRefresh={() => undefined}
@@ -204,12 +208,6 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
           {error}
         </Alert>
       )}
-
-      <Alert severity="info" sx={{ mb: 2 }}>
-        {variant === 'admin'
-          ? 'New tariffs apply to your vendor’s charge points. Network-wide defaults (no vendor) still apply when you have no active vendor tariff.'
-          : 'Tariffs without a vendor apply network-wide. Vendor-specific tariffs override defaults for that vendor’s charge points.'}
-      </Alert>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && tariffs.length > 0} ariaLabel="Loading tariffs" />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import {
   TableRow,
   Alert,
   Pagination,
+  Button,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -36,6 +37,7 @@ import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -57,8 +59,22 @@ function isOtherSession(tx: Transaction): boolean {
   return status !== 'active' && !isCompletedSession(tx);
 }
 
+function sessionDateKey(tx: Transaction): string | null {
+  const raw = tx.startTime || tx.createdAt || tx.timestamp;
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function SessionsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dateFilter = searchParams.get('date');
   const opsBase = useOpsBasePath();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
@@ -72,6 +88,10 @@ export function SessionsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (dateFilter) setStatusTab('all');
+  }, [dateFilter]);
 
   const fetchAllSessionsPage = useCallback(async (pageNum: number, append: boolean) => {
     const offset = (pageNum - 1) * ALL_SESSIONS_PAGE_SIZE;
@@ -171,11 +191,14 @@ export function SessionsPage() {
   const otherOnPage = useMemo(() => allTransactions.filter((tx) => isOtherSession(tx)), [allTransactions]);
 
   const transactions = useMemo(() => {
-    if (statusTab === 'active') return activeTransactions;
-    if (statusTab === 'completed') return completedOnPage;
-    if (statusTab === 'other') return otherOnPage;
-    return allTransactions;
-  }, [statusTab, activeTransactions, allTransactions, completedOnPage, otherOnPage]);
+    let rows: Transaction[];
+    if (statusTab === 'active') rows = activeTransactions;
+    else if (statusTab === 'completed') rows = completedOnPage;
+    else if (statusTab === 'other') rows = otherOnPage;
+    else rows = allTransactions;
+    if (!dateFilter) return rows;
+    return rows.filter((tx) => sessionDateKey(tx) === dateFilter);
+  }, [statusTab, activeTransactions, allTransactions, completedOnPage, otherOnPage, dateFilter]);
 
   const showAllPaging = statusTab === 'all';
 
@@ -187,7 +210,19 @@ export function SessionsPage() {
     }
   };
 
+  const clearDateFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('date');
+    setSearchParams(next, { replace: true });
+  };
+
   const emptyCopy = (() => {
+    if (dateFilter) {
+      return {
+        title: `No sessions on ${dateFilter}`,
+        description: 'Try another day from the revenue chart, or clear the date filter.',
+      };
+    }
     switch (statusTab) {
       case 'active':
         return {
@@ -220,6 +255,15 @@ export function SessionsPage() {
           icon={<EvStationIcon />}
           title={emptyCopy.title}
           description={emptyCopy.description}
+          primaryAction={
+            dateFilter
+              ? { label: 'Clear date', onClick: clearDateFilter, variant: 'secondary' }
+              : {
+                  label: 'Open devices',
+                  onClick: () => navigate(`${opsBase}/devices`),
+                  variant: 'secondary',
+                }
+          }
         />
       );
     }
@@ -386,6 +430,19 @@ export function SessionsPage() {
             { value: 'other', label: 'Other', count: otherOnPage.length },
           ]}
         />
+        {dateFilter ? (
+          <Button
+            variant="outlined"
+            onClick={clearDateFilter}
+            sx={(th) => ({
+              ...sxObject(th, compactOutlinedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: 44,
+            })}
+          >
+            {dateFilter} · Clear
+          </Button>
+        ) : null}
       </StaffFilterBar>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mt: 0 }}>

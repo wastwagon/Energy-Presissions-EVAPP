@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Grid, Alert, Link, Stack } from '@mui/material';
+import { Box, Typography, Grid, Alert, Link, Stack, Button } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import BusinessIcon from '@mui/icons-material/Business';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardRealtime } from '../../hooks/useDashboardRealtime';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { compactOutlinedCtaSx, compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
+import {
+  buildStaffDashboardInsight,
+  countChargePointsByStatus,
+} from '../../utils/staffDashboardInsight';
 import { LivePageHeader } from './LivePageHeader';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { StaffMetricCard } from './StaffMetricCard';
@@ -22,7 +27,7 @@ import { RevenueTrendChart } from '../reports/RevenueTrendChart';
 import { dashboardApi, type RevenueTrendPoint } from '../../services/dashboardApi';
 import { compareRevenueTrend } from '../../utils/revenueTrendCompare';
 
-type StaffDashboardVariant = 'admin' | 'superadmin';
+type StaffDashboardVariant = 'admin' | 'superadmin' | 'vendor';
 
 export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVariant }) {
   const navigate = useNavigate();
@@ -65,6 +70,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
   useStaffPullRefresh(useCallback(() => void refreshAll(false), [refreshAll]));
 
   const trendCompare = useMemo(() => compareRevenueTrend(trendPoints), [trendPoints]);
+  const trendCaption = `vs earlier in ${periodDays}d`;
 
   const createKeyboardNavHandler =
     (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -81,19 +87,42 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
     return top.map((r) => `${r.count} ${r.status}`).join(' · ');
   }, [stats?.breakdowns?.chargePointsByStatus]);
 
+  const offlineCount = useMemo(
+    () => countChargePointsByStatus(stats?.breakdowns?.chargePointsByStatus, /offline/i),
+    [stats?.breakdowns?.chargePointsByStatus],
+  );
+
+  const insight = useMemo(() => {
+    if (!stats) return null;
+    return buildStaffDashboardInsight({
+      periodDays,
+      revenueTrendPercent: trendCompare.revenueTrendPercent,
+      offlineCount,
+      activeSessions: stats.overview.activeSessions || 0,
+      pendingWalletReserved: stats.overview.pendingWalletReserved ?? 0,
+      devicesWithErrors: stats.connectionHealth?.devicesWithErrors,
+    });
+  }, [stats, periodDays, trendCompare.revenueTrendPercent, offlineCount]);
+
   if (loading) {
-    return <DashboardStaffHomeSkeleton variant={variant} />;
+    return <DashboardStaffHomeSkeleton variant={variant === 'superadmin' ? 'superadmin' : 'admin'} />;
   }
 
-  const title = variant === 'admin' ? 'Admin Dashboard' : 'Super Admin Dashboard';
+  const title =
+    variant === 'superadmin' ? 'Super Admin Dashboard' : variant === 'vendor' ? 'Vendor home' : 'Dashboard';
   const subtitle =
-    variant === 'admin'
-      ? "Manage your vendor's charging operations and settings"
-      : 'Complete system control and management across all vendors and users';
+    variant === 'superadmin'
+      ? 'Network control across vendors — one hero metric, then what needs attention.'
+      : variant === 'vendor'
+        ? 'Your charging network at a glance. Branding and receipts live in Settings.'
+        : 'Your vendor operations — what changed, and what to do next.';
 
-  const devicesPath = variant === 'admin' ? ADMIN_ROUTES.opsDevices : SUPERADMIN_ROUTES.opsDevices;
-  const sessionsPath = variant === 'admin' ? ADMIN_ROUTES.opsSessions : SUPERADMIN_ROUTES.opsSessions;
-  const reportsPath = variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports;
+  const isNetwork = variant === 'superadmin';
+  const devicesPath = isNetwork ? SUPERADMIN_ROUTES.opsDevices : ADMIN_ROUTES.opsDevices;
+  const sessionsPath = isNetwork ? SUPERADMIN_ROUTES.opsSessions : ADMIN_ROUTES.opsSessions;
+  const analyticsPath = isNetwork ? SUPERADMIN_ROUTES.analytics : ADMIN_ROUTES.analytics;
+  const billingPath = isNetwork ? SUPERADMIN_ROUTES.billing : ADMIN_ROUTES.billing;
+  const sessionsVariant = isNetwork ? 'superadmin' : 'admin';
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
@@ -122,6 +151,20 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             <StaffPeriodChips value={periodDays} onChange={setPeriodDays} disabled={trendLoading} />
+            {variant === 'vendor' ? (
+              <Button
+                variant="contained"
+                disableElevation
+                startIcon={<SettingsIcon />}
+                onClick={() => navigate(ADMIN_ROUTES.vendorSettings)}
+                sx={(th) => ({
+                  ...sxObject(th, compactContainedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                })}
+              >
+                Settings
+              </Button>
+            ) : null}
           </Stack>
         }
       />
@@ -134,142 +177,141 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
 
       {stats != null ? (
         <>
-          <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 2.5 }}>
-            {variant === 'superadmin' ? (
-              <Grid item xs={12} sm={6} md={3}>
-                <StaffMetricCard
-                  label="Vendors"
-                  value={stats.overview.totalVendors || 0}
-                  icon={<BusinessIcon />}
-                  hint="Network operators"
-                  ariaLabel="Open vendors"
-                  onClick={() => navigate(SUPERADMIN_ROUTES.vendors)}
-                  onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.vendors)}
-                />
-              </Grid>
-            ) : null}
-
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 2 }}>
+            <Grid item xs={12} md={6} lg={5}>
               <StaffMetricCard
-                label="Charge points"
-                value={stats.overview.totalChargePoints || 0}
-                icon={<EvStationIcon />}
-                hint={chargePointHint}
-                ariaLabel="Open devices"
-                onClick={() => navigate(devicesPath)}
-                onKeyDown={createKeyboardNavHandler(devicesPath)}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label="Active sessions"
-                value={stats.overview.activeSessions || 0}
-                icon={<BatteryChargingFullIcon />}
-                hint="Live now"
-                tone={stats.overview.activeSessions > 0 ? 'info' : 'default'}
-                ariaLabel="Open sessions"
-                onClick={() => navigate(sessionsPath)}
-                onKeyDown={createKeyboardNavHandler(sessionsPath)}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
+                size="hero"
                 label={`Revenue (${periodDays}d)`}
                 value={formatCurrency(trendCompare.periodRevenue, 'GHS')}
                 icon={<AttachMoneyIcon />}
                 trendPercent={trendCompare.revenueTrendPercent}
+                trendCaption={trendCaption}
                 sparklineValues={trendCompare.sparkRevenue}
                 sparklineLabel="Revenue sparkline"
                 hint={
-                  variant === 'admin'
-                    ? 'Completed billed sessions'
-                    : 'Network completed billed sessions'
+                  isNetwork ? 'Network completed billed sessions' : 'Completed billed sessions'
                 }
-                ariaLabel="Open revenue reports"
-                onClick={() => navigate(reportsPath)}
-                onKeyDown={createKeyboardNavHandler(reportsPath)}
+                ariaLabel="Open analytics"
+                onClick={() => navigate(analyticsPath)}
+                onKeyDown={createKeyboardNavHandler(analyticsPath)}
               />
             </Grid>
+            <Grid item xs={12} md={6} lg={7}>
+              <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+                {isNetwork ? (
+                  <Grid item xs={12} sm={6}>
+                    <StaffMetricCard
+                      label="Vendors"
+                      value={stats.overview.totalVendors || 0}
+                      icon={<BusinessIcon />}
+                      hint="Network operators"
+                      ariaLabel="Open vendors"
+                      onClick={() => navigate(SUPERADMIN_ROUTES.vendors)}
+                      onKeyDown={createKeyboardNavHandler(SUPERADMIN_ROUTES.vendors)}
+                    />
+                  </Grid>
+                ) : null}
 
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label={`Sessions (${periodDays}d)`}
-                value={trendCompare.periodSessions}
-                icon={<ShowChartIcon />}
-                trendPercent={trendCompare.sessionsTrendPercent}
-                sparklineValues={trendCompare.sparkSessions}
-                sparklineLabel="Sessions sparkline"
-                hint="Completed in selected period"
-                ariaLabel="Open sessions"
-                onClick={() => navigate(sessionsPath)}
-                onKeyDown={createKeyboardNavHandler(sessionsPath)}
-              />
+                <Grid item xs={12} sm={6}>
+                  <StaffMetricCard
+                    label="Charge points"
+                    value={stats.overview.totalChargePoints || 0}
+                    icon={<EvStationIcon />}
+                    hint={chargePointHint}
+                    tone={offlineCount > 0 ? 'warning' : 'default'}
+                    ariaLabel="Open devices"
+                    onClick={() => navigate(devicesPath)}
+                    onKeyDown={createKeyboardNavHandler(devicesPath)}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <StaffMetricCard
+                    label="Active sessions"
+                    value={stats.overview.activeSessions || 0}
+                    icon={<BatteryChargingFullIcon />}
+                    hint="Live now"
+                    tone={stats.overview.activeSessions > 0 ? 'info' : 'default'}
+                    ariaLabel="Open sessions"
+                    onClick={() => navigate(sessionsPath)}
+                    onKeyDown={createKeyboardNavHandler(sessionsPath)}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <StaffMetricCard
+                    label={`Sessions (${periodDays}d)`}
+                    value={trendCompare.periodSessions}
+                    icon={<ShowChartIcon />}
+                    trendPercent={trendCompare.sessionsTrendPercent}
+                    trendCaption={trendCaption}
+                    sparklineValues={trendCompare.sparkSessions}
+                    sparklineLabel="Sessions sparkline"
+                    hint="Completed in selected period"
+                    ariaLabel="Open sessions"
+                    onClick={() => navigate(sessionsPath)}
+                    onKeyDown={createKeyboardNavHandler(sessionsPath)}
+                  />
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
 
-          {variant === 'admin' && (stats.overview.pendingWalletReserved ?? 0) > 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: -1, mb: 2 }}>
-              {formatCurrency(stats.overview.pendingWalletReserved ?? 0)} in pending wallet holds — not
-              counted in revenue until sessions complete.{' '}
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => navigate(ADMIN_ROUTES.billing)}
-                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
-              >
-                Billing & invoices
-              </Link>
+          {insight ? (
+            <Typography variant="body2" sx={{ mb: 1.5, color: 'text.primary', fontWeight: 500 }}>
+              {insight}
             </Typography>
           ) : null}
 
-          {variant === 'admin' && (stats.overview.pendingWalletReserved ?? 0) === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: -1, mb: 2 }}>
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => navigate(ADMIN_ROUTES.analytics)}
-                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, mr: 1 }}
-              >
-                Analytics
-              </Link>
-              ·{' '}
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => navigate(ADMIN_ROUTES.billing)}
-                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
-              >
-                Billing & invoices
-              </Link>
-            </Typography>
-          ) : null}
-
-          {variant === 'superadmin' && stats.connectionHealth ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: -1, mb: 2 }}>
-              Network health: {stats.connectionHealth.averageSuccessRate.toFixed(1)}% success ·{' '}
-              {stats.connectionHealth.devicesWithErrors} devices need attention —{' '}
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => navigate(SUPERADMIN_ROUTES.health)}
-                sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0 }}
-              >
-                System health
-              </Link>
-            </Typography>
-          ) : null}
-
-          {variant === 'superadmin' && (stats.overview.pendingWalletReserved ?? 0) > 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0, mb: 2 }}>
-              Pending wallet holds network-wide: {formatCurrency(stats.overview.pendingWalletReserved ?? 0)}
-            </Typography>
-          ) : null}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              onClick={() => navigate(analyticsPath)}
+              sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, mr: 1 }}
+            >
+              Analytics
+            </Link>
+            ·{' '}
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              onClick={() => navigate(billingPath)}
+              sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, mx: 1 }}
+            >
+              Billing
+            </Link>
+            {isNetwork && stats.connectionHealth ? (
+              <>
+                ·{' '}
+                <Link
+                  component="button"
+                  type="button"
+                  variant="body2"
+                  onClick={() => navigate(SUPERADMIN_ROUTES.health)}
+                  sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, ml: 1 }}
+                >
+                  System health
+                </Link>
+              </>
+            ) : null}
+            {variant !== 'superadmin' ? (
+              <>
+                ·{' '}
+                <Link
+                  component="button"
+                  type="button"
+                  variant="body2"
+                  onClick={() => navigate(ADMIN_ROUTES.vendorSettings)}
+                  sx={{ verticalAlign: 'baseline', p: 0, minWidth: 0, ml: 1 }}
+                >
+                  Vendor settings
+                </Link>
+              </>
+            ) : null}
+          </Typography>
 
           <Box sx={{ mb: 2.5 }}>
             <RevenueTrendChart
@@ -278,10 +320,12 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
               points={trendPoints}
               loading={trendLoading}
               error={trendError}
+              onDaySelect={(date) => navigate(`${sessionsPath}?date=${encodeURIComponent(date)}`)}
+              emptyAction={{ label: 'Open sessions', onClick: () => navigate(sessionsPath) }}
             />
           </Box>
 
-          <StaffDashboardRecentSessions variant={variant} refreshKey={updatedAt ?? 0} />
+          <StaffDashboardRecentSessions variant={sessionsVariant} refreshKey={updatedAt ?? 0} />
         </>
       ) : null}
     </Box>

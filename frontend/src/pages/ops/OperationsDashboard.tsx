@@ -272,6 +272,11 @@ export function OperationsDashboard() {
             icon={<EvStationIcon />}
             title="No charge points yet"
             description="They appear here after connecting and sending BootNotification."
+            primaryAction={{
+              label: 'Open devices',
+              onClick: () => navigate(`${opsBase}/devices`),
+              variant: 'secondary',
+            }}
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>

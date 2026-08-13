@@ -32,7 +32,7 @@ Admin (`/admin`), vendor portal (`/vendor`), and Super Admin (`/superadmin`) sha
 
 - **My Dashboard** vs **Operations Dashboard** — summary metrics vs live ops KPIs.
 - **Device Management** (list) vs **Connection Logs** (global log stream) vs per-device logs dialog — different scopes.
-- **Admin** `/vendor` profile vs **Super Admin** vendor settings — same `VendorSettingsPage`, different entry context.
+- **Admin** `/vendor` home vs `/vendor/settings` vs **Super Admin** `/superadmin/vendor` — same settings page, different entry.
 - **Analytics** (admin vendor scope) vs **System Analytics** (super admin).
 
 **Do not add:**
@@ -43,7 +43,7 @@ Admin (`/admin`), vendor portal (`/vendor`), and Super Admin (`/superadmin`) sha
 **Shared code (already correct):**
 
 - `DevicesPage` for admin + superadmin device routes.
-- `StaffDashboardHomeView` for admin + superadmin home.
+- `StaffDashboardHomeView` for admin, vendor, and superadmin home.
 
 ## Desktop table streamlining (phase 1 targets)
 

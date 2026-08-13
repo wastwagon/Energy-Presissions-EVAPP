@@ -34,7 +34,7 @@ const presets = {
   adminReports: {
     ariaLabel: 'Loading reports',
     asideButtons: 2,
-    kpiCount: 4,
+    kpiCount: 0,
     tabsInPaper: 4,
     tableRows: 5,
     analyticsWideCard: false,
@@ -42,7 +42,7 @@ const presets = {
   superReports: {
     ariaLabel: 'Loading reports',
     asideButtons: 2,
-    kpiCount: 4,
+    kpiCount: 0,
     tabsInPaper: 4,
     tableRows: 5,
     analyticsWideCard: false,
@@ -199,7 +199,7 @@ function SkeletonKpiTiles({ count }: { count: number }) {
 function SkeletonAnalyticsGrid() {
   return (
     <Grid container spacing={{ xs: 2, sm: 3 }}>
-      {Array.from({ length: 5 }, (_, i) => (
+      {Array.from({ length: 4 }, (_, i) => (
         <Grid item xs={12} sm={6} md={3} key={i}>
           <Paper elevation={0} sx={premiumPanelCardSx}>
             <Skeleton variant="text" width="55%" height={22} sx={{ mb: 1 }} />

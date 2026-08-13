@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Paper, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Paper, Skeleton, Typography, useTheme } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import {
   Bar,
@@ -28,6 +28,9 @@ interface RevenueTrendChartProps {
   points?: RevenueTrendPoint[] | null;
   loading?: boolean;
   error?: string | null;
+  /** Drill into that day's sessions. */
+  onDaySelect?: (isoDate: string) => void;
+  emptyAction?: { label: string; onClick: () => void };
 }
 
 export function RevenueTrendChart({
@@ -36,6 +39,8 @@ export function RevenueTrendChart({
   points: controlledPoints,
   loading: controlledLoading,
   error: controlledError,
+  onDaySelect,
+  emptyAction,
 }: RevenueTrendChartProps) {
   const theme = useTheme();
   const reducedMotion = usePrefersReducedMotion();
@@ -90,6 +95,7 @@ export function RevenueTrendChart({
       </Typography>
       <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
         Last {days} days · completed sessions with billing (GH₵ &gt; 0)
+        {onDaySelect ? ' · tap a day for sessions' : ''}
       </Typography>
 
       {error && (
@@ -99,9 +105,13 @@ export function RevenueTrendChart({
       )}
 
       {loading && (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-          Loading trend…
-        </Typography>
+        <Skeleton
+          variant="rounded"
+          animation="wave"
+          height={220}
+          sx={{ width: '100%', mb: 1 }}
+          aria-label="Loading revenue trend"
+        />
       )}
 
       {!loading && !error && !hasRevenue && (
@@ -110,12 +120,21 @@ export function RevenueTrendChart({
           icon={<ShowChartIcon />}
           title="No billed revenue yet"
           description={`No completed paid sessions in the last ${days} days.`}
+          primaryAction={
+            emptyAction
+              ? { label: emptyAction.label, onClick: emptyAction.onClick, variant: 'secondary' }
+              : undefined
+          }
         />
       )}
 
       {!loading && hasRevenue && (
         <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 1, fontVariantNumeric: 'tabular-nums' }}
+          >
             Period total: {formatCurrency(totalRevenue)}
           </Typography>
           <Box sx={{ width: '100%', height: { xs: 220, sm: 260 }, minWidth: 0 }}>
@@ -148,6 +167,11 @@ export function RevenueTrendChart({
                   fill={theme.palette.primary.main}
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={!reducedMotion}
+                  cursor={onDaySelect ? 'pointer' : undefined}
+                  onClick={(entry) => {
+                    const date = (entry as { date?: string } | undefined)?.date;
+                    if (date && onDaySelect) onDaySelect(date);
+                  }}
                 />
               </BarChart>
             </ResponsiveContainer>

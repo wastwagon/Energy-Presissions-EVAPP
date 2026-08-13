@@ -3,9 +3,9 @@ import { premiumPanelCardSx } from '../../theme/jampackShell';
 
 type Variant = 'admin' | 'superadmin';
 
-/** Initial load placeholder — matches KPI + chart + table density */
+/** Initial load placeholder — hero + supporting KPIs + chart + table */
 export function DashboardStaffHomeSkeleton({ variant }: { variant: Variant }) {
-  const count = variant === 'admin' ? 4 : 5;
+  const supporting = variant === 'superadmin' ? 4 : 3;
   return (
     <Box
       sx={{ minWidth: 0, maxWidth: '100%' }}
@@ -20,22 +20,28 @@ export function DashboardStaffHomeSkeleton({ variant }: { variant: Variant }) {
         <Skeleton variant="rounded" height={36} sx={{ width: 180, mt: 1.5 }} />
       </Box>
       <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 2.5 }}>
-        {Array.from({ length: count }, (_, i) => (
-          <Grid
-            item
-            key={i}
-            xs={12}
-            sm={variant === 'admin' ? 6 : 6}
-            md={variant === 'superadmin' ? 3 : 4}
-          >
-            <Skeleton
-              variant="rounded"
-              animation="wave"
-              height={112}
-              sx={{ ...premiumPanelCardSx }}
-            />
+        <Grid item xs={12} md={6} lg={5}>
+          <Skeleton
+            variant="rounded"
+            animation="wave"
+            height={168}
+            sx={{ ...premiumPanelCardSx }}
+          />
+        </Grid>
+        <Grid item xs={12} md={6} lg={7}>
+          <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+            {Array.from({ length: supporting }, (_, i) => (
+              <Grid item key={i} xs={12} sm={6}>
+                <Skeleton
+                  variant="rounded"
+                  animation="wave"
+                  height={112}
+                  sx={{ ...premiumPanelCardSx }}
+                />
+              </Grid>
+            ))}
           </Grid>
-        ))}
+        </Grid>
       </Grid>
       <Skeleton variant="rounded" animation="wave" height={280} sx={{ ...premiumPanelCardSx, mb: 2.5 }} />
       <Skeleton variant="rounded" animation="wave" height={220} sx={{ ...premiumPanelCardSx }} />

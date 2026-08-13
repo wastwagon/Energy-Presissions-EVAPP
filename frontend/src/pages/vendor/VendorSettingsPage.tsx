@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -29,6 +29,15 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
+import { useStaffNavBack } from '../../hooks/useStaffNavBack';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
+
+function VendorPortalSettingsBack() {
+  const navigate = useNavigate();
+  const goHome = useCallback(() => navigate(ADMIN_ROUTES.vendorPortal), [navigate]);
+  useStaffNavBack(goHome, 'Back to vendor home');
+  return null;
+}
 
 function VendorSettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -54,6 +63,8 @@ function VendorSettingsSection({ title, children }: { title: string; children: R
 
 export function VendorSettingsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isVendorPortal = location.pathname === ADMIN_ROUTES.vendorSettings;
   const [loading, setLoading] = useState(true);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -194,11 +205,17 @@ export function VendorSettingsPage() {
   };
 
   if (loading && !initialLoadDone) {
-    return <DashboardStaffChromeSkeleton preset="vendorSettings" />;
+    return (
+      <>
+        {isVendorPortal ? <VendorPortalSettingsBack /> : null}
+        <DashboardStaffChromeSkeleton preset="vendorSettings" />
+      </>
+    );
   }
 
   return (
     <Box sx={{ position: 'relative', minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
+      {isVendorPortal ? <VendorPortalSettingsBack /> : null}
       <TableSurfaceProgress active={loading && initialLoadDone} ariaLabel="Loading vendor settings" />
 
       <LivePageHeader

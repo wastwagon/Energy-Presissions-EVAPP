@@ -605,7 +605,11 @@ export function DevicesPage() {
                       },
                       variant: 'secondary',
                     }
-                  : undefined
+                  : {
+                      label: 'Open operations',
+                      onClick: () => navigate(opsBase),
+                      variant: 'secondary',
+                    }
               }
             />
           ) : (

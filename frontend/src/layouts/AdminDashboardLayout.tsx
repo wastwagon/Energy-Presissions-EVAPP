@@ -16,6 +16,7 @@ import {
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { AdminMenu } from '../components/menus/AdminMenu';
 import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
@@ -206,6 +207,16 @@ function AdminDashboardChrome() {
               >
                 <AccountCircleIcon sx={{ mr: 1.5, fontSize: 20 }} />
                 <Typography>Dashboard</Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate(ADMIN_ROUTES.vendorSettings);
+                }}
+                sx={premiumMenuItemSx}
+              >
+                <SettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography>Vendor settings</Typography>
               </MuiMenuItem>
               <MuiMenuItem onClick={handleLogout} sx={premiumMenuItemSx}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />

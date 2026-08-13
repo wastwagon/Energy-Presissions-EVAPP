@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -25,6 +26,7 @@ import { RevenueTrendChart } from './RevenueTrendChart';
 import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { compareRevenueTrend } from '../../utils/revenueTrendCompare';
+import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 
 function downloadRevenueCsv(
   rows: { label: string; count: number; amount: number }[],
@@ -57,6 +59,8 @@ export function RevenueReportPanel({
   onPeriodChange,
   hidePeriodControls = false,
 }: RevenueReportPanelProps) {
+  const navigate = useNavigate();
+  const opsBase = useOpsBasePath();
   const theme = useTheme();
   const useGrouped = useMediaQuery(theme.breakpoints.down('md'));
   const [localDays, setLocalDays] = useState<StaffPeriodDays>(30);
@@ -251,6 +255,11 @@ export function RevenueReportPanel({
               points={trendPoints}
               loading={trendLoading}
               error={trendError}
+              onDaySelect={(date) => navigate(`${opsBase}/sessions?date=${encodeURIComponent(date)}`)}
+              emptyAction={{
+                label: 'Open sessions',
+                onClick: () => navigate(`${opsBase}/sessions`),
+              }}
             />
           </Box>
 

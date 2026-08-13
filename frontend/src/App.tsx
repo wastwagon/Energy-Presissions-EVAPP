@@ -109,6 +109,9 @@ const UserManagementPage = lazy(() =>
 const VendorSettingsPage = lazy(() =>
   import('./pages/vendor/VendorSettingsPage').then((m) => ({ default: m.VendorSettingsPage })),
 );
+const VendorDashboardPage = lazy(() =>
+  import('./pages/vendor/VendorDashboardPage').then((m) => ({ default: m.VendorDashboardPage })),
+);
 const AdminOperationsDashboard = lazy(() =>
   import('./pages/admin/AdminOperationsDashboard').then((m) => ({ default: m.AdminOperationsDashboard })),
 );
@@ -432,7 +435,7 @@ function App() {
               <Route path="users" element={<UserManagementPage />} />
             </Route>
 
-            {/* Vendor routes - Admin layout (for Admin users) */}
+            {/* Vendor portal — home + settings (Admin layout) */}
             <Route
               path="/vendor"
               element={
@@ -443,7 +446,8 @@ function App() {
                 </RouteSuspense>
               }
             >
-              <Route index element={<VendorSettingsPage />} />
+              <Route index element={<VendorDashboardPage />} />
+              <Route path="settings" element={<VendorSettingsPage />} />
             </Route>
 
             {/* SuperAdmin routes - SuperAdmin layout - SuperAdmin-specific pages only */}
@@ -465,6 +469,7 @@ function App() {
               <Route path="ops/devices" element={<SuperAdminDevicesPage />} />
               <Route path="ops/devices/:id" element={<ChargePointDetailPage />} />
               <Route path="vendor" element={<VendorSettingsPage />} />
+              <Route path="vendor/settings" element={<Navigate to={SUPERADMIN_ROUTES.vendor} replace />} />
               <Route path="settings" element={<SuperAdminSettingsPage />} />
               <Route path="wallets" element={<WalletManagementPage />} />
               <Route path="vendors" element={<VendorManagementPage />} />

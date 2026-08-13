@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Alert,
   Button,
   Tabs,
@@ -12,12 +11,10 @@ import {
 import axios from 'axios';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
-  dashboardPageTitleSx,
-  dashboardPageSubtitleSx,
   premiumTableSurfaceSx,
 } from '../../theme/jampackShell';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
-import { formatCurrency } from '../../utils/formatters';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
 import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
 import { UsersReportPanel } from '../../components/reports/UsersReportPanel';
@@ -30,7 +27,6 @@ import { getStoredUser } from '../../utils/authSession';
 import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 import { Link as RouterLink } from 'react-router-dom';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
-import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { StaffReportToolbar } from '../../components/dashboard/StaffReportToolbar';
 import type { StaffPeriodDays } from '../../components/dashboard/StaffPeriodChips';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
@@ -130,15 +126,16 @@ export function AdminReportsPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Reports & Analytics"
-        subtitle="View detailed reports and analytics for your operations"
+        title="Reports"
+        subtitle="Export session CSVs and inspect breakdowns. Live metrics live on Dashboard and Analytics."
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.reports}
         refreshing={refreshing}
         refreshDisabled={loading}
         onRefresh={() => void loadStats(false)}
-        titleSx={dashboardPageTitleSx}
-        subtitleSx={dashboardPageSubtitleSx}
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
         refreshSx={(th) => ({
           ...sxObject(th, compactOutlinedCtaSx),
           flex: { xs: '1 1 auto', sm: '0 0 auto' },
@@ -180,46 +177,7 @@ export function AdminReportsPage() {
       )}
 
       {stats && (
-        <>
-          <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label="Total Revenue"
-                value={formatCurrency(stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0)}
-                hint="Completed sessions only — excludes wallet holds"
-                tone="brand"
-              />
-            </Grid>
-            {(stats.overview?.pendingWalletReserved ?? 0) > 0 && (
-              <Grid item xs={12} sm={6} md={3}>
-                <StaffMetricCard
-                  label="Wallet holds (pending)"
-                  value={formatCurrency(stats.overview?.pendingWalletReserved ?? 0)}
-                  tone="warning"
-                />
-              </Grid>
-            )}
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label="Total Sessions"
-                value={stats.overview?.totalTransactions ?? stats.totalSessions ?? 0}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label="Active Sessions"
-                value={stats.overview?.activeSessions ?? stats.activeSessions ?? 0}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StaffMetricCard
-                label="Total Users"
-                value={stats.overview?.totalUsers ?? stats.totalUsers ?? 0}
-              />
-            </Grid>
-          </Grid>
-
-          <Paper sx={premiumTableSurfaceSx}>
+        <Paper sx={premiumTableSurfaceSx}>
             <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile aria-label="Admin report sections">
               <Tab label="Overview" {...tabA11yProps(0)} />
               <Tab label="Revenue" {...tabA11yProps(1)} />
@@ -278,7 +236,6 @@ export function AdminReportsPage() {
               )}
             </Box>
           </Paper>
-        </>
       )}
     </Box>
   );

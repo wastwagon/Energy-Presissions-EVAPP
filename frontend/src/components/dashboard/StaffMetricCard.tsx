@@ -18,6 +18,10 @@ export type StaffMetricCardProps = {
   /** Optional sparkline series (same period). */
   sparklineValues?: number[];
   sparklineLabel?: string;
+  /** Caption after the trend percent. Default: vs earlier in period. */
+  trendCaption?: string;
+  /** `hero` = one oversized metric; supporting tiles stay `default`. */
+  size?: 'default' | 'hero';
   /** When set, card is keyboard-activatable. */
   onClick?: () => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
@@ -45,12 +49,15 @@ export function StaffMetricCard({
   trendPercent,
   sparklineValues,
   sparklineLabel,
+  trendCaption = 'vs earlier in period',
+  size = 'default',
   onClick,
   onKeyDown,
   ariaLabel,
   sx,
 }: StaffMetricCardProps) {
   const interactive = onClick != null;
+  const hero = size === 'hero';
   const trendLabel = formatTrendPercent(trendPercent);
   const trendPositive = trendPercent != null && trendPercent > 0;
   const trendNegative = trendPercent != null && trendPercent < 0;
@@ -60,7 +67,7 @@ export function StaffMetricCard({
       elevation={0}
       sx={[
         premiumPanelCardSx,
-        { p: { xs: 1.75, sm: 2 } },
+        { p: hero ? { xs: 2.25, sm: 2.75 } : { xs: 1.75, sm: 2 }, height: '100%' },
         ...(interactive ? [jampackKpiCardHoverSx, { cursor: 'pointer' }] : []),
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
@@ -73,7 +80,10 @@ export function StaffMetricCard({
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 0.75 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minHeight: 24, minWidth: 0 }}>
           {icon ? (
-            <Box sx={{ display: 'flex', color: 'primary.main', '& .MuiSvgIcon-root': { fontSize: 20 } }} aria-hidden>
+            <Box
+              sx={{ display: 'flex', color: 'primary.main', '& .MuiSvgIcon-root': { fontSize: hero ? 26 : 20 } }}
+              aria-hidden
+            >
               {icon}
             </Box>
           ) : null}
@@ -89,10 +99,11 @@ export function StaffMetricCard({
         variant="h5"
         sx={{
           fontWeight: 700,
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.03em',
           color: valueColor[tone],
-          lineHeight: 1.25,
-          fontSize: { xs: '1.35rem', sm: '1.5rem' },
+          lineHeight: 1.15,
+          fontSize: hero ? { xs: '1.75rem', sm: '2.125rem' } : { xs: '1.35rem', sm: '1.5rem' },
+          fontVariantNumeric: 'tabular-nums',
           wordBreak: 'break-word',
         }}
       >
@@ -110,7 +121,7 @@ export function StaffMetricCard({
         >
           {trendLabel}
           <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 500, ml: 0.5 }}>
-            vs prior half
+            {trendCaption}
           </Typography>
         </Typography>
       ) : null}
