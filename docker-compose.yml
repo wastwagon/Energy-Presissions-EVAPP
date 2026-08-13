@@ -139,7 +139,9 @@ services:
       - "8443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # Mount only the dev vhost — conf.d also contains default-prod.conf, and nginx
+      # include *.conf would load both and fail with duplicate upstream "csms-api".
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - csms-api
       - frontend
