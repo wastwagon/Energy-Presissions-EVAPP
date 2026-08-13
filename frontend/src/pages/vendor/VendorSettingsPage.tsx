@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -7,10 +7,11 @@ import {
   Button,
   Alert,
   Paper,
+  Link,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { vendorApi } from '../../services/vendorApi';
+import { vendorApi, type Vendor } from '../../services/vendorApi';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { iosGroupedPaperSx, iosGroupedSectionHeaderSx } from '../../theme/iosGroupedList';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
@@ -24,18 +25,72 @@ import {
   getDashboardPathForAccountType,
   getStoredUser,
   hasValidSession,
+  type SessionUser,
 } from '../../utils/authSession';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { GroupedExpandableRow } from '../../components/ios/GroupedExpandableRow';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { useStaffNavBack } from '../../hooks/useStaffNavBack';
-import { ADMIN_ROUTES } from '../../config/staffNav.paths';
+import { ADMIN_ROUTES, staffHelpPath } from '../../config/staffNav.paths';
 
-function VendorPortalSettingsBack() {
-  const navigate = useNavigate();
-  const goHome = useCallback(() => navigate(ADMIN_ROUTES.vendorPortal), [navigate]);
-  useStaffNavBack(goHome, 'Back to vendor home');
+type VendorSettingsForm = {
+  name: string;
+  businessName: string;
+  businessRegistrationNumber: string;
+  taxId: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  supportEmail: string;
+  supportPhone: string;
+  websiteUrl: string;
+  receiptHeaderText: string;
+  receiptFooterText: string;
+  logoUrl: string;
+};
+
+const EMPTY_FORM: VendorSettingsForm = {
+  name: '',
+  businessName: '',
+  businessRegistrationNumber: '',
+  taxId: '',
+  contactEmail: '',
+  contactPhone: '',
+  address: '',
+  supportEmail: '',
+  supportPhone: '',
+  websiteUrl: '',
+  receiptHeaderText: '',
+  receiptFooterText: '',
+  logoUrl: '',
+};
+
+function formFromVendor(data: Vendor): VendorSettingsForm {
+  return {
+    name: data.name || '',
+    businessName: data.businessName || data.name || '',
+    businessRegistrationNumber: data.businessRegistrationNumber || '',
+    taxId: data.taxId || '',
+    contactEmail: data.contactEmail || '',
+    contactPhone: data.contactPhone || '',
+    address: data.address || '',
+    supportEmail: data.supportEmail || data.contactEmail || '',
+    supportPhone: data.supportPhone || data.contactPhone || '',
+    websiteUrl: data.websiteUrl || '',
+    receiptHeaderText: data.receiptHeaderText || 'Thank you for charging with us!',
+    receiptFooterText: data.receiptFooterText || 'For support, please contact us.',
+    logoUrl: data.logoUrl || '',
+  };
+}
+
+function confirmDiscardUnsaved(): boolean {
+  return window.confirm('Discard unsaved vendor settings?');
+}
+
+function VendorPortalSettingsBack({ onBack }: { onBack: () => void }) {
+  useStaffNavBack(onBack, 'Back to vendor home');
   return null;
 }
 
@@ -69,10 +124,21 @@ export function VendorSettingsPage() {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [, setVendor] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [formData, setFormData] = useState<VendorSettingsForm>(EMPTY_FORM);
+  const [savedForm, setSavedForm] = useState<VendorSettingsForm>(EMPTY_FORM);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(formData) !== JSON.stringify(savedForm),
+    [formData, savedForm],
+  );
+
+  const goHome = useCallback(() => {
+    if (isDirty && !confirmDiscardUnsaved()) return;
+    navigate(ADMIN_ROUTES.vendorPortal);
+  }, [isDirty, navigate]);
 
   useEffect(() => {
     if (!hasValidSession()) {
@@ -91,7 +157,7 @@ export function VendorSettingsPage() {
     }
   }, [navigate]);
 
-  const getCurrentVendorId = (): number | null => {
+  const getCurrentVendorId = useCallback((): number | null => {
     const stored = localStorage.getItem('currentVendorId');
     if (stored) {
       const n = Number.parseInt(stored, 10);
@@ -101,65 +167,56 @@ export function VendorSettingsPage() {
       return user.vendorId;
     }
     return null;
-  };
+  }, [user]);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    businessName: '',
-    businessRegistrationNumber: '',
-    taxId: '',
-    contactEmail: '',
-    contactPhone: '',
-    address: '',
-    supportEmail: '',
-    supportPhone: '',
-    websiteUrl: '',
-    receiptHeaderText: '',
-    receiptFooterText: '',
-    logoUrl: '',
-  });
-
-  const loadVendor = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const vendorId = getCurrentVendorId();
-      if (vendorId == null) {
-        setError('No vendor is selected for this account. Contact support if this persists.');
-        return;
+  const loadVendor = useCallback(
+    async (opts?: { force?: boolean }) => {
+      if (!opts?.force && isDirty) {
+        if (!confirmDiscardUnsaved()) return;
       }
-      const data = await vendorApi.getById(vendorId);
-      setVendor(data);
-      setFormData({
-        name: data.name || '',
-        businessName: data.businessName || data.name || '',
-        businessRegistrationNumber: data.businessRegistrationNumber || '',
-        taxId: data.taxId || '',
-        contactEmail: data.contactEmail || '',
-        contactPhone: data.contactPhone || '',
-        address: data.address || '',
-        supportEmail: data.supportEmail || data.contactEmail || '',
-        supportPhone: data.supportPhone || data.contactPhone || '',
-        websiteUrl: data.websiteUrl || '',
-        receiptHeaderText: data.receiptHeaderText || 'Thank you for charging with us!',
-        receiptFooterText: data.receiptFooterText || 'For support, please contact us.',
-        logoUrl: data.logoUrl || '',
-      });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load vendor information');
-    } finally {
-      setLoading(false);
-      setInitialLoadDone(true);
-    }
-  };
+      try {
+        setLoading(true);
+        setError(null);
+        const vendorId = getCurrentVendorId();
+        if (vendorId == null) {
+          setError('No vendor is selected for this account. Contact support if this persists.');
+          return;
+        }
+        const data = await vendorApi.getById(vendorId);
+        const next = formFromVendor(data);
+        setFormData(next);
+        setSavedForm(next);
+        setLastSavedAt(new Date(data.updatedAt).getTime());
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to load vendor information';
+        setError(message);
+      } finally {
+        setLoading(false);
+        setInitialLoadDone(true);
+      }
+    },
+    [getCurrentVendorId, isDirty],
+  );
 
   useEffect(() => {
     if (user) {
-      void loadVendor();
+      void loadVendor({ force: true });
     }
+    // Load once the session user is known; later refreshes go through pull-to-refresh / Save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  useStaffPullRefresh(useCallback(() => void loadVendor(), [user]));
+  useStaffPullRefresh(useCallback(() => void loadVendor(), [loadVendor]));
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
   const handleSave = async () => {
     try {
@@ -170,12 +227,21 @@ export function VendorSettingsPage() {
         setError('No vendor is selected for this account.');
         return;
       }
-      await vendorApi.update(vendorId, formData);
-      setSuccess('Vendor settings saved successfully');
-      setTimeout(() => setSuccess(null), 3000);
-      void loadVendor();
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to save settings');
+      const updated = await vendorApi.update(vendorId, formData);
+      const next = updated ? formFromVendor(updated) : formData;
+      setFormData(next);
+      setSavedForm(next);
+      setLastSavedAt(Date.now());
+    } catch (err: unknown) {
+      const responseMessage =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
+          'string'
+          ? (err as { response: { data: { message: string } } }).response.data.message
+          : null;
+      setError(responseMessage || (err instanceof Error ? err.message : 'Failed to save settings'));
     } finally {
       setSaving(false);
     }
@@ -194,34 +260,48 @@ export function VendorSettingsPage() {
       setLogoUploading(true);
       setError(null);
       const updated = await vendorApi.uploadLogo(vendorId, file);
-      setFormData((prev) => ({ ...prev, logoUrl: updated.logoUrl || '' }));
-      setVendor(updated);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Logo upload failed');
+      const logoUrl = updated.logoUrl || '';
+      setFormData((prev) => ({ ...prev, logoUrl }));
+      setSavedForm((prev) => ({ ...prev, logoUrl }));
+    } catch (err: unknown) {
+      const responseMessage =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
+          'string'
+          ? (err as { response: { data: { message: string } } }).response.data.message
+          : null;
+      setError(responseMessage || (err instanceof Error ? err.message : 'Logo upload failed'));
     } finally {
       setLogoUploading(false);
       event.target.value = '';
     }
   };
 
+  const lastSavedLabel = 'Business identity, branding, and receipt copy for your chargers.';
+  const subtitle = isDirty ? 'Unsaved changes' : lastSavedLabel;
+
   if (loading && !initialLoadDone) {
     return (
       <>
-        {isVendorPortal ? <VendorPortalSettingsBack /> : null}
+        {isVendorPortal ? <VendorPortalSettingsBack onBack={goHome} /> : null}
         <DashboardStaffChromeSkeleton preset="vendorSettings" />
       </>
     );
   }
 
+  const receiptName = formData.businessName || formData.name || 'Your business';
+
   return (
     <Box sx={{ position: 'relative', minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-      {isVendorPortal ? <VendorPortalSettingsBack /> : null}
+      {isVendorPortal ? <VendorPortalSettingsBack onBack={goHome} /> : null}
       <TableSurfaceProgress active={loading && initialLoadDone} ariaLabel="Loading vendor settings" />
 
       <LivePageHeader
         title="Vendor settings"
-        subtitle="Business identity, branding, and receipt copy for your chargers."
-        updatedAt={null}
+        subtitle={subtitle}
+        updatedAt={lastSavedAt}
         refreshing={saving}
         refreshDisabled={loading}
         onRefresh={() => void loadVendor()}
@@ -240,7 +320,7 @@ export function VendorSettingsPage() {
             disableElevation
             startIcon={<SaveIcon />}
             onClick={() => void handleSave()}
-            disabled={saving || loading}
+            disabled={saving || loading || !isDirty}
             sx={(th) => ({
               ...sxObject(th, compactContainedCtaSx),
               width: { xs: '100%', sm: 'auto' },
@@ -251,15 +331,23 @@ export function VendorSettingsPage() {
         }
       />
 
+      {isDirty ? (
+        <Alert
+          severity="warning"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => void handleSave()} disabled={saving}>
+              Save
+            </Button>
+          }
+        >
+          You have unsaved changes.
+        </Alert>
+      ) : null}
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-          {success}
         </Alert>
       )}
 
@@ -378,14 +466,18 @@ export function VendorSettingsPage() {
             sx={{ mt: 1, maxWidth: 200, maxHeight: 100, objectFit: 'contain', borderRadius: 1 }}
           />
         ) : null}
-        <TextField
-          fullWidth
-          label="Logo URL"
-          value={formData.logoUrl}
-          onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-          helperText="Upload to object storage or paste an external image URL"
-          sx={(th) => sxObject(th, authFormFieldSx)}
-        />
+        <Box sx={{ mx: { xs: -2, sm: -2.25 }, mt: 1 }}>
+          <GroupedExpandableRow primary="Advanced — logo URL">
+            <TextField
+              fullWidth
+              label="Logo URL"
+              value={formData.logoUrl}
+              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+              helperText="Paste an external image URL if you are not uploading a file"
+              sx={(th) => sxObject(th, authFormFieldSx)}
+            />
+          </GroupedExpandableRow>
+        </Box>
       </VendorSettingsSection>
 
       <VendorSettingsSection title="Receipts">
@@ -410,6 +502,55 @@ export function VendorSettingsPage() {
         />
       </VendorSettingsSection>
 
+      <Box component="section" sx={{ mb: 2.5 }}>
+        <Typography component="h2" variant="caption" sx={iosGroupedSectionHeaderSx}>
+          Receipt preview
+        </Typography>
+        <Paper
+          elevation={0}
+          sx={{
+            ...iosGroupedPaperSx,
+            p: { xs: 2, sm: 2.5 },
+            maxWidth: 420,
+          }}
+        >
+          {formData.logoUrl ? (
+            <Box
+              component="img"
+              src={formData.logoUrl}
+              alt=""
+              sx={{ mb: 1.5, maxWidth: 140, maxHeight: 56, objectFit: 'contain' }}
+            />
+          ) : null}
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+            {receiptName}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            {formData.receiptHeaderText || 'Thank you for charging with us!'}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', fontVariantNumeric: 'tabular-nums' }}>
+            <Typography variant="body2">Energy</Typography>
+            <Typography variant="body2">12.4 kWh</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', fontVariantNumeric: 'tabular-nums', mb: 1.5 }}>
+            <Typography variant="body2" fontWeight={600}>
+              Total
+            </Typography>
+            <Typography variant="body2" fontWeight={600}>
+              GH₵ 18.60
+            </Typography>
+          </Box>
+          <Typography variant="caption" color="text.secondary" display="block">
+            {formData.receiptFooterText || 'For support, please contact us.'}
+          </Typography>
+          {formData.supportEmail || formData.supportPhone ? (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              {[formData.supportEmail, formData.supportPhone].filter(Boolean).join(' · ')}
+            </Typography>
+          ) : null}
+        </Paper>
+      </Box>
+
       <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.25 }, display: { xs: 'block', sm: 'none' } }}>
         <Button
           variant="contained"
@@ -417,12 +558,25 @@ export function VendorSettingsPage() {
           fullWidth
           startIcon={<SaveIcon />}
           onClick={() => void handleSave()}
-          disabled={saving || loading}
+          disabled={saving || loading || !isDirty}
           sx={(th) => sxObject(th, compactContainedCtaSx)}
         >
           {saving ? 'Saving…' : 'Save changes'}
         </Button>
       </Paper>
+
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, mb: 2 }}>
+        Need a walkthrough?{' '}
+        <Link
+          component="button"
+          type="button"
+          variant="caption"
+          onClick={() => navigate(staffHelpPath(location.pathname))}
+          sx={{ verticalAlign: 'baseline' }}
+        >
+          Operator guide
+        </Link>
+      </Typography>
     </Box>
   );
 }

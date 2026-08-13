@@ -15,6 +15,7 @@ export const ADMIN_ROUTES = {
   tariffs: '/admin/tariffs',
   payments: '/admin/payments',
   billing: '/admin/billing',
+  help: '/admin/help',
 } as const;
 
 export const SUPERADMIN_ROUTES = {
@@ -41,7 +42,14 @@ export const SUPERADMIN_ROUTES = {
   diagnostics: '/superadmin/diagnostics',
   smartCharging: '/superadmin/smart-charging',
   localAuth: '/superadmin/local-auth',
+  help: '/superadmin/help',
 } as const;
+
+export function staffHelpPath(pathname: string): string {
+  if (pathname.startsWith('/superadmin')) return SUPERADMIN_ROUTES.help;
+  if (pathname.startsWith('/vendor')) return '/vendor/help';
+  return ADMIN_ROUTES.help;
+}
 
 /** When URL is not under /admin or /superadmin (e.g. legacy /ops). */
 export const LEGACY_OPS_BASE = '/ops';

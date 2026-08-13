@@ -35,6 +35,7 @@ import CableIcon from '@mui/icons-material/Cable';
 import SpeedIcon from '@mui/icons-material/Speed';
 import HomeIcon from '@mui/icons-material/Home';
 import LoginIcon from '@mui/icons-material/Login';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { CUSTOMER_BOTTOM_NAV_PREFIXES, CUSTOMER_ROUTES } from './customerNav.paths';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './staffNav.paths';
 
@@ -82,6 +83,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Dashboard',
         icon: <DashboardIcon />,
         path: SUPERADMIN_ROUTES.dashboard,
+        shortcut: 'G D',
         roles: ['SuperAdmin'],
       },
       {
@@ -89,6 +91,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'System Analytics',
         icon: <TrendingUpIcon />,
         path: SUPERADMIN_ROUTES.analytics,
+        shortcut: 'G A',
         activeOnlyWithoutSearch: true,
         roles: ['SuperAdmin'],
       },
@@ -97,6 +100,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Operations Dashboard',
         icon: <SpeedIcon />,
         path: SUPERADMIN_ROUTES.ops,
+        shortcut: 'G O',
         roles: ['SuperAdmin'],
       },
       {
@@ -104,6 +108,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Charging Sessions',
         icon: <HistoryIcon />,
         path: SUPERADMIN_ROUTES.opsSessions,
+        shortcut: 'G S',
         roles: ['SuperAdmin'],
       },
       {
@@ -111,6 +116,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Device Management',
         icon: <EvStationIcon />,
         path: SUPERADMIN_ROUTES.opsDevices,
+        shortcut: 'G E',
         roles: ['SuperAdmin'],
       },
       {
@@ -118,6 +124,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Connection Logs',
         icon: <StorageIcon />,
         path: SUPERADMIN_ROUTES.connectionLogs,
+        shortcut: 'G L',
         roles: ['SuperAdmin'],
       },
     ],
@@ -134,6 +141,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'All Vendors',
         icon: <BusinessIcon />,
         path: SUPERADMIN_ROUTES.vendors,
+        shortcut: 'G V',
         roles: ['SuperAdmin'],
       },
       {
@@ -141,6 +149,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Vendor Settings',
         icon: <SettingsIcon />,
         path: SUPERADMIN_ROUTES.vendor,
+        shortcut: 'G N',
         roles: ['SuperAdmin'],
       },
     ],
@@ -157,6 +166,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Wallet Management',
         icon: <AccountBalanceWalletIcon />,
         path: SUPERADMIN_ROUTES.wallets,
+        shortcut: 'G W',
         roles: ['SuperAdmin'],
       },
       {
@@ -164,6 +174,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Payment Processing',
         icon: <PaymentIcon />,
         path: SUPERADMIN_ROUTES.payments,
+        shortcut: 'G P',
         roles: ['SuperAdmin'],
       },
       {
@@ -171,6 +182,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Revenue Reports',
         icon: <AssessmentIcon />,
         path: SUPERADMIN_ROUTES.reports,
+        shortcut: 'G R',
         roles: ['SuperAdmin'],
       },
       {
@@ -178,6 +190,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Billing & Invoices',
         icon: <ReceiptIcon />,
         path: SUPERADMIN_ROUTES.billing,
+        shortcut: 'G B',
         roles: ['SuperAdmin'],
       },
     ],
@@ -194,6 +207,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'System Settings',
         icon: <SettingsIcon />,
         path: SUPERADMIN_ROUTES.settings,
+        shortcut: 'G I',
         roles: ['SuperAdmin'],
       },
       {
@@ -201,6 +215,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'User Management',
         icon: <PeopleIcon />,
         path: SUPERADMIN_ROUTES.users,
+        shortcut: 'G U',
         roles: ['SuperAdmin'],
       },
       {
@@ -208,6 +223,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Security & Logs',
         icon: <SecurityIcon />,
         path: SUPERADMIN_ROUTES.security,
+        shortcut: 'G X',
         roles: ['SuperAdmin'],
       },
       {
@@ -215,6 +231,15 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'System Health',
         icon: <MemoryIcon />,
         path: SUPERADMIN_ROUTES.health,
+        shortcut: 'G Y',
+        roles: ['SuperAdmin'],
+      },
+      {
+        id: 'operator-guide',
+        text: 'Operator guide',
+        icon: <HelpOutlineIcon />,
+        path: SUPERADMIN_ROUTES.help,
+        shortcut: 'G H',
         roles: ['SuperAdmin'],
       },
     ],
@@ -231,6 +256,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Tariffs & Pricing',
         icon: <AttachMoneyIcon />,
         path: SUPERADMIN_ROUTES.tariffs,
+        shortcut: 'G T',
         roles: ['SuperAdmin'],
       },
       {
@@ -238,6 +264,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Reservations',
         icon: <ScheduleIcon />,
         path: SUPERADMIN_ROUTES.reservations,
+        shortcut: 'G M',
         roles: ['SuperAdmin'],
       },
       {
@@ -245,6 +272,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Firmware Management',
         icon: <CloudUploadIcon />,
         path: SUPERADMIN_ROUTES.firmware,
+        shortcut: 'G F',
         roles: ['SuperAdmin'],
       },
       {
@@ -252,6 +280,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Diagnostics',
         icon: <BugReportIcon />,
         path: SUPERADMIN_ROUTES.diagnostics,
+        shortcut: 'G J',
         roles: ['SuperAdmin'],
       },
       {
@@ -259,6 +288,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Smart Charging',
         icon: <SpeedIcon />,
         path: SUPERADMIN_ROUTES.smartCharging,
+        shortcut: 'G C',
         roles: ['SuperAdmin'],
       },
       {
@@ -266,6 +296,7 @@ export const superAdminMenuConfig: MenuSection[] = [
         text: 'Local Auth List',
         icon: <VpnKeyIcon />,
         path: SUPERADMIN_ROUTES.localAuth,
+        shortcut: 'G 1',
         roles: ['SuperAdmin'],
       },
     ],
@@ -285,10 +316,11 @@ export const adminMenuConfig: MenuSection[] = [
     defaultExpanded: true,
     items: [
       {
-        id: 'my-dashboard',
+        id: 'dashboard',
         text: 'Dashboard',
         icon: <DashboardIcon />,
         path: ADMIN_ROUTES.dashboard,
+        shortcut: 'G D',
         roles: ['Admin'],
       },
       {
@@ -296,6 +328,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Analytics',
         icon: <TrendingUpIcon />,
         path: ADMIN_ROUTES.analytics,
+        shortcut: 'G A',
         roles: ['Admin'],
       },
       {
@@ -303,6 +336,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Operations Dashboard',
         icon: <SpeedIcon />,
         path: ADMIN_ROUTES.ops,
+        shortcut: 'G O',
         roles: ['Admin'],
       },
       {
@@ -310,6 +344,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Charging Sessions',
         icon: <HistoryIcon />,
         path: ADMIN_ROUTES.opsSessions,
+        shortcut: 'G S',
         roles: ['Admin'],
       },
       {
@@ -317,6 +352,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Device Management',
         icon: <EvStationIcon />,
         path: ADMIN_ROUTES.opsDevices,
+        shortcut: 'G E',
         roles: ['Admin'],
       },
     ],
@@ -329,17 +365,11 @@ export const adminMenuConfig: MenuSection[] = [
     defaultExpanded: false,
     items: [
       {
-        id: 'vendor-home',
-        text: 'Vendor home',
-        icon: <BusinessIcon />,
-        path: ADMIN_ROUTES.vendorPortal,
-        roles: ['Admin'],
-      },
-      {
         id: 'vendor-settings',
         text: 'Vendor settings',
         icon: <SettingsIcon />,
         path: ADMIN_ROUTES.vendorSettings,
+        shortcut: 'G V',
         roles: ['Admin'],
       },
       {
@@ -347,6 +377,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Tariffs & Pricing',
         icon: <AttachMoneyIcon />,
         path: ADMIN_ROUTES.tariffs,
+        shortcut: 'G T',
         roles: ['Admin'],
       },
     ],
@@ -363,6 +394,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Wallet Management',
         icon: <AccountBalanceWalletIcon />,
         path: ADMIN_ROUTES.wallets,
+        shortcut: 'G W',
         roles: ['Admin'],
       },
       {
@@ -370,6 +402,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Payment History',
         icon: <PaymentIcon />,
         path: ADMIN_ROUTES.payments,
+        shortcut: 'G P',
         roles: ['Admin'],
       },
       {
@@ -377,6 +410,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Revenue Reports',
         icon: <AssessmentIcon />,
         path: ADMIN_ROUTES.reports,
+        shortcut: 'G R',
         roles: ['Admin'],
       },
       {
@@ -384,6 +418,7 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'Billing & Invoices',
         icon: <ReceiptIcon />,
         path: ADMIN_ROUTES.billing,
+        shortcut: 'G B',
         roles: ['Admin'],
       },
       {
@@ -391,6 +426,15 @@ export const adminMenuConfig: MenuSection[] = [
         text: 'User Management',
         icon: <PeopleIcon />,
         path: ADMIN_ROUTES.users,
+        shortcut: 'G U',
+        roles: ['Admin'],
+      },
+      {
+        id: 'operator-guide',
+        text: 'Operator guide',
+        icon: <HelpOutlineIcon />,
+        path: ADMIN_ROUTES.help,
+        shortcut: 'G H',
         roles: ['Admin'],
       },
     ],

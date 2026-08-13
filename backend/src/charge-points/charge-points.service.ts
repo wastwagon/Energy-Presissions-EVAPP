@@ -241,6 +241,12 @@ export class ChargePointsService {
         this.logger,
       );
     }
+    if (data.vendorId != null && data.vendorName === undefined) {
+      const v = await this.vendorRepository.findOne({ where: { id: data.vendorId } });
+      if (v) {
+        data = { ...data, vendorName: v.name };
+      }
+    }
     const chargePoint = this.chargePointRepository.create(data);
     return this.chargePointRepository.save(chargePoint);
   }

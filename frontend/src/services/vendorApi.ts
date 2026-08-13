@@ -23,6 +23,9 @@ export interface Vendor {
   metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  stationCount?: number;
+  lastSessionAt?: string | null;
+  gmv?: number;
 }
 
 export interface VendorStatusInfo {

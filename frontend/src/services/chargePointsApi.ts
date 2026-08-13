@@ -82,6 +82,17 @@ export const chargePointsApi = {
     await api.delete(`/charge-points/${encodeURIComponent(id)}`);
   },
 
+  create: async (data: {
+    chargePointId: string;
+    vendorId?: number;
+    model?: string;
+    serialNumber?: string;
+    locationAddress?: string;
+  }): Promise<ChargePoint> => {
+    const response = await api.post('/charge-points', data);
+    return response.data;
+  },
+
   clearStaleOperationalState: async (
     id: string,
   ): Promise<{ clearedConnectors: number; chargePointStatus: string }> => {

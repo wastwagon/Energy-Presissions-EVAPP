@@ -30,9 +30,9 @@ Admin (`/admin`), vendor portal (`/vendor`), and Super Admin (`/superadmin`) sha
 
 **Keep separate (not duplicates):**
 
-- **My Dashboard** vs **Operations Dashboard** — summary metrics vs live ops KPIs.
+- **Dashboard** vs **Operations Dashboard** — summary metrics vs live ops KPIs. Admin drawer Dashboard is `/admin/dashboard`; `/vendor` is the portal entry (bottom nav Home), not a second drawer item.
 - **Device Management** (list) vs **Connection Logs** (global log stream) vs per-device logs dialog — different scopes.
-- **Admin** `/vendor` home vs `/vendor/settings` vs **Super Admin** `/superadmin/vendor` — same settings page, different entry.
+- **Admin** `/vendor` home vs `/vendor/settings` vs **Super Admin** `/superadmin/vendor` — portal home + settings vs network-side vendor profile.
 - **Analytics** (admin vendor scope) vs **System Analytics** (super admin).
 
 **Do not add:**

@@ -55,6 +55,9 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+import { StaffBulkBar, StaffSelectCheckbox } from '../../components/dashboard/StaffBulkBar';
+import { useStaffSelection } from '../../hooks/useStaffSelection';
+import { downloadCsv } from '../../utils/reportExport';
 
 type UserStatusTab = 'all' | 'Active' | 'Inactive' | 'Suspended';
 type UserRoleTab = 'all' | 'Customer' | 'Admin' | 'SuperAdmin';
@@ -74,6 +77,9 @@ export function UserManagementPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState('Inactive');
+  const [bulkProgress, setBulkProgress] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<string>('');
   
@@ -123,6 +129,13 @@ export function UserManagementPage() {
       );
     });
   }, [users, searchTerm, statusTab, roleTab]);
+
+  const visibleUserIds = useMemo(() => filteredUsers.map((user) => user.id), [filteredUsers]);
+  const selection = useStaffSelection(visibleUserIds);
+  const selectedUsers = useMemo(
+    () => filteredUsers.filter((user) => selection.isSelected(user.id)),
+    [filteredUsers, selection],
+  );
 
   const loadUsers = async (silent?: boolean) => {
     try {
@@ -248,6 +261,53 @@ export function UserManagementPage() {
     }
   };
 
+  const exportSelectedUsers = () => {
+    downloadCsv(
+      `users-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['ID', 'Email', 'First name', 'Last name', 'Phone', 'Role', 'Status', 'Balance', 'Created'],
+      selectedUsers.map((user) => [
+        user.id,
+        user.email,
+        user.firstName || '',
+        user.lastName || '',
+        user.phone || '',
+        user.accountType,
+        user.status,
+        user.balance != null ? Number(user.balance) : 0,
+        user.createdAt,
+      ]),
+    );
+  };
+
+  const applyBulkStatus = async () => {
+    const targets = selectedUsers.filter((user) => user.accountType !== 'SuperAdmin');
+    const skipped = selectedUsers.length - targets.length;
+    if (targets.length === 0) {
+      setError('Super Admin accounts cannot be changed in bulk.');
+      return;
+    }
+    try {
+      setError(null);
+      for (let i = 0; i < targets.length; i += 1) {
+        setBulkProgress(`Updating ${i + 1} of ${targets.length}…`);
+        await usersApi.update(targets[i].id, { status: bulkStatus });
+      }
+      setSuccess(
+        skipped
+          ? `Updated ${targets.length} user(s) to ${bulkStatus}. Skipped ${skipped} Super Admin.`
+          : `Updated ${targets.length} user(s) to ${bulkStatus}.`,
+      );
+      selection.clear();
+      setBulkStatusOpen(false);
+      await loadUsers(true);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to update user status');
+    } finally {
+      setBulkProgress(null);
+    }
+  };
+
   const getAccountTypeColor = (type: string) => {
     switch (type) {
       case 'SuperAdmin':
@@ -363,11 +423,39 @@ export function UserManagementPage() {
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && users.length > 0} ariaLabel="Loading users" />
-        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            py: { xs: 1.25, sm: 1.5 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            minHeight: 52,
+          }}
+        >
+          {filteredUsers.length > 0 && useGroupedList ? (
+            <StaffSelectCheckbox
+              checked={selection.allSelected}
+              indeterminate={selection.someSelected}
+              onChange={() => selection.toggleAll()}
+              label="Select all users"
+            />
+          ) : null}
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
             Users ({filteredUsers.length})
           </Typography>
         </Box>
+        <StaffBulkBar
+          count={selection.selectedCount}
+          progress={bulkProgress}
+          onClear={selection.clear}
+          actions={[
+            { label: 'Export', onClick: exportSelectedUsers },
+            { label: 'Set status', onClick: () => setBulkStatusOpen(true), variant: 'primary' },
+          ]}
+        />
         {filteredUsers.length === 0 ? (
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
@@ -403,11 +491,18 @@ export function UserManagementPage() {
                 <GroupedListRow
                   key={user.id}
                   divider={index < filteredUsers.length - 1}
+                  leading={
+                    <StaffSelectCheckbox
+                      checked={selection.isSelected(user.id)}
+                      onChange={() => selection.toggle(user.id)}
+                      label={`Select ${user.email}`}
+                    />
+                  }
                   primary={`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email}
                   secondary={user.email}
                   end={
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                         {formatCurrency(user.balance != null ? Number(user.balance) : 0, 'GHS')}
                       </Typography>
                       <AppBadge
@@ -434,6 +529,14 @@ export function UserManagementPage() {
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
+                <TableCell padding="checkbox">
+                  <StaffSelectCheckbox
+                    checked={selection.allSelected}
+                    indeterminate={selection.someSelected}
+                    onChange={() => selection.toggleAll()}
+                    label="Select all users"
+                  />
+                </TableCell>
                 <TableCell>User</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Account</TableCell>
@@ -444,6 +547,13 @@ export function UserManagementPage() {
             <TableBody>
               {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell padding="checkbox">
+                      <StaffSelectCheckbox
+                        checked={selection.isSelected(user.id)}
+                        onChange={() => selection.toggle(user.id)}
+                        label={`Select ${user.email}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.email}
@@ -522,6 +632,53 @@ export function UserManagementPage() {
         </TableContainer>
         )}
       </Paper>
+
+      {/* Bulk status */}
+      <Dialog
+        open={bulkStatusOpen}
+        onClose={() => !bulkProgress && setBulkStatusOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Set status</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Apply to {selection.selectedCount} selected user
+            {selection.selectedCount === 1 ? '' : 's'}. Super Admin accounts are skipped.
+          </Typography>
+          <TextField
+            select
+            label="Status"
+            fullWidth
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value)}
+            sx={(th) => sxObject(th, authFormFieldSx)}
+          >
+            <MenuItem value="Active">Active</MenuItem>
+            <MenuItem value="Inactive">Inactive</MenuItem>
+            <MenuItem value="Suspended">Suspended</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={() => setBulkStatusOpen(false)}
+            disabled={Boolean(bulkProgress)}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void applyBulkStatus()}
+            variant="contained"
+            disableElevation
+            disabled={Boolean(bulkProgress) || selection.selectedCount === 0}
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            {bulkProgress || 'Apply'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Create User Dialog */}
       <Dialog

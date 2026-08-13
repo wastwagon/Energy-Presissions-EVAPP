@@ -25,7 +25,7 @@ import { StaffDashboardRecentSessions } from './StaffDashboardRecentSessions';
 import { DashboardStaffHomeSkeleton } from './DashboardStaffHomeSkeleton';
 import { RevenueTrendChart } from '../reports/RevenueTrendChart';
 import { dashboardApi, type RevenueTrendPoint } from '../../services/dashboardApi';
-import { compareRevenueTrend } from '../../utils/revenueTrendCompare';
+import { StaffFirstRunChecklist } from './StaffFirstRunChecklist';
 
 type StaffDashboardVariant = 'admin' | 'superadmin' | 'vendor';
 
@@ -173,6 +173,10 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
+      ) : null}
+
+      {stats != null && (stats.overview.totalChargePoints || 0) === 0 ? (
+        <StaffFirstRunChecklist variant={variant} />
       ) : null}
 
       {stats != null ? (

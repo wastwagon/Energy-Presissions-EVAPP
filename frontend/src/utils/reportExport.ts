@@ -46,3 +46,22 @@ export function downloadSessionsReportCsv(rows: Transaction[], filename: string)
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export function downloadCsv(
+  filename: string,
+  headers: string[],
+  rows: Array<Array<string | number | null | undefined>>,
+) {
+  const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = [
+    headers.join(','),
+    ...rows.map((row) => row.map((cell) => escape(cell == null ? '' : String(cell))).join(',')),
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

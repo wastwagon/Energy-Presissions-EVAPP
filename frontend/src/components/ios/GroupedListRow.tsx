@@ -15,6 +15,8 @@ interface GroupedListRowProps {
   secondary?: ReactNode;
   onClick?: () => void;
   end?: ReactNode;
+  /** Leading control (e.g. bulk checkbox). Clicks should stopPropagation. */
+  leading?: ReactNode;
   showChevron?: boolean;
   divider?: boolean;
   disabled?: boolean;
@@ -30,6 +32,7 @@ export function GroupedListRow({
   secondary,
   onClick,
   end,
+  leading,
   showChevron = Boolean(onClick),
   divider = false,
   disabled = false,
@@ -57,6 +60,9 @@ export function GroupedListRow({
           cursor: interactive ? 'pointer' : 'default',
         }}
       >
+        {leading ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, mr: 0.5 }}>{leading}</Box>
+        ) : null}
         <ListItemText
           primary={primary}
           secondary={secondary}

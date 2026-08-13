@@ -112,6 +112,9 @@ const VendorSettingsPage = lazy(() =>
 const VendorDashboardPage = lazy(() =>
   import('./pages/vendor/VendorDashboardPage').then((m) => ({ default: m.VendorDashboardPage })),
 );
+const StaffHelpPage = lazy(() =>
+  import('./pages/staff/StaffHelpPage').then((m) => ({ default: m.StaffHelpPage })),
+);
 const AdminOperationsDashboard = lazy(() =>
   import('./pages/admin/AdminOperationsDashboard').then((m) => ({ default: m.AdminOperationsDashboard })),
 );
@@ -433,6 +436,7 @@ function App() {
               <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="billing" element={<AdminBillingPage />} />
               <Route path="users" element={<UserManagementPage />} />
+              <Route path="help" element={<StaffHelpPage variant="admin" />} />
             </Route>
 
             {/* Vendor portal — home + settings (Admin layout) */}
@@ -448,6 +452,7 @@ function App() {
             >
               <Route index element={<VendorDashboardPage />} />
               <Route path="settings" element={<VendorSettingsPage />} />
+              <Route path="help" element={<StaffHelpPage variant="admin" />} />
             </Route>
 
             {/* SuperAdmin routes - SuperAdmin layout - SuperAdmin-specific pages only */}
@@ -487,6 +492,7 @@ function App() {
               <Route path="billing" element={<SuperAdminBillingPage />} />
               <Route path="smart-charging" element={<SuperAdminSmartChargingPage />} />
               <Route path="local-auth" element={<SuperAdminLocalAuthPage />} />
+              <Route path="help" element={<StaffHelpPage variant="superadmin" />} />
             </Route>
 
         {/* Catch all - redirect to home */}

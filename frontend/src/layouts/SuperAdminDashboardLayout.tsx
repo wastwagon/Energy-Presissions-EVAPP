@@ -24,6 +24,8 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import SearchIcon from '@mui/icons-material/Search';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { SuperAdminMenu } from '../components/menus/SuperAdminMenu';
 import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
@@ -55,6 +57,12 @@ import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 import { StaffPageChromeProvider, useStaffPageChrome } from '../contexts/StaffPageChromeContext';
 import { StaffToolbarLeading } from '../components/staff/StaffToolbarLeading';
 import { StaffScrollProviders } from '../components/staff/StaffScrollProviders';
+import {
+  StaffCommandPalette,
+  staffModifierKeyLabel,
+  useStaffCommandPalette,
+  useStaffGoShortcuts,
+} from '../components/staff/StaffCommandPalette';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -75,6 +83,9 @@ function SuperAdminDashboardChrome() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
+  const commandPalette = useStaffCommandPalette();
+  useStaffGoShortcuts('superadmin');
+  const jumpShortcut = `${staffModifierKeyLabel()}K`;
 
   const superAdminMobileNavItems = useMemo((): BottomNavItem[] => {
     return [
@@ -272,6 +283,29 @@ function SuperAdminDashboardChrome() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
+                  commandPalette.setOpen(true);
+                }}
+                sx={premiumMenuItemSx}
+              >
+                <SearchIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography sx={{ flex: 1 }}>Jump to</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {jumpShortcut}
+                </Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate(SUPERADMIN_ROUTES.help);
+                }}
+                sx={premiumMenuItemSx}
+              >
+                <HelpOutlineIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography>Operator guide</Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
                   navigate(SUPERADMIN_ROUTES.dashboard);
                 }}
                 sx={premiumMenuItemSx}
@@ -378,6 +412,11 @@ function SuperAdminDashboardChrome() {
           </Button>
         </DialogActions>
       </Dialog>
+      <StaffCommandPalette
+        open={commandPalette.open}
+        onClose={() => commandPalette.setOpen(false)}
+        variant="superadmin"
+      />
     </Box>
   );
 }

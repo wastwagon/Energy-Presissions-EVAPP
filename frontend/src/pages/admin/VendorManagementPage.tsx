@@ -16,10 +16,12 @@ import {
   DialogContentText,
   DialogActions,
   TextField,
+  Menu,
   MenuItem,
+  ListItemIcon,
+  ListItemText,
   Alert,
   IconButton,
-  Tooltip,
   Grid,
   InputAdornment,
   useTheme,
@@ -34,6 +36,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
@@ -45,6 +48,8 @@ import {
   compactWarningContainedCtaSx,
   premiumDialogPaperSx,
   premiumIconButtonTouchSx,
+  premiumMenuItemSx,
+  premiumMenuPaperSx,
   sxObject,
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
@@ -61,8 +66,23 @@ import { getOpsNavPaths } from '../../config/opsNav.paths';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+import { formatCurrency } from '../../utils/formatters';
 
 type VendorStatusTab = 'all' | VendorStatus;
+
+function vendorSecondaryLine(vendor: Vendor): string {
+  const contact = vendor.contactEmail || vendor.domain || 'No contact email';
+  return `${contact} · ${new Date(vendor.createdAt).toLocaleDateString()}`;
+}
+
+function vendorScoreboardLine(vendor: Vendor): string {
+  const stations = vendor.stationCount ?? 0;
+  const gmv = formatCurrency(vendor.gmv ?? 0, 'GHS');
+  const last = vendor.lastSessionAt
+    ? new Date(vendor.lastSessionAt).toLocaleDateString()
+    : 'No sessions';
+  return `${stations} station${stations === 1 ? '' : 's'} · ${gmv} GMV · ${last}`;
+}
 
 export function VendorManagementPage() {
   const navigate = useNavigate();
@@ -83,6 +103,8 @@ export function VendorManagementPage() {
   const [loginAsDialogOpen, setLoginAsDialogOpen] = useState(false);
   const [pendingDeleteVendor, setPendingDeleteVendor] = useState<Vendor | null>(null);
   const [pendingLoginVendor, setPendingLoginVendor] = useState<Vendor | null>(null);
+  const [menuVendor, setMenuVendor] = useState<Vendor | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [newStatus, setNewStatus] = useState<VendorStatus>('active');
   const [reason, setReason] = useState('');
@@ -352,6 +374,25 @@ export function VendorManagementPage() {
     }
   };
 
+  const closeVendorMenu = () => {
+    setMenuAnchor(null);
+    setMenuVendor(null);
+  };
+
+  const openVendorMenu = (event: React.MouseEvent<HTMLElement>, vendor: Vendor) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+    setMenuVendor(vendor);
+  };
+
+  const openVendor = (vendor: Vendor) => {
+    if (vendor.status === 'active') {
+      handleLoginAsVendor(vendor);
+    } else {
+      void handleEditVendor(vendor);
+    }
+  };
+
   if (loading && vendors.length === 0) {
     return <DashboardStaffChromeSkeleton preset="vendorManagement" />;
   }
@@ -360,7 +401,7 @@ export function VendorManagementPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Vendor Management"
-        subtitle="Manage vendor accounts, status, and impersonation access."
+        subtitle="Open an active vendor to operate as them. Use the row menu for edit, status, and history."
         updatedAt={null}
         refreshing={refreshing}
         onRefresh={() => void loadVendors(true)}
@@ -485,16 +526,32 @@ export function VendorManagementPage() {
                   key={vendor.id}
                   divider={index < filteredVendors.length - 1}
                   primary={vendor.name}
-                  secondary={vendor.contactEmail || vendor.domain || '—'}
+                  secondary={vendorScoreboardLine(vendor)}
                   end={
-                    <AppBadge
-                      label={vendor.status}
-                      tone={chipColorToBadgeTone(getVendorStatusColor(vendor.status))}
-                      sx={{ height: 24 }}
-                    />
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <AppBadge
+                        label={vendor.status}
+                        tone={chipColorToBadgeTone(getVendorStatusColor(vendor.status))}
+                        sx={{ height: 24 }}
+                      />
+                      <IconButton
+                        onClick={(event) => openVendorMenu(event, vendor)}
+                        aria-label={`More actions for ${vendor.name}`}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                      >
+                        <MoreVertIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   }
-                  onClick={() => handleEditVendor(vendor)}
-                  aria-label={`Edit vendor ${vendor.name}`}
+                  onClick={() => openVendor(vendor)}
+                  aria-label={
+                    vendor.status === 'active'
+                      ? `Open vendor ${vendor.name}`
+                      : `Edit vendor ${vendor.name}`
+                  }
                 />
               ))}
             </GroupedListSection>
@@ -505,25 +562,54 @@ export function VendorManagementPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Vendor</TableCell>
+                <TableCell>Stations</TableCell>
+                <TableCell>Last session</TableCell>
+                <TableCell>GMV</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Created</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredVendors.map((vendor) => (
-                  <TableRow key={vendor.id}>
+                  <TableRow
+                    key={vendor.id}
+                    hover
+                    onClick={() => openVendor(vendor)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openVendor(vendor);
+                      }
+                    }}
+                    tabIndex={0}
+                    sx={{ cursor: 'pointer' }}
+                    aria-label={
+                      vendor.status === 'active'
+                        ? `Open vendor ${vendor.name}`
+                        : `Edit vendor ${vendor.name}`
+                    }
+                  >
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         {vendor.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        {vendor.contactEmail || 'No contact email'}
-                        {vendor.domain ? ` · ${vendor.domain}` : ''}
+                        {vendorSecondaryLine(vendor)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         ID {vendor.id}
                       </Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {vendor.stationCount ?? 0}
+                    </TableCell>
+                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {vendor.lastSessionAt
+                        ? new Date(vendor.lastSessionAt).toLocaleDateString()
+                        : '—'}
+                    </TableCell>
+                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                      {formatCurrency(vendor.gmv ?? 0, 'GHS')}
                     </TableCell>
                     <TableCell>
                       <AppBadge
@@ -531,63 +617,14 @@ export function VendorManagementPage() {
                         tone={chipColorToBadgeTone(getVendorStatusColor(vendor.status))}
                       />
                     </TableCell>
-                    <TableCell>
-                      {new Date(vendor.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        <Tooltip title="Login as vendor">
-                          <IconButton
-                            onClick={() => handleLoginAsVendor(vendor)}
-                            color="success"
-                            disabled={vendor.status !== 'active'}
-                            aria-label={`Login as vendor ${vendor.name}`}
-                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                          >
-                            <LoginIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit vendor">
-                          <IconButton
-                            onClick={() => handleEditVendor(vendor)}
-                            color="primary"
-                            aria-label={`Edit vendor ${vendor.name}`}
-                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Change status">
-                          <IconButton
-                            onClick={() => handleStatusChange(vendor)}
-                            color="default"
-                            aria-label={`Change status for vendor ${vendor.name}`}
-                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                          >
-                            <SwapHorizIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="View history">
-                          <IconButton
-                            onClick={() => handleViewHistory(vendor)}
-                            color="default"
-                            aria-label={`View history for vendor ${vendor.name}`}
-                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                          >
-                            <HistoryIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Disable vendor">
-                          <IconButton
-                            onClick={() => handleDeleteVendor(vendor)}
-                            color="error"
-                            aria-label={`Delete vendor ${vendor.name}`}
-                            sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                    <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                      <IconButton
+                        onClick={(event) => openVendorMenu(event, vendor)}
+                        aria-label={`More actions for ${vendor.name}`}
+                        sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
               ))}
@@ -596,6 +633,85 @@ export function VendorManagementPage() {
         </TableContainer>
         )}
       </Paper>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor) && Boolean(menuVendor)}
+        onClose={closeVendorMenu}
+        PaperProps={{
+          elevation: 0,
+          sx: (th) => sxObject(th, premiumMenuPaperSx),
+        }}
+      >
+        {menuVendor ? (
+          <>
+            <MenuItem
+              disabled={menuVendor.status !== 'active'}
+              onClick={() => {
+                handleLoginAsVendor(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={premiumMenuItemSx}
+            >
+              <ListItemIcon>
+                <LoginIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Open as vendor</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                void handleEditVendor(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={premiumMenuItemSx}
+            >
+              <ListItemIcon>
+                <EditIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Edit</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleStatusChange(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={premiumMenuItemSx}
+            >
+              <ListItemIcon>
+                <SwapHorizIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Change status</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                void handleViewHistory(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={premiumMenuItemSx}
+            >
+              <ListItemIcon>
+                <HistoryIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>History</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleDeleteVendor(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={(th) => ({
+                ...sxObject(th, premiumMenuItemSx),
+                color: 'error.main',
+              })}
+            >
+              <ListItemIcon>
+                <DeleteIcon fontSize="small" color="error" />
+              </ListItemIcon>
+              <ListItemText>Disable vendor</ListItemText>
+            </MenuItem>
+          </>
+        ) : null}
+      </Menu>
 
       {/* Status Change Dialog */}
       <Dialog

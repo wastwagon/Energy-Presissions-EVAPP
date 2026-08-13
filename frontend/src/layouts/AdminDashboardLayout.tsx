@@ -17,11 +17,13 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SearchIcon from '@mui/icons-material/Search';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { AdminMenu } from '../components/menus/AdminMenu';
 import { BottomNav, type BottomNavItem } from '../components/BottomNav';
 import { DrawerBrandHeader } from '../components/DrawerBrandHeader';
 import { adminBottomNavItems, vendorBottomNavItems } from '../config/menu.config';
-import { ADMIN_ROUTES } from '../config/staffNav.paths';
+import { ADMIN_ROUTES, staffHelpPath } from '../config/staffNav.paths';
 import { brandColors } from '../theme';
 import { clearSession, getStoredUser } from '../utils/authSession';
 import {
@@ -39,6 +41,12 @@ import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
 import { StaffPageChromeProvider, useStaffPageChrome } from '../contexts/StaffPageChromeContext';
 import { StaffToolbarLeading } from '../components/staff/StaffToolbarLeading';
 import { StaffScrollProviders } from '../components/staff/StaffScrollProviders';
+import {
+  StaffCommandPalette,
+  staffModifierKeyLabel,
+  useStaffCommandPalette,
+  useStaffGoShortcuts,
+} from '../components/staff/StaffCommandPalette';
 
 const drawerWidth = JAMPACK_DRAWER_WIDTH;
 
@@ -57,6 +65,9 @@ function AdminDashboardChrome() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
+  const commandPalette = useStaffCommandPalette();
+  useStaffGoShortcuts('admin');
+  const jumpShortcut = `${staffModifierKeyLabel()}K`;
 
   const staffMobileNavItems = useMemo((): BottomNavItem[] => {
     const base = location.pathname.startsWith('/vendor') ? vendorBottomNavItems : adminBottomNavItems;
@@ -211,6 +222,29 @@ function AdminDashboardChrome() {
               <MuiMenuItem
                 onClick={() => {
                   handleMenuClose();
+                  commandPalette.setOpen(true);
+                }}
+                sx={premiumMenuItemSx}
+              >
+                <SearchIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography sx={{ flex: 1 }}>Jump to</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {jumpShortcut}
+                </Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  navigate(staffHelpPath(location.pathname));
+                }}
+                sx={premiumMenuItemSx}
+              >
+                <HelpOutlineIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                <Typography>Operator guide</Typography>
+              </MuiMenuItem>
+              <MuiMenuItem
+                onClick={() => {
+                  handleMenuClose();
                   navigate(ADMIN_ROUTES.vendorSettings);
                 }}
                 sx={premiumMenuItemSx}
@@ -290,6 +324,11 @@ function AdminDashboardChrome() {
           )}
         </Box>
       </Box>
+      <StaffCommandPalette
+        open={commandPalette.open}
+        onClose={() => commandPalette.setOpen(false)}
+        variant="admin"
+      />
     </Box>
   );
 }

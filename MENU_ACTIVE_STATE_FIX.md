@@ -58,7 +58,7 @@ const isActive = location === item.path;
 ### SuperAdmin Menu Structure:
 ```
 OVERVIEW
-  ├── My Dashboard (/superadmin/dashboard)
+  ├── Dashboard (/superadmin/dashboard)
   ├── System Analytics (/superadmin/analytics)
   └── Real-time Monitor (/superadmin/ops) ← Should NOT be active on /superadmin/ops/devices
 
@@ -120,7 +120,7 @@ OPERATIONS
 1. ✅ Navigate to `/superadmin/ops/devices` → Only "Device Management" is active
 2. ✅ Navigate to `/superadmin/ops` → Only "Real-time Monitor" and "Operations Dashboard" are active
 3. ✅ Navigate to `/superadmin/ops/sessions` → Only "Active Sessions" is active
-4. ✅ Navigate to `/superadmin/dashboard` → Only "My Dashboard" is active
+4. ✅ Navigate to `/superadmin/dashboard` → Only "Dashboard" is active
 
 ---
 

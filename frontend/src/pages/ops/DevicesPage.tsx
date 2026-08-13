@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -25,12 +25,14 @@ import {
   Tabs,
   Tab,
   Badge,
+  MenuItem,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AddIcon from '@mui/icons-material/Add';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -39,7 +41,9 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import HealingIcon from '@mui/icons-material/Healing';
 import { alpha } from '@mui/material/styles';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { staffHelpPath } from '../../config/staffNav.paths';
 import { chargePointsApi, ChargePoint } from '../../services/chargePointsApi';
+import { vendorApi, Vendor } from '../../services/vendorApi';
 import { connectionLogsApi, ConnectionLog, ConnectionStatistics } from '../../services/connectionLogsApi';
 import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
@@ -84,6 +88,9 @@ import {
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { StaffBulkBar, StaffSelectCheckbox } from '../../components/dashboard/StaffBulkBar';
+import { useStaffSelection } from '../../hooks/useStaffSelection';
+import { downloadCsv } from '../../utils/reportExport';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -125,6 +132,7 @@ function looksLikeNumericChargePointIdentity(id: string): boolean {
 
 export function DevicesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const opsBase = useOpsBasePath();
@@ -152,6 +160,16 @@ export function DevicesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [clearStaleSubmittingId, setClearStaleSubmittingId] = useState<string | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [registerVendors, setRegisterVendors] = useState<Vendor[]>([]);
+  const [registerForm, setRegisterForm] = useState({
+    chargePointId: '',
+    vendorId: '',
+    model: '',
+    serialNumber: '',
+    locationAddress: '',
+  });
 
   const canUserDeleteDevice = (cp: ChargePoint): boolean => {
     const user = getStoredUser();
@@ -238,6 +256,16 @@ export function DevicesPage() {
     loadChargePoints();
     loadRecentErrors();
   }, []);
+
+  useEffect(() => {
+    if (!registerOpen) return;
+    const user = getStoredUser();
+    if (user?.accountType !== 'SuperAdmin') return;
+    void vendorApi
+      .getAll()
+      .then(setRegisterVendors)
+      .catch(() => setRegisterVendors([]));
+  }, [registerOpen]);
 
   const applyLinkRealtime = useCallback((payload: Parameters<typeof mergeChargePointLinkUpdate>[1]) => {
     setChargePoints((prev) => mergeChargePointLinkUpdate(prev, payload));
@@ -425,6 +453,66 @@ export function DevicesPage() {
     }
   };
 
+  const visibleDeviceIds = useMemo(
+    () => filteredChargePoints.map((cp) => cp.chargePointId),
+    [filteredChargePoints],
+  );
+  const selection = useStaffSelection(visibleDeviceIds);
+
+  const openRegisterDialog = () => {
+    const user = getStoredUser();
+    setRegisterForm({
+      chargePointId: '',
+      vendorId: user?.accountType === 'Admin' && user.vendorId ? String(user.vendorId) : '',
+      model: '',
+      serialNumber: '',
+      locationAddress: '',
+    });
+    setRegisterOpen(true);
+  };
+
+  const handleRegisterDevice = async () => {
+    const chargePointId = registerForm.chargePointId.trim();
+    if (!chargePointId) {
+      setError('Charge point ID is required.');
+      return;
+    }
+    const user = getStoredUser();
+    const vendorIdRaw =
+      registerForm.vendorId ||
+      (user?.accountType === 'Admin' && user.vendorId ? String(user.vendorId) : '');
+    const vendorId = vendorIdRaw ? Number(vendorIdRaw) : undefined;
+    if (!vendorId) {
+      setError('Choose a vendor before registering the device.');
+      return;
+    }
+    try {
+      setRegisterSubmitting(true);
+      setError(null);
+      const created = await chargePointsApi.create({
+        chargePointId,
+        vendorId,
+        model: registerForm.model.trim() || undefined,
+        serialNumber: registerForm.serialNumber.trim() || undefined,
+        locationAddress: registerForm.locationAddress.trim() || undefined,
+      });
+      setRegisterOpen(false);
+      setSuccess(`Registered ${created.chargePointId}. Add coordinates so it appears on the public map.`);
+      await loadChargePoints();
+      navigate(`${opsBase}/devices/${encodeURIComponent(created.chargePointId)}`);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string | string[] } }; message?: string };
+      const msg =
+        e.response?.data?.message ||
+        (Array.isArray(e.response?.data?.message) ? e.response.data.message.join(', ') : null) ||
+        e.message ||
+        'Failed to register device';
+      setError(typeof msg === 'string' ? msg : 'Failed to register device');
+    } finally {
+      setRegisterSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <DashboardStaffChromeSkeleton preset="devices" />;
   }
@@ -436,6 +524,37 @@ export function DevicesPage() {
   const fieldDevices = chargePoints.filter(isRealDevice);
   const linkScope = showOnlyFieldProvisioned ? fieldDevices : chargePoints;
   const linkCounts = countByLinkStatus(linkScope);
+
+  const exportSelectedDevices = () => {
+    const selectedDevices = filteredChargePoints.filter((cp) => selection.isSelected(cp.chargePointId));
+    downloadCsv(
+      `devices-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Charge point ID',
+        'Vendor',
+        'Model',
+        'Serial',
+        'Firmware',
+        'OCPP status',
+        'Link status',
+        'Address',
+        'Last heartbeat',
+        'Active sessions',
+      ],
+      selectedDevices.map((cp) => [
+        cp.chargePointId,
+        cp.vendorName || cp.vendor || '',
+        cp.model || '',
+        cp.serialNumber || '',
+        cp.firmwareVersion || '',
+        cp.status,
+        getLinkStatusLabel(cp.linkStatus),
+        cp.locationAddress || '',
+        cp.lastHeartbeat || '',
+        cp.activeTransactionCount ?? 0,
+      ]),
+    );
+  };
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
@@ -453,6 +572,20 @@ export function DevicesPage() {
         showToolbarRefreshOnMobile
         containerSx={{ mb: 2 }}
         refreshSx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: { sm: 'nowrap' } }}
+        actions={
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<AddIcon />}
+            onClick={openRegisterDialog}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+            })}
+          >
+            Register device
+          </Button>
+        }
       />
 
       <StaffFilterBar aria-label="Device filters">
@@ -606,8 +739,17 @@ export function DevicesPage() {
                       variant: 'secondary',
                     }
                   : {
-                      label: 'Open operations',
-                      onClick: () => navigate(opsBase),
+                      label: 'Register device',
+                      onClick: openRegisterDialog,
+                      startIcon: <AddIcon />,
+                    }
+              }
+              secondaryAction={
+                showOnlyFieldProvisioned || searchTerm
+                  ? undefined
+                  : {
+                      label: 'Learn how',
+                      onClick: () => navigate(staffHelpPath(location.pathname)),
                       variant: 'secondary',
                     }
               }
@@ -647,13 +789,38 @@ export function DevicesPage() {
                 <AppBadge label={`${linkCounts.offline} offline`} tone="error" />
                 <AppBadge label={`${linkCounts.never_seen} never`} tone="neutral" />
               </Box>
+              <StaffBulkBar
+                count={selection.selectedCount}
+                onClear={selection.clear}
+                actions={[{ label: 'Export', onClick: exportSelectedDevices, variant: 'primary' }]}
+              />
             {useGroupedList ? (
               <Box sx={{ mt: 1, py: 1 }}>
+                {filteredChargePoints.length > 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', px: 1, minHeight: 44 }}>
+                    <StaffSelectCheckbox
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      onChange={() => selection.toggleAll()}
+                      label="Select all devices"
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      Select all
+                    </Typography>
+                  </Box>
+                ) : null}
                 <GroupedListSection>
                   {filteredChargePoints.map((cp, index) => (
                     <GroupedListRow
                       key={cp.chargePointId}
                       divider={index < filteredChargePoints.length - 1}
+                      leading={
+                        <StaffSelectCheckbox
+                          checked={selection.isSelected(cp.chargePointId)}
+                          onChange={() => selection.toggle(cp.chargePointId)}
+                          label={`Select ${cp.chargePointId}`}
+                        />
+                      }
                       primary={cp.chargePointId}
                       secondary={`${cp.vendorName || cp.vendor || 'No vendor'} · ${cp.model || '—'}`}
                       end={
@@ -683,6 +850,14 @@ export function DevicesPage() {
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
+                    <TableCell padding="checkbox">
+                      <StaffSelectCheckbox
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        onChange={() => selection.toggleAll()}
+                        label="Select all devices"
+                      />
+                    </TableCell>
                     <TableCell>Device</TableCell>
                     <TableCell>Connection</TableCell>
                     <TableCell>OCPP</TableCell>
@@ -706,6 +881,13 @@ export function DevicesPage() {
                           },
                         }}
                       >
+                        <TableCell padding="checkbox">
+                          <StaffSelectCheckbox
+                            checked={selection.isSelected(cp.chargePointId)}
+                            onChange={() => selection.toggle(cp.chargePointId)}
+                            label={`Select ${cp.chargePointId}`}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
                             <Tooltip title={inventoryTypeTooltip(cp)}>
@@ -978,6 +1160,98 @@ export function DevicesPage() {
           )}
         </TabPanel>
       </Paper>
+
+      <Dialog
+        open={registerOpen}
+        onClose={() => !registerSubmitting && setRegisterOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Register device</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Pre-register a charge point ID so it is assigned to your vendor when it boots. You can still wait for
+            BootNotification if the station is already on the network.
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="Charge point ID"
+                required
+                fullWidth
+                value={registerForm.chargePointId}
+                onChange={(e) => setRegisterForm((prev) => ({ ...prev, chargePointId: e.target.value }))}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            {getStoredUser()?.accountType === 'SuperAdmin' ? (
+              <Grid item xs={12}>
+                <TextField
+                  select
+                  label="Vendor"
+                  required
+                  fullWidth
+                  value={registerForm.vendorId}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, vendorId: e.target.value }))}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                >
+                  {registerVendors.map((vendor) => (
+                    <MenuItem key={vendor.id} value={String(vendor.id)}>
+                      {vendor.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : null}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Model"
+                fullWidth
+                value={registerForm.model}
+                onChange={(e) => setRegisterForm((prev) => ({ ...prev, model: e.target.value }))}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Serial"
+                fullWidth
+                value={registerForm.serialNumber}
+                onChange={(e) => setRegisterForm((prev) => ({ ...prev, serialNumber: e.target.value }))}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Address"
+                fullWidth
+                value={registerForm.locationAddress}
+                onChange={(e) => setRegisterForm((prev) => ({ ...prev, locationAddress: e.target.value }))}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>
+          <Button
+            onClick={() => setRegisterOpen(false)}
+            disabled={registerSubmitting}
+            sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disableElevation
+            disabled={registerSubmitting || !registerForm.chargePointId.trim()}
+            onClick={() => void handleRegisterDevice()}
+            sx={(th) => ({ ...sxObject(th, compactContainedCtaSx), width: { xs: '100%', sm: 'auto' } })}
+          >
+            {registerSubmitting ? 'Registering…' : 'Register'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={deleteDialogOpen}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -29,6 +30,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
 import { getStoredUser } from '../../utils/authSession';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -58,6 +60,7 @@ function canMutateTariff(tariff: Tariff, variant: StaffTariffsVariant): boolean 
 }
 
 export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffsVariant }) {
+  const navigate = useNavigate();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
@@ -228,6 +231,12 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
               startIcon: <AddIcon />,
               variant: 'secondary',
             }}
+            secondaryAction={{
+              label: 'Learn how',
+              onClick: () =>
+                navigate(variant === 'superadmin' ? SUPERADMIN_ROUTES.help : ADMIN_ROUTES.help),
+              variant: 'secondary',
+            }}
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
@@ -244,6 +253,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                         ? ` · ${tariff.vendorId ? `Vendor #${tariff.vendorId}` : 'Network'}`
                         : ''
                     }`}
+                    secondaryTypographyProps={{ sx: { fontVariantNumeric: 'tabular-nums' } }}
                     end={
                       <AppBadge
                         label={tariff.isActive ? 'Active' : 'Inactive'}

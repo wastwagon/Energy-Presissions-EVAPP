@@ -5,6 +5,8 @@ import * as bcrypt from 'bcryptjs';
 import { Vendor, VendorStatus } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
 import { User } from '../entities/user.entity';
+import { ChargePoint } from '../entities/charge-point.entity';
+import { Transaction } from '../entities/transaction.entity';
 import { VendorStatusService } from './vendor-status.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -26,6 +28,10 @@ export class VendorsService {
     private disablementRepository: Repository<VendorDisablement>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(ChargePoint)
+    private chargePointRepository: Repository<ChargePoint>,
+    @InjectRepository(Transaction)
+    private transactionRepository: Repository<Transaction>,
     private vendorStatusService: VendorStatusService,
     private readonly storageService: StorageService,
   ) {}
@@ -149,13 +155,60 @@ export class VendorsService {
   }
 
   /**
-   * Get all vendors
+   * Get all vendors, with station count, last session, and completed-session GMV.
    */
   async findAll(): Promise<Vendor[]> {
     try {
-      return await this.vendorRepository.find({
+      const vendors = await this.vendorRepository.find({
         order: { createdAt: 'DESC' },
       });
+      if (vendors.length === 0) return vendors;
+
+      const stationRows: Array<{ vendorId: string | number; stationCount: string | number }> =
+        await this.chargePointRepository
+          .createQueryBuilder('cp')
+          .select('cp.vendor_id', 'vendorId')
+          .addSelect('COUNT(cp.id)', 'stationCount')
+          .groupBy('cp.vendor_id')
+          .getRawMany();
+
+      const sessionRows: Array<{
+        vendorId: string | number;
+        lastSessionAt: Date | string | null;
+        gmv: string | number;
+      }> = await this.transactionRepository
+        .createQueryBuilder('t')
+        .innerJoin(ChargePoint, 'cp', 'cp.charge_point_id = t.charge_point_id')
+        .select('cp.vendor_id', 'vendorId')
+        .addSelect('MAX(t.start_time)', 'lastSessionAt')
+        .addSelect(
+          `COALESCE(SUM(CASE WHEN t.status = 'Completed' THEN t.total_cost ELSE 0 END), 0)`,
+          'gmv',
+        )
+        .groupBy('cp.vendor_id')
+        .getRawMany();
+
+      const stationCount = new Map<number, number>();
+      for (const row of stationRows) {
+        stationCount.set(Number(row.vendorId), Number(row.stationCount) || 0);
+      }
+      const sessionStats = new Map<number, { lastSessionAt: Date | string | null; gmv: number }>();
+      for (const row of sessionRows) {
+        sessionStats.set(Number(row.vendorId), {
+          lastSessionAt: row.lastSessionAt ?? null,
+          gmv: Number(row.gmv) || 0,
+        });
+      }
+
+      for (const vendor of vendors) {
+        const stats = sessionStats.get(vendor.id);
+        (vendor as Vendor & { stationCount: number; lastSessionAt: Date | string | null; gmv: number }).stationCount =
+          stationCount.get(vendor.id) ?? 0;
+        (vendor as Vendor & { lastSessionAt: Date | string | null }).lastSessionAt = stats?.lastSessionAt ?? null;
+        (vendor as Vendor & { gmv: number }).gmv = stats?.gmv ?? 0;
+      }
+
+      return vendors;
     } catch (error) {
       this.logger.error(`Error fetching all vendors: ${error.message}`, error.stack);
       throw error;

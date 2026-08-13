@@ -1,102 +1,25 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Alert,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import axios from 'axios';
-import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
-import {
-  premiumTableSurfaceSx,
-} from '../../theme/jampackShell';
+import { useState } from 'react';
+import { Box, Typography, Paper, Alert, Button, Tabs, Tab } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
-import { formatCurrency } from '../../utils/formatters';
+import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
 import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
 import { VendorsReportPanel } from '../../components/reports/VendorsReportPanel';
-import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
-import { ReportSessionAverages } from '../../components/reports/ReportSessionAverages';
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
-import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
 import { StaffReportToolbar } from '../../components/dashboard/StaffReportToolbar';
 import type { StaffPeriodDays } from '../../components/dashboard/StaffPeriodChips';
-import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
-import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminReportsPage() {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [periodDays, setPeriodDays] = useState<StaffPeriodDays>(30);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef(true);
-  const statsRef = useRef<DashboardStats | null>(null);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const loadStats = useCallback(async (silent?: boolean) => {
-    const isQuiet = silent === true;
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      if (!mountedRef.current) return;
-
-      if (isQuiet) {
-        setRefreshing(true);
-      } else if (statsRef.current == null) {
-        setLoading(true);
-      } else {
-        setRefreshing(true);
-      }
-      setError(null);
-
-      const data = await dashboardApi.getStats({ signal: controller.signal });
-      if (mountedRef.current) {
-        statsRef.current = data;
-        setStats(data);
-        setUpdatedAt(Date.now());
-      }
-    } catch (err: unknown) {
-      if (axios.isCancel(err)) return;
-      console.error('Error loading reports:', err);
-      if (mountedRef.current) {
-        const message = err instanceof Error ? err.message : 'Failed to load reports';
-        setError(message);
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadStats(false);
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, [loadStats]);
 
   const handleExport = async () => {
     try {
@@ -117,28 +40,19 @@ export function SuperAdminReportsPage() {
     'aria-controls': `superadmin-reports-panel-${index}`,
   });
 
-  if (loading) {
-    return <DashboardStaffChromeSkeleton preset="superReports" />;
-  }
-
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Reports"
-        subtitle="Export CSVs and inspect network breakdowns. Live metrics live on Dashboard and Analytics."
-        updatedAt={updatedAt}
-        liveLabel={LIVE_DATA_LABELS.reports}
-        refreshing={refreshing}
-        refreshDisabled={loading}
-        onRefresh={() => void loadStats(false)}
+        subtitle="Export CSVs for the selected period. Live metrics and breakdowns live on Dashboard and Analytics."
+        updatedAt={null}
+        showRefresh={false}
+        showLiveMeta={false}
+        refreshing={false}
+        onRefresh={() => undefined}
         titleVariant="large"
         titleSx={staffLargeTitleSx}
         subtitleSx={staffLargeSubtitleSx}
-        refreshSx={(th) => ({
-          ...sxObject(th, compactOutlinedCtaSx),
-          flex: { xs: '1 1 auto', sm: '0 0 auto' },
-          minWidth: { xs: 0, sm: 'auto' },
-        })}
       />
 
       <StaffReportToolbar
@@ -149,103 +63,93 @@ export function SuperAdminReportsPage() {
         exporting={exporting}
       />
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
       {exportNotice && (
         <Alert severity="info" sx={{ mb: 3 }} onClose={() => setExportNotice(null)}>
           {exportNotice}
         </Alert>
       )}
 
-      {stats && (
-        <Paper sx={premiumTableSurfaceSx}>
-            <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile aria-label="Super Admin report sections">
-              <Tab label="Overview" {...tabA11yProps(0)} />
-              <Tab label="Revenue" {...tabA11yProps(1)} />
-              <Tab label="Vendors" {...tabA11yProps(2)} />
-              <Tab label="Sessions" {...tabA11yProps(3)} />
-            </Tabs>
+      <Paper sx={premiumTableSurfaceSx}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label="Super Admin report sections"
+        >
+          <Tab label="Export" {...tabA11yProps(0)} />
+          <Tab label="Revenue" {...tabA11yProps(1)} />
+          <Tab label="Vendors" {...tabA11yProps(2)} />
+          <Tab label="Sessions" {...tabA11yProps(3)} />
+        </Tabs>
 
-            <Box sx={{ p: { xs: 2, sm: 3 } }} role="tabpanel" id={`superadmin-reports-panel-${activeTab}`} aria-labelledby={`superadmin-reports-tab-${activeTab}`}>
-              {activeTab === 0 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    System Overview Report
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Comprehensive overview of the entire EV charging network. Use the period chips above for trend exports.
-                  </Typography>
-                  <ReportSessionAverages stats={stats} />
-                  {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0 && (
-                    <Grid container spacing={2} sx={{ mb: 2 }}>
-                      <Grid item xs={12} md={6}>
-                        <StaffMetricCard
-                          label="Average revenue per vendor"
-                          value={formatCurrency(
-                            (stats.overview?.totalRevenue ?? stats.totalRevenue ?? 0) /
-                              Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
-                          )}
-                          hint="Network total ÷ vendor count"
-                          tone="brand"
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <StaffMetricCard
-                          label="Average sessions per vendor"
-                          value={Math.round(
-                            (stats.overview?.totalTransactions ?? stats.totalSessions ?? 0) /
-                              Math.max(1, stats.overview?.totalVendors ?? stats.totalVendors ?? 1),
-                          )}
-                        />
-                      </Grid>
-                    </Grid>
-                  )}
-                  <AnalyticsBreakdownPanel stats={stats} />
-                </Box>
-              )}
-
-              {activeTab === 1 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Revenue Report
-                  </Typography>
-                  <RevenueReportPanel
-                    periodDays={periodDays}
-                    onPeriodChange={setPeriodDays}
-                    hidePeriodControls
-                  />
-                </Box>
-              )}
-
-              {activeTab === 2 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Vendor Performance Report
-                  </Typography>
-                  <VendorsReportPanel />
-                </Box>
-              )}
-
-              {activeTab === 3 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Sessions Report
-                  </Typography>
-                  <SessionsReportPanel
-                    periodDays={periodDays}
-                    onPeriodChange={setPeriodDays}
-                    hidePeriodControls
-                  />
-                </Box>
-              )}
+        <Box
+          sx={{ p: { xs: 2, sm: 3 } }}
+          role="tabpanel"
+          id={`superadmin-reports-panel-${activeTab}`}
+          aria-labelledby={`superadmin-reports-tab-${activeTab}`}
+        >
+          {activeTab === 0 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Network export
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Downloads billed session rows for the last {periodDays} days. Fleet health and
+                period KPIs stay on Analytics so this page does not repeat the dashboard.
+              </Typography>
+              <Button
+                component={RouterLink}
+                to={SUPERADMIN_ROUTES.analytics}
+                variant="contained"
+                disableElevation
+                sx={(th) => ({
+                  ...sxObject(th, compactContainedCtaSx),
+                  width: { xs: '100%', sm: 'auto' },
+                })}
+              >
+                Open Analytics
+              </Button>
             </Box>
-          </Paper>
-      )}
+          )}
+
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Revenue Report
+              </Typography>
+              <RevenueReportPanel
+                periodDays={periodDays}
+                onPeriodChange={setPeriodDays}
+                hidePeriodControls
+              />
+            </Box>
+          )}
+
+          {activeTab === 2 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Vendor Performance Report
+              </Typography>
+              <VendorsReportPanel />
+            </Box>
+          )}
+
+          {activeTab === 3 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Sessions Report
+              </Typography>
+              <SessionsReportPanel
+                periodDays={periodDays}
+                onPeriodChange={setPeriodDays}
+                hidePeriodControls
+              />
+            </Box>
+          )}
+        </Box>
+      </Paper>
     </Box>
   );
 }
-

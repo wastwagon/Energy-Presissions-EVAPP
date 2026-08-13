@@ -8,12 +8,14 @@ import { VendorStatusService } from './vendor-status.service';
 import { Vendor } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
 import { User } from '../entities/user.entity';
+import { ChargePoint } from '../entities/charge-point.entity';
+import { Transaction } from '../entities/transaction.entity';
 import { StorageModule } from '../storage/storage.module';
 import { resolveJwtSecret } from '../common/utils/jwt-secret';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vendor, VendorDisablement, User]),
+    TypeOrmModule.forFeature([Vendor, VendorDisablement, User, ChargePoint, Transaction]),
     StorageModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

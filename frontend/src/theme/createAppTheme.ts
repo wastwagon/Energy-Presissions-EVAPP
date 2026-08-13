@@ -199,6 +199,11 @@ export function createAppTheme(options: AppThemeOptions = {}) {
         },
       },
       MuiAppBar: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      MuiTableCell: {
+        styleOverrides: {
+          root: { fontVariantNumeric: 'tabular-nums' },
+        },
+      },
       MuiTextField: { defaultProps: { variant: 'outlined' } },
       MuiOutlinedInput: {
         styleOverrides: {

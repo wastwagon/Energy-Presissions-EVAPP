@@ -38,6 +38,9 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+import { StaffBulkBar, StaffSelectCheckbox } from '../../components/dashboard/StaffBulkBar';
+import { useStaffSelection } from '../../hooks/useStaffSelection';
+import { downloadCsv } from '../../utils/reportExport';
 
 const PAYMENTS_PAGE_SIZE = 20;
 
@@ -157,6 +160,31 @@ export function AdminPaymentsPage() {
     );
   });
 
+  const visiblePaymentIds = useMemo(() => filteredPayments.map((p) => p.id), [filteredPayments]);
+  const selection = useStaffSelection(visiblePaymentIds);
+  const selectedPayments = useMemo(
+    () => filteredPayments.filter((p) => selection.isSelected(p.id)),
+    [filteredPayments, selection],
+  );
+
+  const exportSelectedPayments = () => {
+    downloadCsv(
+      `payments-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['ID', 'User ID', 'Amount', 'Currency', 'Method', 'Gateway', 'Status', 'Transaction ID', 'Date'],
+      selectedPayments.map((payment) => [
+        payment.id,
+        payment.userId,
+        payment.amount,
+        payment.currency,
+        payment.paymentMethod,
+        payment.paymentGateway || '',
+        payment.status,
+        payment.transactionId ?? '',
+        payment.createdAt,
+      ]),
+    );
+  };
+
   const showStaffPaging =
     isStaffListApi() && totalPayments > PAYMENTS_PAGE_SIZE && statusTab === 'all' && !searchTerm;
 
@@ -231,12 +259,36 @@ export function AdminPaymentsPage() {
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mb: 3, position: 'relative' }}>
         <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payments" />
-        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            py: { xs: 1.25, sm: 1.5 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            minHeight: 52,
+          }}
+        >
+          {filteredPayments.length > 0 && useGroupedList ? (
+            <StaffSelectCheckbox
+              checked={selection.allSelected}
+              indeterminate={selection.someSelected}
+              onChange={() => selection.toggleAll()}
+              label="Select all payments"
+            />
+          ) : null}
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
             Payments ({filteredPayments.length}
             {showStaffPaging ? ` of ${totalPayments}` : ''})
           </Typography>
         </Box>
+        <StaffBulkBar
+          count={selection.selectedCount}
+          onClear={selection.clear}
+          actions={[{ label: 'Export', onClick: exportSelectedPayments, variant: 'primary' }]}
+        />
 
         {filteredPayments.length === 0 ? (
           <AppEmptyState
@@ -257,7 +309,15 @@ export function AdminPaymentsPage() {
                   key={payment.id}
                   divider={index < filteredPayments.length - 1}
                   showChevron={false}
+                  leading={
+                    <StaffSelectCheckbox
+                      checked={selection.isSelected(payment.id)}
+                      onChange={() => selection.toggle(payment.id)}
+                      label={`Select payment ${payment.id}`}
+                    />
+                  }
                   primary={formatCurrency(payment.amount, payment.currency)}
+                  primaryTypographyProps={{ sx: { fontVariantNumeric: 'tabular-nums' } }}
                   secondary={`#${payment.id} · ${payment.paymentMethod} · ${new Date(payment.createdAt).toLocaleDateString()}`}
                   end={
                     <AppBadge
@@ -284,6 +344,14 @@ export function AdminPaymentsPage() {
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <StaffSelectCheckbox
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      onChange={() => selection.toggleAll()}
+                      label="Select all payments"
+                    />
+                  </TableCell>
                   <TableCell>Payment</TableCell>
                   <TableCell>User</TableCell>
                   <TableCell>Amount</TableCell>
@@ -295,6 +363,13 @@ export function AdminPaymentsPage() {
               <TableBody>
                 {filteredPayments.map((payment) => (
                   <TableRow key={payment.id} hover>
+                    <TableCell padding="checkbox">
+                      <StaffSelectCheckbox
+                        checked={selection.isSelected(payment.id)}
+                        onChange={() => selection.toggle(payment.id)}
+                        label={`Select payment ${payment.id}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         #{payment.id}

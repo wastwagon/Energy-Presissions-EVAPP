@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import EvStationIcon from '@mui/icons-material/EvStation';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
+import { staffHelpPath } from '../../config/staffNav.paths';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
 import { websocketService } from '../../services/websocket';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -43,6 +44,9 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+import { StaffBulkBar, StaffSelectCheckbox } from '../../components/dashboard/StaffBulkBar';
+import { useStaffSelection } from '../../hooks/useStaffSelection';
+import { downloadSessionsReportCsv } from '../../utils/reportExport';
 
 const ALL_SESSIONS_PAGE_SIZE = 20;
 
@@ -71,8 +75,14 @@ function sessionDateKey(tx: Transaction): string | null {
   return `${y}-${m}-${day}`;
 }
 
+function sessionSelectId(tx: Transaction): string {
+  if (tx.recordPending) return `pending:${tx.chargePointId}:${tx.connectorId}`;
+  return String(tx.transactionId);
+}
+
 export function SessionsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date');
   const opsBase = useOpsBasePath();
@@ -200,6 +210,14 @@ export function SessionsPage() {
     return rows.filter((tx) => sessionDateKey(tx) === dateFilter);
   }, [statusTab, activeTransactions, allTransactions, completedOnPage, otherOnPage, dateFilter]);
 
+  const visibleSessionIds = useMemo(() => transactions.map(sessionSelectId), [transactions]);
+  const selection = useStaffSelection(visibleSessionIds);
+
+  const exportSelectedSessions = () => {
+    const selected = transactions.filter((tx) => selection.isSelected(sessionSelectId(tx)));
+    downloadSessionsReportCsv(selected, `sessions-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   const showAllPaging = statusTab === 'all';
 
   const openSession = (tx: Transaction) => {
@@ -264,6 +282,15 @@ export function SessionsPage() {
                   variant: 'secondary',
                 }
           }
+          secondaryAction={
+            dateFilter
+              ? undefined
+              : {
+                  label: 'Learn how',
+                  onClick: () => navigate(staffHelpPath(location.pathname)),
+                  variant: 'secondary',
+                }
+          }
         />
       );
     }
@@ -271,16 +298,36 @@ export function SessionsPage() {
     if (useGroupedList) {
       return (
         <Box sx={{ py: 1 }}>
+          {transactions.length > 0 ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', px: 1, minHeight: 44 }}>
+              <StaffSelectCheckbox
+                checked={selection.allSelected}
+                indeterminate={selection.someSelected}
+                onChange={() => selection.toggleAll()}
+                label="Select all sessions"
+              />
+              <Typography variant="body2" color="text.secondary">
+                Select all
+              </Typography>
+            </Box>
+          ) : null}
           <GroupedListSection>
             {transactions.map((tx, index) => (
               <GroupedListRow
                 key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}-${tx.id}`}
                 divider={index < transactions.length - 1}
+                leading={
+                  <StaffSelectCheckbox
+                    checked={selection.isSelected(sessionSelectId(tx))}
+                    onChange={() => selection.toggle(sessionSelectId(tx))}
+                    label={`Select session ${tx.recordPending ? tx.chargePointId : tx.transactionId}`}
+                  />
+                }
                 primary={formatCustomerDisplayName(tx)}
                 secondary={`${tx.chargePointId} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
                 end={
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                       {formatSessionCost(tx)}
                     </Typography>
                     <AppBadge
@@ -323,6 +370,14 @@ export function SessionsPage() {
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
+                <TableCell padding="checkbox">
+                  <StaffSelectCheckbox
+                    checked={selection.allSelected}
+                    indeterminate={selection.someSelected}
+                    onChange={() => selection.toggleAll()}
+                    label="Select all sessions"
+                  />
+                </TableCell>
                 <TableCell>Transaction ID</TableCell>
                 <TableCell>Customer</TableCell>
                 <TableCell>Charge Point</TableCell>
@@ -353,6 +408,13 @@ export function SessionsPage() {
                       : `Open session ${tx.transactionId}`
                   }
                 >
+                  <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                    <StaffSelectCheckbox
+                      checked={selection.isSelected(sessionSelectId(tx))}
+                      onChange={() => selection.toggle(sessionSelectId(tx))}
+                      label={`Select session ${tx.recordPending ? tx.chargePointId : tx.transactionId}`}
+                    />
+                  </TableCell>
                   <TableCell>{tx.recordPending ? 'Pending sync' : tx.transactionId}</TableCell>
                   <TableCell>{formatCustomerDisplayName(tx)}</TableCell>
                   <TableCell>{tx.chargePointId}</TableCell>
@@ -446,7 +508,17 @@ export function SessionsPage() {
       </StaffFilterBar>
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mt: 0 }}>
-        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 1.75 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            py: { xs: 1.25, sm: 1.5 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: 52,
+          }}
+        >
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             {statusTab === 'active'
               ? 'Active sessions'
@@ -457,6 +529,11 @@ export function SessionsPage() {
                   : 'All sessions'}
           </Typography>
         </Box>
+        <StaffBulkBar
+          count={selection.selectedCount}
+          onClear={selection.clear}
+          actions={[{ label: 'Export', onClick: exportSelectedSessions, variant: 'primary' }]}
+        />
         {renderSessionRows()}
       </Paper>
     </Box>

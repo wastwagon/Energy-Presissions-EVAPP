@@ -29,7 +29,7 @@ A comprehensive, role-based menu system has been implemented that maps all datab
 ### Super Admin Menu
 
 #### Overview Section
-- ✅ **My Dashboard** → `/superadmin/dashboard` (Working)
+- ✅ **Dashboard** → `/superadmin/dashboard` (Working)
 - ⚠️ **System Analytics** → `/superadmin/analytics` (TODO: Create page)
 - ✅ **Real-time Monitor** → `/superadmin/ops` (Working)
 
@@ -98,7 +98,7 @@ A comprehensive, role-based menu system has been implemented that maps all datab
 ### Admin/Vendor Menu
 
 #### Dashboard Section
-- ✅ **My Dashboard** → `/admin/dashboard` (Working)
+- ✅ **Dashboard** → `/admin/dashboard` (Working)
 - ✅ **Operations Overview** → `/admin/ops` (Working)
 - ✅ **Performance Metrics** → `/admin/dashboard` (Working)
 
@@ -114,7 +114,7 @@ A comprehensive, role-based menu system has been implemented that maps all datab
 - `connectors` table
 
 #### Vendor Settings Section (Collapsible)
-- ✅ **Vendor Profile** → `/vendor` (Working)
+- ✅ **Vendor home** → `/vendor` (Working)
 - ✅ **Business Information** → `/vendor` (Working)
 - ✅ **Branding & Assets** → `/vendor` (Working)
 - ⚠️ **Tariffs & Pricing** → `/admin/tariffs` (TODO: Create page)

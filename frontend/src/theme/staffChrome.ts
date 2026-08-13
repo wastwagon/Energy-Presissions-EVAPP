@@ -18,3 +18,8 @@ export const staffLargeTitleSx: SystemStyleObject<Theme> = customerLargeTitleSx;
 export const staffLargeSubtitleSx: SystemStyleObject<Theme> = customerLargeSubtitleSx;
 
 export const staffCompactNavTitleSx: SystemStyleObject<Theme> = customerCompactNavTitleSx;
+
+/** Money, kWh, and KPI figures — aligned digits. */
+export const staffNumericSx: SystemStyleObject<Theme> = {
+  fontVariantNumeric: 'tabular-nums',
+};

@@ -38,7 +38,7 @@ frontend/src/components/menus/
 #### **Super Admin Menu**
 **Sections:**
 1. **Overview**
-   - My Dashboard
+   - Dashboard
    - System Analytics
    - Real-time Monitor
 
@@ -75,7 +75,7 @@ frontend/src/components/menus/
 #### **Admin/Vendor Menu**
 **Sections:**
 1. **Dashboard**
-   - My Dashboard
+   - Dashboard
    - Operations Overview
    - Performance Metrics
 
@@ -86,7 +86,7 @@ frontend/src/components/menus/
    - Transaction History
 
 3. **Vendor Settings**
-   - Vendor Profile
+   - Vendor home
    - Business Information
    - Branding & Assets
    - Tariffs & Pricing
