@@ -7,7 +7,6 @@ import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { AppBadge } from '../ui/AppBadge';
 
 type CustomerChargingPersonalStripProps = {
-  greetingName?: string | null;
   availableBalance: number | null;
   currency?: string;
   activeCount: number;
@@ -15,18 +14,15 @@ type CustomerChargingPersonalStripProps = {
 };
 
 /**
- * Compact personal strip under the charging hub hero (Untitled UI mobile greeting + personal metrics).
- * Not fleet analytics — balance, live sessions, last charge energy only.
+ * Compact personal metrics under the Charge title — balance, live sessions, last charge.
  */
 export function CustomerChargingPersonalStrip({
-  greetingName,
   availableBalance,
   currency = 'GHS',
   activeCount,
   lastEnergyLabel,
 }: CustomerChargingPersonalStripProps) {
   const navigate = useNavigate();
-  const first = greetingName?.trim().split(/\s+/)[0];
 
   return (
     <Paper
@@ -50,10 +46,10 @@ export function CustomerChargingPersonalStrip({
       >
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-            {first ? `Welcome back, ${first}` : 'Welcome back'}
+            Snapshot
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Your charge snapshot
+            Balance, live sessions, last charge
           </Typography>
         </Box>
         {activeCount > 0 ? <AppBadge label={`${activeCount} live`} tone="info" /> : null}

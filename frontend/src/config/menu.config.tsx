@@ -1,17 +1,17 @@
 /**
  * Menu configuration: admin/superadmin drawer sections and shared bottom-nav item lists.
  *
- * Customer **drawer** (hamburger menu) routes/labels live in `customerDrawerNav.tsx`.
- * Bottom nav tabs here intentionally use shorter labels (e.g. “Stations” vs “Find stations”).
- * Touch sizing aligns with `theme/iosMobileTokens.ts` (44px targets) via layout & `BottomNav`.
- * Destinations live in nav + drawers; no duplicate shortcut grids on dashboard pages.
+ * Customer tab bar labels live in `customerBottomNavItems` (Map, Charge, Wallet, Account).
+ * Secondary Account rows live in `customerDrawerNav.tsx`.
  */
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EvStationIcon from '@mui/icons-material/EvStation';
+import EvStationOutlinedIcon from '@mui/icons-material/EvStationOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -23,9 +23,11 @@ import BuildIcon from '@mui/icons-material/Build';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import PersonIcon from '@mui/icons-material/Person';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import MemoryIcon from '@mui/icons-material/Memory';
@@ -394,29 +396,33 @@ export const adminMenuConfig: MenuSection[] = [
 export const customerBottomNavItems = [
   {
     id: 'stations',
-    label: 'Stations',
-    icon: <LocationOnIcon />,
+    label: 'Map',
+    icon: <LocationOnOutlinedIcon />,
+    activeIcon: <LocationOnIcon />,
     path: CUSTOMER_ROUTES.stations,
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.stations],
   },
   {
     id: 'charging',
-    label: 'Charging',
-    icon: <EvStationIcon />,
+    label: 'Charge',
+    icon: <EvStationOutlinedIcon />,
+    activeIcon: <EvStationIcon />,
     path: CUSTOMER_ROUTES.charging,
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.sessions],
   },
   {
     id: 'wallet',
     label: 'Wallet',
-    icon: <AccountBalanceWalletIcon />,
+    icon: <AccountBalanceWalletOutlinedIcon />,
+    activeIcon: <AccountBalanceWalletIcon />,
     path: CUSTOMER_ROUTES.wallet,
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.wallet],
   },
   {
     id: 'profile',
-    label: 'Profile',
-    icon: <AccountCircleIcon />,
+    label: 'Account',
+    icon: <PersonOutlineIcon />,
+    activeIcon: <PersonIcon />,
     path: CUSTOMER_ROUTES.profile,
     matchPaths: [...CUSTOMER_BOTTOM_NAV_PREFIXES.profile],
   },

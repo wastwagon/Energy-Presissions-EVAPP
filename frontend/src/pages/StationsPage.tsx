@@ -1,31 +1,22 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Paper,
-  Grid,
   Skeleton,
   LinearProgress,
   Alert,
   TextField,
   InputAdornment,
-  Button,
-  Collapse,
   InputLabel,
-  Link,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { stationsApi, StationWithDistance } from '../services/stationsApi';
 import { usersApi } from '../services/usersApi';
 import { websocketService } from '../services/websocket';
 import { StartChargingDialog } from '../components/StartChargingDialog';
-import {
-  authFormFieldSx,
-  compactContainedCtaSx,
-  compactOutlinedCtaSx,
-  sxObject,
-} from '../styles/authShell';
+import { authFormFieldSx, sxObject } from '../styles/authShell';
 import { premiumPanelCardSx } from '../theme/jampackShell';
 import { LivePageHeader } from '../components/dashboard/LivePageHeader';
 import { useCustomerPullRefresh } from '../contexts/CustomerPullRefreshContext';
@@ -62,7 +53,6 @@ const STATIONS_MAP_PANEL_ID = 'stations-map-panel';
 export function StationsPage() {
   const navigate = useNavigate();
   const mapSectionRef = useRef<HTMLDivElement>(null);
-  const [mapExpanded, setMapExpanded] = useState(false);
   const [mapSelectionId, setMapSelectionId] = useState<string | null>(null);
   /** Increments when the map should re-fit to markers (load nearby, search, near me). Not for viewport (pan) refresh. */
   const [mapFitToken, setMapFitToken] = useState(0);
@@ -193,11 +183,7 @@ export function StationsPage() {
 
   const handleViewportBoundsStable = useCallback(
     async (bounds: MapViewportBounds) => {
-      if (
-        searchTermRef.current.trim() !== '' ||
-        !mapExpanded ||
-        !userAdjustedMapViewRef.current
-      ) {
+      if (searchTermRef.current.trim() !== '' || !userAdjustedMapViewRef.current) {
         return;
       }
       const epoch = ++stationsLoadEpochRef.current;
@@ -209,11 +195,7 @@ export function StationsPage() {
           ...bounds,
           status: activeStatuses,
         });
-        if (
-          searchTermRef.current.trim() === '' &&
-          mapExpanded &&
-          userAdjustedMapViewRef.current
-        ) {
+        if (searchTermRef.current.trim() === '' && userAdjustedMapViewRef.current) {
           applyStationsIfCurrent(epoch, list);
         }
       } catch (err: unknown) {
@@ -226,7 +208,7 @@ export function StationsPage() {
         }
       }
     },
-    [applyStationsIfCurrent, mapExpanded],
+    [applyStationsIfCurrent],
   );
 
   const handleUserAdjustedMapView = useCallback(() => {
@@ -335,7 +317,6 @@ export function StationsPage() {
 
   useEffect(() => {
     if (!mapSelectionId) return;
-    setMapExpanded(true);
     if (!mapSectionRef.current) return;
     mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [mapSelectionId]);
@@ -435,7 +416,7 @@ export function StationsPage() {
       return 'Updating stations for the visible map area.';
     }
     if (!loading && stations.length === 0 && !error) {
-      return 'No charging stations found. Try another search or open the map to explore.';
+      return 'No charging stations found. Try another search or pan the map.';
     }
     if (sortedStations.length > 0) {
       return `${sortedStations.length} charging station${sortedStations.length === 1 ? '' : 's'} listed, sorted by distance.`;
@@ -452,7 +433,7 @@ export function StationsPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Stations"
+        title="Map"
         subtitle={stationsSubtitle}
         updatedAt={null}
         refreshing={listRefreshing}
@@ -461,21 +442,6 @@ export function StationsPage() {
         titleVariant="large"
         containerSx={{ mb: 2 }}
         refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
-        actions={
-          isAuthenticated ? (
-            <Button
-              component={RouterLink}
-              to={CUSTOMER_ROUTES.charging}
-              variant="outlined"
-              sx={(th) => ({
-                ...sxObject(th, compactOutlinedCtaSx),
-                width: { xs: '100%', sm: 'auto' },
-              })}
-            >
-              Charging hub
-            </Button>
-          ) : undefined
-        }
       />
 
       {locationError && (
@@ -505,7 +471,114 @@ export function StationsPage() {
         {liveStatusMessage}
       </Box>
 
-      {/* List-first (Uber/Bolt): pick a station from cards, then use the map for context */}
+      <Box
+        component="form"
+        onSubmit={handleSearchSubmit}
+        aria-describedby={STATIONS_SEARCH_HINT_ID}
+        sx={{ mb: 1.5 }}
+      >
+        <Typography id={STATIONS_SEARCH_HINT_ID} sx={visuallyHiddenSx}>
+          Search by city, address, or charge point ID. Press Search or Return to run the search.
+        </Typography>
+        <InputLabel htmlFor={STATIONS_SEARCH_FIELD_ID} sx={visuallyHiddenSx}>
+          Search stations by city, address, or charge point ID
+        </InputLabel>
+        <TextField
+          id={STATIONS_SEARCH_FIELD_ID}
+          type="search"
+          fullWidth
+          placeholder="City, address, or ID"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" color="action" aria-hidden />
+              </InputAdornment>
+            ),
+          }}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </Box>
+
+      {viewportStationsLoading && (
+        <LinearProgress
+          color="primary"
+          sx={{ mb: 1.5, borderRadius: 0.5, width: '100%' }}
+          aria-label="Loading stations in map area"
+        />
+      )}
+
+      <Box
+        ref={mapSectionRef}
+        component="section"
+        id={STATIONS_MAP_PANEL_ID}
+        aria-labelledby="stations-map-heading"
+        aria-describedby={STATIONS_MAP_HINT_ID}
+        sx={{ mb: 2 }}
+      >
+        <Typography id="stations-map-heading" sx={visuallyHiddenSx}>
+          Map of nearby charging stations
+        </Typography>
+        <Typography id={STATIONS_MAP_HINT_ID} sx={visuallyHiddenSx}>
+          Pan and zoom to explore. Use the station list below to select a charger with the keyboard.
+        </Typography>
+        <Box
+          role="application"
+          aria-label="Map of nearby charging stations"
+          tabIndex={0}
+          sx={{
+            height: { xs: '42vh', sm: 320, md: 380 },
+            minHeight: 260,
+            maxHeight: 480,
+            position: 'relative',
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: (t) => `1px solid ${t.palette.divider}`,
+            bgcolor: 'background.paper',
+            '&:focus-visible': {
+              outline: (t) => `2px solid ${t.palette.primary.main}`,
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {loading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+                bgcolor: (t) => t.palette.action.hover,
+              }}
+              role="status"
+              aria-busy="true"
+              aria-label="Loading stations map"
+            >
+              <Skeleton
+                variant="rounded"
+                animation="wave"
+                sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
+              />
+            </Box>
+          )}
+          <StationsMapView
+            stations={stations}
+            userLocation={userLocation}
+            selectedChargePointId={mapSelectionId}
+            onSelectStation={handleStationClick}
+            mapFitToken={mapFitToken}
+            ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
+            onViewportBoundsStable={handleViewportBoundsStable}
+            onUserAdjustedMapView={handleUserAdjustedMapView}
+            viewportSearchEnabled={stations.length > 0 && searchTerm.trim() === ''}
+          />
+        </Box>
+      </Box>
+
       <Paper
         elevation={0}
         component="section"
@@ -520,81 +593,6 @@ export function StationsPage() {
         >
           Nearby chargers
         </Typography>
-        <Typography
-          id={STATIONS_SEARCH_HINT_ID}
-          variant="body2"
-          color="text.secondary"
-          sx={{ mb: 2 }}
-        >
-          Search or browse available stations. The list is the easiest way to choose a charger; open the
-          map for a geographic view. Keyboard users: use Tab to move between station cards.
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleSearchSubmit}
-          aria-describedby={STATIONS_SEARCH_HINT_ID}
-          sx={{ mb: 2 }}
-        >
-          <InputLabel htmlFor={STATIONS_SEARCH_FIELD_ID} sx={visuallyHiddenSx}>
-            Search stations by city, address, or charge point ID
-          </InputLabel>
-          <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="stretch">
-            <Grid item xs={12}>
-              <TextField
-                id={STATIONS_SEARCH_FIELD_ID}
-                fullWidth
-                placeholder="Search city, address, or ID…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" color="action" aria-hidden />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={(th) => sxObject(th, authFormFieldSx)}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<SearchIcon />}
-                fullWidth
-                disableElevation
-                sx={compactContainedCtaSx}
-              >
-                Search stations
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
-        {viewportStationsLoading && (
-          <LinearProgress
-            color="primary"
-            sx={{ mb: 1.5, borderRadius: 0.5, width: '100%' }}
-            aria-label="Loading stations in map area"
-          />
-        )}
-        {userLocation && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography variant="body2" component="div">
-              Showing stations near{' '}
-              {userAreaLabel ? (
-                <Box component="span" sx={{ fontWeight: 600 }}>
-                  {userAreaLabel}
-                </Box>
-              ) : (
-                'your location'
-              )}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-              GPS: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-            </Typography>
-          </Alert>
-        )}
         {loading && stations.length === 0 && (
           <Typography
             variant="body2"
@@ -608,20 +606,16 @@ export function StationsPage() {
         )}
         {!loading && stations.length === 0 && !error && (
           <AppEmptyState
+            variant="plain"
             sx={{ p: 2, mb: 0 }}
-            illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
-            illustrationAlt="Ready to charge"
+            illustrationSrc={CUSTOMER_IMAGES.stationHero}
+            illustrationAlt=""
             title="No chargers here"
             description={
               userLocation
-                ? 'Nothing in this area yet. Try another search or open the map.'
+                ? 'Nothing in this area yet. Search another place or pan the map.'
                 : 'Turn on location, or search by area or station ID.'
             }
-            primaryAction={{
-              label: mapExpanded ? 'Hide map' : 'Show map',
-              onClick: () => setMapExpanded((v) => !v),
-              variant: 'secondary',
-            }}
           />
         )}
         {!loading && sortedStations.length > 0 ? (
@@ -676,113 +670,7 @@ export function StationsPage() {
             </Box>
           </>
         ) : null}
-
-        <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            aria-expanded={mapExpanded}
-            aria-controls={STATIONS_MAP_PANEL_ID}
-            onClick={() => setMapExpanded((v) => !v)}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-            })}
-          >
-            {mapExpanded ? 'Hide map' : 'Show map'}
-          </Button>
-          {!mapExpanded ? (
-            <Link href={`#${STATIONS_MAP_PANEL_ID}`} underline="hover" variant="body2" sx={{ alignSelf: 'center' }}>
-              Skip to map section
-            </Link>
-          ) : null}
-        </Box>
       </Paper>
-
-      <Collapse in={mapExpanded} unmountOnExit>
-        <Box
-          ref={mapSectionRef}
-          component="section"
-          id={STATIONS_MAP_PANEL_ID}
-          aria-labelledby="stations-map-heading"
-          aria-describedby={STATIONS_MAP_HINT_ID}
-          sx={{ mb: 2 }}
-        >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'baseline' },
-            justifyContent: 'space-between',
-            gap: 0.5,
-            mb: 1.25,
-          }}
-        >
-          <Typography id="stations-map-heading" variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
-            Map view
-          </Typography>
-          <Typography id={STATIONS_MAP_HINT_ID} variant="caption" color="text.secondary" component="p">
-            Pan and zoom to explore. Markers are not fully keyboard-accessible; use the station list
-            above to select a charger.
-          </Typography>
-        </Box>
-        <Box
-          role="application"
-          aria-label="Map of nearby charging stations"
-          tabIndex={0}
-          sx={{
-            height: { xs: 260, sm: 320, md: 380 },
-            minHeight: 200,
-            position: 'relative',
-            borderRadius: 2,
-            overflow: 'hidden',
-            border: (t) => `1px solid ${t.palette.divider}`,
-            bgcolor: 'background.paper',
-            '&:focus-visible': {
-              outline: (t) => `2px solid ${t.palette.primary.main}`,
-              outlineOffset: 2,
-            },
-          }}
-        >
-          {loading && (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 500,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                p: 2,
-                bgcolor: (t) => t.palette.action.hover,
-              }}
-              role="status"
-              aria-busy="true"
-              aria-label="Loading stations map"
-            >
-              <Skeleton
-                variant="rounded"
-                animation="wave"
-                sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
-              />
-            </Box>
-          )}
-          <StationsMapView
-            stations={stations}
-            userLocation={userLocation}
-            selectedChargePointId={mapSelectionId}
-            onSelectStation={handleStationClick}
-            mapFitToken={mapFitToken}
-            ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
-            onViewportBoundsStable={handleViewportBoundsStable}
-            onUserAdjustedMapView={handleUserAdjustedMapView}
-            viewportSearchEnabled={
-              mapExpanded && stations.length > 0 && searchTerm.trim() === ''
-            }
-          />
-        </Box>
-        </Box>
-      </Collapse>
 
       {/* Start Charging Dialog */}
       <StartChargingDialog

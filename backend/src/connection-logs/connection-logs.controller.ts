@@ -5,13 +5,20 @@ import {
   Query,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ConnectionLogsService } from './connection-logs.service';
 import { ConnectionLog, ConnectionEventType } from '../entities/connection-log.entity';
 import { ConnectionStatistics } from '../entities/connection-statistics.entity';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Connection Logs')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin', 'Admin')
 @Controller('connection-logs')
 export class ConnectionLogsController {
   constructor(private readonly connectionLogsService: ConnectionLogsService) {}
@@ -99,7 +106,7 @@ export class ConnectionLogsController {
     @Query('errorCode') errorCode?: string,
     @Query('requireResolution') requireResolution?: string,
   ) {
-    const requireResolutionBool = requireResolution !== 'false'; // Default to true
+    const requireResolutionBool = requireResolution !== 'false';
     return this.connectionLogsService.deleteResolvedErrors(
       olderThanHours ? parseInt(olderThanHours.toString()) : 24,
       errorCode,
@@ -114,6 +121,3 @@ export class ConnectionLogsController {
     return this.connectionLogsService.deleteError(id);
   }
 }
-
-
-

@@ -33,7 +33,7 @@ import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
 export function CustomerPaymentHistoryPage() {
   const navigate = useNavigate();
@@ -114,24 +114,16 @@ export function CustomerPaymentHistoryPage() {
 
       {payments.length === 0 ? (
         <AppEmptyState
-          illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
-          illustrationAlt="Wallet payments"
+          variant="plain"
+          icon={<ReceiptLongOutlinedIcon />}
           title="No payments yet"
           description="Top-ups and wallet payments will list here."
           primaryAction={{
-            label: 'Top up wallet',
+            label: 'Top up',
             onClick: () => {
               triggerHaptic('light');
               navigate(CUSTOMER_ROUTES.walletTopUp);
             },
-          }}
-          secondaryAction={{
-            label: 'View wallet',
-            onClick: () => {
-              triggerHaptic('light');
-              navigate(CUSTOMER_ROUTES.wallet);
-            },
-            variant: 'secondary',
           }}
         />
       ) : useGroupedList ? (

@@ -284,6 +284,11 @@ export class AuthService {
     });
   }
 
+  async getProfile(userId: number): Promise<AuthUserPayload> {
+    const user = await this.usersService.findOne(userId);
+    return this.toAuthUserPayload(user);
+  }
+
   async requestPasswordReset(email: string): Promise<{ message: string }> {
     const normalized = email.trim().toLowerCase();
     const generic: { message: string } = {

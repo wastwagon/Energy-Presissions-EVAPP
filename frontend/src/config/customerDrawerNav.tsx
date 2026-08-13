@@ -1,6 +1,6 @@
 /**
- * Hamburger drawer links that are **not** on the bottom tab bar (Stations, Charging,
- * Wallet, Profile). Keeps main tabs in menu.config / BottomNav as the single place for those.
+ * Secondary Account destinations (not on the tab bar). Map, Charge, Wallet, and Account
+ * live in `customerBottomNavItems`.
  */
 import type { SvgIconComponent } from '@mui/icons-material';
 import HistoryIcon from '@mui/icons-material/History';

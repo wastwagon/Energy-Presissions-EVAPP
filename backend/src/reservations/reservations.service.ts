@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, LessThan } from 'typeorm';
 import { Reservation } from '../entities/reservation.entity';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { Connector } from '../entities/connector.entity';
@@ -193,7 +193,7 @@ export class ReservationsService {
     const expired = await this.reservationRepository.find({
       where: {
         status: 'Active',
-        expiryDate: MoreThan(new Date()),
+        expiryDate: LessThan(new Date()),
       },
     });
 

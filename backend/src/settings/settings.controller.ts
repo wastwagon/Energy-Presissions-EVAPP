@@ -35,6 +35,9 @@ export class SettingsController {
 
   // System Settings Endpoints
   @Get('system')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Get all system settings' })
   @ApiResponse({ status: 200, description: 'List of system settings', type: [SystemSetting] })
   async getAllSettings(@Query('category') category?: SettingCategory): Promise<SystemSetting[]> {
@@ -49,6 +52,9 @@ export class SettingsController {
   }
 
   @Get('system/:key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Get a specific system setting' })
   @ApiResponse({ status: 200, description: 'System setting', type: SystemSetting })
   @ApiResponse({ status: 404, description: 'Setting not found' })
@@ -57,6 +63,9 @@ export class SettingsController {
   }
 
   @Put('system/:key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Update a system setting' })
   @ApiResponse({ status: 200, description: 'Setting updated', type: SystemSetting })
   async updateSetting(
@@ -67,6 +76,9 @@ export class SettingsController {
   }
 
   @Post('system')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Create a new system setting' })
   @ApiResponse({ status: 201, description: 'Setting created', type: SystemSetting })
   async createSetting(
@@ -92,6 +104,9 @@ export class SettingsController {
 
   // CMS Content Endpoints
   @Get('cms')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get all CMS content' })
   @ApiResponse({ status: 200, description: 'List of CMS content', type: [CmsContent] })
   async getAllContent(
@@ -105,6 +120,9 @@ export class SettingsController {
   }
 
   @Get('cms/:key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get CMS content by key' })
   @ApiResponse({ status: 200, description: 'CMS content', type: CmsContent })
   async getContent(
@@ -115,6 +133,9 @@ export class SettingsController {
   }
 
   @Post('cms')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Create or update CMS content' })
   @ApiResponse({ status: 201, description: 'Content created/updated', type: CmsContent })
   async createOrUpdateContent(
@@ -141,6 +162,9 @@ export class SettingsController {
   }
 
   @Delete('cms/:key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Delete CMS content' })
   @ApiResponse({ status: 204, description: 'Content deleted' })
   async deleteContent(
@@ -152,6 +176,9 @@ export class SettingsController {
 
   // Branding Assets Endpoints
   @Get('branding')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get all branding assets' })
   @ApiResponse({ status: 200, description: 'List of branding assets', type: [BrandingAsset] })
   async getAllAssets(

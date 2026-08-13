@@ -67,6 +67,15 @@ export class WalletService {
     }
 
     return this.dataSource.transaction(async (manager) => {
+      if (paymentId) {
+        const existing = await manager.findOne(WalletTransaction, {
+          where: { paymentId },
+        });
+        if (existing) {
+          return existing;
+        }
+      }
+
       const user = await manager.findOne(User, {
         where: { id: userId },
         lock: { mode: 'pessimistic_write' },
@@ -278,7 +287,7 @@ export class WalletService {
   ) {
     const [transactions, total] = await this.walletTransactionRepository.findAndCount({
       where: { userId },
-      relations: ['payment', 'transaction'],
+      relations: ['payment'],
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
@@ -293,7 +302,7 @@ export class WalletService {
   async getTransaction(id: number): Promise<WalletTransaction> {
     const transaction = await this.walletTransactionRepository.findOne({
       where: { id },
-      relations: ['user', 'payment', 'transaction'],
+      relations: ['user', 'payment'],
     });
 
     if (!transaction) {

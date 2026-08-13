@@ -212,36 +212,20 @@ export function CustomerTopUpPage() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={{ ...premiumPanelCardSx, overflow: 'hidden', p: 0 }}>
-            <Box
-              component="img"
-              src={CUSTOMER_IMAGES.walletEnergy}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              decoding="async"
-              sx={{
-                display: { xs: 'none', md: 'block' },
-                width: '100%',
-                height: 120,
-                objectFit: 'cover',
-              }}
-            />
-            <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.25 }}>
-                How it works
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 } }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.25 }}>
+              How it works
+            </Typography>
+            <Box component="ul" sx={{ m: 0, pl: 2.25, color: 'text.secondary' }}>
+              <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
+                Pick an amount or enter your own (min GHS 1)
               </Typography>
-              <Box component="ul" sx={{ m: 0, pl: 2.25, color: 'text.secondary' }}>
-                <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
-                  Pick an amount or enter your own (min GHS 1)
-                </Typography>
-                <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
-                  Pay with mobile money or card
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Balance updates instantly for charging
-                </Typography>
-              </Box>
+              <Typography component="li" variant="body2" sx={{ mb: 0.75 }}>
+                Pay with mobile money or card
+              </Typography>
+              <Typography component="li" variant="body2">
+                Balance updates instantly for charging
+              </Typography>
             </Box>
           </Paper>
         </Grid>
@@ -254,6 +238,7 @@ export function CustomerTopUpPage() {
           amount={parseFloat(amount)}
           currency="GHS"
           userId={userId}
+          walletTopUp
           onSuccess={handlePaymentSuccess}
           onError={(err) => setError(err)}
         />

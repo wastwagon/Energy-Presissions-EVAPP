@@ -5,11 +5,18 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { FirmwareService } from './firmware.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Firmware')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin', 'Admin')
 @Controller('firmware')
 export class FirmwareController {
   constructor(private readonly firmwareService: FirmwareService) {}
@@ -44,6 +51,3 @@ export class FirmwareController {
     return this.firmwareService.getFirmwareJob(id);
   }
 }
-
-
-

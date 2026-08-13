@@ -18,20 +18,23 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import HelpIcon from '@mui/icons-material/Help';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { BottomNav } from '../components/BottomNav';
+import { CustomerTabBar } from '../components/customer/CustomerTabBar';
 import { customerBottomNavItems } from '../config/menu.config';
 import { CustomerDesktopNavCards } from '../components/customer/CustomerDesktopNavCards';
 import { CUSTOMER_ROUTES } from '../config/customerNav.paths';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../config/legal.config';
 import { clearSession, getStoredUser, isCustomerOrWalkInAccount } from '../utils/authSession';
-import { CustomerAppNavDrawer } from '../components/customer/CustomerAppNavDrawer';
 import { CustomerToolbarLeading } from '../components/customer/CustomerToolbarLeading';
 import {
   jampackAppBarSafeAreaTopSx,
   jampackFixedAppBarMainGapSx,
   jampackFixedAppBarZIndexSx,
 } from '../theme/jampackShell';
-import { customerFrostedAppBarSx } from '../theme/customerChrome';
+import {
+  customerFixedNavBarGapSx,
+  customerFrostedAppBarSx,
+  customerToolbarSx,
+} from '../theme/customerChrome';
 import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/CustomerPageChromeContext';
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
@@ -52,7 +55,6 @@ function CustomerDashboardChrome() {
   );
   const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const open = Boolean(anchorEl);
   const isCustomer = isCustomerOrWalkInAccount(user);
   const showCustomerDesktopNav = !showBottomNav && isCustomer;
@@ -103,24 +105,14 @@ function CustomerDashboardChrome() {
           color: 'text.primary',
         }}
       >
-        <Toolbar
-          sx={{
-            px: { xs: 2, sm: 3 },
-            minHeight: '64px !important',
-            gap: 1,
-            position: 'relative',
-          }}
-        >
+        <Toolbar sx={showBottomNav ? customerToolbarSx : { px: { xs: 2, sm: 3 }, minHeight: '64px !important', gap: 1, position: 'relative' }}>
           <CustomerToolbarLeading
             showBottomNav={showBottomNav}
             isCustomer={isCustomer}
-            navDrawerOpen={navDrawerOpen}
-            onOpenNavDrawer={() => setNavDrawerOpen(true)}
             showCompactNavTitle={showCompactNavTitle}
-            navDrawerId="customer-app-nav-drawer"
           />
           <Box sx={{ flexGrow: 1, minWidth: 0 }} />
-          <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ flexShrink: 0, display: { xs: 'none', lg: 'flex' }, alignItems: 'center', gap: 2 }}>
             <Box
               sx={{
                 textAlign: 'right',
@@ -244,10 +236,7 @@ function CustomerDashboardChrome() {
           </Box>
         </Toolbar>
       </AppBar>
-      {showBottomNav && isCustomer && (
-        <CustomerAppNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
-      )}
-      <Box sx={jampackFixedAppBarMainGapSx} aria-hidden />
+      <Box sx={showBottomNav ? customerFixedNavBarGapSx : jampackFixedAppBarMainGapSx} aria-hidden />
       {showCustomerDesktopNav && (
         <Container
           maxWidth="lg"
@@ -281,9 +270,9 @@ function CustomerDashboardChrome() {
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorY: 'contain',
             overflowX: 'hidden',
-            mt: { xs: 1, sm: 2 },
+            mt: { xs: 0.5, sm: 2 },
             px: { xs: 2, sm: 3 },
-            pb: showDockedBottomNav ? 2 : 4,
+            pb: showDockedBottomNav ? 1.5 : 4,
             width: '100%',
             minWidth: 0,
           }}
@@ -292,9 +281,7 @@ function CustomerDashboardChrome() {
             <CustomerStackTransition />
           </CustomerScrollProviders>
         </Container>
-        {showDockedBottomNav && (
-          <BottomNav items={customerBottomNavItems} variant="customer" />
-        )}
+        {showDockedBottomNav && <CustomerTabBar items={customerBottomNavItems} />}
       </Box>
     </Box>
   );

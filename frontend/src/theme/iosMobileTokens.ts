@@ -60,6 +60,17 @@ export const iosElevations = {
   cardBorder: (foregroundRgb = '60, 60, 67') => `1px solid rgba(${foregroundRgb}, 0.12)`,
 };
 
+export const iosTabBar = {
+  /** Content row above the home indicator (HIG tab bar). */
+  rowHeightPx: 49,
+  iconSizePx: 26,
+  labelSizePx: 10,
+  unselected: 'rgba(60, 60, 67, 0.60)',
+  /** Light tab bar fill (ultra-thin material). */
+  blurBg: 'rgba(249, 249, 249, 0.92)',
+  separator: 'rgba(60, 60, 67, 0.29)',
+} as const;
+
 export function iosSheetBlurBg(mode: IosPaletteMode): string {
   return mode === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(28, 28, 30, 0.94)';
 }

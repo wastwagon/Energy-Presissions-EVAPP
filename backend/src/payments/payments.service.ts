@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { Payment } from '../entities/payment.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { Transaction } from '../entities/transaction.entity';
@@ -11,6 +12,7 @@ import { User } from '../entities/user.entity';
 import { BillingService } from '../billing/billing.service';
 import { WalletService } from '../wallet/wallet.service';
 import { VendorStatusService } from '../vendors/vendor-status.service';
+import { isStaffAccount } from '../common/utils/account-type';
 
 interface PaystackInitializeResponse {
   status: boolean;
@@ -67,6 +69,7 @@ export class PaymentsService {
     private walletService: WalletService,
     private configService: ConfigService,
     private vendorStatusService: VendorStatusService,
+    private dataSource: DataSource,
   ) {
     this.paystackSecretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY') || '';
     this.paystackPublicKey = this.configService.get<string>('PAYSTACK_PUBLIC_KEY') || '';
@@ -74,6 +77,30 @@ export class PaymentsService {
     if (!this.paystackSecretKey || !this.paystackPublicKey) {
       this.logger.warn('Paystack keys not configured. Payment processing will fail.');
     }
+  }
+
+  private getPaystackCallbackUrl(): string {
+    const explicit = this.configService.get<string>('PAYSTACK_CALLBACK_URL')?.trim();
+    if (explicit) {
+      return explicit;
+    }
+    const frontend =
+      this.configService.get<string>('FRONTEND_URL')?.replace(/\/$/, '') ||
+      'https://cleanmotion.energyprecisions.com';
+    return `${frontend}/user/wallet`;
+  }
+
+  private assertInvoiceActor(
+    invoiceUserId: number,
+    actor?: { id: number; accountType: string },
+  ): void {
+    if (!actor) {
+      return;
+    }
+    if (isStaffAccount(actor.accountType) || actor.id === invoiceUserId) {
+      return;
+    }
+    throw new ForbiddenException('You cannot pay this invoice');
   }
 
   /**
@@ -86,6 +113,7 @@ export class PaymentsService {
     metadata?: Record<string, any>,
     channel?: string, // 'card', 'mobile_money', 'bank', 'ussd', 'qr'
     phone?: string, // For mobile money payments
+    actor?: { id: number; accountType: string },
   ): Promise<{ authorizationUrl: string; reference: string; accessCode: string }> {
     const invoice = await this.invoiceRepository.findOne({
       where: { id: invoiceId },
@@ -95,6 +123,8 @@ export class PaymentsService {
     if (!invoice) {
       throw new NotFoundException(`Invoice ${invoiceId} not found`);
     }
+
+    this.assertInvoiceActor(invoice.userId, actor);
 
     if (invoice.status === 'Paid') {
       throw new BadRequestException('Invoice is already paid');
@@ -115,9 +145,10 @@ export class PaymentsService {
           invoiceId: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
           transactionId: invoice.transactionId,
+          type: 'invoice',
           ...metadata,
         },
-        callback_url: this.configService.get<string>('PAYSTACK_CALLBACK_URL') || '',
+        callback_url: this.getPaystackCallbackUrl(),
       };
 
       // Add channel for mobile money or other payment methods
@@ -190,8 +221,103 @@ export class PaymentsService {
     }
   }
 
+  async initializeWalletTopUp(
+    userId: number,
+    amount: number,
+    email: string,
+    channel?: string,
+    phone?: string,
+  ): Promise<{ authorizationUrl: string; reference: string; accessCode: string }> {
+    if (amount < 1) {
+      throw new BadRequestException('Minimum top-up is GHS 1.00');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User ${userId} not found`);
+    }
+
+    const amountInPesewas = Math.round(amount * 100);
+    const currency = user.currency || 'GHS';
+
+    try {
+      const paymentRequest: Record<string, unknown> = {
+        email,
+        amount: amountInPesewas,
+        currency,
+        reference: `WALLET-${userId}-${Date.now()}`,
+        metadata: {
+          type: 'wallet_topup',
+          userId,
+        },
+        callback_url: this.getPaystackCallbackUrl(),
+        channels: channel ? [channel] : ['card', 'mobile_money', 'bank', 'ussd', 'qr'],
+      };
+
+      if (phone && (channel === 'mobile_money' || !channel)) {
+        (paymentRequest.metadata as Record<string, unknown>).phone = phone;
+      }
+
+      const response = await axios.post<PaystackInitializeResponse>(
+        `${this.paystackBaseUrl}/transaction/initialize`,
+        paymentRequest,
+        {
+          headers: {
+            Authorization: `Bearer ${this.paystackSecretKey}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (!response.data.status) {
+        throw new BadRequestException(response.data.message || 'Failed to initialize payment');
+      }
+
+      let paymentMethod = 'Card';
+      if (channel === 'mobile_money') {
+        paymentMethod = 'Mobile Money';
+      } else if (channel === 'bank') {
+        paymentMethod = 'Bank Transfer';
+      } else if (channel === 'ussd') {
+        paymentMethod = 'USSD';
+      } else if (channel === 'qr') {
+        paymentMethod = 'QR Code';
+      }
+
+      const payment = this.paymentRepository.create({
+        transactionId: null,
+        userId,
+        amount,
+        currency,
+        paymentMethod,
+        paymentGateway: 'Paystack',
+        paymentGatewayId: response.data.data.reference,
+        status: 'Pending',
+      });
+
+      await this.paymentRepository.save(payment);
+
+      return {
+        authorizationUrl: response.data.data.authorization_url,
+        reference: response.data.data.reference,
+        accessCode: response.data.data.access_code,
+      };
+    } catch (error: any) {
+      this.logger.error('Error initializing wallet top-up:', error);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error.response?.data) {
+        throw new BadRequestException(
+          error.response.data.message || 'Failed to initialize payment',
+        );
+      }
+      throw new BadRequestException('Failed to initialize payment');
+    }
+  }
+
   /**
-   * Verify Paystack payment
+   * Verify Paystack payment and credit wallet / mark invoice paid.
    */
   async verifyPayment(reference: string): Promise<Payment> {
     try {
@@ -210,41 +336,63 @@ export class PaymentsService {
 
       const paymentData = response.data.data;
 
-      // Find payment by reference
-      const payment = await this.paymentRepository.findOne({
-        where: { paymentGatewayId: reference },
-        relations: ['transaction'],
-      });
-
-      if (!payment) {
-        throw new NotFoundException(`Payment with reference ${reference} not found`);
-      }
-
-      // Update payment status
-      if (paymentData.status === 'success') {
-        payment.status = 'Succeeded';
-        payment.processedAt = new Date(paymentData.transaction_date);
-        payment.paymentMethod = paymentData.authorization?.card_type || 'Card';
-
-        // Update invoice status
-        const invoice = await this.invoiceRepository.findOne({
-          where: { transactionId: payment.transactionId },
+      return this.dataSource.transaction(async (manager) => {
+        const payment = await manager.findOne(Payment, {
+          where: { paymentGatewayId: reference },
+          lock: { mode: 'pessimistic_write' },
         });
 
-        if (invoice) {
-          invoice.status = 'Paid';
-          invoice.paidAt = new Date();
-          await this.invoiceRepository.save(invoice);
+        if (!payment) {
+          throw new NotFoundException(`Payment with reference ${reference} not found`);
         }
-      } else {
-        payment.status = 'Failed';
-        payment.failureReason = paymentData.gateway_response;
-        payment.processedAt = new Date(paymentData.transaction_date);
-      }
 
-      return this.paymentRepository.save(payment);
+        if (payment.status === 'Succeeded') {
+          return payment;
+        }
+
+        if (paymentData.status === 'success') {
+          const paidAmount = Number(paymentData.amount) / 100;
+          payment.status = 'Succeeded';
+          payment.processedAt = new Date(paymentData.transaction_date);
+          payment.paymentMethod = paymentData.authorization?.card_type || payment.paymentMethod || 'Card';
+          payment.amount = paidAmount;
+          await manager.save(payment);
+
+          if (!payment.transactionId) {
+            await this.walletService.topUp(
+              payment.userId,
+              paidAmount,
+              undefined,
+              'Paystack wallet top-up',
+              payment.id,
+            );
+          } else {
+            const invoice = await manager.findOne(Invoice, {
+              where: { transactionId: payment.transactionId },
+            });
+            if (invoice && invoice.status !== 'Paid') {
+              invoice.status = 'Paid';
+              invoice.paidAt = new Date();
+              await manager.save(invoice);
+            }
+          }
+        } else {
+          payment.status = 'Failed';
+          payment.failureReason = paymentData.gateway_response;
+          payment.processedAt = new Date(paymentData.transaction_date);
+          await manager.save(payment);
+        }
+
+        return payment;
+      });
     } catch (error: any) {
       this.logger.error('Error verifying Paystack payment:', error);
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
       if (error.response?.data) {
         throw new BadRequestException(
           error.response.data.message || 'Payment verification failed',
@@ -252,6 +400,42 @@ export class PaymentsService {
       }
       throw new BadRequestException('Payment verification failed');
     }
+  }
+
+  async handlePaystackWebhook(
+    signature: string,
+    rawBody: Buffer | undefined,
+    parsedBody: { event?: string; data?: { reference?: string } },
+  ): Promise<{ received: true }> {
+    const secret = this.paystackSecretKey;
+    if (!secret) {
+      throw new UnauthorizedException('Paystack is not configured');
+    }
+
+    const payload = rawBody?.length ? rawBody : Buffer.from(JSON.stringify(parsedBody ?? {}));
+    const hash = crypto.createHmac('sha512', secret).update(payload).digest('hex');
+    const expected = Buffer.from(hash, 'utf8');
+    const received = Buffer.from(signature || '', 'utf8');
+    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
+      throw new UnauthorizedException('Invalid Paystack signature');
+    }
+
+    if (parsedBody?.event === 'charge.success' && parsedBody.data?.reference) {
+      try {
+        await this.verifyPayment(parsedBody.data.reference);
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          this.logger.warn(
+            `Paystack webhook for unknown reference ${parsedBody.data.reference}`,
+          );
+          return { received: true };
+        }
+        this.logger.error(`Paystack webhook verify failed for ${parsedBody.data.reference}`, error);
+        throw error;
+      }
+    }
+
+    return { received: true };
   }
 
   /**
@@ -262,8 +446,9 @@ export class PaymentsService {
     email: string,
     channel?: string,
     phone?: string,
+    actor?: { id: number; accountType: string },
   ): Promise<{ authorizationUrl: string; reference: string }> {
-    const result = await this.initializePayment(invoiceId, email, undefined, channel, phone);
+    const result = await this.initializePayment(invoiceId, email, undefined, channel, phone, actor);
     return {
       authorizationUrl: result.authorizationUrl,
       reference: result.reference,
@@ -279,6 +464,7 @@ export class PaymentsService {
     email: string,
     channel?: string,
     phone?: string,
+    actor?: { id: number; accountType: string },
   ): Promise<{ authorizationUrl: string; reference: string }> {
     const transaction = await this.transactionRepository.findOne({
       where: { transactionId },
@@ -292,6 +478,10 @@ export class PaymentsService {
       throw new BadRequestException('Transaction is not completed');
     }
 
+    if (transaction.userId) {
+      this.assertInvoiceActor(transaction.userId, actor);
+    }
+
     // Generate invoice if not exists
     let invoice = await this.invoiceRepository.findOne({
       where: { transactionId },
@@ -301,7 +491,7 @@ export class PaymentsService {
       invoice = await this.billingService.generateInvoice(transactionId);
     }
 
-    return this.processPaymentForInvoice(invoice.id, email, channel, phone);
+    return this.processPaymentForInvoice(invoice.id, email, channel, phone, actor);
   }
 
   /**

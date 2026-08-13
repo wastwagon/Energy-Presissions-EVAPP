@@ -19,15 +19,20 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { isStaffAccount } from '../common/utils/account-type';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePoint } from '../entities/charge-point.entity';
 
 @ApiTags('Charge Points')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('charge-points')
 export class ChargePointsController {
   constructor(private readonly chargePointsService: ChargePointsService) {}
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get all charge points' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by chargePointId, vendor, model, or serialNumber' })
   @ApiQuery({ name: 'vendorId', required: false, type: Number, description: 'Filter by vendor ID' })
@@ -38,16 +43,14 @@ export class ChargePointsController {
     @Query('vendorId') vendorId?: number,
     @Headers('x-vendor-id') vendorIdHeader?: string,
   ): Promise<ChargePoint[]> {
-    // Use query param vendorId or header X-Vendor-Id
     const finalVendorId = vendorId || (vendorIdHeader ? parseInt(vendorIdHeader) : undefined);
-    
+
     return this.chargePointsService.findAll(search, finalVendorId);
   }
 
   @Post('reconcile-vendor-names')
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Set vendorName from vendors table for all charge points (data repair)' })
   @ApiResponse({ status: 200, description: 'Count of rows updated' })
@@ -56,6 +59,8 @@ export class ChargePointsController {
   }
 
   @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get charge point by ID' })
   @ApiResponse({ status: 200, description: 'Charge point details' })
   @ApiResponse({ status: 404, description: 'Charge point not found' })
@@ -65,6 +70,8 @@ export class ChargePointsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Create a new charge point' })
   @ApiResponse({ status: 201, description: 'Charge point created' })
   async create(@Body() data: Partial<ChargePoint>): Promise<ChargePoint> {
@@ -72,6 +79,8 @@ export class ChargePointsController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Update charge point' })
   @ApiResponse({ status: 200, description: 'Charge point updated' })
   @ApiResponse({ status: 404, description: 'Charge point not found' })
@@ -84,8 +93,7 @@ export class ChargePointsController {
 
   @Delete('registry-block/:chargePointId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('SuperAdmin')
   @ApiOperation({
     summary:
@@ -99,8 +107,7 @@ export class ChargePointsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Delete charge point (removes related billing/connector data)' })
   @ApiResponse({ status: 204, description: 'Charge point deleted' })
@@ -121,8 +128,7 @@ export class ChargePointsController {
 
   @Post(':id/clear-stale-operational-state')
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('SuperAdmin', 'Admin')
   @ApiOperation({
     summary:
@@ -145,6 +151,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get charge point status' })
   @ApiResponse({ status: 200, description: 'Charge point status' })
   async getStatus(@Param('id') id: string): Promise<any> {
@@ -152,6 +160,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/connectors')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get all connectors for a charge point' })
   @ApiResponse({ status: 200, description: 'List of connectors' })
   async getConnectors(@Param('id') id: string): Promise<any[]> {
@@ -159,6 +169,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/connectors/:connectorId')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get connector details' })
   @ApiResponse({ status: 200, description: 'Connector details' })
   async getConnector(
@@ -170,6 +182,8 @@ export class ChargePointsController {
 
   @Post(':id/remote-start')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Remote start transaction' })
   @ApiResponse({ status: 200, description: 'Command sent successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request or charge point not connected' })
@@ -191,12 +205,15 @@ export class ChargePointsController {
   @ApiResponse({ status: 400, description: 'Invalid request or insufficient balance' })
   async startWalletBasedCharging(
     @Param('id') id: string,
-    @Body() body: { connectorId: number; userId: number; amount?: number },
+    @Request() req: { user: { id: number; accountType: string } },
+    @Body() body: { connectorId: number; userId?: number; amount?: number },
   ) {
+    const userId =
+      isStaffAccount(req.user.accountType) && body.userId ? body.userId : req.user.id;
     return this.chargePointsService.startWalletBasedCharging(
       id,
       body.connectorId,
-      body.userId,
+      userId,
       body.amount,
     );
   }
@@ -215,6 +232,8 @@ export class ChargePointsController {
 
   @Post(':id/connectors/:connectorId/unlock')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Unlock connector' })
   @ApiResponse({ status: 200, description: 'Command sent successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request or charge point not connected' })
@@ -227,6 +246,8 @@ export class ChargePointsController {
 
   @Post(':id/change-availability')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Change connector availability' })
   @ApiResponse({ status: 200, description: 'Command sent successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request or charge point not connected' })
@@ -242,6 +263,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/configuration')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get charge point configuration' })
   @ApiResponse({ status: 200, description: 'Configuration retrieved' })
   @ApiResponse({ status: 400, description: 'Invalid request or charge point not connected' })
@@ -255,6 +278,8 @@ export class ChargePointsController {
 
   @Post(':id/configuration')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Change charge point configuration' })
   @ApiResponse({ status: 200, description: 'Configuration changed' })
   @ApiResponse({ status: 400, description: 'Invalid request or charge point not connected' })
@@ -267,6 +292,8 @@ export class ChargePointsController {
 
   @Post(':id/reset')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Reset charge point' })
   @ApiResponse({ status: 200, description: 'Reset command sent' })
   async reset(
@@ -278,6 +305,8 @@ export class ChargePointsController {
 
   @Post(':id/clear-cache')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Clear authorization cache' })
   @ApiResponse({ status: 200, description: 'Clear cache command sent' })
   async clearCache(@Param('id') id: string) {
@@ -286,6 +315,8 @@ export class ChargePointsController {
 
   @Post(':id/reserve-now')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Reserve connector' })
   @ApiResponse({ status: 200, description: 'Reservation command sent' })
   async reserveNow(
@@ -311,6 +342,8 @@ export class ChargePointsController {
 
   @Post(':id/cancel-reservation')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Cancel reservation' })
   @ApiResponse({ status: 200, description: 'Cancel reservation command sent' })
   async cancelReservation(
@@ -322,6 +355,8 @@ export class ChargePointsController {
 
   @Post(':id/send-local-list')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Send local authorization list' })
   @ApiResponse({ status: 200, description: 'Local list sent' })
   async sendLocalList(
@@ -342,6 +377,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/local-list-version')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get local list version' })
   @ApiResponse({ status: 200, description: 'Local list version' })
   async getLocalListVersion(@Param('id') id: string) {
@@ -350,6 +387,8 @@ export class ChargePointsController {
 
   @Post(':id/set-charging-profile')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Set charging profile' })
   @ApiResponse({ status: 200, description: 'Charging profile set' })
   async setChargingProfile(
@@ -365,6 +404,8 @@ export class ChargePointsController {
 
   @Post(':id/clear-charging-profile')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Clear charging profile' })
   @ApiResponse({ status: 200, description: 'Charging profile cleared' })
   async clearChargingProfile(
@@ -387,6 +428,8 @@ export class ChargePointsController {
   }
 
   @Get(':id/composite-schedule')
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get composite schedule' })
   @ApiResponse({ status: 200, description: 'Composite schedule' })
   async getCompositeSchedule(
@@ -400,6 +443,8 @@ export class ChargePointsController {
 
   @Post(':id/update-firmware')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Update firmware' })
   @ApiResponse({ status: 200, description: 'Firmware update initiated' })
   async updateFirmware(
@@ -423,6 +468,8 @@ export class ChargePointsController {
 
   @Post(':id/get-diagnostics')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Get diagnostics' })
   @ApiResponse({ status: 200, description: 'Diagnostics request sent' })
   async getDiagnostics(
@@ -448,6 +495,8 @@ export class ChargePointsController {
 
   @Post(':id/data-transfer')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Data transfer' })
   @ApiResponse({ status: 200, description: 'Data transfer sent' })
   async dataTransfer(
@@ -462,4 +511,3 @@ export class ChargePointsController {
     return this.chargePointsService.dataTransfer(id, body.vendorId, body.messageId, body.data);
   }
 }
-

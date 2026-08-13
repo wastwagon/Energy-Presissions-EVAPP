@@ -38,7 +38,9 @@ import {
   sxObject,
 } from '../../styles/authShell';
 import { triggerHaptic } from '../../utils/haptics';
-import { getStoredUser } from '../../utils/authSession';
+import { clearSession, getStoredUser } from '../../utils/authSession';
+import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
+import { customerDrawerMoreItems } from '../../config/customerDrawerNav';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { AppBadge } from '../../components/ui/AppBadge';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -322,6 +324,33 @@ export function CustomerProfilePage() {
                       : 'N/A'
                   }
                   showChevron={false}
+                />
+              </GroupedListSection>
+
+              <GroupedListSection title="More">
+                {customerDrawerMoreItems.map((item, index) => (
+                  <GroupedListRow
+                    key={item.to}
+                    primary={item.label}
+                    onClick={() => {
+                      triggerHaptic('light');
+                      navigate(item.to);
+                    }}
+                    divider={index < customerDrawerMoreItems.length - 1}
+                  />
+                ))}
+              </GroupedListSection>
+
+              <GroupedListSection>
+                <GroupedListRow
+                  primary="Sign out"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    clearSession();
+                    navigate('/login');
+                  }}
+                  showChevron={false}
+                  primaryTypographyProps={{ sx: { color: 'error.main', fontWeight: 600 } }}
                 />
               </GroupedListSection>
 

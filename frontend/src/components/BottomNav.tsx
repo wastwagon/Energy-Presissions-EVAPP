@@ -7,7 +7,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { alpha } from '@mui/material/styles';
 import { brandColors } from '../theme';
 import { iosMotion, iosRadii, iosSheetBlurBg } from '../theme/iosMobileTokens';
 import { triggerHaptic } from '../utils/haptics';
@@ -17,6 +16,8 @@ export type BottomNavRouteItem = {
   id: string;
   label: string;
   icon: ReactNode;
+  /** Filled glyph when the tab is selected (iOS outline → fill). */
+  activeIcon?: ReactNode;
   path: string;
   matchPaths?: string[];
 };
@@ -45,16 +46,11 @@ export function isBottomNavItemActive(pathname: string, item: BottomNavItem): bo
 
 interface BottomNavProps {
   items: BottomNavItem[];
-  /** Accent color for active state (default / staff shells) */
+  /** Accent color for active state (staff shells) */
   accentColor?: string;
-  /**
-   * `customer`: light chrome aligned with `#f4f7f9` page shell — pill active chip, separators match Jampack.
-   * `default`: legacy frosted bar (staff / MainLayout).
-   */
-  variant?: 'default' | 'customer';
 }
 
-export function BottomNav({ items, accentColor = brandColors.primary, variant = 'default' }: BottomNavProps) {
+export function BottomNav({ items, accentColor = brandColors.primary }: BottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -81,7 +77,6 @@ export function BottomNav({ items, accentColor = brandColors.primary, variant = 
         borderColor: 'divider',
         borderRadius: iosRadii.flat,
         pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
-        pt: variant === 'customer' ? 0.5 : 0,
         background: iosSheetBlurBg('light'),
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
@@ -104,34 +99,27 @@ export function BottomNav({ items, accentColor = brandColors.primary, variant = 
         sx={{
           height: 'auto',
           minHeight: 64,
-          py: variant === 'customer' ? 0.75 : 0.5,
-          px: variant === 'customer' ? { xs: 0.75, sm: 1 } : 0,
+          py: 0.5,
           boxSizing: 'border-box',
-          bgcolor: variant === 'customer' ? 'transparent' : undefined,
-          gap: variant === 'customer' ? { xs: 0.25, sm: 0.5 } : 0,
           '& .MuiBottomNavigationAction-root': {
             minWidth: isMobile ? 56 : 72,
             minHeight: isMobile ? 44 : undefined,
             maxWidth: 'none',
             flex: '1 1 0',
-            py: variant === 'customer' ? 0.75 : 0.5,
-            pt: variant === 'customer' ? 1 : 0.75,
-            pb: variant === 'customer' ? 0.5 : 0.25,
-            px: variant === 'customer' ? 0.35 : 0,
-            borderRadius: variant === 'customer' ? 999 : 0,
-            color: variant === 'customer' ? 'text.secondary' : undefined,
-            transition: `color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease, background-color ${iosMotion.standard}ms ease`,
+            py: 0.5,
+            pt: 0.75,
+            pb: 0.25,
+            transition: `color ${iosMotion.standard}ms ease, transform ${iosMotion.standard}ms ease`,
           },
           '& .MuiBottomNavigationAction-root.Mui-selected': {
-            color: variant === 'customer' ? 'primary.main' : accentColor,
-            bgcolor: variant === 'customer' ? (t) => alpha(t.palette.primary.main, 0.12) : undefined,
+            color: accentColor,
             '& .MuiSvgIcon-root': {
               transform: 'scale(1.06)',
             },
           },
           '& .MuiBottomNavigationAction-label': {
             fontSize: isMobile ? '0.6875rem' : '0.8rem',
-            fontWeight: variant === 'customer' ? 600 : 500,
+            fontWeight: 500,
             lineHeight: 1.2,
             opacity: 1,
             whiteSpace: 'nowrap',

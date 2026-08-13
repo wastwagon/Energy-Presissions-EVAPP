@@ -45,7 +45,7 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 
 export function CustomerPaymentMethodsPage() {
   const theme = useTheme();
@@ -188,14 +188,13 @@ export function CustomerPaymentMethodsPage() {
 
       {methods.length === 0 ? (
         <AppEmptyState
-          illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
-          illustrationAlt="Wallet payments"
-          title="No payment methods yet"
+          variant="plain"
+          icon={<CreditCardOutlinedIcon />}
+          title="No payment methods"
           description="Save mobile money or a card for faster top-ups."
           primaryAction={{
-            label: 'Add payment method',
+            label: 'Add a method',
             onClick: () => setDialogOpen(true),
-            startIcon: <AddIcon />,
           }}
         />
       ) : useGroupedList ? (

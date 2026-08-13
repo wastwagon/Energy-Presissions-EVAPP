@@ -111,6 +111,32 @@ export const paymentsApi = {
   },
 
   /**
+   * Start a Paystack checkout that credits the signed-in user's wallet.
+   */
+  initializeWalletTopUp: async (
+    amount: number,
+    email: string,
+    channel?: string,
+    phone?: string,
+  ): Promise<PaymentInitResponse> => {
+    const response = await api.post('/payments/wallet/top-up', {
+      amount,
+      email,
+      channel,
+      phone,
+    });
+    return response.data;
+  },
+
+  /**
+   * Confirm a Paystack payment (wallet top-up or invoice) after redirect.
+   */
+  verifyPayment: async (reference: string): Promise<Payment> => {
+    const response = await api.post(`/payments/verify/${encodeURIComponent(reference)}`);
+    return response.data;
+  },
+
+  /**
    * Process wallet payment
    */
   processWalletPayment: async (invoiceId: number): Promise<Payment> => {

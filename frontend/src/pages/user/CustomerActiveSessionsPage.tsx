@@ -34,7 +34,7 @@ import {
 } from '../../styles/authShell';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import EvStationOutlinedIcon from '@mui/icons-material/EvStationOutlined';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatElapsedDurationFromStart } from '../../utils/formatters';
@@ -214,12 +214,12 @@ export function CustomerActiveSessionsPage() {
 
       {transactions.length === 0 ? (
         <AppEmptyState
-          illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
-          illustrationAlt="Ready to charge"
+          variant="plain"
+          icon={<EvStationOutlinedIcon />}
           title="No active sessions"
-          description="Find a charger when you're ready — live sessions show here."
+          description="Find a charger when you’re ready — live sessions show here."
           primaryAction={{
-            label: 'Find chargers',
+            label: 'Find a charger',
             onClick: () => navigate(CUSTOMER_ROUTES.stations),
           }}
         />

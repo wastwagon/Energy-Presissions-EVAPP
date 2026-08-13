@@ -24,6 +24,11 @@ export type AppEmptyStateProps = {
   primaryAction?: AppEmptyStateAction;
   secondaryAction?: AppEmptyStateAction;
   sx?: SxProps<Theme>;
+  /**
+   * `card` — bordered panel (staff tables).
+   * `plain` — iOS-style empty: no chrome, SF-sized glyph, air, one tinted action.
+   */
+  variant?: 'card' | 'plain';
 };
 
 /**
@@ -40,16 +45,13 @@ export function AppEmptyState({
   primaryAction,
   secondaryAction,
   sx,
+  variant = 'card',
 }: AppEmptyStateProps) {
   const actions = [primaryAction, secondaryAction].filter(Boolean) as AppEmptyStateAction[];
+  const plain = variant === 'plain';
 
-  return (
-    <Paper
-      elevation={0}
-      role="status"
-      aria-live="polite"
-      sx={[premiumEmptyStatePaperSx, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
-    >
+  const body = (
+    <>
       {illustrationSrc ? (
         <Box
           component="img"
@@ -58,8 +60,8 @@ export function AppEmptyState({
           loading="lazy"
           decoding="async"
           sx={{
-            width: { xs: 140, sm: 168 },
-            height: { xs: 140, sm: 168 },
+            width: plain ? { xs: 128, sm: 148 } : { xs: 140, sm: 168 },
+            height: plain ? { xs: 128, sm: 148 } : { xs: 140, sm: 168 },
             objectFit: 'cover',
             borderRadius: `${iosRadii.md}px`,
             mx: 'auto',
@@ -70,27 +72,39 @@ export function AppEmptyState({
       ) : icon ? (
         <Box
           sx={(theme) => ({
-            width: 72,
-            height: 72,
+            width: plain ? 56 : 72,
+            height: plain ? 56 : 72,
             mx: 'auto',
-            mb: 2,
-            borderRadius: `${iosRadii.md}px`,
+            mb: plain ? 1.75 : 2,
+            borderRadius: plain ? '50%' : `${iosRadii.md}px`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: theme.palette.action.hover,
-            color: 'text.secondary',
-            '& .MuiSvgIcon-root': { fontSize: 36 },
+            bgcolor: plain ? 'rgba(60, 60, 67, 0.08)' : theme.palette.action.hover,
+            color: plain ? 'text.secondary' : 'text.secondary',
+            '& .MuiSvgIcon-root': { fontSize: plain ? 28 : 36 },
           })}
         >
           {icon}
         </Box>
       ) : null}
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: description || footnote || actions.length ? 0.5 : 0 }}>
+      <Typography
+        variant={plain ? 'h6' : 'subtitle1'}
+        sx={{
+          fontWeight: plain ? 700 : 600,
+          letterSpacing: plain ? '-0.022em' : undefined,
+          fontSize: plain ? '1.25rem' : undefined,
+          mb: description || footnote || actions.length ? 0.75 : 0,
+        }}
+      >
         {title}
       </Typography>
       {description ? (
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto' }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ maxWidth: plain ? 280 : 420, mx: 'auto', fontSize: plain ? '0.9375rem' : undefined, lineHeight: 1.45 }}
+        >
           {description}
         </Typography>
       ) : null}
@@ -107,10 +121,10 @@ export function AppEmptyState({
       {actions.length > 0 ? (
         <Box
           sx={{
-            mt: 3,
+            mt: plain ? 2.5 : 3,
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
-            gap: 1.5,
+            gap: 1.25,
             justifyContent: 'center',
             alignItems: 'stretch',
           }}
@@ -120,12 +134,20 @@ export function AppEmptyState({
             return (
               <Button
                 key={action.label}
-                variant={isPrimary ? 'contained' : 'outlined'}
+                variant={plain && isPrimary ? 'contained' : isPrimary ? 'contained' : 'text'}
                 disableElevation={isPrimary}
-                startIcon={action.startIcon}
+                startIcon={plain ? undefined : action.startIcon}
                 onClick={action.onClick}
                 sx={(th) => ({
-                  ...sxObject(th, isPrimary ? compactContainedCtaSx : compactOutlinedCtaSx),
+                  ...(plain
+                    ? {
+                        ...sxObject(th, isPrimary ? compactContainedCtaSx : compactOutlinedCtaSx),
+                        minHeight: 44,
+                        borderRadius: 999,
+                        fontWeight: 600,
+                        ...(isPrimary ? {} : { border: 'none', color: 'primary.main' }),
+                      }
+                    : sxObject(th, isPrimary ? compactContainedCtaSx : compactOutlinedCtaSx)),
                   width: { xs: '100%', sm: 'auto' },
                 })}
               >
@@ -135,6 +157,36 @@ export function AppEmptyState({
           })}
         </Box>
       ) : null}
+    </>
+  );
+
+  if (plain) {
+    return (
+      <Box
+        role="status"
+        aria-live="polite"
+        sx={[
+          {
+            py: { xs: 6, sm: 8 },
+            px: 2,
+            textAlign: 'center',
+          },
+          ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+        ]}
+      >
+        {body}
+      </Box>
+    );
+  }
+
+  return (
+    <Paper
+      elevation={0}
+      role="status"
+      aria-live="polite"
+      sx={[premiumEmptyStatePaperSx, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+    >
+      {body}
     </Paper>
   );
 }

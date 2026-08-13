@@ -22,6 +22,7 @@ import { AdaptiveSheet } from './ios/AdaptiveSheet';
 import { UserErrorAlert } from './UserErrorAlert';
 import { triggerHaptic } from '../utils/haptics';
 import { formatUserFacingErrorMessage, UserMessages } from '../utils/userFriendlyErrors';
+import { getStoredUser } from '../utils/authSession';
 
 interface PaystackPaymentProps {
   open: boolean;
@@ -31,6 +32,8 @@ interface PaystackPaymentProps {
   amount: number;
   currency?: string;
   userId?: number;
+  /** When true, checkout credits the wallet instead of paying an invoice. */
+  walletTopUp?: boolean;
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
@@ -43,6 +46,7 @@ export function PaystackPayment({
   amount,
   currency = 'GHS',
   userId,
+  walletTopUp = false,
   onSuccess,
   onError,
 }: PaystackPaymentProps) {
@@ -57,10 +61,18 @@ export function PaystackPayment({
   const [loadingBalance, setLoadingBalance] = useState(false);
 
   useEffect(() => {
-    if (open && userId) {
+    if (open && userId && !walletTopUp) {
       void loadWalletBalance();
     }
-  }, [open, userId]);
+  }, [open, userId, walletTopUp]);
+
+  useEffect(() => {
+    if (!open) return;
+    const stored = getStoredUser();
+    if (stored?.email && stored.email.includes('@')) {
+      setEmail((current) => current || stored.email || '');
+    }
+  }, [open]);
 
   const loadWalletBalance = async () => {
     if (!userId) return;
@@ -160,6 +172,13 @@ export function PaystackPayment({
           paymentChannel === 'card' ? undefined : paymentChannel,
           paymentChannel === 'mobile_money' ? formattedPhone : undefined,
         );
+      } else if (walletTopUp) {
+        paymentData = await paymentsApi.initializeWalletTopUp(
+          amount,
+          email,
+          paymentChannel === 'card' ? undefined : paymentChannel,
+          paymentChannel === 'mobile_money' ? formattedPhone : undefined,
+        );
       } else {
         throw new Error('Either invoiceId or transactionId is required');
       }
@@ -180,7 +199,7 @@ export function PaystackPayment({
   };
 
   const hasSufficientBalance = walletBalance && walletBalance.balance >= amount;
-  const canUseWallet = userId && walletBalance !== null;
+  const canUseWallet = Boolean(userId && walletBalance !== null && !walletTopUp);
 
   return (
     <AdaptiveSheet

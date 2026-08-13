@@ -42,7 +42,7 @@ async function bootstrap() {
     process.env.CSMS_API_URL = `http://127.0.0.1:${port}`;
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.useGlobalFilters(new HttpExceptionLoggingFilter());
   setupMergedOcppGateway(app);
   app.getHttpAdapter().getInstance().set('trust proxy', 1);

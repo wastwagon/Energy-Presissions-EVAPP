@@ -2,7 +2,7 @@ import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { iosFontStacks, iosSheetBlurBg } from './iosMobileTokens';
 
-/** Frosted navigation chrome (AppBar / tab bar) — iOS ultra-thin material. */
+/** Frosted navigation chrome (AppBar) — iOS ultra-thin material. */
 export const customerFrostedChromeSx: SystemStyleObject<Theme> = {
   background: (theme) => iosSheetBlurBg(theme.palette.mode),
   backdropFilter: 'saturate(180%) blur(20px)',
@@ -14,6 +14,22 @@ export const customerFrostedChromeSx: SystemStyleObject<Theme> = {
 export const customerFrostedAppBarSx: SystemStyleObject<Theme> = {
   ...customerFrostedChromeSx,
   borderBottom: '0.5px solid rgba(60, 60, 67, 0.12)',
+};
+
+/** iOS navigation bar content height (44pt) under the status-bar inset. */
+export const CUSTOMER_NAV_BAR_HEIGHT_PX = 44;
+
+export const customerFixedNavBarGapSx: SystemStyleObject<Theme> = {
+  height: `calc(${CUSTOMER_NAV_BAR_HEIGHT_PX}px + env(safe-area-inset-top, 0px))`,
+  flexShrink: 0,
+};
+
+export const customerToolbarSx: SystemStyleObject<Theme> = {
+  px: { xs: 1.5, sm: 2 },
+  minHeight: `${CUSTOMER_NAV_BAR_HEIGHT_PX}px !important`,
+  height: CUSTOMER_NAV_BAR_HEIGHT_PX,
+  gap: 0.5,
+  position: 'relative',
 };
 
 /** Large navigation title (mobile); compacts on md+ via LivePageHeader. */
@@ -38,8 +54,8 @@ export const customerLargeSubtitleSx: SystemStyleObject<Theme> = {
 /** Centered page title in the app bar when the large in-page title scrolls away. */
 export const customerCompactNavTitleSx: SystemStyleObject<Theme> = {
   position: 'absolute',
-  left: { xs: 52, sm: 56 },
-  right: { xs: 52, sm: 56 },
+  left: 16,
+  right: 16,
   textAlign: 'center',
   fontWeight: 600,
   letterSpacing: '-0.02em',
@@ -48,4 +64,10 @@ export const customerCompactNavTitleSx: SystemStyleObject<Theme> = {
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+};
+
+export const customerCompactNavTitleWithBackSx: SystemStyleObject<Theme> = {
+  ...customerCompactNavTitleSx,
+  left: 52,
+  right: 52,
 };

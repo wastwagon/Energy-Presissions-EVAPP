@@ -7,8 +7,10 @@ import {
   Get,
   Request,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { IsEmail, IsString, IsOptional, MinLength, IsNotEmpty } from 'class-validator';
 import { AuthService } from './auth.service';
 
@@ -147,11 +149,12 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'Current user info' })
-  async getCurrentUser(@Request() req: any) {
-    // This will be protected by JWT guard
-    return req.user;
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
+  async getCurrentUser(@Request() req: { user: { id: number } }) {
+    return this.authService.getProfile(req.user.id);
   }
 }
 

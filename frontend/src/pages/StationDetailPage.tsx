@@ -198,8 +198,8 @@ export function StationDetailPage() {
       />
 
       <CustomerHeroBanner
-        src={CUSTOMER_IMAGES.stationHero}
-        alt="Electric vehicle charging station"
+        src={CUSTOMER_IMAGES.chargingHubHero}
+        alt="Electric vehicle at a charging station"
       />
 
       {isCompact ? (

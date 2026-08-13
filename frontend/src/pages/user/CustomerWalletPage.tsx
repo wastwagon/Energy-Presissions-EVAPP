@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -17,8 +17,9 @@ import {
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
-import AddIcon from '@mui/icons-material/Add';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import { walletApi, WalletBalance, WalletTransaction } from '../../services/walletApi';
+import { paymentsApi } from '../../services/paymentsApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
@@ -42,13 +43,13 @@ import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFrie
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { CustomerWalletBalanceHero } from '../../components/customer/CustomerWalletBalanceHero';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 const WALLET_TX_PAGE_SIZE = 20;
 const ACTIVITY_DAYS = 14;
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [balance, setBalance] = useState<WalletBalance | null>(null);
@@ -139,6 +140,40 @@ export function CustomerWalletPage() {
     void loadWalletData();
   }, [loadWalletData]);
 
+  const paystackReturnRef = searchParams.get('reference') || searchParams.get('trxref') || '';
+
+  useEffect(() => {
+    if (!paystackReturnRef) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        await paymentsApi.verifyPayment(paystackReturnRef);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(formatUserFacingErrorMessage(err, 'payments'));
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete('reference');
+              next.delete('trxref');
+              return next;
+            },
+            { replace: true },
+          );
+          void loadWalletData(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadWalletData, paystackReturnRef, setSearchParams]);
+
   useCustomerPullRefresh(useCallback(() => void loadWalletData(true), [loadWalletData]));
 
   const activity = useMemo(
@@ -185,26 +220,16 @@ export function CustomerWalletPage() {
           <TableSurfaceProgress active={loading && balance !== null} ariaLabel="Loading wallet transactions" />
           {transactions.length === 0 ? (
             <AppEmptyState
-              sx={{ mb: 0 }}
-              illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
-              illustrationAlt="Wallet energy"
-              title="No transactions yet"
+              variant="plain"
+              icon={<AccountBalanceWalletOutlinedIcon />}
+              title="No activity yet"
               description="Top up to start charging. Your ledger appears here."
               primaryAction={{
-                label: 'Top up wallet',
+                label: 'Top up',
                 onClick: () => {
                   triggerHaptic('light');
                   goTopUp();
                 },
-                startIcon: <AddIcon />,
-              }}
-              secondaryAction={{
-                label: 'Find stations',
-                onClick: () => {
-                  triggerHaptic('light');
-                  navigate(CUSTOMER_ROUTES.stations);
-                },
-                variant: 'secondary',
               }}
             />
           ) : (
@@ -281,26 +306,16 @@ export function CustomerWalletPage() {
                   <TableRow>
                     <TableCell colSpan={6} sx={{ border: 0, p: 0 }}>
                       <AppEmptyState
-                        sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
-                        illustrationSrc={CUSTOMER_IMAGES.walletEnergy}
-                        illustrationAlt="Wallet energy"
-                        title="No transactions yet"
+                        variant="plain"
+                        icon={<AccountBalanceWalletOutlinedIcon />}
+                        title="No activity yet"
                         description="Top up to start charging. Your ledger appears here."
                         primaryAction={{
-                          label: 'Top up wallet',
+                          label: 'Top up',
                           onClick: () => {
                             triggerHaptic('light');
                             goTopUp();
                           },
-                          startIcon: <AddIcon />,
-                        }}
-                        secondaryAction={{
-                          label: 'Find stations',
-                          onClick: () => {
-                            triggerHaptic('light');
-                            navigate(CUSTOMER_ROUTES.stations);
-                          },
-                          variant: 'secondary',
                         }}
                       />
                     </TableCell>

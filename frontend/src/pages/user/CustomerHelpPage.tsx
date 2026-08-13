@@ -15,7 +15,7 @@ import { iosRadii } from '../../theme/iosMobileTokens';
 const faqs = [
   {
     q: 'How do I start charging?',
-    a: 'Open Find chargers, pick a station, then Start charging. Keep a wallet balance ready — top up with mobile money or card if needed.',
+    a: 'Open Map, pick a station, then Start charging. Keep a wallet balance ready — top up with mobile money or card if needed.',
   },
   {
     q: 'How do I add wallet funds?',
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: 'How do I find nearby stations?',
-    a: 'Allow location, then use Find chargers. You can also search by city or region.',
+    a: 'Allow location, then use the Map tab. You can also search by city or region.',
   },
   {
     q: 'What payments are accepted?',

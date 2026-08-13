@@ -38,7 +38,7 @@ import { useLiveRefresh } from '../../hooks/useLiveRefresh';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import { CustomerChromeSkeleton } from '../../components/dashboard/CustomerChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
@@ -128,12 +128,12 @@ export function CustomerSessionHistoryPage() {
 
       {transactions.length === 0 ? (
         <AppEmptyState
-          illustrationSrc={CUSTOMER_IMAGES.emptyReadyCharge}
-          illustrationAlt="Ready to charge"
+          variant="plain"
+          icon={<HistoryOutlinedIcon />}
           title="No sessions yet"
           description="Completed charges appear here after your first plug-in."
           primaryAction={{
-            label: 'Find chargers',
+            label: 'Find a charger',
             onClick: () => {
               triggerHaptic('light');
               navigate(CUSTOMER_ROUTES.stations);

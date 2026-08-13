@@ -83,10 +83,15 @@ export function CustomerDesktopNavCards({ items }: CustomerDesktopNavCardsProps)
                   }}
                 >
                   {isValidElement(item.icon)
-                    ? cloneElement(item.icon as ReactElement<{ fontSize?: string }>, {
-                        fontSize: 'inherit',
-                      })
-                    : item.icon}
+                    ? cloneElement(
+                        (active && item.activeIcon && isValidElement(item.activeIcon)
+                          ? item.activeIcon
+                          : item.icon) as ReactElement<{ fontSize?: string }>,
+                        { fontSize: 'inherit' },
+                      )
+                    : active && item.activeIcon
+                      ? item.activeIcon
+                      : item.icon}
                 </Box>
                 <Typography
                   variant="body2"

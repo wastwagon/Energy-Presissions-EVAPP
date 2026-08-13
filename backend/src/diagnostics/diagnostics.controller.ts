@@ -5,11 +5,18 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { DiagnosticsService } from './diagnostics.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Diagnostics')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SuperAdmin', 'Admin')
 @Controller('diagnostics')
 export class DiagnosticsController {
   constructor(private readonly diagnosticsService: DiagnosticsService) {}
@@ -45,6 +52,3 @@ export class DiagnosticsController {
     return this.diagnosticsService.getDiagnosticsJob(id);
   }
 }
-
-
-
