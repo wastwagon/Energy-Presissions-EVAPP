@@ -19,6 +19,8 @@ import { websocketService } from '../../services/websocket';
 import { formatCurrency } from '../../utils/formatters';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
+import { StaffPeriodChips, type StaffPeriodDays } from '../../components/dashboard/StaffPeriodChips';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreakdownPanel';
@@ -35,6 +37,7 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [periodDays, setPeriodDays] = useState<StaffPeriodDays>(30);
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const statsRef = useRef<DashboardStats | null>(null);
@@ -184,28 +187,47 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
             />
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-              <Button
-                component={RouterLink}
-                to={variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports}
-                variant="outlined"
-                size="small"
-                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+            <StaffFilterBar aria-label="Analytics period" sx={{ mb: 2 }}>
+              <StaffPeriodChips value={periodDays} onChange={setPeriodDays} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  ml: { xs: 0, sm: 'auto' },
+                  width: { xs: '100%', sm: 'auto' },
+                }}
               >
-                Open reports
-              </Button>
-              <Button
-                component={RouterLink}
-                to={variant === 'admin' ? ADMIN_ROUTES.billing : SUPERADMIN_ROUTES.billing}
-                variant="outlined"
-                size="small"
-                sx={(th) => sxObject(th, compactOutlinedCtaSx)}
-              >
-                Billing & invoices
-              </Button>
-            </Box>
+                <Button
+                  component={RouterLink}
+                  to={variant === 'admin' ? ADMIN_ROUTES.reports : SUPERADMIN_ROUTES.reports}
+                  variant="outlined"
+                  size="small"
+                  sx={(th) => ({
+                    ...sxObject(th, compactOutlinedCtaSx),
+                    width: { xs: '100%', sm: 'auto' },
+                    minHeight: 44,
+                  })}
+                >
+                  Open reports
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to={variant === 'admin' ? ADMIN_ROUTES.billing : SUPERADMIN_ROUTES.billing}
+                  variant="outlined"
+                  size="small"
+                  sx={(th) => ({
+                    ...sxObject(th, compactOutlinedCtaSx),
+                    width: { xs: '100%', sm: 'auto' },
+                    minHeight: 44,
+                  })}
+                >
+                  Billing & invoices
+                </Button>
+              </Box>
+            </StaffFilterBar>
             <Box sx={{ mb: 2 }}>
-              <RevenueTrendChart days={30} />
+              <RevenueTrendChart days={periodDays} />
             </Box>
             <AnalyticsBreakdownPanel stats={stats} />
           </Grid>

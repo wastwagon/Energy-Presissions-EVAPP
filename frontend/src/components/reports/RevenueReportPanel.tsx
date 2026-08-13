@@ -14,21 +14,28 @@ import { dashboardApi, type DashboardStats } from '../../services/dashboardApi';
 import { reportsApi } from '../../services/dashboardApi';
 import type { Transaction } from '../../services/transactionsApi';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { formatCurrency } from '../../utils/formatters';
 import { isNoEnergyCompleted } from '../../utils/sessionDisplay';
 import { GroupedListSection } from '../ios/GroupedListSection';
 import { GroupedDetailRow } from '../ios/GroupedDetailRow';
 import { StaffMetricCard } from '../dashboard/StaffMetricCard';
+import { StaffPeriodChips, type StaffPeriodDays } from '../dashboard/StaffPeriodChips';
+import { StaffFilterBar } from '../dashboard/StaffFilterBar';
 import { RevenueTrendChart } from './RevenueTrendChart';
+import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
+import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
+import { compareRevenueTrend } from '../../utils/revenueTrendCompare';
 
-function downloadRevenueCsv(rows: { label: string; count: number; amount: number }[]) {
+function downloadRevenueCsv(
+  rows: { label: string; count: number; amount: number }[],
+  filename: string,
+) {
   const lines = ['Category,Sessions,Amount (GHS)', ...rows.map((r) => `"${r.label}",${r.count},${r.amount.toFixed(2)}`)];
   const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `revenue-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -36,15 +43,33 @@ function downloadRevenueCsv(rows: { label: string; count: number; amount: number
 interface RevenueReportPanelProps {
   vendorId?: number;
   loadStats?: () => Promise<DashboardStats>;
+  /** Controlled period from parent reports page */
+  periodDays?: StaffPeriodDays;
+  onPeriodChange?: (days: StaffPeriodDays) => void;
+  /** Hide local period chips when parent toolbar owns period */
+  hidePeriodControls?: boolean;
 }
 
-export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelProps) {
+export function RevenueReportPanel({
+  vendorId,
+  loadStats,
+  periodDays: controlledDays,
+  onPeriodChange,
+  hidePeriodControls = false,
+}: RevenueReportPanelProps) {
   const theme = useTheme();
   const useGrouped = useMediaQuery(theme.breakpoints.down('md'));
+  const [localDays, setLocalDays] = useState<StaffPeriodDays>(30);
+  const periodDays = controlledDays ?? localDays;
+  const setPeriodDays = onPeriodChange ?? setLocalDays;
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [sessions, setSessions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trendPoints, setTrendPoints] = useState<Awaited<ReturnType<typeof dashboardApi.getRevenueTrend>>['points']>([]);
+  const [trendLoading, setTrendLoading] = useState(true);
+  const [trendError, setTrendError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -63,19 +88,44 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
     }
   }, [loadStats, vendorId]);
 
+  const loadTrend = useCallback(async () => {
+    try {
+      setTrendError(null);
+      setTrendLoading(true);
+      const data = await dashboardApi.getRevenueTrend(periodDays);
+      setTrendPoints(data.points ?? []);
+    } catch (err: unknown) {
+      setTrendError(err instanceof Error ? err.message : 'Failed to load revenue trend');
+      setTrendPoints([]);
+    } finally {
+      setTrendLoading(false);
+    }
+  }, [periodDays]);
+
   useEffect(() => {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    void loadTrend();
+  }, [loadTrend]);
+
+  const periodSessions = useMemo(
+    () => filterTransactionsByPeriodDays(sessions, periodDays),
+    [sessions, periodDays],
+  );
+
   const breakdown = useMemo(() => {
-    const completed = sessions.filter((t) => t.status === 'Completed');
+    const completed = periodSessions.filter((t) => t.status === 'Completed');
     const withRevenue = completed.filter((t) => Number(t.totalCost) > 0);
     const noEnergy = completed.filter((t) => isNoEnergyCompleted(t));
     const zeroCost = completed.filter((t) => !Number(t.totalCost));
-    const active = sessions.filter((t) => t.status === 'Active');
+    const active = periodSessions.filter((t) => t.status === 'Active');
     const revenueSum = withRevenue.reduce((s, t) => s + Number(t.totalCost || 0), 0);
     return { completed, withRevenue, noEnergy, zeroCost, active, revenueSum };
-  }, [sessions]);
+  }, [periodSessions]);
+
+  const trendCompare = useMemo(() => compareRevenueTrend(trendPoints), [trendPoints]);
 
   const summaryRows = useMemo(
     () => [
@@ -103,7 +153,6 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
     [breakdown],
   );
 
-  const totalRevenue = stats?.overview?.totalRevenue ?? stats?.totalRevenue ?? breakdown.revenueSum;
   const pendingHolds = stats?.overview?.pendingWalletReserved ?? 0;
 
   if (error) {
@@ -116,30 +165,56 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 1.5,
-          mb: 2,
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Revenue is summed from completed session costs. Wallet holds are not revenue until the session finalizes.
-        </Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<DownloadIcon />}
-          disabled={loading}
-          onClick={() => downloadRevenueCsv(summaryRows)}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), alignSelf: { xs: 'stretch', sm: 'flex-start' } })}
+      {!hidePeriodControls ? (
+        <StaffFilterBar aria-label="Revenue period and export" sx={{ mb: 2 }}>
+          <StaffPeriodChips value={periodDays} onChange={setPeriodDays} disabled={loading || trendLoading} />
+          <Button
+            variant="contained"
+            disableElevation
+            size="small"
+            startIcon={<DownloadIcon />}
+            disabled={loading}
+            onClick={() => downloadRevenueCsv(summaryRows, reportExportFilename('revenue-summary', periodDays))}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              ml: { xs: 0, sm: 'auto' },
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: 44,
+            })}
+          >
+            Export summary
+          </Button>
+        </StaffFilterBar>
+      ) : (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: { xs: 'stretch', sm: 'flex-end' },
+            mb: 2,
+          }}
         >
-          Export summary
-        </Button>
-      </Box>
+          <Button
+            variant="contained"
+            disableElevation
+            size="small"
+            startIcon={<DownloadIcon />}
+            disabled={loading}
+            onClick={() => downloadRevenueCsv(summaryRows, reportExportFilename('revenue-summary', periodDays))}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: 44,
+            })}
+          >
+            Export summary
+          </Button>
+        </Box>
+      )}
+
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Period totals use completed billed sessions in the last {periodDays} days. Wallet holds are not revenue until
+        the session finalizes.
+      </Typography>
 
       {loading ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
@@ -150,8 +225,10 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
           <Grid container spacing={{ xs: 2, sm: 2 }} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={6}>
               <StaffMetricCard
-                label="Total revenue (completed)"
-                value={formatCurrency(totalRevenue)}
+                label={`Revenue (${periodDays}d)`}
+                value={formatCurrency(trendCompare.periodRevenue || breakdown.revenueSum)}
+                trendPercent={trendCompare.revenueTrendPercent}
+                sparklineValues={trendCompare.sparkRevenue}
                 tone="brand"
               />
             </Grid>
@@ -168,11 +245,17 @@ export function RevenueReportPanel({ vendorId, loadStats }: RevenueReportPanelPr
           </Grid>
 
           <Box sx={{ mb: 2 }}>
-            <RevenueTrendChart days={30} />
+            <RevenueTrendChart
+              days={periodDays}
+              title="Revenue trend"
+              points={trendPoints}
+              loading={trendLoading}
+              error={trendError}
+            />
           </Box>
 
           {useGrouped ? (
-            <GroupedListSection title="Breakdown (recent sample)">
+            <GroupedListSection title={`Breakdown (last ${periodDays}d sample)`}>
               {summaryRows.map((row, index) => (
                 <GroupedDetailRow
                   key={row.label}

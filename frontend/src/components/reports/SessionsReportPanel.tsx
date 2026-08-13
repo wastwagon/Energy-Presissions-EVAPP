@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -22,7 +22,7 @@ import { GroupedListRow } from '../ios/GroupedListRow';
 import { AppBadge, chipColorToBadgeTone } from '../ui/AppBadge';
 import { AppEmptyState } from '../ui/AppEmptyState';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import {
   formatCustomerDisplayName,
   formatSessionCost,
@@ -32,15 +32,30 @@ import {
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
+import { StaffPeriodChips, type StaffPeriodDays } from '../dashboard/StaffPeriodChips';
+import { StaffFilterBar } from '../dashboard/StaffFilterBar';
+import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
 
 interface SessionsReportPanelProps {
   vendorId?: number;
   limit?: number;
+  periodDays?: StaffPeriodDays;
+  onPeriodChange?: (days: StaffPeriodDays) => void;
+  hidePeriodControls?: boolean;
 }
 
-export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPanelProps) {
+export function SessionsReportPanel({
+  vendorId,
+  limit = 100,
+  periodDays: controlledDays,
+  onPeriodChange,
+  hidePeriodControls = false,
+}: SessionsReportPanelProps) {
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
+  const [localDays, setLocalDays] = useState<StaffPeriodDays>(30);
+  const periodDays = controlledDays ?? localDays;
+  const setPeriodDays = onPeriodChange ?? setLocalDays;
   const [rows, setRows] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,8 +77,13 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
     void load();
   }, [load]);
 
+  const filteredRows = useMemo(
+    () => filterTransactionsByPeriodDays(rows, periodDays),
+    [rows, periodDays],
+  );
+
   const exportCsv = () => {
-    downloadSessionsReportCsv(rows, `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadSessionsReportCsv(filteredRows, reportExportFilename('sessions-report', periodDays));
   };
 
   if (error) {
@@ -76,48 +96,67 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 1.5,
-          mb: 2,
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Recent charging sessions with live estimates for active rows. Revenue totals use completed session costs only.
-        </Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<DownloadIcon />}
-          disabled={loading || rows.length === 0}
-          onClick={exportCsv}
-          sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), alignSelf: { xs: 'stretch', sm: 'flex-start' } })}
-        >
-          Export CSV
-        </Button>
-      </Box>
+      {!hidePeriodControls ? (
+        <StaffFilterBar aria-label="Sessions period and export" sx={{ mb: 2 }}>
+          <StaffPeriodChips value={periodDays} onChange={setPeriodDays} disabled={loading} />
+          <Button
+            variant="contained"
+            disableElevation
+            size="small"
+            startIcon={<DownloadIcon />}
+            disabled={loading || filteredRows.length === 0}
+            onClick={exportCsv}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              ml: { xs: 0, sm: 'auto' },
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: 44,
+            })}
+          >
+            Export CSV
+          </Button>
+        </StaffFilterBar>
+      ) : (
+        <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mb: 2 }}>
+          <Button
+            variant="contained"
+            disableElevation
+            size="small"
+            startIcon={<DownloadIcon />}
+            disabled={loading || filteredRows.length === 0}
+            onClick={exportCsv}
+            sx={(th) => ({
+              ...sxObject(th, compactContainedCtaSx),
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: 44,
+            })}
+          >
+            Export CSV
+          </Button>
+        </Box>
+      )}
+
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Sessions started in the last {periodDays} days (from recent sample). Active rows may include live estimates.
+      </Typography>
 
       {loading ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
           Loading sessions…
         </Typography>
-      ) : rows.length === 0 ? (
+      ) : filteredRows.length === 0 ? (
         <AppEmptyState
           sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
           icon={<EvStationIcon />}
-          title="No sessions found"
-          description="Recent charging sessions will appear here once drivers start charging."
+          title="No sessions in this period"
+          description={`No charging sessions in the last ${periodDays} days from the current sample.`}
         />
       ) : useGroupedList ? (
-        <GroupedListSection title="Recent sessions">
-          {rows.map((tx, index) => (
+        <GroupedListSection title={`Sessions (${periodDays}d)`}>
+          {filteredRows.map((tx, index) => (
             <GroupedListRow
               key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}-${tx.id}`}
-              divider={index < rows.length - 1}
+              divider={index < filteredRows.length - 1}
               showChevron={false}
               primary={formatCustomerDisplayName(tx)}
               secondary={`${tx.chargePointId} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
@@ -154,7 +193,7 @@ export function SessionsReportPanel({ vendorId, limit = 100 }: SessionsReportPan
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((tx) => (
+                {filteredRows.map((tx) => (
                   <TableRow key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}-${tx.id}`}>
                     <TableCell>{tx.recordPending ? 'Pending sync' : tx.transactionId}</TableCell>
                     <TableCell>{formatCustomerDisplayName(tx)}</TableCell>

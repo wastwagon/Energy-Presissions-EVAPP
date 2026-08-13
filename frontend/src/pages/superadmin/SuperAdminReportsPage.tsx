@@ -5,11 +5,9 @@ import {
   Paper,
   Grid,
   Alert,
-  Button,
   Tabs,
   Tab,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios';
 import { dashboardApi, DashboardStats } from '../../services/dashboardApi';
 import {
@@ -26,8 +24,11 @@ import { AnalyticsBreakdownPanel } from '../../components/reports/AnalyticsBreak
 import { ReportSessionAverages } from '../../components/reports/ReportSessionAverages';
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
+import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffMetricCard } from '../../components/dashboard/StaffMetricCard';
+import { StaffReportToolbar } from '../../components/dashboard/StaffReportToolbar';
+import type { StaffPeriodDays } from '../../components/dashboard/StaffPeriodChips';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 
@@ -36,6 +37,8 @@ export function SuperAdminReportsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [periodDays, setPeriodDays] = useState<StaffPeriodDays>(30);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -98,15 +101,16 @@ export function SuperAdminReportsPage() {
 
   const handleExport = async () => {
     try {
+      setExporting(true);
       setExportNotice(null);
       const data = await reportsApi.getSessionRows(200, 0);
-      downloadSessionsReportCsv(
-        data.transactions,
-        `sessions-report-${new Date().toISOString().slice(0, 10)}.csv`,
-      );
-      setExportNotice('Sessions CSV downloaded.');
+      const filtered = filterTransactionsByPeriodDays(data.transactions, periodDays);
+      downloadSessionsReportCsv(filtered, reportExportFilename('sessions-report', periodDays));
+      setExportNotice(`Sessions CSV downloaded (${periodDays}d · ${filtered.length} rows).`);
     } catch (err: unknown) {
       setExportNotice(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
     }
   };
   const tabA11yProps = (index: number) => ({
@@ -135,20 +139,14 @@ export function SuperAdminReportsPage() {
           flex: { xs: '1 1 auto', sm: '0 0 auto' },
           minWidth: { xs: 0, sm: 'auto' },
         })}
-        actions={
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={() => void handleExport()}
-            sx={(th) => ({
-              ...sxObject(th, compactOutlinedCtaSx),
-              flex: { xs: '1 1 auto', sm: '0 0 auto' },
-              minWidth: { xs: 0, sm: 'auto' },
-            })}
-          >
-            Export Report
-          </Button>
-        }
+      />
+
+      <StaffReportToolbar
+        periodDays={periodDays}
+        onPeriodChange={setPeriodDays}
+        onExport={() => void handleExport()}
+        exportLabel="Export report"
+        exporting={exporting}
       />
 
       {error && (
@@ -218,7 +216,7 @@ export function SuperAdminReportsPage() {
                     System Overview Report
                   </Typography>
                   <Typography variant="body2" color="text.secondary" paragraph>
-                    Comprehensive overview of the entire EV charging network.
+                    Comprehensive overview of the entire EV charging network. Use the period chips above for trend exports.
                   </Typography>
                   <ReportSessionAverages stats={stats} />
                   {((stats.overview?.totalVendors ?? stats.totalVendors) ?? 0) > 0 && (
@@ -254,7 +252,11 @@ export function SuperAdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Revenue Report
                   </Typography>
-                  <RevenueReportPanel />
+                  <RevenueReportPanel
+                    periodDays={periodDays}
+                    onPeriodChange={setPeriodDays}
+                    hidePeriodControls
+                  />
                 </Box>
               )}
 
@@ -272,7 +274,11 @@ export function SuperAdminReportsPage() {
                   <Typography variant="h6" gutterBottom>
                     Sessions Report
                   </Typography>
-                  <SessionsReportPanel />
+                  <SessionsReportPanel
+                    periodDays={periodDays}
+                    onPeriodChange={setPeriodDays}
+                    hidePeriodControls
+                  />
                 </Box>
               )}
             </Box>

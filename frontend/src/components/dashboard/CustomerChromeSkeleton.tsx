@@ -153,22 +153,14 @@ export function CustomerChromeSkeleton({ preset }: { preset: CustomerChromePrese
     case 'wallet':
       return (
         <StatusWrap ariaLabel={labels[preset]}>
-          <HeaderBlock asideCount={1} />
-          <Skeleton variant="rounded" height={44} sx={{ mb: 2, maxWidth: { xs: '100%', sm: 240 } }} />
-          <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 2 }}>
-            <Grid item xs={12} md={6}>
-              <Paper elevation={0} sx={premiumPanelCardSx}>
-                <Skeleton variant="text" width="50%" sx={{ mb: 1 }} />
-                <Skeleton variant="rounded" width="66%" height={40} />
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Paper elevation={0} sx={premiumPanelCardSx}>
-                <Skeleton variant="text" width="44%" sx={{ mb: 1 }} />
-                <Skeleton variant="rounded" width="55%" height={40} />
-              </Paper>
-            </Grid>
-          </Grid>
+          <HeaderBlock asideCount={0} />
+          <Paper elevation={0} sx={{ ...premiumPanelCardSx, p: { xs: 2, sm: 2.5 }, mb: 2.5 }}>
+            <Skeleton variant="text" width={96} sx={{ mb: 0.5 }} />
+            <Skeleton variant="rounded" height={44} sx={{ maxWidth: 220, mb: 1.5 }} />
+            <Skeleton variant="text" width="70%" sx={{ mb: 2 }} />
+            <Skeleton variant="rounded" height={56} sx={{ mb: 1.5 }} />
+            <Skeleton variant="rounded" height={48} />
+          </Paper>
           <TableBlock rows={7} />
         </StatusWrap>
       );

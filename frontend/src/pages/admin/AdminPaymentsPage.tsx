@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -28,6 +28,7 @@ import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
@@ -40,6 +41,16 @@ import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 
 const PAYMENTS_PAGE_SIZE = 20;
 
+type PaymentStatusTab = 'all' | 'succeeded' | 'pending' | 'failed';
+
+function matchesPaymentStatus(payment: Payment, tab: PaymentStatusTab): boolean {
+  if (tab === 'all') return true;
+  const status = (payment.status || '').toLowerCase();
+  if (tab === 'succeeded') return status === 'succeeded' || status === 'completed' || status === 'paid';
+  if (tab === 'pending') return status === 'pending' || status === 'processing';
+  return status === 'failed' || status === 'cancelled' || status === 'canceled' || status === 'refunded';
+}
+
 export function AdminPaymentsPage() {
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
@@ -49,6 +60,7 @@ export function AdminPaymentsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusTab, setStatusTab] = useState<PaymentStatusTab>('all');
   const [page, setPage] = useState(1);
 
   const isStaffListApi = useCallback(() => {
@@ -124,14 +136,29 @@ export function AdminPaymentsPage() {
 
   useStaffPullRefresh(loadPayments);
 
-  const filteredPayments = payments.filter(
-    (payment) =>
-      payment.id.toString().includes(searchTerm) ||
-      payment.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.status.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const statusCounts = useMemo(() => {
+    const counts = { all: payments.length, succeeded: 0, pending: 0, failed: 0 };
+    for (const payment of payments) {
+      if (matchesPaymentStatus(payment, 'succeeded')) counts.succeeded += 1;
+      else if (matchesPaymentStatus(payment, 'pending')) counts.pending += 1;
+      else if (matchesPaymentStatus(payment, 'failed')) counts.failed += 1;
+    }
+    return counts;
+  }, [payments]);
 
-  const showStaffPaging = isStaffListApi() && totalPayments > PAYMENTS_PAGE_SIZE;
+  const filteredPayments = payments.filter((payment) => {
+    if (!matchesPaymentStatus(payment, statusTab)) return false;
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      payment.id.toString().includes(searchTerm) ||
+      payment.paymentMethod.toLowerCase().includes(q) ||
+      payment.status.toLowerCase().includes(q)
+    );
+  });
+
+  const showStaffPaging =
+    isStaffListApi() && totalPayments > PAYMENTS_PAGE_SIZE && statusTab === 'all' && !searchTerm;
 
   if (loading && payments.length === 0) {
     return <DashboardStaffChromeSkeleton preset="adminPayments" />;
@@ -159,7 +186,7 @@ export function AdminPaymentsPage() {
         </Alert>
       )}
 
-      <StaffFilterBar aria-label="Payment search">
+      <StaffFilterBar aria-label="Payment filters">
         <TextField
           fullWidth
           placeholder="Search by ID, method, or status…"
@@ -185,9 +212,20 @@ export function AdminPaymentsPage() {
           }}
           sx={(th) => ({
             ...sxObject(th, staffFilterFieldSx),
-            width: { xs: '100%', sm: 320 },
+            width: { xs: '100%', sm: 280 },
             maxWidth: '100%',
           })}
+        />
+        <StaffStatusTabs
+          aria-label="Payment status"
+          value={statusTab}
+          onChange={setStatusTab}
+          options={[
+            { value: 'all', label: 'All', count: statusCounts.all },
+            { value: 'succeeded', label: 'Paid', count: statusCounts.succeeded },
+            { value: 'pending', label: 'Pending', count: statusCounts.pending },
+            { value: 'failed', label: 'Failed', count: statusCounts.failed },
+          ]}
         />
       </StaffFilterBar>
 
@@ -204,10 +242,10 @@ export function AdminPaymentsPage() {
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<PaymentIcon />}
-            title={searchTerm ? 'No payments match your search' : 'No payments yet'}
+            title={searchTerm || statusTab !== 'all' ? 'No payments match your filters' : 'No payments yet'}
             description={
-              searchTerm
-                ? 'Try another ID, method, or status, or clear the search.'
+              searchTerm || statusTab !== 'all'
+                ? 'Try another status tab or clear the search.'
                 : 'Payment transactions will appear here once customers start charging.'
             }
           />

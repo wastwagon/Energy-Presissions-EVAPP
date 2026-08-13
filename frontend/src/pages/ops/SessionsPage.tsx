@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -11,8 +11,6 @@ import {
   TableHead,
   TableRow,
   Alert,
-  Tabs,
-  Tab,
   Pagination,
   useMediaQuery,
   useTheme,
@@ -32,6 +30,8 @@ import {
   sessionStatusLabel,
 } from '../../utils/sessionDisplay';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
@@ -44,12 +44,25 @@ import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 
 const ALL_SESSIONS_PAGE_SIZE = 20;
 
+type SessionStatusTab = 'active' | 'all' | 'completed' | 'other';
+
+function isCompletedSession(tx: Transaction): boolean {
+  const status = (tx.status || '').toLowerCase();
+  return status === 'completed' || status === 'succeeded';
+}
+
+function isOtherSession(tx: Transaction): boolean {
+  if (tx.recordPending) return false;
+  const status = (tx.status || '').toLowerCase();
+  return status !== 'active' && !isCompletedSession(tx);
+}
+
 export function SessionsPage() {
   const navigate = useNavigate();
   const opsBase = useOpsBasePath();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
-  const [activeTab, setActiveTab] = useState(0);
+  const [statusTab, setStatusTab] = useState<SessionStatusTab>('active');
   const [activeTransactions, setActiveTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [allPage, setAllPage] = useState(1);
@@ -137,7 +150,7 @@ export function SessionsPage() {
     });
 
     const interval = setInterval(() => {
-      if (activeTab === 0) {
+      if (statusTab === 'active') {
         void loadActiveTransactions();
       }
     }, 10000);
@@ -147,9 +160,24 @@ export function SessionsPage() {
       unsubscribeTransactionStopped();
       clearInterval(interval);
     };
-  }, [activeTab, loadTransactions, loadActiveTransactions]);
+  }, [statusTab, loadTransactions, loadActiveTransactions]);
 
-  const transactions = activeTab === 0 ? activeTransactions : allTransactions;
+  useStaffPullRefresh(useCallback(() => void loadTransactions(true), [loadTransactions]));
+
+  const completedOnPage = useMemo(
+    () => allTransactions.filter((tx) => isCompletedSession(tx)),
+    [allTransactions],
+  );
+  const otherOnPage = useMemo(() => allTransactions.filter((tx) => isOtherSession(tx)), [allTransactions]);
+
+  const transactions = useMemo(() => {
+    if (statusTab === 'active') return activeTransactions;
+    if (statusTab === 'completed') return completedOnPage;
+    if (statusTab === 'other') return otherOnPage;
+    return allTransactions;
+  }, [statusTab, activeTransactions, allTransactions, completedOnPage, otherOnPage]);
+
+  const showAllPaging = statusTab === 'all';
 
   const openSession = (tx: Transaction) => {
     if (tx.recordPending) {
@@ -159,18 +187,39 @@ export function SessionsPage() {
     }
   };
 
+  const emptyCopy = (() => {
+    switch (statusTab) {
+      case 'active':
+        return {
+          title: 'No active charging sessions',
+          description: 'Live sessions will appear here when drivers start charging.',
+        };
+      case 'completed':
+        return {
+          title: 'No completed sessions on this page',
+          description: 'Completed sessions from the current history page will show here.',
+        };
+      case 'other':
+        return {
+          title: 'No other sessions on this page',
+          description: 'Failed, cancelled, or other statuses from the current history page appear here.',
+        };
+      default:
+        return {
+          title: 'No transactions found',
+          description: 'Completed and historical sessions will show up once activity begins.',
+        };
+    }
+  })();
+
   const renderSessionRows = () => {
     if (transactions.length === 0) {
       return (
         <AppEmptyState
           sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
           icon={<EvStationIcon />}
-          title={activeTab === 0 ? 'No active charging sessions' : 'No transactions found'}
-          description={
-            activeTab === 0
-              ? 'Live sessions will appear here when drivers start charging.'
-              : 'Completed and historical sessions will show up once activity begins.'
-          }
+          title={emptyCopy.title}
+          description={emptyCopy.description}
         />
       );
     }
@@ -211,7 +260,7 @@ export function SessionsPage() {
               />
             ))}
           </GroupedListSection>
-          {activeTab === 1 && (
+          {showAllPaging && (
             <MobileListLoadMore
               page={allPage}
               totalCount={allTotal}
@@ -284,7 +333,7 @@ export function SessionsPage() {
             </TableBody>
           </Table>
         </TableContainer>
-        {activeTab === 1 && allTotal > ALL_SESSIONS_PAGE_SIZE && (
+        {showAllPaging && allTotal > ALL_SESSIONS_PAGE_SIZE && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
             <Pagination
               count={Math.ceil(allTotal / ALL_SESSIONS_PAGE_SIZE)}
@@ -325,32 +374,33 @@ export function SessionsPage() {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mt: 2 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          sx={{
-            px: { xs: 1, sm: 2 },
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 },
-          }}
-          aria-label="Charging session sections"
-        >
-          <Tab label={`Active (${activeTransactions.length})`} id="ops-sessions-tab-0" aria-controls="ops-sessions-panel-0" />
-          <Tab
-            label={`All sessions (${allTotal})`}
-            id="ops-sessions-tab-1"
-            aria-controls="ops-sessions-panel-1"
-          />
-        </Tabs>
+      <StaffFilterBar aria-label="Session status filters">
+        <StaffStatusTabs
+          aria-label="Session status"
+          value={statusTab}
+          onChange={setStatusTab}
+          options={[
+            { value: 'active', label: 'Active', count: activeTransactions.length },
+            { value: 'all', label: 'All', count: allTotal },
+            { value: 'completed', label: 'Completed', count: completedOnPage.length },
+            { value: 'other', label: 'Other', count: otherOnPage.length },
+          ]}
+        />
+      </StaffFilterBar>
 
-        <Box role="tabpanel" id={`ops-sessions-panel-${activeTab}`} aria-labelledby={`ops-sessions-tab-${activeTab}`}>
-          {renderSessionRows()}
+      <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, mt: 0 }}>
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 1.75 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            {statusTab === 'active'
+              ? 'Active sessions'
+              : statusTab === 'completed'
+                ? 'Completed (this page)'
+                : statusTab === 'other'
+                  ? 'Other statuses (this page)'
+                  : 'All sessions'}
+          </Typography>
         </Box>
+        {renderSessionRows()}
       </Paper>
     </Box>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { Box, Typography, Paper, Alert, Button } from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -36,8 +36,10 @@ import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge } from '../../components/ui/AppBadge';
 import { CustomerHeroBanner } from '../../components/customer/CustomerHeroBanner';
+import { CustomerChargingPersonalStrip } from '../../components/customer/CustomerChargingPersonalStrip';
 import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 import { iosRadii } from '../../theme/iosMobileTokens';
+import { PLATFORM_CURRENCY } from '../../constants/platform';
 
 type NavItem = {
   id: string;
@@ -106,7 +108,9 @@ export function CustomerChargingPage() {
   const [lastSession, setLastSession] = useState<Transaction | null>(null);
   const [activeCount, setActiveCount] = useState(0);
 
-  const { isBelowMinimum } = useWalletAvailableBalance(true);
+  const { available, isBelowMinimum } = useWalletAvailableBalance(true);
+  const storedUser = getStoredUser();
+  const greetingName = storedUser?.firstName || storedUser?.name || null;
 
   const loadChargingData = useCallback(async (silent?: boolean) => {
     await runWithRefresh(async () => {
@@ -149,6 +153,11 @@ export function CustomerChargingPage() {
     if (!lastSession?.stopTime) return null;
     const d = new Date(lastSession.stopTime);
     return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }, [lastSession]);
+
+  const lastEnergyLabel = useMemo(() => {
+    if (!lastSession) return null;
+    return formatSessionEnergy(lastSession);
   }, [lastSession]);
 
   if (loading && !chargingDataReady) {
@@ -195,6 +204,14 @@ export function CustomerChargingPage() {
         alt="Electric vehicle charging at a modern station"
         title="Power when you need it"
         subtitle="Find a charger, start a session, and pay from your wallet."
+      />
+
+      <CustomerChargingPersonalStrip
+        greetingName={greetingName}
+        availableBalance={available}
+        currency={PLATFORM_CURRENCY}
+        activeCount={activeCount}
+        lastEnergyLabel={lastEnergyLabel}
       />
 
       {activeCount === 0 && !lastSession ? (

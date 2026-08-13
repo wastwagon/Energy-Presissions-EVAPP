@@ -24,32 +24,48 @@ function formatAxisDate(isoDate: string): string {
 interface RevenueTrendChartProps {
   days?: number;
   title?: string;
+  /** Controlled mode — skip internal fetch when provided (including empty). */
+  points?: RevenueTrendPoint[] | null;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export function RevenueTrendChart({ days = 30, title = 'Revenue trend' }: RevenueTrendChartProps) {
+export function RevenueTrendChart({
+  days = 30,
+  title = 'Revenue trend',
+  points: controlledPoints,
+  loading: controlledLoading,
+  error: controlledError,
+}: RevenueTrendChartProps) {
   const theme = useTheme();
   const reducedMotion = usePrefersReducedMotion();
-  const [points, setPoints] = useState<RevenueTrendPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const controlled = controlledPoints !== undefined;
+  const [fetchedPoints, setFetchedPoints] = useState<RevenueTrendPoint[]>([]);
+  const [fetchedLoading, setFetchedLoading] = useState(!controlled);
+  const [fetchedError, setFetchedError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (controlled) return;
     try {
-      setError(null);
-      setLoading(true);
+      setFetchedError(null);
+      setFetchedLoading(true);
       const data = await dashboardApi.getRevenueTrend(days);
-      setPoints(data.points ?? []);
+      setFetchedPoints(data.points ?? []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load revenue trend');
-      setPoints([]);
+      setFetchedError(err instanceof Error ? err.message : 'Failed to load revenue trend');
+      setFetchedPoints([]);
     } finally {
-      setLoading(false);
+      setFetchedLoading(false);
     }
-  }, [days]);
+  }, [days, controlled]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const points = controlled ? (controlledPoints ?? []) : fetchedPoints;
+  const loading = controlled ? Boolean(controlledLoading) : fetchedLoading;
+  const error = controlled ? (controlledError ?? null) : fetchedError;
 
   const chartData = useMemo(
     () =>

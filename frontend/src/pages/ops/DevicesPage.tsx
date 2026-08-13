@@ -70,6 +70,7 @@ import {
 } from '../../hooks/useChargePointLinkRealtime';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
@@ -433,7 +434,8 @@ export function DevicesPage() {
   };
 
   const fieldDevices = chargePoints.filter(isRealDevice);
-  const linkCounts = countByLinkStatus(showOnlyFieldProvisioned ? fieldDevices : chargePoints);
+  const linkScope = showOnlyFieldProvisioned ? fieldDevices : chargePoints;
+  const linkCounts = countByLinkStatus(linkScope);
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
@@ -512,35 +514,21 @@ export function DevicesPage() {
             gap: 0.75,
             width: { xs: '100%', sm: 'auto' },
             alignItems: 'center',
+            flex: { sm: '1 1 280px' },
           }}
-          role="group"
-          aria-label="CSMS link filter"
         >
-          {(
-            [
-              ['all', 'All links'],
-              ['online', 'Online'],
-              ['stale', 'Recent off'],
-              ['offline', 'Offline'],
-              ['never_seen', 'Never'],
-            ] as const
-          ).map(([value, label]) => {
-            const selected = linkFilter === value;
-            return (
-              <AppBadge
-                key={value}
-                label={label}
-                size="small"
-                tone={selected ? 'brand' : 'neutral'}
-                clickable
-                onClick={() => setLinkFilter(value)}
-                sx={{
-                  minHeight: 36,
-                  cursor: 'pointer',
-                }}
-              />
-            );
-          })}
+          <StaffStatusTabs
+            aria-label="CSMS link filter"
+            value={linkFilter}
+            onChange={setLinkFilter}
+            options={[
+              { value: 'all', label: 'All links', count: linkScope.length },
+              { value: 'online', label: 'Online', count: linkCounts.online },
+              { value: 'stale', label: 'Recent off', count: linkCounts.stale },
+              { value: 'offline', label: 'Offline', count: linkCounts.offline },
+              { value: 'never_seen', label: 'Never', count: linkCounts.never_seen },
+            ]}
+          />
         </Box>
       </StaffFilterBar>
 

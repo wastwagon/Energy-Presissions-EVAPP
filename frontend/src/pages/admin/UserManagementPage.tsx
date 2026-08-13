@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -44,6 +44,7 @@ import {
 } from '../../styles/authShell';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import PeopleIcon from '@mui/icons-material/People';
@@ -53,16 +54,22 @@ import { DashboardStaffChromeSkeleton } from '../../components/dashboard/Dashboa
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+
+type UserStatusTab = 'all' | 'Active' | 'Inactive' | 'Suspended';
+type UserRoleTab = 'all' | 'Customer' | 'Admin' | 'SuperAdmin';
 
 export function UserManagementPage() {
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusTab, setStatusTab] = useState<UserStatusTab>('all');
+  const [roleTab, setRoleTab] = useState<UserRoleTab>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,36 +88,54 @@ export function UserManagementPage() {
   });
 
   useEffect(() => {
-    loadUsers();
+    void loadUsers();
   }, []);
 
-  useEffect(() => {
-    // Filter users based on search term
-    if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter(
-        (user) =>
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (user.phone && user.phone.includes(searchTerm)),
-      );
-      setFilteredUsers(filtered);
+  const statusCounts = useMemo(() => {
+    const counts = { all: users.length, Active: 0, Inactive: 0, Suspended: 0 };
+    for (const user of users) {
+      const s = user.status as keyof typeof counts;
+      if (s in counts && s !== 'all') counts[s] += 1;
     }
-  }, [searchTerm, users]);
+    return counts;
+  }, [users]);
 
-  const loadUsers = async () => {
+  const roleCounts = useMemo(() => {
+    const counts = { all: users.length, Customer: 0, Admin: 0, SuperAdmin: 0 };
+    for (const user of users) {
+      const r = user.accountType as keyof typeof counts;
+      if (r in counts && r !== 'all') counts[r] += 1;
+    }
+    return counts;
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return users.filter((user) => {
+      if (statusTab !== 'all' && user.status !== statusTab) return false;
+      if (roleTab !== 'all' && user.accountType !== roleTab) return false;
+      if (!q) return true;
+      return (
+        user.email.toLowerCase().includes(q) ||
+        (user.firstName && user.firstName.toLowerCase().includes(q)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(q)) ||
+        (user.phone && user.phone.includes(searchTerm))
+      );
+    });
+  }, [users, searchTerm, statusTab, roleTab]);
+
+  const loadUsers = async (silent?: boolean) => {
     try {
-      setLoading(true);
+      if (silent) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       const data = await usersApi.getAll();
       setUsers(data);
-      setFilteredUsers(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load users');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -248,10 +273,12 @@ export function UserManagementPage() {
         title="User Management"
         subtitle="Manage user accounts, roles, and account status."
         updatedAt={null}
-        refreshing={false}
-        onRefresh={() => undefined}
-        showRefresh={false}
-        showLiveMeta={false}
+        refreshing={refreshing}
+        onRefresh={() => void loadUsers(true)}
+        showToolbarRefreshOnMobile
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
         actions={
           <Button
             variant="contained"
@@ -280,7 +307,7 @@ export function UserManagementPage() {
         </Alert>
       )}
 
-      <StaffFilterBar aria-label="User search">
+      <StaffFilterBar aria-label="User filters">
         <TextField
           placeholder="Search users…"
           fullWidth
@@ -306,9 +333,31 @@ export function UserManagementPage() {
           }}
           sx={(th) => ({
             ...sxObject(th, staffFilterFieldSx),
-            width: { xs: '100%', sm: 320 },
+            width: { xs: '100%', sm: 280 },
             maxWidth: '100%',
           })}
+        />
+        <StaffStatusTabs
+          aria-label="Account status"
+          value={statusTab}
+          onChange={setStatusTab}
+          options={[
+            { value: 'all', label: 'All', count: statusCounts.all },
+            { value: 'Active', label: 'Active', count: statusCounts.Active },
+            { value: 'Inactive', label: 'Inactive', count: statusCounts.Inactive },
+            { value: 'Suspended', label: 'Suspended', count: statusCounts.Suspended },
+          ]}
+        />
+        <StaffStatusTabs
+          aria-label="Account role"
+          value={roleTab}
+          onChange={setRoleTab}
+          options={[
+            { value: 'all', label: 'All roles', count: roleCounts.all },
+            { value: 'Customer', label: 'Customer', count: roleCounts.Customer },
+            { value: 'Admin', label: 'Admin', count: roleCounts.Admin },
+            { value: 'SuperAdmin', label: 'Super admin', count: roleCounts.SuperAdmin },
+          ]}
         />
       </StaffFilterBar>
 
@@ -316,24 +365,28 @@ export function UserManagementPage() {
         <TableSurfaceProgress active={loading && users.length > 0} ariaLabel="Loading users" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            All users ({filteredUsers.length})
+            Users ({filteredUsers.length})
           </Typography>
         </Box>
         {filteredUsers.length === 0 ? (
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<PeopleIcon />}
-            title={searchTerm ? 'No users match your search' : 'No users found'}
+            title={searchTerm || statusTab !== 'all' || roleTab !== 'all' ? 'No users match your filters' : 'No users found'}
             description={
-              searchTerm
-                ? 'Try another name or email, or clear the search.'
+              searchTerm || statusTab !== 'all' || roleTab !== 'all'
+                ? 'Try another status, role, or clear the search.'
                 : 'Create a user to grant portal access.'
             }
             primaryAction={
-              searchTerm
+              searchTerm || statusTab !== 'all' || roleTab !== 'all'
                 ? {
-                    label: 'Clear search',
-                    onClick: () => setSearchTerm(''),
+                    label: 'Clear filters',
+                    onClick: () => {
+                      setSearchTerm('');
+                      setStatusTab('all');
+                      setRoleTab('all');
+                    },
                     variant: 'secondary',
                   }
                 : {

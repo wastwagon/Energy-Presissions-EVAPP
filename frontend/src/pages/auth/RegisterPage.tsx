@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
-  Container,
-  Paper,
   TextField,
   Button,
   Typography,
-  Alert,
   Link,
   IconButton,
   InputAdornment,
@@ -18,20 +15,16 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../../services/authApi';
-import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
+import { AuthSplitLayout } from '../../components/auth/AuthSplitLayout';
 import {
   authFormFieldSx,
-  authPagePaperSx,
-  authPageRootAtmosphereSx,
-  authPageTitleSx,
   authPageBodySx,
   authPageLinkSx,
   compactContainedCtaSx,
   premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
-import { LegalDocLink, LegalFooterLinks } from '../../components/legal/LegalAuthNotice';
+import { LegalDocLink } from '../../components/legal/LegalAuthNotice';
 import { getPrivacyPolicyLink, getTermsOfServiceLink } from '../../config/legal.config';
 import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage } from '../../utils/userFriendlyErrors';
@@ -41,6 +34,9 @@ function phoneHasMinDigits(value: string, min: number): boolean {
   return digits.length >= min;
 }
 
+/**
+ * Create account — Untitled UI light auth shell (simple mobile + split desktop).
+ */
 export function RegisterPage() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -96,183 +92,161 @@ export function RegisterPage() {
   };
 
   return (
-    <Box sx={authPageRootAtmosphereSx(CUSTOMER_IMAGES.authAtmosphere)}>
-      <Container maxWidth="xs" disableGutters sx={{ width: '100%' }}>
-        <Paper elevation={0} sx={authPagePaperSx}>
-          <AuthBrandHeader compact />
-          <Typography component="h1" variant="subtitle1" sx={{ ...authPageTitleSx, textAlign: 'center' }}>
-            Create account
-          </Typography>
+    <AuthSplitLayout
+      mode="register"
+      title="Create an account"
+      subtitle="Start charging with Energy Presissions."
+      footer={
+        <Typography component="p" sx={{ ...authPageBodySx, m: 0 }}>
+          Already have an account?{' '}
+          <Link component={RouterLink} to="/login" sx={{ ...authPageLinkSx, fontWeight: 600 }}>
+            Log in
+          </Link>
+        </Typography>
+      }
+    >
+      {error && (
+        <UserErrorAlert error={error} context="auth" sx={{ mb: 2 }} onClose={() => setError(null)} />
+      )}
 
-          {error && (
-            <UserErrorAlert error={error} context="auth" sx={{ mb: 1, py: 0 }} onClose={() => setError(null)} />
-          )}
-
-          <form onSubmit={handleRegister}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.875 }}>
-              <Box sx={{ display: 'flex', gap: 0.875, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  margin="none"
-                  sx={authFormFieldSx}
-                  required
-                  autoComplete="given-name"
-                />
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  margin="none"
-                  sx={authFormFieldSx}
-                  required
-                  autoComplete="family-name"
-                />
-              </Box>
-              <TextField
-                fullWidth
-                size="small"
-                label="Phone number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                margin="none"
-                sx={authFormFieldSx}
-                required
-                autoComplete="tel"
-                inputMode="tel"
-                helperText="Required. Ghana: e.g. 024 000 0000 or +233 24 000 0000"
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="none"
-                sx={authFormFieldSx}
-                required
-                autoComplete="email"
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="none"
-                sx={authFormFieldSx}
-                required
-                autoComplete="new-password"
-                helperText="Min. 6 characters"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        sx={{
-                          ...sxObject(theme, premiumIconButtonTouchSx),
-                          color: 'text.secondary',
-                        }}
-                      >
-                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="Confirm password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                margin="none"
-                sx={authFormFieldSx}
-                required
-                autoComplete="new-password"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                        sx={{
-                          ...sxObject(theme, premiumIconButtonTouchSx),
-                          color: 'text.secondary',
-                        }}
-                      >
-                        {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <FormControlLabel
-                sx={{ alignItems: 'flex-start', mt: 0.25, mr: 0, ml: -0.5 }}
-                control={
-                  <Checkbox
-                    checked={agreedToLegal}
-                    onChange={(_, checked) => setAgreedToLegal(checked)}
-                    size="small"
-                    sx={{ pt: 0.25 }}
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={authPageBodySx}>
-                    I agree to the{' '}
-                    <LegalDocLink
-                      label="Terms of Service"
-                      {...getTermsOfServiceLink()}
-                    />{' '}
-                    and{' '}
-                    <LegalDocLink
-                      label="Privacy Policy"
-                      {...getPrivacyPolicyLink()}
-                    />
-                    .
-                  </Typography>
-                }
-              />
-            </Box>
-            <Button
-              type="submit"
+      <Box component="form" onSubmit={handleRegister} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <TextField
               fullWidth
-              variant="contained"
-              size="medium"
-              disableElevation
-              sx={(th) => ({
-                ...sxObject(th, compactContainedCtaSx),
-                width: '100%',
-                mt: { xs: 1.125, sm: 1.25 },
-              })}
-              disabled={loading}
-            >
-              {loading ? 'Creating account...' : 'Sign up'}
-            </Button>
-          </form>
-
-          <Box sx={{ mt: { xs: 1, sm: 1.125 }, textAlign: 'left' }}>
-            <Link component={RouterLink} to="/login" sx={authPageLinkSx}>
-              Sign in instead
-            </Link>
+              label="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              sx={authFormFieldSx}
+              required
+              autoComplete="given-name"
+              autoFocus
+            />
+            <TextField
+              fullWidth
+              label="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              sx={authFormFieldSx}
+              required
+              autoComplete="family-name"
+            />
           </Box>
+          <TextField
+            fullWidth
+            label="Phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            sx={authFormFieldSx}
+            required
+            autoComplete="tel"
+            inputMode="tel"
+            helperText="Ghana: e.g. 024 000 0000 or +233 24 000 0000"
+          />
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            sx={authFormFieldSx}
+            required
+            autoComplete="email"
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Create a password"
+            sx={authFormFieldSx}
+            required
+            autoComplete="new-password"
+            helperText="Must be at least 6 characters"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    edge="end"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    sx={{
+                      ...sxObject(theme, premiumIconButtonTouchSx),
+                      color: 'text.secondary',
+                    }}
+                  >
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Confirm password"
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••"
+            sx={authFormFieldSx}
+            required
+            autoComplete="new-password"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    edge="end"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    sx={{
+                      ...sxObject(theme, premiumIconButtonTouchSx),
+                      color: 'text.secondary',
+                    }}
+                  >
+                    {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControlLabel
+            sx={{ alignItems: 'flex-start', m: 0 }}
+            control={
+              <Checkbox
+                checked={agreedToLegal}
+                onChange={(_, checked) => setAgreedToLegal(checked)}
+                size="small"
+                sx={{ pt: 0.25 }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={authPageBodySx}>
+                I agree to the{' '}
+                <LegalDocLink label="Terms of Service" {...getTermsOfServiceLink()} /> and{' '}
+                <LegalDocLink label="Privacy Policy" {...getPrivacyPolicyLink()} />.
+              </Typography>
+            }
+          />
+        </Box>
 
-          <LegalFooterLinks sx={{ textAlign: 'left', justifyContent: 'flex-start' }} />
-        </Paper>
-      </Container>
-    </Box>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disableElevation
+          sx={(th) => ({
+            ...sxObject(th, compactContainedCtaSx),
+            width: '100%',
+            minHeight: 48,
+            fontSize: '1rem',
+          })}
+          disabled={loading}
+        >
+          {loading ? 'Creating account…' : 'Get started'}
+        </Button>
+      </Box>
+    </AuthSplitLayout>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +21,7 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  InputAdornment,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -31,10 +32,13 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LoginIcon from '@mui/icons-material/Login';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
+  staffFilterFieldSx,
   compactContainedCtaSx,
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
@@ -45,6 +49,8 @@ import {
 } from '../../styles/authShell';
 import { getVendorStatusColor } from '../../utils/statusColors';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
+import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import StorefrontIcon from '@mui/icons-material/Storefront';
@@ -54,6 +60,9 @@ import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContent
 import { getOpsNavPaths } from '../../config/opsNav.paths';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+
+type VendorStatusTab = 'all' | VendorStatus;
 
 export function VendorManagementPage() {
   const navigate = useNavigate();
@@ -61,8 +70,11 @@ export function VendorManagementPage() {
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusTab, setStatusTab] = useState<VendorStatusTab>('all');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -93,12 +105,35 @@ export function VendorManagementPage() {
   });
 
   useEffect(() => {
-    loadVendors();
+    void loadVendors();
   }, []);
 
-  const loadVendors = async () => {
+  const statusCounts = useMemo(() => {
+    const counts = { all: vendors.length, active: 0, suspended: 0, disabled: 0 };
+    for (const vendor of vendors) {
+      if (vendor.status in counts) counts[vendor.status] += 1;
+    }
+    return counts;
+  }, [vendors]);
+
+  const filteredVendors = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return vendors.filter((vendor) => {
+      if (statusTab !== 'all' && vendor.status !== statusTab) return false;
+      if (!q) return true;
+      return (
+        vendor.name.toLowerCase().includes(q) ||
+        (vendor.contactEmail && vendor.contactEmail.toLowerCase().includes(q)) ||
+        (vendor.domain && vendor.domain.toLowerCase().includes(q)) ||
+        (vendor.slug && vendor.slug.toLowerCase().includes(q))
+      );
+    });
+  }, [vendors, searchTerm, statusTab]);
+
+  const loadVendors = async (silent?: boolean) => {
     try {
-      setLoading(true);
+      if (silent) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       const data = await vendorApi.getAll();
       setVendors(data);
@@ -106,6 +141,7 @@ export function VendorManagementPage() {
       setError(err.message || 'Failed to load vendors');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -326,10 +362,12 @@ export function VendorManagementPage() {
         title="Vendor Management"
         subtitle="Manage vendor accounts, status, and impersonation access."
         updatedAt={null}
-        refreshing={false}
-        onRefresh={() => undefined}
-        showRefresh={false}
-        showLiveMeta={false}
+        refreshing={refreshing}
+        onRefresh={() => void loadVendors(true)}
+        showToolbarRefreshOnMobile
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
         actions={
           <Button
             variant="contained"
@@ -358,32 +396,90 @@ export function VendorManagementPage() {
         </Alert>
       )}
 
+      <StaffFilterBar aria-label="Vendor filters">
+        <TextField
+          placeholder="Search vendors…"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm ? (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear vendor search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
+          }}
+          sx={(th) => ({
+            ...sxObject(th, staffFilterFieldSx),
+            width: { xs: '100%', sm: 280 },
+            maxWidth: '100%',
+          })}
+        />
+        <StaffStatusTabs
+          aria-label="Vendor status"
+          value={statusTab}
+          onChange={setStatusTab}
+          options={[
+            { value: 'all', label: 'All', count: statusCounts.all },
+            { value: 'active', label: 'Active', count: statusCounts.active },
+            { value: 'suspended', label: 'Suspended', count: statusCounts.suspended },
+            { value: 'disabled', label: 'Disabled', count: statusCounts.disabled },
+          ]}
+        />
+      </StaffFilterBar>
+
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
         <TableSurfaceProgress active={loading && vendors.length > 0} ariaLabel="Loading vendors" />
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 1.75, sm: 2 }, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Vendors ({vendors.length})
+            Vendors ({filteredVendors.length})
           </Typography>
         </Box>
-        {vendors.length === 0 ? (
+        {filteredVendors.length === 0 ? (
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<StorefrontIcon />}
-            title="No vendors yet"
-            description="Create a vendor to onboard operators and assign charge points."
-            primaryAction={{
-              label: 'Create vendor',
-              onClick: handleCreateVendor,
-              startIcon: <AddIcon />,
-            }}
+            title={searchTerm || statusTab !== 'all' ? 'No vendors match your filters' : 'No vendors yet'}
+            description={
+              searchTerm || statusTab !== 'all'
+                ? 'Try another status or clear the search.'
+                : 'Create a vendor to onboard operators and assign charge points.'
+            }
+            primaryAction={
+              searchTerm || statusTab !== 'all'
+                ? {
+                    label: 'Clear filters',
+                    onClick: () => {
+                      setSearchTerm('');
+                      setStatusTab('all');
+                    },
+                    variant: 'secondary',
+                  }
+                : {
+                    label: 'Create vendor',
+                    onClick: handleCreateVendor,
+                    startIcon: <AddIcon />,
+                  }
+            }
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
-              {vendors.map((vendor, index) => (
+              {filteredVendors.map((vendor, index) => (
                 <GroupedListRow
                   key={vendor.id}
-                  divider={index < vendors.length - 1}
+                  divider={index < filteredVendors.length - 1}
                   primary={vendor.name}
                   secondary={vendor.contactEmail || vendor.domain || '—'}
                   end={
@@ -411,7 +507,7 @@ export function VendorManagementPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {vendors.map((vendor) => (
+              {filteredVendors.map((vendor) => (
                   <TableRow key={vendor.id}>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>

@@ -19,6 +19,7 @@ import {
   CircularProgress,
   Grid,
   InputAdornment,
+  IconButton,
   MenuItem,
   Select,
   FormControl,
@@ -31,6 +32,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PeopleIcon from '@mui/icons-material/People';
+import ClearIcon from '@mui/icons-material/Clear';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
@@ -42,10 +44,12 @@ import {
   compactErrorContainedCtaSx,
   compactOutlinedCtaSx,
   premiumDialogPaperSx,
+  premiumIconButtonTouchSx,
   sxObject,
 } from '../../styles/authShell';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { StaffFilterBar } from '../../components/dashboard/StaffFilterBar';
+import { StaffStatusTabs } from '../../components/dashboard/StaffStatusTabs';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { formatCurrency } from '../../utils/formatters';
@@ -60,8 +64,11 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
+import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 
 const WALLET_TX_PAGE_SIZE = 20;
+
+type WalletBalanceTab = 'all' | 'positive' | 'zero' | 'debt';
 
 export function WalletManagementPage() {
   const theme = useTheme();
@@ -76,9 +83,11 @@ export function WalletManagementPage() {
     currency: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [balanceTab, setBalanceTab] = useState<WalletBalanceTab>('all');
   const [creditDebtDialogOpen, setCreditDebtDialogOpen] = useState(false);
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
@@ -98,12 +107,13 @@ export function WalletManagementPage() {
   });
 
   useEffect(() => {
-    loadUsers();
+    void loadUsers();
   }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = async (silent?: boolean) => {
     try {
-      setLoading(true);
+      if (silent) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       const data = await usersApi.getAll();
       setUsers(data);
@@ -111,6 +121,7 @@ export function WalletManagementPage() {
       setError(err.message || 'Failed to load users');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -255,19 +266,34 @@ export function WalletManagementPage() {
     }
   };
 
-  // Filter users based on search query
+  // Filter users based on search query + balance tab
+  const balanceCounts = useMemo(() => {
+    const counts = { all: users.length, positive: 0, zero: 0, debt: 0 };
+    for (const user of users) {
+      const balance = Number(user.balance ?? 0);
+      if (balance < 0) counts.debt += 1;
+      else if (balance === 0) counts.zero += 1;
+      else counts.positive += 1;
+    }
+    return counts;
+  }, [users]);
+
   const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    
-    const query = searchQuery.toLowerCase();
-    return users.filter(
-      (user) =>
+    const query = searchQuery.trim().toLowerCase();
+    return users.filter((user) => {
+      const balance = Number(user.balance ?? 0);
+      if (balanceTab === 'debt' && !(balance < 0)) return false;
+      if (balanceTab === 'zero' && balance !== 0) return false;
+      if (balanceTab === 'positive' && !(balance > 0)) return false;
+      if (!query) return true;
+      return (
         user.firstName?.toLowerCase().includes(query) ||
         user.lastName?.toLowerCase().includes(query) ||
         user.email?.toLowerCase().includes(query) ||
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(query)
-    );
-  }, [users, searchQuery]);
+      );
+    });
+  }, [users, searchQuery, balanceTab]);
 
   const handleUserRowKeyDown =
     (user: User) => (event: React.KeyboardEvent<HTMLTableRowElement>) => {
@@ -288,10 +314,12 @@ export function WalletManagementPage() {
         title="Wallet Management"
         subtitle="Manage customer wallet balances, credits, debts, and transactions."
         updatedAt={null}
-        refreshing={false}
-        onRefresh={() => undefined}
-        showRefresh={false}
-        showLiveMeta={false}
+        refreshing={refreshing}
+        onRefresh={() => void loadUsers(true)}
+        showToolbarRefreshOnMobile
+        titleVariant="large"
+        titleSx={staffLargeTitleSx}
+        subtitleSx={staffLargeSubtitleSx}
         actions={
           <Button
             variant="contained"
@@ -321,7 +349,7 @@ export function WalletManagementPage() {
         </Alert>
       )}
 
-      <StaffFilterBar aria-label="User search">
+      <StaffFilterBar aria-label="Wallet user filters">
         <TextField
           fullWidth
           placeholder="Search by name or email…"
@@ -329,7 +357,7 @@ export function WalletManagementPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={(th) => ({
             ...sxObject(th, staffFilterFieldSx),
-            width: { xs: '100%', sm: 320 },
+            width: { xs: '100%', sm: 280 },
             maxWidth: '100%',
           })}
           InputProps={{
@@ -338,7 +366,29 @@ export function WalletManagementPage() {
                 <SearchIcon fontSize="small" />
               </InputAdornment>
             ),
+            endAdornment: searchQuery ? (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear wallet search"
+                  sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
           }}
+        />
+        <StaffStatusTabs
+          aria-label="Balance filter"
+          value={balanceTab}
+          onChange={setBalanceTab}
+          options={[
+            { value: 'all', label: 'All', count: balanceCounts.all },
+            { value: 'positive', label: 'Credit', count: balanceCounts.positive },
+            { value: 'zero', label: 'Zero', count: balanceCounts.zero },
+            { value: 'debt', label: 'Debt', count: balanceCounts.debt },
+          ]}
         />
       </StaffFilterBar>
 
@@ -356,10 +406,10 @@ export function WalletManagementPage() {
               <AppEmptyState
                 sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
                 icon={<PeopleIcon />}
-                title={searchQuery ? 'No users match your search' : 'No users found'}
+                title={searchQuery || balanceTab !== 'all' ? 'No users match your filters' : 'No users found'}
                 description={
-                  searchQuery
-                    ? 'Try another name or email, or clear the search.'
+                  searchQuery || balanceTab !== 'all'
+                    ? 'Try another balance filter or clear the search.'
                     : 'Create a user to start managing wallet balances.'
                 }
               />
@@ -376,12 +426,15 @@ export function WalletManagementPage() {
                         primary={`${user.firstName} ${user.lastName}`.trim()}
                         secondary={user.email}
                         end={
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 700, color: hasDebt ? 'error.main' : 'success.main' }}
-                          >
-                            {formatCurrency(balance, user.currency)}
-                          </Typography>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 700, color: hasDebt ? 'error.main' : 'success.main' }}
+                            >
+                              {formatCurrency(balance, user.currency)}
+                            </Typography>
+                            {hasDebt ? <AppBadge label="Debt" tone="error" size="small" sx={{ mt: 0.5 }} /> : null}
+                          </Box>
                         }
                         onClick={() => {
                           setSelectedUser(user);

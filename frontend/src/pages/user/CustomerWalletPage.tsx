@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Paper,
-  Button,
-  Alert,
   Table,
   TableBody,
   TableCell,
@@ -19,12 +17,9 @@ import {
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useCustomerPullRefresh } from '../../contexts/CustomerPullRefreshContext';
-import { alpha } from '@mui/material/styles';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import { walletApi, WalletBalance, WalletTransaction } from '../../services/walletApi';
-import { premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
-import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
+import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { getStoredUser } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor, getWalletTransactionTypeColor } from '../../utils/statusColors';
@@ -33,7 +28,7 @@ import {
   formatWalletLedgerTypeLabel,
   walletLedgerAmountColor,
 } from '../../utils/walletLedgerDisplay';
-import { GroupedDetailRow } from '../../components/ios/GroupedDetailRow';
+import { buildWalletActivitySeries } from '../../utils/walletActivitySeries';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -46,16 +41,23 @@ import { UserErrorAlert } from '../../components/UserErrorAlert';
 import { formatUserFacingErrorMessage, UserMessages } from '../../utils/userFriendlyErrors';
 import { AppEmptyState } from '../../components/ui/AppEmptyState';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
+import { CustomerWalletBalanceHero } from '../../components/customer/CustomerWalletBalanceHero';
 import { CUSTOMER_IMAGES } from '../../config/customerImagery';
 
 const WALLET_TX_PAGE_SIZE = 20;
+const ACTIVITY_DAYS = 14;
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [balance, setBalance] = useState<WalletBalance | null>(null);
-  const [funds, setFunds] = useState<{ available: number; reserved: number; total: number; currency: string } | null>(null);
+  const [funds, setFunds] = useState<{
+    available: number;
+    reserved: number;
+    total: number;
+    currency: string;
+  } | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [txPage, setTxPage] = useState(1);
   const [txTotal, setTxTotal] = useState(0);
@@ -139,6 +141,15 @@ export function CustomerWalletPage() {
 
   useCustomerPullRefresh(useCallback(() => void loadWalletData(true), [loadWalletData]));
 
+  const activity = useMemo(
+    () => buildWalletActivitySeries(transactions, ACTIVITY_DAYS),
+    [transactions],
+  );
+
+  const goTopUp = useCallback(() => {
+    navigate(CUSTOMER_ROUTES.walletTopUp);
+  }, [navigate]);
+
   if (loading && balance === null) {
     return <CustomerChromeSkeleton preset="wallet" />;
   }
@@ -154,147 +165,20 @@ export function CustomerWalletPage() {
         onRefresh={() => void loadWalletData(true)}
         titleVariant="large"
       />
-      <Box sx={{ mb: 3 }}>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon />}
-          onClick={() => {
-            triggerHaptic('light');
-            navigate(CUSTOMER_ROUTES.walletTopUp);
-          }}
-          sx={(th) => ({
-            ...sxObject(th, compactContainedCtaSx),
-            width: { xs: '100%', sm: 'auto' },
-          })}
-        >
-          Top Up Wallet
-        </Button>
-      </Box>
 
       {error && (
-        <UserErrorAlert error={error} context="wallet" sx={{ mb: 3 }} onClose={() => setError(null)} />
+        <UserErrorAlert error={error} context="wallet" sx={{ mb: 2 }} onClose={() => setError(null)} />
       )}
 
-      {balance && funds && (
-        <Box sx={{ mb: 3 }}>
-          <Paper
-            elevation={0}
-            sx={(th) => ({
-              ...premiumPanelCardSx,
-              mb: 2,
-              overflow: 'hidden',
-              p: 0,
-              background: `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.07)} 0%, ${alpha(
-                th.palette.primary.main,
-                0.02,
-              )} 100%)`,
-              borderColor: alpha(th.palette.primary.main, 0.18),
-            })}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: 'stretch',
-                minHeight: { sm: 132 },
-              }}
-            >
-              <Box
-                component="img"
-                src={CUSTOMER_IMAGES.walletEnergy}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                decoding="async"
-                sx={{
-                  width: { xs: '100%', sm: 168 },
-                  height: { xs: 96, sm: 'auto' },
-                  objectFit: 'cover',
-                  flexShrink: 0,
-                }}
-              />
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  flexWrap: 'wrap',
-                  p: { xs: 2, sm: 2.25 },
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Box
-                  sx={(th) => ({
-                    width: 52,
-                    height: 52,
-                    borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    bgcolor: alpha(th.palette.primary.main, 0.12),
-                    color: 'primary.main',
-                  })}
-                >
-                  <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                  >
-                    Available to spend
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      fontSize: { xs: '1.75rem', sm: '2.25rem' },
-                      wordBreak: 'break-word',
-                      lineHeight: 1.2,
-                      mt: 0.25,
-                    }}
-                  >
-                    {formatCurrency(funds.available, funds.currency)}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-          <GroupedListSection title="Balance">
-            <GroupedDetailRow
-              label="Available"
-              value={
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {formatCurrency(funds.available, funds.currency)}
-                </Typography>
-              }
-              divider
-            />
-            <GroupedDetailRow
-              label="On hold"
-              value={
-                <Typography variant="body2" sx={{ fontWeight: 600, color: funds.reserved > 0 ? 'warning.main' : 'text.primary' }}>
-                  {formatCurrency(funds.reserved, funds.currency)}
-                </Typography>
-              }
-              divider
-            />
-            <GroupedDetailRow
-              label="Wallet total"
-              value={
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {formatCurrency(funds.total, funds.currency)}
-                </Typography>
-              }
-            />
-          </GroupedListSection>
-        </Box>
-      )}
+      {funds ? (
+        <CustomerWalletBalanceHero
+          funds={funds}
+          activityValues={activity.values}
+          periodSpend={activity.periodSpend}
+          periodDays={ACTIVITY_DAYS}
+          onTopUp={goTopUp}
+        />
+      ) : null}
 
       {useGroupedList ? (
         <Box sx={{ position: 'relative' }}>
@@ -310,7 +194,7 @@ export function CustomerWalletPage() {
                 label: 'Top up wallet',
                 onClick: () => {
                   triggerHaptic('light');
-                  navigate(CUSTOMER_ROUTES.walletTopUp);
+                  goTopUp();
                 },
                 startIcon: <AddIcon />,
               }}
@@ -330,21 +214,33 @@ export function CustomerWalletPage() {
                   key={tx.id}
                   divider={index < transactions.length - 1}
                   showChevron={false}
-                  primary={tx.description || formatWalletLedgerTypeLabel(tx.type)}
-                  secondary={`${new Date(tx.createdAt).toLocaleDateString()} · ${tx.status}`}
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                      <Typography component="span" sx={{ fontWeight: 600, fontSize: '0.9375rem' }}>
+                        {tx.description || formatWalletLedgerTypeLabel(tx.type)}
+                      </Typography>
+                      <AppBadge
+                        label={tx.status}
+                        tone={chipColorToBadgeTone(getPaymentStatusColor(tx.status))}
+                        size="small"
+                      />
+                    </Box>
+                  }
+                  secondary={`${new Date(tx.createdAt).toLocaleDateString()} · ${formatWalletLedgerTypeLabel(tx.type)}`}
                   end={
                     <Box sx={{ textAlign: 'right' }}>
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: 600,
+                          fontWeight: 700,
                           color: walletLedgerAmountColor(tx.type),
+                          letterSpacing: '-0.01em',
                         }}
                       >
                         {formatWalletLedgerAmount(tx)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {formatCurrency(tx.balanceAfter)}
+                        Bal. {formatCurrency(tx.balanceAfter)}
                       </Typography>
                     </Box>
                   }
@@ -394,7 +290,7 @@ export function CustomerWalletPage() {
                           label: 'Top up wallet',
                           onClick: () => {
                             triggerHaptic('light');
-                            navigate(CUSTOMER_ROUTES.walletTopUp);
+                            goTopUp();
                           },
                           startIcon: <AddIcon />,
                         }}
@@ -453,4 +349,3 @@ export function CustomerWalletPage() {
     </Box>
   );
 }
-
