@@ -20,15 +20,19 @@
       html,
       body,
       #root {
-        min-height: 100vh;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
         background: var(--app-chrome-bg, #f4f7f9);
       }
 
-      @supports (min-height: 100dvh) {
+      @supports (height: 100svh) {
         html,
         body,
         #root {
-          min-height: 100dvh;
+          height: 100svh;
+          max-height: 100svh;
         }
       }
 

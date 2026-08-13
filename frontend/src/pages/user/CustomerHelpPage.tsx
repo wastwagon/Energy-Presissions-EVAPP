@@ -9,8 +9,6 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { GroupedExpandableRow } from '../../components/ios/GroupedExpandableRow';
 import { authPageBodySx } from '../../styles/authShell';
-import { CUSTOMER_IMAGES } from '../../config/customerImagery';
-import { iosRadii } from '../../theme/iosMobileTokens';
 
 const faqs = [
   {
@@ -43,7 +41,6 @@ export function CustomerHelpPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Help"
-        subtitle="Answers and ways to reach us"
         updatedAt={null}
         refreshing={false}
         onRefresh={() => {}}
@@ -53,57 +50,6 @@ export function CustomerHelpPage() {
         titleVariant="large"
         containerSx={{ mb: 1.5 }}
       />
-
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: { xs: 2, sm: 2.5 },
-          mb: { xs: 2.5, sm: 3 },
-          mx: { xs: -2, sm: 0 },
-          px: { xs: 2, sm: 0 },
-        }}
-      >
-        <Box
-          component="img"
-          src={CUSTOMER_IMAGES.helpSupport}
-          alt="Help and support"
-          loading="lazy"
-          decoding="async"
-          sx={{
-            width: { xs: '100%', sm: 148 },
-            maxWidth: { xs: 220, sm: 148 },
-            height: { xs: 160, sm: 148 },
-            objectFit: 'cover',
-            borderRadius: `${iosRadii.lg}px`,
-            mx: { xs: 'auto', sm: 0 },
-            flexShrink: 0,
-            bgcolor: 'primary.dark',
-          }}
-        />
-        <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-          <Typography
-            component="p"
-            sx={{
-              m: 0,
-              fontWeight: 700,
-              letterSpacing: '-0.02em',
-              fontSize: { xs: '1.15rem', sm: '1.25rem' },
-              lineHeight: 1.25,
-            }}
-          >
-            We're here when charging gets stuck
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.75, lineHeight: 1.45, maxWidth: 420, mx: { xs: 'auto', sm: 0 } }}
-          >
-            Browse common questions below, or email and call support directly.
-          </Typography>
-        </Box>
-      </Box>
 
       <GroupedListSection title="FAQ">
         {faqs.map((faq, idx) => (

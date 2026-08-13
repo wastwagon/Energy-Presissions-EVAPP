@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -29,7 +29,6 @@ import {
   formatWalletLedgerTypeLabel,
   walletLedgerAmountColor,
 } from '../../utils/walletLedgerDisplay';
-import { buildWalletActivitySeries } from '../../utils/walletActivitySeries';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { useLiveRefresh } from '../../hooks/useLiveRefresh';
@@ -45,7 +44,6 @@ import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { CustomerWalletBalanceHero } from '../../components/customer/CustomerWalletBalanceHero';
 
 const WALLET_TX_PAGE_SIZE = 20;
-const ACTIVITY_DAYS = 14;
 
 export function CustomerWalletPage() {
   const navigate = useNavigate();
@@ -176,11 +174,6 @@ export function CustomerWalletPage() {
 
   useCustomerPullRefresh(useCallback(() => void loadWalletData(true), [loadWalletData]));
 
-  const activity = useMemo(
-    () => buildWalletActivitySeries(transactions, ACTIVITY_DAYS),
-    [transactions],
-  );
-
   const goTopUp = useCallback(() => {
     navigate(CUSTOMER_ROUTES.walletTopUp);
   }, [navigate]);
@@ -193,7 +186,6 @@ export function CustomerWalletPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Wallet"
-        subtitle="Balance and history"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.wallet}
         refreshing={refreshing}
@@ -205,15 +197,7 @@ export function CustomerWalletPage() {
         <UserErrorAlert error={error} context="wallet" sx={{ mb: 2 }} onClose={() => setError(null)} />
       )}
 
-      {funds ? (
-        <CustomerWalletBalanceHero
-          funds={funds}
-          activityValues={activity.values}
-          periodSpend={activity.periodSpend}
-          periodDays={ACTIVITY_DAYS}
-          onTopUp={goTopUp}
-        />
-      ) : null}
+      {funds ? <CustomerWalletBalanceHero funds={funds} onTopUp={goTopUp} /> : null}
 
       {useGroupedList ? (
         <Box sx={{ position: 'relative' }}>

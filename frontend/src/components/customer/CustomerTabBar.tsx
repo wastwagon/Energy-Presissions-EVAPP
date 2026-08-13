@@ -51,8 +51,9 @@ export function CustomerTabBar({ items }: CustomerTabBarProps) {
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
         borderTop: `0.5px solid ${iosTabBar.separator}`,
-        pb: 'env(safe-area-inset-bottom, 0px)',
+        pb: 'max(12px, env(safe-area-inset-bottom, 0px))',
         boxShadow: 'none',
+        zIndex: (t) => t.zIndex.appBar,
       }}
     >
       <Box

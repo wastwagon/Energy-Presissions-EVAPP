@@ -200,6 +200,7 @@ export function StationDetailPage() {
       <CustomerHeroBanner
         src={CUSTOMER_IMAGES.chargingHubHero}
         alt="Electric vehicle at a charging station"
+        sx={{ height: { xs: 128, sm: 168, md: 196 } }}
       />
 
       {isCompact ? (

@@ -10,7 +10,7 @@ import { useStaffPageChrome } from '../../contexts/StaffPageChromeContext';
 
 interface LivePageHeaderProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   /** `large` = iOS navigation title on mobile (compact on md+) */
   titleVariant?: 'compact' | 'large';
   updatedAt: number | null;
@@ -58,10 +58,13 @@ export function LivePageHeader({
   const chrome = customerChrome ?? staffChrome;
   const pullRefresh = useCustomerPullRefreshContext();
   const registerLargeTitle = titleVariant === 'large' && isMobile && Boolean(chrome);
+  const isCustomerShell = Boolean(customerChrome);
+  const hideLiveMeta = !showLiveMeta || (isCustomerShell && isMobile);
+  const hideLinearProgress = isCustomerShell && isMobile;
   const hideToolbarRefresh =
     !showRefresh ||
     (isMobile &&
-      Boolean(pullRefresh?.hasRefreshHandler) &&
+      Boolean(pullRefresh?.hasRefreshHandler || isCustomerShell) &&
       !refreshDisabled &&
       !showToolbarRefreshOnMobile);
 
@@ -84,12 +87,12 @@ export function LivePageHeader({
 
   return (
     <>
-      {refreshing && showRefresh && (
+      {refreshing && showRefresh && !hideLinearProgress && (
         <LinearProgress sx={{ mb: 2, borderRadius: 1 }} aria-label={`Updating ${title.toLowerCase()}`} />
       )}
       <Box
         sx={{
-          mb: 3,
+          mb: titleVariant === 'large' ? { xs: 1.5, md: 3 } : 3,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
@@ -105,12 +108,14 @@ export function LivePageHeader({
           {registerLargeTitle && (
             <Box ref={titleSentinelRef} sx={{ height: 1, width: '100%' }} aria-hidden />
           )}
-          <Typography variant="body2" sx={resolvedSubtitleSx}>
-            {subtitle}
-          </Typography>
-          {showLiveMeta ? (
-            <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />
+          {subtitle ? (
+            <Typography variant="body2" sx={resolvedSubtitleSx}>
+              {subtitle}
+            </Typography>
           ) : null}
+          {hideLiveMeta ? null : (
+            <LiveDataMeta updatedAt={updatedAt} liveLabel={liveLabel} showSeconds={showSeconds} />
+          )}
         </Box>
         {(actions || !hideToolbarRefresh) && (
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>

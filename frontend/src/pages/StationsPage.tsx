@@ -438,7 +438,6 @@ export function StationsPage() {
         updatedAt={null}
         refreshing={listRefreshing}
         onRefresh={() => void refreshStations()}
-        showToolbarRefreshOnMobile
         titleVariant="large"
         containerSx={{ mb: 2 }}
         refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
@@ -509,76 +508,6 @@ export function StationsPage() {
         />
       )}
 
-      <Box
-        ref={mapSectionRef}
-        component="section"
-        id={STATIONS_MAP_PANEL_ID}
-        aria-labelledby="stations-map-heading"
-        aria-describedby={STATIONS_MAP_HINT_ID}
-        sx={{ mb: 2 }}
-      >
-        <Typography id="stations-map-heading" sx={visuallyHiddenSx}>
-          Map of nearby charging stations
-        </Typography>
-        <Typography id={STATIONS_MAP_HINT_ID} sx={visuallyHiddenSx}>
-          Pan and zoom to explore. Use the station list below to select a charger with the keyboard.
-        </Typography>
-        <Box
-          role="application"
-          aria-label="Map of nearby charging stations"
-          tabIndex={0}
-          sx={{
-            height: { xs: '42vh', sm: 320, md: 380 },
-            minHeight: 260,
-            maxHeight: 480,
-            position: 'relative',
-            borderRadius: 2,
-            overflow: 'hidden',
-            border: (t) => `1px solid ${t.palette.divider}`,
-            bgcolor: 'background.paper',
-            '&:focus-visible': {
-              outline: (t) => `2px solid ${t.palette.primary.main}`,
-              outlineOffset: 2,
-            },
-          }}
-        >
-          {loading && (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 500,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                p: 2,
-                bgcolor: (t) => t.palette.action.hover,
-              }}
-              role="status"
-              aria-busy="true"
-              aria-label="Loading stations map"
-            >
-              <Skeleton
-                variant="rounded"
-                animation="wave"
-                sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
-              />
-            </Box>
-          )}
-          <StationsMapView
-            stations={stations}
-            userLocation={userLocation}
-            selectedChargePointId={mapSelectionId}
-            onSelectStation={handleStationClick}
-            mapFitToken={mapFitToken}
-            ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
-            onViewportBoundsStable={handleViewportBoundsStable}
-            onUserAdjustedMapView={handleUserAdjustedMapView}
-            viewportSearchEnabled={stations.length > 0 && searchTerm.trim() === ''}
-          />
-        </Box>
-      </Box>
-
       <Paper
         elevation={0}
         component="section"
@@ -613,7 +542,7 @@ export function StationsPage() {
             title="No chargers here"
             description={
               userLocation
-                ? 'Nothing in this area yet. Search another place or pan the map.'
+                ? 'Nothing in this area yet. Search another place or scroll to the map.'
                 : 'Turn on location, or search by area or station ID.'
             }
           />
@@ -671,6 +600,74 @@ export function StationsPage() {
           </>
         ) : null}
       </Paper>
+
+      <Box
+        ref={mapSectionRef}
+        component="section"
+        id={STATIONS_MAP_PANEL_ID}
+        aria-labelledby="stations-map-heading"
+        aria-describedby={STATIONS_MAP_HINT_ID}
+        sx={{ mb: 2 }}
+      >
+        <Typography id="stations-map-heading" sx={visuallyHiddenSx}>
+          Map of nearby charging stations
+        </Typography>
+        <Typography id={STATIONS_MAP_HINT_ID} sx={visuallyHiddenSx}>
+          Pan and zoom to explore. Use the station list above to select a charger with the keyboard.
+        </Typography>
+        <Box
+          role="application"
+          aria-label="Map of nearby charging stations"
+          tabIndex={0}
+          sx={{
+            height: { xs: 220, sm: 300, md: 380 },
+            position: 'relative',
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: (t) => `1px solid ${t.palette.divider}`,
+            bgcolor: 'background.paper',
+            '&:focus-visible': {
+              outline: (t) => `2px solid ${t.palette.primary.main}`,
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {loading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+                bgcolor: (t) => t.palette.action.hover,
+              }}
+              role="status"
+              aria-busy="true"
+              aria-label="Loading stations map"
+            >
+              <Skeleton
+                variant="rounded"
+                animation="wave"
+                sx={{ width: 'min(92%, 440px)', height: 'min(55%, 240px)', borderRadius: 2 }}
+              />
+            </Box>
+          )}
+          <StationsMapView
+            stations={stations}
+            userLocation={userLocation}
+            selectedChargePointId={mapSelectionId}
+            onSelectStation={handleStationClick}
+            mapFitToken={mapFitToken}
+            ignoreViewportBoundsMoveEndsBefore={ignoreViewportBoundsMoveEndsBefore}
+            onViewportBoundsStable={handleViewportBoundsStable}
+            onUserAdjustedMapView={handleUserAdjustedMapView}
+            viewportSearchEnabled={stations.length > 0 && searchTerm.trim() === ''}
+          />
+        </Box>
+      </Box>
 
       {/* Start Charging Dialog */}
       <StartChargingDialog

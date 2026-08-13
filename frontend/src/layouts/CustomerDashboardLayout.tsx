@@ -39,6 +39,7 @@ import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/C
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
+import { iosGroupedPageBgSx } from '../theme/iosGroupedList';
 import { premiumIconButtonTouchSx, premiumMenuItemSx, premiumMenuPaperSx, sxObject } from '../styles/authShell';
 import { SkipToMain } from '../components/SkipToMain';
 import { APP_MAIN_CONTENT_ID } from '../constants/a11y';
@@ -48,8 +49,8 @@ function CustomerDashboardChrome() {
   const theme = useTheme();
   const pageChrome = useCustomerPageChrome();
   const showBottomNav = useMediaQuery(theme.breakpoints.down('lg'));
-  /** Stack pushes with AppBar back hide the tab bar (iOS navigation-stack pattern). */
-  const showDockedBottomNav = showBottomNav && !pageChrome?.navBack;
+  /** Tab bar stays on stacked screens (Top up, session detail) so primary nav is always reachable. */
+  const showDockedBottomNav = showBottomNav;
   const showCompactNavTitle = Boolean(
     pageChrome?.showCompactNavTitle && pageChrome.pageTitle && showBottomNav,
   );
@@ -91,7 +92,7 @@ function CustomerDashboardChrome() {
   };
 
   return (
-    <Box sx={dashboardViewportColumnSx}>
+    <Box sx={{ ...dashboardViewportColumnSx, ...iosGroupedPageBgSx }}>
       <SkipToMain />
       <AppBar
         position="fixed"

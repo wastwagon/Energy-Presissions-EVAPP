@@ -158,8 +158,7 @@ export function CustomerPaymentMethodsPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Payment Methods"
-        subtitle="Manage your saved payment methods for quick top-ups"
+        title="Payment methods"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.payments}
         refreshing={refreshing}

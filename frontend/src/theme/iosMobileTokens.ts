@@ -33,7 +33,7 @@ export const iosBrandColors = {
 export const iosSemanticColors = {
   separatorLight: 'rgba(60, 60, 67, 0.29)',
   separatorOnLight: 'rgba(60, 60, 67, 0.12)',
-  groupingBackground: '#f2f4f7',
+  groupingBackground: '#f2f2f7',
   labelSecondary: '#3c3c43',
 } as const;
 

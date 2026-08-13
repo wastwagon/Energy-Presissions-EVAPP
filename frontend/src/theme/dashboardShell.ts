@@ -38,15 +38,20 @@ export function dashboardScrollMainSx(options: {
   };
 }
 
-/** Non-scrolling root column for full-viewport dashboard shells */
+/** Non-scrolling root column for full-viewport dashboard shells (WebViewGold / iOS).
+ * Use the small viewport so the tab bar is never pushed below the visible area. */
 export const dashboardViewportColumnSx: SystemStyleObject<Theme> = {
   display: 'flex',
   flexDirection: 'column',
-  height: '100dvh',
-  maxHeight: '100dvh',
-  minHeight: '100dvh',
+  height: '100%',
+  maxHeight: '100%',
+  minHeight: 0,
   overflow: 'hidden',
   bgcolor: 'background.default',
+  '@supports (height: 100svh)': {
+    height: '100svh',
+    maxHeight: '100svh',
+  },
 };
 
 export const fixedHeaderSpacerProps = {

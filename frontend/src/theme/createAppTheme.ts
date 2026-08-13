@@ -84,25 +84,45 @@ export function createAppTheme(options: AppThemeOptions = {}) {
       MuiCssBaseline: {
         styleOverrides: (theme) => ({
           html: {
-            minHeight: '100dvh',
+            height: '100%',
+            maxHeight: '100%',
+            overflow: 'hidden',
+            overscrollBehavior: 'none',
             backgroundColor: theme.palette.background.default,
             colorScheme: 'light',
+            '@supports (height: 100svh)': {
+              height: '100svh',
+              maxHeight: '100svh',
+            },
           },
           body: {
-            minHeight: '100dvh',
+            height: '100%',
+            maxHeight: '100%',
+            overflow: 'hidden',
+            overscrollBehavior: 'none',
             backgroundColor: theme.palette.background.default,
             WebkitFontSmoothing: 'antialiased',
             MozOsxFontSmoothing: 'grayscale',
             WebkitTapHighlightColor: 'transparent',
+            '@supports (height: 100svh)': {
+              height: '100svh',
+              maxHeight: '100svh',
+            },
           },
           'button, a, [role="button"]': {
             WebkitTouchCallout: 'none',
           },
           '#root': {
-            minHeight: '100dvh',
+            height: '100%',
+            maxHeight: '100%',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: theme.palette.background.default,
+            '@supports (height: 100svh)': {
+              height: '100svh',
+              maxHeight: '100svh',
+            },
           },
           '@media (prefers-reduced-motion: reduce)': {
             '*, *::before, *::after': {

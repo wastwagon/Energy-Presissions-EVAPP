@@ -99,8 +99,7 @@ export function CustomerPaymentHistoryPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Payment History"
-        subtitle="View all your payment transactions"
+        title="Payments"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.payments}
         refreshing={refreshing}
@@ -129,7 +128,7 @@ export function CustomerPaymentHistoryPage() {
       ) : useGroupedList ? (
         <>
           <TableSurfaceProgress active={loading && payments.length > 0} ariaLabel="Loading payment history" />
-          <GroupedListSection title="Your payments">
+          <GroupedListSection>
             {payments.map((payment, index) => (
               <GroupedListRow
                 key={payment.id}

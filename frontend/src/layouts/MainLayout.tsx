@@ -32,6 +32,7 @@ import { CustomerPageChromeProvider, useCustomerPageChrome } from '../contexts/C
 import { CustomerScrollProviders } from '../components/customer/CustomerShellProviders';
 import { CustomerStackTransition } from '../components/customer/CustomerStackTransition';
 import { dashboardViewportColumnSx } from '../theme/dashboardShell';
+import { iosGroupedPageBgSx } from '../theme/iosGroupedList';
 import {
   clearSession,
   getDashboardPathForAccountType,
@@ -70,7 +71,7 @@ function MainLayoutChrome() {
   };
 
   const isCustomer = isCustomerOrWalkInAccount(user);
-  const showDockedBottomNav = showBottomNav && !(isCustomer && pageChrome?.navBack);
+  const showDockedBottomNav = showBottomNav;
   const usePremiumCustomerHeader = isAuthenticated && isCustomer && showBottomNav;
   const showCompactNavTitle = Boolean(
     usePremiumCustomerHeader && pageChrome?.showCompactNavTitle && pageChrome.pageTitle,
@@ -80,7 +81,7 @@ function MainLayoutChrome() {
     !showBottomNav && isAuthenticated && isCustomer && usePremiumCustomerHeader;
 
   return (
-    <Box sx={dashboardViewportColumnSx}>
+    <Box sx={{ ...dashboardViewportColumnSx, ...(isCustomer ? iosGroupedPageBgSx : null) }}>
       <SkipToMain />
       <AppBar
         position="fixed"

@@ -49,8 +49,8 @@ export function GroupedListRow({
   return (
     <>
       <ListItemButton
-        onClick={handleClick}
-        disabled={disabled || !onClick}
+        onClick={interactive ? handleClick : undefined}
+        disabled={disabled}
         aria-label={ariaLabel}
         sx={{
           ...iosGroupedListRowSx,

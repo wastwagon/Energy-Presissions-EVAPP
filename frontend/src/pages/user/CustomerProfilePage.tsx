@@ -165,7 +165,6 @@ export function CustomerProfilePage() {
       <TableSurfaceProgress active={Boolean(loading && user)} ariaLabel="Refreshing profile" />
       <LivePageHeader
         title="Profile"
-        subtitle="Name, contact details, and account security"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.profile}
         refreshing={refreshing}

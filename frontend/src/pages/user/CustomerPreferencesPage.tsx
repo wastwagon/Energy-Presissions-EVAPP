@@ -38,7 +38,6 @@ export function CustomerPreferencesPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Preferences"
-        subtitle="Currency and notifications"
         updatedAt={null}
         refreshing={false}
         onRefresh={() => undefined}

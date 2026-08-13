@@ -113,8 +113,7 @@ export function CustomerSessionHistoryPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Session History"
-        subtitle="View all your past charging sessions"
+        title="History"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.history}
         refreshing={refreshing}
@@ -143,7 +142,7 @@ export function CustomerSessionHistoryPage() {
       ) : useGroupedList ? (
         <>
           <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading session history" />
-          <GroupedListSection title="Past sessions">
+          <GroupedListSection title="Recent">
             {transactions.map((tx, index) => (
               <GroupedListRow
                 key={tx.id}

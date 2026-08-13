@@ -76,7 +76,7 @@ export function BottomNav({ items, accentColor = brandColors.primary }: BottomNa
         borderTop: '1px solid',
         borderColor: 'divider',
         borderRadius: iosRadii.flat,
-        pb: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+        pb: 'max(12px, env(safe-area-inset-bottom, 0px))',
         background: iosSheetBlurBg('light'),
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',

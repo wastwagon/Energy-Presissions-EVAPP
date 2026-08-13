@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   CircularProgress,
-  Alert,
   Button,
   Grid,
   Tooltip,
@@ -175,8 +174,7 @@ export function CustomerActiveSessionsPage() {
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
-        title="Active Charging Sessions"
-        subtitle="Monitor your current charging sessions — cost updates as energy is delivered"
+        title="Live charging"
         updatedAt={updatedAt}
         liveLabel={LIVE_DATA_LABELS.session}
         showSeconds
@@ -206,10 +204,9 @@ export function CustomerActiveSessionsPage() {
       )}
 
       {transactions.some((t) => t.recordPending) && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          One or more sessions are still syncing with the charger. Energy and billing may update shortly.
-          Stop charging may be unavailable until the session appears with a transaction number—unplugging also ends the session on the vehicle side.
-        </Alert>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, px: 0.5, lineHeight: 1.45 }}>
+          A session is still syncing with the charger. Energy may update shortly — unplugging also ends the charge.
+        </Typography>
       )}
 
       {transactions.length === 0 ? (
@@ -226,7 +223,7 @@ export function CustomerActiveSessionsPage() {
       ) : useGroupedList ? (
         <Box sx={{ position: 'relative' }}>
           <TableSurfaceProgress active={loading && transactions.length > 0} ariaLabel="Loading active sessions" />
-          <GroupedListSection title="Live sessions">
+          <GroupedListSection>
             {transactions.map((tx, index) => (
               <ActiveSessionListItem
                 key={`${tx.chargePointId}-${tx.connectorId}-${tx.transactionId}`}

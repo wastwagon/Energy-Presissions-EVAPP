@@ -22,11 +22,11 @@ export const iosGroupedSectionHeaderSx: SystemStyleObject<Theme> = {
   fontFamily: iosFontStacks.ui,
 };
 
-/** Inset rounded group container. */
+/** Inset rounded group container (UITableView grouped). */
 export const iosGroupedPaperSx: SystemStyleObject<Theme> = {
   borderRadius: `${iosRadii.md}px`,
   bgcolor: 'background.paper',
-  border: (theme) => `1px solid ${theme.palette.divider}`,
+  border: 'none',
   boxShadow: 'none',
   overflow: 'hidden',
 };
@@ -44,5 +44,5 @@ export const iosGroupedListRowSx: SystemStyleObject<Theme> = {
 
 export const iosGroupedRowDividerSx: SystemStyleObject<Theme> = {
   ml: 2,
-  borderColor: 'divider',
+  borderColor: iosSemanticColors.separatorOnLight,
 };
