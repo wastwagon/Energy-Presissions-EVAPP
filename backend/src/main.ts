@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -8,6 +9,11 @@ import { AppModule } from './app.module';
 import { HttpExceptionLoggingFilter } from './common/filters/http-exception-logging.filter';
 import { setupMergedOcppGateway } from './ocpp/ocpp-gateway.bootstrap';
 import { collectAllowedOrigins, isBrowserOriginAllowed } from './common/cors-origins';
+
+// Node 18 (Docker image) has no global crypto; @nestjs/schedule 6 uses crypto.randomUUID().
+if (typeof globalThis.crypto === 'undefined') {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto });
+}
 
 function isSwaggerEnabled(): boolean {
   const env = (process.env.ENABLE_SWAGGER || '').toLowerCase();
