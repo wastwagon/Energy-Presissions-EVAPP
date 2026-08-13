@@ -11,6 +11,7 @@ import { getDashboardPathForAccountType, getStoredUser } from './utils/authSessi
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
 import { getAppChromeBackground } from './constants/userPreferences';
+import { syncWebViewGoldStatusBar } from './utils/webviewGold';
 
 const MainLayout = lazy(() =>
   import('./layouts/MainLayout').then((m) => ({ default: m.MainLayout })),
@@ -259,10 +260,10 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
-    const path = location.pathname.toLowerCase();
     const chromeColor = getAppChromeBackground();
 
     document.documentElement.style.setProperty('--app-chrome-bg', chromeColor);
+    document.documentElement.style.backgroundColor = chromeColor;
     document.body.style.backgroundColor = chromeColor;
     document.documentElement.style.colorScheme = 'light';
 
@@ -271,6 +272,10 @@ function App() {
       themeMeta.setAttribute('content', chromeColor);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    syncWebViewGoldStatusBar(getAppChromeBackground());
+  }, []);
 
   return (
     <VendorStatusGuard>

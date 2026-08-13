@@ -273,7 +273,7 @@ function CustomerDashboardChrome() {
             overflowX: 'hidden',
             mt: { xs: 0.5, sm: 2 },
             px: { xs: 2, sm: 3 },
-            pb: showDockedBottomNav ? 1.5 : 4,
+            pb: showDockedBottomNav ? { xs: 0, sm: 1.5 } : 4,
             width: '100%',
             minWidth: 0,
           }}

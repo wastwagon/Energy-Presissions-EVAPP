@@ -1,12 +1,16 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
-import { iosFontStacks, iosSheetBlurBg } from './iosMobileTokens';
+import { iosFontStacks, iosSemanticColors } from './iosMobileTokens';
 
-/** Frosted navigation chrome (AppBar) — iOS ultra-thin material. */
+/**
+ * Opaque navigation chrome. Translucent frost left the status-bar / notch region
+ * unpainted in WebViewGold; a solid grouping fill matches the page and native bar.
+ */
 export const customerFrostedChromeSx: SystemStyleObject<Theme> = {
-  background: (theme) => iosSheetBlurBg(theme.palette.mode),
-  backdropFilter: 'saturate(180%) blur(20px)',
-  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+  backgroundColor: iosSemanticColors.groupingBackground,
+  background: iosSemanticColors.groupingBackground,
+  backdropFilter: 'none',
+  WebkitBackdropFilter: 'none',
   borderColor: 'rgba(60, 60, 67, 0.12)',
   boxShadow: 'none',
 };
@@ -20,7 +24,7 @@ export const customerFrostedAppBarSx: SystemStyleObject<Theme> = {
 export const CUSTOMER_NAV_BAR_HEIGHT_PX = 44;
 
 export const customerFixedNavBarGapSx: SystemStyleObject<Theme> = {
-  height: `calc(${CUSTOMER_NAV_BAR_HEIGHT_PX}px + env(safe-area-inset-top, 0px))`,
+  height: `calc(${CUSTOMER_NAV_BAR_HEIGHT_PX}px + var(--app-sat, env(safe-area-inset-top, 0px)))`,
   flexShrink: 0,
 };
 

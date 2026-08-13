@@ -54,7 +54,7 @@ export const jampackAppBarSx: SystemStyleObject<Theme> = {
  * when `viewport-fit=cover` is set (iOS, many Android WebViews incl. WebViewGold).
  */
 export const jampackAppBarSafeAreaTopSx: SystemStyleObject<Theme> = {
-  pt: 'env(safe-area-inset-top, 0px)',
+  pt: 'var(--app-sat, env(safe-area-inset-top, 0px))',
   boxSizing: 'border-box',
 };
 
@@ -62,7 +62,7 @@ export const jampackAppBarSafeAreaTopSx: SystemStyleObject<Theme> = {
  * Spacer under fixed AppBar + 64px Toolbar; keeps main content below header + inset.
  */
 export const jampackFixedAppBarMainGapSx: SystemStyleObject<Theme> = {
-  height: 'calc(64px + env(safe-area-inset-top, 0px))',
+  height: 'calc(64px + var(--app-sat, env(safe-area-inset-top, 0px)))',
   flexShrink: 0,
 };
 
@@ -75,7 +75,7 @@ export const jampackFixedAppBarZIndexSx: SystemStyleObject<Theme> = {
  * MainLayout header row is slightly taller than 64px (logo + wrap); keeps content clear of fixed AppBar.
  */
 export const mainLayoutFixedHeaderGapSx: SystemStyleObject<Theme> = {
-  height: 'calc(72px + env(safe-area-inset-top, 0px))',
+  height: 'calc(72px + var(--app-sat, env(safe-area-inset-top, 0px)))',
   flexShrink: 0,
 };
 

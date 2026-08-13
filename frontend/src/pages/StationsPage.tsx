@@ -512,7 +512,7 @@ export function StationsPage() {
         elevation={0}
         component="section"
         aria-labelledby="stations-list-heading"
-        sx={{ ...premiumPanelCardSx, mb: 2 }}
+        sx={{ ...premiumPanelCardSx, mb: { xs: 1.5, sm: 2 } }}
       >
         <Typography
           id="stations-list-heading"
@@ -607,7 +607,10 @@ export function StationsPage() {
         id={STATIONS_MAP_PANEL_ID}
         aria-labelledby="stations-map-heading"
         aria-describedby={STATIONS_MAP_HINT_ID}
-        sx={{ mb: 2 }}
+        sx={{
+          mb: 0,
+          mx: { xs: -2, sm: 0 },
+        }}
       >
         <Typography id="stations-map-heading" sx={visuallyHiddenSx}>
           Map of nearby charging stations
@@ -622,10 +625,14 @@ export function StationsPage() {
           sx={{
             height: { xs: 220, sm: 300, md: 380 },
             position: 'relative',
-            borderRadius: 2,
+            borderRadius: { xs: 0, sm: 2 },
             overflow: 'hidden',
-            border: (t) => `1px solid ${t.palette.divider}`,
+            border: 'none',
+            borderTop: (t) => `1px solid ${t.palette.divider}`,
             bgcolor: 'background.paper',
+            sm: {
+              border: (t) => `1px solid ${t.palette.divider}`,
+            },
             '&:focus-visible': {
               outline: (t) => `2px solid ${t.palette.primary.main}`,
               outlineOffset: 2,

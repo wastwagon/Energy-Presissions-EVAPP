@@ -10,13 +10,19 @@
     />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f4f7f9" />
+    <meta name="theme-color" content="#f2f2f7" />
     <meta name="color-scheme" content="light" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent: draw web chrome under the status bar (clock/signal stay native). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <style>
+      :root {
+        --app-chrome-bg: #f2f2f7;
+        --app-sat: env(safe-area-inset-top, 0px);
+      }
+
       html,
       body,
       #root {
@@ -24,7 +30,8 @@
         max-height: 100%;
         overflow: hidden;
         overscroll-behavior: none;
-        background: var(--app-chrome-bg, #f4f7f9);
+        background: var(--app-chrome-bg, #f2f2f7);
+        background-color: var(--app-chrome-bg, #f2f2f7);
       }
 
       @supports (height: 100svh) {
@@ -36,27 +43,43 @@
         }
       }
 
-      /*
-       * WebViewGold / mobile safe-area paint strip:
-       * keep the top inset filled with app chrome color even when native status
-       * bar overlays content.
-       */
-      body::before {
-        content: '';
+      /* Fixed fill behind the clock / signal — sized by --app-sat (JS + env()). */
+      #status-bar-cover {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        height: env(safe-area-inset-top, 0px);
-        background: var(--app-chrome-bg, #f4f7f9);
+        height: constant(safe-area-inset-top);
+        height: var(--app-sat, env(safe-area-inset-top, 0px));
+        background: var(--app-chrome-bg, #f2f2f7);
         pointer-events: none;
-        z-index: 2147483647;
+        z-index: 2000;
       }
     </style>
     <title>Clean Motion Ghana</title>
   </head>
   <body>
+    <div id="status-bar-cover" aria-hidden="true"></div>
     <div id="root"></div>
+    <script>
+      (function () {
+        function ping(url) {
+          try {
+            var i = document.createElement('iframe');
+            i.setAttribute('hidden', '');
+            i.style.cssText = 'display:none;width:0;height:0;border:0';
+            i.src = url;
+            document.documentElement.appendChild(i);
+            setTimeout(function () {
+              i.remove();
+            }, 400);
+          } catch (e) {}
+        }
+        ping('hidebars://on');
+        ping('statusbarcolor://242,242,247');
+        ping('statusbartextcolor://black');
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
