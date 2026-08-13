@@ -75,7 +75,8 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-ev-billing}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
-      MIGRATIONS_AUTO_RUN: "true"
+      # Default true. Hotfixes 26–28 still run in entrypoint even if Coolify sets this false.
+      MIGRATIONS_AUTO_RUN: ${MIGRATIONS_AUTO_RUN:-true}
       INCLUDE_SAMPLE_DATA: "false"
       # SuperAdmin + vendor admins + walk-in on first start if absent. Set in Coolify: true only for first-time onboarding, then false.
       SEED_BOOTSTRAP_USERS: ${SEED_BOOTSTRAP_USERS:-false}
