@@ -9,10 +9,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evbilling} -d ${POSTGRES_DB:-ev_billing_db}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
+      start_period: 20s
     logging:
       driver: json-file
       options:
@@ -27,9 +28,10 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     logging:
       driver: json-file
       options:
@@ -92,11 +94,13 @@ services:
       PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
       PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-}
       ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+    # Coolify `compose up -d` times out (exit 255) if it must wait for healthchecks.
+    # Entrypoint already blocks on Postgres before migrations/start.
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
       minio:
         condition: service_started
     healthcheck:
@@ -123,7 +127,7 @@ services:
       API_ORIGIN: http://csms-api:3000
     depends_on:
       csms-api:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1"]
       interval: 20s
