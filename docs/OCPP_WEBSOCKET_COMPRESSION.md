@@ -16,16 +16,11 @@ The CSMS enables **per-message deflate** on the OCPP `WebSocketServer` (`backend
 
 Nginx: `gzip off` on `location /ocpp` so HTTP gzip is not applied to the upgrade path.
 
-## WebSocket header spelling (Sec-WebSocket-Accept)
+## WebSocket handshake headers
 
-Some EVSE firmware (vendor lab tests) rejects the upgrade response when nginx rewrites header names to `Sec-Websocket-Accept` (lowercase **s** in “socket”) instead of RFC 6455’s `Sec-WebSocket-Accept`.
+Do **not** hide and re-add `Sec-WebSocket-Accept` / `Sec-WebSocket-Protocol` in nginx. Rewriting them can drop `Sec-WebSocket-Extensions` (`permessage-deflate`) and produce empty Accept keys, which shows up as `RSV1 must be clear` or an immediate close after a successful handshake.
 
-HTTP treats header names as case-insensitive, but strict embedded clients may not. Production nginx (`frontend/default.conf.template`) re-emits:
-
-- `Sec-WebSocket-Accept`
-- `Sec-WebSocket-Protocol` (e.g. `ocpp1.6`)
-
-After changing nginx config, **redeploy the frontend** container (Coolify rebuilds nginx from `default.conf.template`).
+Let the upstream Node `ws` server send handshake headers through unchanged.
 
 ## Disabling compression on the charger
 

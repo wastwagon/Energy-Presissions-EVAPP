@@ -35,17 +35,29 @@ function hasValidServiceToken(req: Request): boolean {
   return token === configuredToken;
 }
 
-function extractChargePointId(pathname: string): string | null {
+function ocppPathParts(pathname: string): string[] {
   const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  const parts = normalizedPath.split('/').filter((p) => p);
+  return normalizedPath.split('/').filter((p) => p);
+}
 
-  if (parts.length >= 2 && parts[0] === 'ocpp') {
+/** First ID only. Extra segments (EVSE appending Charge ID onto a URL that already has it) are ignored. */
+function extractChargePointId(pathname: string): string | null {
+  const parts = ocppPathParts(pathname);
+  if (parts.length >= 2 && parts[0] === 'ocpp' && parts[1]) {
     return parts[1];
   }
   if (parts.length === 1 && parts[0] === 'ocpp') {
     return null;
   }
   return null;
+}
+
+function isOcppWebSocketPath(pathname: string): boolean {
+  const parts = ocppPathParts(pathname);
+  if (parts[0] !== 'ocpp') {
+    return false;
+  }
+  return parts.length === 1 || Boolean(parts[1]);
 }
 
 function sendError(ws: WebSocket, errorCode: string, errorDescription: string) {
@@ -387,13 +399,14 @@ export function setupMergedOcppGateway(app: INestApplication): MergedOcppHandle 
     const ipAddress = req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
 
-    const pathParts = url.pathname.split('/').filter((p) => p);
-    const isValidPath =
-      (pathParts.length === 1 && pathParts[0] === 'ocpp') ||
-      (pathParts.length === 0 && url.pathname === '/ocpp/') ||
-      (pathParts.length === 2 && pathParts[0] === 'ocpp' && pathParts[1]);
+    const pathParts = ocppPathParts(url.pathname);
+    if (pathParts.length > 2) {
+      logger.warn(
+        `OCPP path has extra segments (using first charge point ID): ${url.pathname}`,
+      );
+    }
 
-    if (!isValidPath) {
+    if (!isOcppWebSocketPath(url.pathname)) {
       logger.warn(`Connection rejected: Invalid path - ${url.pathname}`);
       await ConnectionLogger.logConnectionFailure(
         'UNKNOWN',

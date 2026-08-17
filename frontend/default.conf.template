@@ -94,13 +94,6 @@ server {
         proxy_send_timeout 3600s;
         proxy_connect_timeout 75s;
         proxy_buffering off;
-        # Some EVSE firmware checks RFC 6455 header spelling (WebSocket, not Websocket).
-        proxy_hide_header Sec-Websocket-Accept;
-        proxy_hide_header Sec-WebSocket-Accept;
-        add_header Sec-WebSocket-Accept $upstream_http_sec_websocket_accept always;
-        proxy_hide_header Sec-Websocket-Protocol;
-        proxy_hide_header Sec-WebSocket-Protocol;
-        add_header Sec-WebSocket-Protocol $upstream_http_sec_websocket_protocol always;
     }
 
     # Handle React Router - serve index.html for all routes (never cache HTML)

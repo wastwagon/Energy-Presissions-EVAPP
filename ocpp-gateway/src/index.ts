@@ -196,17 +196,12 @@ wss.on('connection', async (ws, req) => {
   const ipAddress = req.socket.remoteAddress;
   const userAgent = req.headers['user-agent'];
 
-  // Validate path - accept:
-  // - /ocpp (no ID, will extract from BootNotification)
-  // - /ocpp/ (no ID, with trailing slash)
-  // - /ocpp/{chargePointId} (with ID in URL - legacy format, also supported)
-  const pathParts = url.pathname.split('/').filter(p => p);
-  const isValidPath = 
-    (pathParts.length === 1 && pathParts[0] === 'ocpp') ||           // /ocpp
-    (pathParts.length === 0 && url.pathname === '/ocpp/') ||          // /ocpp/
-    (pathParts.length === 2 && pathParts[0] === 'ocpp' && pathParts[1]); // /ocpp/{chargePointId}
-  
-  if (!isValidPath) {
+  const pathParts = ocppPathParts(url.pathname);
+  if (pathParts.length > 2) {
+    logger.warn(`OCPP path has extra segments (using first charge point ID): ${url.pathname}`);
+  }
+
+  if (!isOcppWebSocketPath(url.pathname)) {
     logger.warn(`Connection rejected: Invalid path - ${url.pathname}`);
     await ConnectionLogger.logConnectionFailure(
       'UNKNOWN',
@@ -414,21 +409,29 @@ wss.on('connection', async (ws, req) => {
   });
 });
 
-// Extract charge point ID from URL path
-function extractChargePointId(pathname: string): string | null {
-  // Expected format: /ocpp/{chargePointId} or /ocpp/ or /ocpp (without ID - will be extracted from BootNotification)
-  // Handle both /ocpp and /ocpp/ (with or without trailing slash)
+function ocppPathParts(pathname: string): string[] {
   const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  const parts = normalizedPath.split('/').filter(p => p);
-  
-  if (parts.length >= 2 && parts[0] === 'ocpp') {
-    return parts[1]; // Return charge point ID if present
+  return normalizedPath.split('/').filter((p) => p);
+}
+
+/** First ID only. Extra segments (EVSE appending Charge ID onto a URL that already has it) are ignored. */
+function extractChargePointId(pathname: string): string | null {
+  const parts = ocppPathParts(pathname);
+  if (parts.length >= 2 && parts[0] === 'ocpp' && parts[1]) {
+    return parts[1];
   }
-  // Return null if path is just /ocpp or /ocpp/ (without ID) - this is allowed
   if (parts.length === 1 && parts[0] === 'ocpp') {
     return null;
   }
   return null;
+}
+
+function isOcppWebSocketPath(pathname: string): boolean {
+  const parts = ocppPathParts(pathname);
+  if (parts[0] !== 'ocpp') {
+    return false;
+  }
+  return parts.length === 1 || Boolean(parts[1]);
 }
 
 // Send OCPP error response
