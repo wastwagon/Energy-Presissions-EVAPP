@@ -183,11 +183,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Tariffs & Pricing"
-        subtitle={
-          variant === 'admin'
-            ? 'Pricing is set by Clean Motion when chargers are commissioned. This list is read-only.'
-            : 'Set per-kWh tariffs when you commission devices. Vendors cannot edit prices.'
-        }
+        subtitle="Set per-kWh tariffs when you commission devices. Vendors cannot edit prices."
         updatedAt={null}
         refreshing={false}
         onRefresh={() => undefined}
@@ -246,8 +242,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
             }
             secondaryAction={{
               label: 'Learn how',
-              onClick: () =>
-                navigate(variant === 'superadmin' ? SUPERADMIN_ROUTES.help : ADMIN_ROUTES.help),
+              onClick: () => navigate(SUPERADMIN_ROUTES.help),
               variant: 'secondary',
             }}
           />
