@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -35,8 +36,10 @@ import { TableSurfaceProgress } from '../../components/dashboard/TableSurfacePro
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
+import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 export function SuperAdminReservationsPage() {
+  const navigate = useNavigate();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -136,8 +139,25 @@ export function SuperAdminReservationsPage() {
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<EventBusyIcon />}
-            title="No active reservations"
-            description="Connector reservations will appear here when customers or operators hold a bay."
+            title={filterChargePoint ? 'No reservations match this charger' : 'No active reservations'}
+            description={
+              filterChargePoint
+                ? 'Try another charge point ID, or clear the filter.'
+                : 'Connector reservations will appear here when customers or operators hold a bay.'
+            }
+            primaryAction={
+              filterChargePoint
+                ? {
+                    label: 'Clear filter',
+                    onClick: () => setFilterChargePoint(''),
+                    variant: 'secondary',
+                  }
+                : {
+                    label: 'Open devices',
+                    onClick: () => navigate(SUPERADMIN_ROUTES.opsDevices),
+                    variant: 'secondary',
+                  }
+            }
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>

@@ -26,6 +26,9 @@ import { DashboardStaffHomeSkeleton } from './DashboardStaffHomeSkeleton';
 import { RevenueTrendChart } from '../reports/RevenueTrendChart';
 import { dashboardApi, type RevenueTrendPoint } from '../../services/dashboardApi';
 import { StaffFirstRunChecklist } from './StaffFirstRunChecklist';
+import { compareRevenueTrend } from '../../utils/revenueTrendCompare';
+import { vendorApi, type VendorPayoutSummary } from '../../services/vendorApi';
+import { VendorPayoutSummaryCard } from '../vendor/VendorPayoutSummaryCard';
 
 type StaffDashboardVariant = 'admin' | 'superadmin' | 'vendor';
 
@@ -36,6 +39,8 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
   const [trendPoints, setTrendPoints] = useState<RevenueTrendPoint[]>([]);
   const [trendLoading, setTrendLoading] = useState(true);
   const [trendError, setTrendError] = useState<string | null>(null);
+  const [payoutSummary, setPayoutSummary] = useState<VendorPayoutSummary | null>(null);
+  const [payoutLoading, setPayoutLoading] = useState(false);
 
   const loadTrend = useCallback(async () => {
     try {
@@ -55,11 +60,40 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
     void loadTrend();
   }, [loadTrend]);
 
+  useEffect(() => {
+    if (variant === 'superadmin') return;
+    let cancelled = false;
+    setPayoutLoading(true);
+    void vendorApi
+      .getOwnPayoutSummary()
+      .then((data) => {
+        if (!cancelled) setPayoutSummary(data);
+      })
+      .catch(() => {
+        if (!cancelled) setPayoutSummary(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPayoutLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [variant]);
+
   const refreshAll = useCallback(
     async (silent?: boolean) => {
-      await Promise.all([loadStats(silent), loadTrend()]);
+      const tasks: Promise<unknown>[] = [loadStats(silent), loadTrend()];
+      if (variant !== 'superadmin') {
+        tasks.push(
+          vendorApi
+            .getOwnPayoutSummary()
+            .then(setPayoutSummary)
+            .catch(() => setPayoutSummary(null)),
+        );
+      }
+      await Promise.all(tasks);
     },
-    [loadStats, loadTrend],
+    [loadStats, loadTrend, variant],
   );
 
   useDashboardRealtime(
@@ -70,7 +104,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
   useStaffPullRefresh(useCallback(() => void refreshAll(false), [refreshAll]));
 
   const trendCompare = useMemo(() => compareRevenueTrend(trendPoints), [trendPoints]);
-  const trendCaption = `vs earlier in ${periodDays}d`;
+  const trendCaption = `vs earlier in ${periodDays} days`;
 
   const createKeyboardNavHandler =
     (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -101,8 +135,9 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
       activeSessions: stats.overview.activeSessions || 0,
       pendingWalletReserved: stats.overview.pendingWalletReserved ?? 0,
       devicesWithErrors: stats.connectionHealth?.devicesWithErrors,
+      moneyNoun: variant === 'superadmin' ? 'Revenue' : 'Sales',
     });
-  }, [stats, periodDays, trendCompare.revenueTrendPercent, offlineCount]);
+  }, [stats, periodDays, trendCompare.revenueTrendPercent, offlineCount, variant]);
 
   if (loading) {
     return <DashboardStaffHomeSkeleton variant={variant === 'superadmin' ? 'superadmin' : 'admin'} />;
@@ -113,9 +148,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
   const subtitle =
     variant === 'superadmin'
       ? 'Network control across vendors — one hero metric, then what needs attention.'
-      : variant === 'vendor'
-        ? 'Your charging network at a glance. Branding and receipts live in Settings.'
-        : 'Your vendor operations — what changed, and what to do next.';
+      : 'Sales for the selected period, plus the matured amount on your next payout.';
 
   const isNetwork = variant === 'superadmin';
   const devicesPath = isNetwork ? SUPERADMIN_ROUTES.opsDevices : ADMIN_ROUTES.opsDevices;
@@ -175,25 +208,38 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
         </Alert>
       ) : null}
 
+      {variant !== 'superadmin' && (payoutLoading || payoutSummary) ? (
+        <Box sx={{ mb: 2.5 }}>
+          <VendorPayoutSummaryCard summary={payoutSummary} loading={payoutLoading} />
+        </Box>
+      ) : null}
+
       {stats != null && (stats.overview.totalChargePoints || 0) === 0 ? (
         <StaffFirstRunChecklist variant={variant} />
       ) : null}
 
       {stats != null ? (
         <>
+          {variant !== 'superadmin' ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Sales below are for the last {periodDays} days. Next payout above is matured sales, not this filter.
+            </Typography>
+          ) : null}
           <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 2 }}>
             <Grid item xs={12} md={6} lg={5}>
               <StaffMetricCard
                 size="hero"
-                label={`Revenue (${periodDays}d)`}
+                label={isNetwork ? `Revenue (${periodDays} days)` : `Sales (${periodDays} days)`}
                 value={formatCurrency(trendCompare.periodRevenue, 'GHS')}
                 icon={<AttachMoneyIcon />}
                 trendPercent={trendCompare.revenueTrendPercent}
                 trendCaption={trendCaption}
                 sparklineValues={trendCompare.sparkRevenue}
-                sparklineLabel="Revenue sparkline"
+                sparklineLabel={isNetwork ? 'Revenue sparkline' : 'Sales sparkline'}
                 hint={
-                  isNetwork ? 'Network completed billed sessions' : 'Completed billed sessions'
+                  isNetwork
+                    ? 'Network completed billed sessions'
+                    : 'Completed sessions at your chargers in the selected period'
                 }
                 ariaLabel="Open analytics"
                 onClick={() => navigate(analyticsPath)}
@@ -244,7 +290,7 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
 
                 <Grid item xs={12} sm={6}>
                   <StaffMetricCard
-                    label={`Sessions (${periodDays}d)`}
+                    label={`Sessions (${periodDays} days)`}
                     value={trendCompare.periodSessions}
                     icon={<ShowChartIcon />}
                     trendPercent={trendCompare.sessionsTrendPercent}
@@ -320,7 +366,8 @@ export function StaffDashboardHomeView({ variant }: { variant: StaffDashboardVar
           <Box sx={{ mb: 2.5 }}>
             <RevenueTrendChart
               days={periodDays}
-              title="Revenue trend"
+              title={isNetwork ? 'Revenue trend' : 'Sales trend'}
+              moneyLabel={isNetwork ? 'Revenue' : 'Sales'}
               points={trendPoints}
               loading={trendLoading}
               error={trendError}

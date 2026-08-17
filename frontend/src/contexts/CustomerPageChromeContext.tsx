@@ -51,7 +51,7 @@ function CustomerScrollTitleObserver({
   return null;
 }
 
-/** SF Pro typography for customer routes (no Plus Jakarta). */
+  /** SF Pro typography for customer routes. */
 function CustomerTypographyLayer({ children }: { children: ReactNode }) {
   const outerTheme = useTheme();
   const customerTheme = useMemo(

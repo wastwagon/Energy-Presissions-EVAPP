@@ -11,6 +11,8 @@ import { User } from './user.entity';
 import { VendorDisablement } from './vendor-disablement.entity';
 
 export type VendorStatus = 'active' | 'suspended' | 'disabled';
+export type VendorPayoutCycle = 'weekly' | 'biweekly' | 'monthly';
+export type VendorPayoutMethod = 'mobile_money' | 'bank';
 
 @Entity('vendors')
 export class Vendor {
@@ -68,6 +70,43 @@ export class Vendor {
 
   @Column({ name: 'website_url', length: 255, nullable: true })
   websiteUrl: string;
+
+  @Column({
+    name: 'payout_cycle',
+    type: 'enum',
+    enum: ['weekly', 'biweekly', 'monthly'],
+    default: 'monthly',
+  })
+  payoutCycle: VendorPayoutCycle;
+
+  @Column({ name: 'payout_hold_days', type: 'int', default: 7 })
+  payoutHoldDays: number;
+
+  @Column({
+    name: 'payout_method',
+    type: 'enum',
+    enum: ['mobile_money', 'bank'],
+    nullable: true,
+  })
+  payoutMethod: VendorPayoutMethod | null;
+
+  @Column({ name: 'payout_momo_network', length: 32, nullable: true })
+  payoutMomoNetwork: string | null;
+
+  @Column({ name: 'payout_momo_phone', length: 20, nullable: true })
+  payoutMomoPhone: string | null;
+
+  @Column({ name: 'payout_bank_name', length: 128, nullable: true })
+  payoutBankName: string | null;
+
+  @Column({ name: 'payout_account_name', length: 255, nullable: true })
+  payoutAccountName: string | null;
+
+  @Column({ name: 'payout_account_number', length: 64, nullable: true })
+  payoutAccountNumber: string | null;
+
+  @Column({ name: 'payout_bank_branch', length: 128, nullable: true })
+  payoutBankBranch: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>; // Additional vendor-specific configuration

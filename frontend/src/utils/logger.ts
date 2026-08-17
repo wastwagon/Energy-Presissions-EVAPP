@@ -1,11 +1,24 @@
-// Simple logger utility for frontend
+const isDev = import.meta.env.DEV;
+
+/** Dev-only chatter; errors always print. */
 export const logger = {
-  log: (...args: any[]) => console.log(...args),
-  error: (...args: any[]) => console.error(...args),
-  warn: (...args: any[]) => console.warn(...args),
-  info: (...args: any[]) => console.info(...args),
-  debug: (...args: any[]) => console.debug(...args),
+  log: (...args: unknown[]) => {
+    if (isDev) console.log(...args);
+  },
+  info: (...args: unknown[]) => {
+    if (isDev) console.info(...args);
+  },
+  debug: (...args: unknown[]) => {
+    if (isDev) console.debug(...args);
+  },
+  warn: (...args: unknown[]) => {
+    if (isDev) console.warn(...args);
+  },
+  error: (...args: unknown[]) => {
+    console.error(...args);
+  },
 };
+
 
 
 

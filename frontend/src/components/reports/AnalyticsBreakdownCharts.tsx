@@ -18,6 +18,7 @@ type ChartRow = { label: string; count: number };
 
 interface AnalyticsBreakdownChartsProps {
   stats: DashboardStats;
+  hideUserBreakdown?: boolean;
 }
 
 function mapRows(rows: Array<{ type?: string; status?: string; count: number }>): ChartRow[] {
@@ -130,12 +131,12 @@ function DeviceHealthPieChart({
   );
 }
 
-export function AnalyticsBreakdownCharts({ stats }: AnalyticsBreakdownChartsProps) {
+export function AnalyticsBreakdownCharts({ stats, hideUserBreakdown }: AnalyticsBreakdownChartsProps) {
   const theme = useTheme();
   const reducedMotion = usePrefersReducedMotion();
   const animate = !reducedMotion;
 
-  const usersByType = mapRows(stats.breakdowns?.usersByType ?? []);
+  const usersByType = hideUserBreakdown ? [] : mapRows(stats.breakdowns?.usersByType ?? []);
   const cpByStatus = mapRows(stats.breakdowns?.chargePointsByStatus ?? []);
   const health = stats.connectionHealth;
 

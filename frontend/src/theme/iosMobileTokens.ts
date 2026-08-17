@@ -2,7 +2,7 @@
  * Canonical iOS-native-inspired design tokens for the web app (MUI + Emotion).
  * Use these for spacing rhythm, typography, motion, surfaces, and touch targets.
  *
- * Typography: system UI stack mimics SF on Apple platforms; Jakarta remains a readable pairing for headings on non-Apple.
+ * Typography: system UI stack mimics SF on Apple platforms.
  */
 
 /** Dark / light for sheet chrome helpers */
@@ -18,8 +18,8 @@ export const IOS_TOUCH_TARGET_PX = 44;
 export const iosFontStacks = {
   /** Body & UI — system first for native feel */
   ui: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  /** Headings — slightly more character while staying clean on mobile */
-  display: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  /** Headings — same system stack as UI (SF on iOS, Segoe on Windows). No webfont round-trip. */
+  display: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 } as const;
 
 export const iosBrandColors = {

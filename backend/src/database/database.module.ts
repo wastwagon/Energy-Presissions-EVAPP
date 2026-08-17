@@ -19,6 +19,7 @@ import { FirmwareJob } from '../entities/firmware-job.entity';
 import { DiagnosticsJob } from '../entities/diagnostics-job.entity';
 import { Vendor } from '../entities/vendor.entity';
 import { VendorDisablement } from '../entities/vendor-disablement.entity';
+import { VendorPayout } from '../entities/vendor-payout.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { CmsContent } from '../entities/cms-content.entity';
 import { BrandingAsset } from '../entities/branding-asset.entity';
@@ -57,6 +58,7 @@ import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity
           DiagnosticsJob,
           Vendor,
           VendorDisablement,
+          VendorPayout,
           SystemSetting,
           CmsContent,
           BrandingAsset,

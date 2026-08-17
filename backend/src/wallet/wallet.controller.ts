@@ -53,7 +53,7 @@ export class WalletController {
     user: { id: number; accountType: string },
     targetUserId: number,
   ): void {
-    if (user.accountType === 'SuperAdmin' || user.accountType === 'Admin') {
+    if (user.accountType === 'SuperAdmin') {
       return;
     }
     if (user.accountType === 'Customer' && user.id === targetUserId) {
@@ -88,8 +88,8 @@ export class WalletController {
 
   @Post('top-up')
   @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Top up user wallet (Admin)' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Top up user wallet (platform Super Admin)' })
   @ApiResponse({ status: 201, description: 'Wallet topped up successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async topUp(
@@ -107,8 +107,8 @@ export class WalletController {
 
   @Post('adjust')
   @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Adjust user wallet balance (Admin)' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Adjust user wallet balance (platform Super Admin)' })
   @ApiResponse({ status: 201, description: 'Wallet adjusted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async adjust(

@@ -49,6 +49,7 @@ import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { logger } from '../../utils/logger';
 
 export function OperationsDashboard() {
   const navigate = useNavigate();
@@ -130,11 +131,11 @@ export function OperationsDashboard() {
       setError(null);
       const [cpData, activeTx] = await Promise.all([
         chargePointsApi.getAll().catch((err) => {
-          console.warn('Error loading charge points:', err);
+          logger.warn('Error loading charge points:', err);
           return []; // Return empty array on error
         }),
         transactionsApi.getActive().catch((err) => {
-          console.warn('Error loading active transactions:', err);
+          logger.warn('Error loading active transactions:', err);
           return []; // Return empty array on error
         }),
       ]);
@@ -147,7 +148,7 @@ export function OperationsDashboard() {
         setError(err.message || 'Failed to load data');
       } else {
         // For 404 or empty data, just log and continue
-        console.warn('Dashboard data load warning:', err);
+        logger.warn('Dashboard data load warning:', err);
         setChargePoints([]);
         setActiveSessions(0);
       }

@@ -25,17 +25,19 @@ Run on **375–430px** width (or a real device). Check items off in `UI_MIGRATIO
 ## Cross-cutting
 
 15. Skip link → `#main-content` lands in main content.
-16. Frosted AppBar + customer bottom nav over scrolling content.
+16. Opaque AppBar (grouping fill `#f2f2f7`) plus customer bottom nav over scrolling content. Clock/signal strip is painted by `#status-bar-cover` — not a frosted gap.
 17. Large-title customer page: scroll until compact title appears in AppBar.
-18. List taps give **light haptic** where WebViewGold bridge is configured (`WEBVIEW_HAPTICS.md`).
+18. List taps give **light haptic** (`WEBVIEW_HAPTICS.md` — URL schemes + optional native bridge).
 19. Auth/legal pages: SF stack typography; light chrome on login and legal routes.
 
 ## WebViewGold smoke
 
 20. Build wrapped app; open customer home, stations map, wallet, one staff route if applicable.
-21. Safe areas: bottom nav and notched devices — no content under home indicator.
+21. Safe areas: status bar painted with header color (no white gap under the clock); bottom nav clears the home indicator.
+22. Toggle airplane mode: a “You’re offline” strip appears under the status bar; turning network back on dismisses it.
+23. Help / Support / Suspended / Disabled: email `support@cleanmotionghana.com` and phone `+233 533 611 611` (`tel:+233533611611`).
 
 ## Out of scope
 
 - **Dark mode** — light shell only by product decision.
-- Native haptics without WebViewGold config
+- Native haptics if the wrapper does not register `haptic://` (Android `vibrate` may still fire).

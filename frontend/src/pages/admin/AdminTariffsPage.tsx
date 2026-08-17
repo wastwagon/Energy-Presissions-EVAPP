@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -29,7 +29,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { tariffsApi, Tariff, CreateTariffDto } from '../../services/tariffsApi';
-import { getStoredUser } from '../../utils/authSession';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
@@ -52,13 +51,6 @@ import { GroupedListRow } from '../../components/ios/GroupedListRow';
 
 export type StaffTariffsVariant = 'admin' | 'superadmin';
 
-function canMutateTariff(tariff: Tariff, variant: StaffTariffsVariant): boolean {
-  if (variant === 'superadmin') return true;
-  const user = getStoredUser();
-  if (!user?.vendorId) return false;
-  return tariff.vendorId != null && tariff.vendorId === user.vendorId;
-}
-
 export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffsVariant }) {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -79,7 +71,10 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
     baseFee: 0,
   });
 
+  const canEdit = variant === 'superadmin';
+
   useEffect(() => {
+    if (variant !== 'superadmin') return;
     loadTariffs();
   }, []);
 
@@ -98,6 +93,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
   };
 
   const handleOpenDialog = (tariff?: Tariff) => {
+    if (variant !== 'superadmin') return;
     if (tariff) {
       setEditingTariff(tariff);
       setFormData({
@@ -128,6 +124,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
   };
 
   const handleSave = async () => {
+    if (variant !== 'superadmin') return;
     try {
       setError(null);
       const saveData = {
@@ -147,6 +144,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
   };
 
   const handleDelete = (id: number) => {
+    if (variant !== 'superadmin') return;
     setPendingDeleteTariffId(id);
     setDeleteDialogOpen(true);
   };
@@ -164,6 +162,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
   };
 
   const handleToggleActive = async (tariff: Tariff) => {
+    if (variant !== 'superadmin') return;
     try {
       await tariffsApi.update(tariff.id, { isActive: !tariff.isActive });
       loadTariffs();
@@ -171,6 +170,10 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
       setError(err.message || 'Failed to update tariff');
     }
   };
+
+  if (variant === 'admin') {
+    return <Navigate to={ADMIN_ROUTES.dashboard} replace />;
+  }
 
   if (loading && tariffs.length === 0) {
     return <DashboardStaffChromeSkeleton preset="tariffs" />;
@@ -182,8 +185,8 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
         title="Tariffs & Pricing"
         subtitle={
           variant === 'admin'
-            ? 'Pricing for your charge points. Network defaults apply if you have no active vendor tariff.'
-            : 'Network-wide tariffs apply when a vendor has no plan of their own. Vendor tariffs override defaults.'
+            ? 'Pricing is set by Clean Motion when chargers are commissioned. This list is read-only.'
+            : 'Set per-kWh tariffs when you commission devices. Vendors cannot edit prices.'
         }
         updatedAt={null}
         refreshing={false}
@@ -191,18 +194,20 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
         showRefresh={false}
         showLiveMeta={false}
         actions={
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={(th) => ({
-              ...sxObject(th, compactContainedCtaSx),
-              width: { xs: '100%', sm: 'auto' },
-            })}
-          >
-            New tariff
-          </Button>
+          variant === 'superadmin' ? (
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={(th) => ({
+                ...sxObject(th, compactContainedCtaSx),
+                width: { xs: '100%', sm: 'auto' },
+              })}
+            >
+              New tariff
+            </Button>
+          ) : undefined
         }
       />
 
@@ -224,13 +229,21 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<AttachMoneyIcon />}
             title="No tariffs configured yet"
-            description="Create a tariff plan to set per-kWh pricing for charging sessions."
-            primaryAction={{
-              label: 'Create first tariff',
-              onClick: () => handleOpenDialog(),
-              startIcon: <AddIcon />,
-              variant: 'secondary',
-            }}
+            description={
+              canEdit
+                ? 'Create a tariff plan to set per-kWh pricing when you commission chargers.'
+                : 'Clean Motion sets per-kWh pricing when chargers are commissioned.'
+            }
+            primaryAction={
+              canEdit
+                ? {
+                    label: 'Create first tariff',
+                    onClick: () => handleOpenDialog(),
+                    startIcon: <AddIcon />,
+                    variant: 'secondary' as const,
+                  }
+                : undefined
+            }
             secondaryAction={{
               label: 'Learn how',
               onClick: () =>
@@ -242,7 +255,6 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
           <Box sx={{ py: 1 }}>
             <GroupedListSection>
               {tariffs.map((tariff, index) => {
-                const mutable = canMutateTariff(tariff, variant);
                 return (
                   <GroupedListRow
                     key={tariff.id}
@@ -260,8 +272,8 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                         tone={tariff.isActive ? 'success' : 'neutral'}
                       />
                     }
-                    onClick={mutable ? () => handleOpenDialog(tariff) : undefined}
-                    aria-label={mutable ? `Edit tariff ${tariff.name}` : tariff.name}
+                    onClick={canEdit ? () => handleOpenDialog(tariff) : undefined}
+                    aria-label={canEdit ? `Edit tariff ${tariff.name}` : tariff.name}
                   />
                 );
               })}
@@ -279,12 +291,11 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
               <TableCell>Base Fee</TableCell>
               <TableCell>Currency</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              {canEdit ? <TableCell>Actions</TableCell> : null}
             </TableRow>
           </TableHead>
           <TableBody>
               {tariffs.map((tariff) => {
-                const mutable = canMutateTariff(tariff, variant);
                 return (
                 <TableRow key={tariff.id} hover>
                   <TableCell>
@@ -326,20 +337,19 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                         tone={tariff.isActive ? 'success' : 'neutral'}
                       />
                   </TableCell>
+                  {canEdit ? (
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <IconButton
-                        onClick={() => mutable && handleToggleActive(tariff)}
-                        disabled={!mutable}
+                        onClick={() => handleToggleActive(tariff)}
                         color={tariff.isActive ? 'default' : 'primary'}
                         aria-label={`${tariff.isActive ? 'Deactivate' : 'Activate'} tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
                       >
-                        <Switch checked={tariff.isActive} size="small" disabled={!mutable} />
+                        <Switch checked={tariff.isActive} size="small" />
                       </IconButton>
                       <IconButton
-                        onClick={() => mutable && handleOpenDialog(tariff)}
-                        disabled={!mutable}
+                        onClick={() => handleOpenDialog(tariff)}
                         color="primary"
                         aria-label={`Edit tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -347,8 +357,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
-                        onClick={() => mutable && handleDelete(tariff.id)}
-                        disabled={!mutable}
+                        onClick={() => handleDelete(tariff.id)}
                         color="error"
                         aria-label={`Delete tariff ${tariff.name}`}
                         sx={(th) => ({ ...sxObject(th, premiumIconButtonTouchSx) })}
@@ -357,6 +366,7 @@ export function AdminTariffsPage({ variant = 'admin' }: { variant?: StaffTariffs
                       </IconButton>
                     </Box>
                   </TableCell>
+                  ) : null}
                 </TableRow>
               );
               })}

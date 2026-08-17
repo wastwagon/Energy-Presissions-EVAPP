@@ -52,7 +52,17 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionLoggingFilter());
   setupMergedOcppGateway(app);
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    }),
+  );
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,

@@ -34,6 +34,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PeopleIcon from '@mui/icons-material/People';
 import ClearIcon from '@mui/icons-material/Clear';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import { Navigate } from 'react-router-dom';
 import { usersApi, User } from '../../services/usersApi';
 import { walletApi, WalletTransaction } from '../../services/walletApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -65,6 +66,8 @@ import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
+import { getStoredAccountType } from '../../utils/authSession';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 
 const WALLET_TX_PAGE_SIZE = 20;
 
@@ -304,6 +307,10 @@ export function WalletManagementPage() {
       }
     };
 
+  if (getStoredAccountType() === 'Admin') {
+    return <Navigate to={ADMIN_ROUTES.dashboard} replace />;
+  }
+
   if (loading && users.length === 0) {
     return <DashboardStaffChromeSkeleton preset="walletManagement" />;
   }
@@ -312,7 +319,7 @@ export function WalletManagementPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Wallet Management"
-        subtitle="Manage customer wallet balances, credits, debts, and transactions."
+        subtitle="Customer wallet balances. Top-ups land in the Clean Motion account; vendors are paid on their payout cycle."
         updatedAt={null}
         refreshing={refreshing}
         onRefresh={() => void loadUsers(true)}
@@ -411,6 +418,22 @@ export function WalletManagementPage() {
                   searchQuery || balanceTab !== 'all'
                     ? 'Try another balance filter or clear the search.'
                     : 'Create a user to start managing wallet balances.'
+                }
+                primaryAction={
+                  searchQuery || balanceTab !== 'all'
+                    ? {
+                        label: 'Clear filters',
+                        onClick: () => {
+                          setSearchQuery('');
+                          setBalanceTab('all');
+                        },
+                        variant: 'secondary',
+                      }
+                    : {
+                        label: 'Create user',
+                        onClick: () => setCreateUserDialogOpen(true),
+                        startIcon: <PersonAddIcon />,
+                      }
                 }
               />
             ) : useGroupedList ? (

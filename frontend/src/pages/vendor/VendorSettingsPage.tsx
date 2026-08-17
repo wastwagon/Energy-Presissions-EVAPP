@@ -11,7 +11,9 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { vendorApi, type Vendor } from '../../services/vendorApi';
+import { vendorApi, type Vendor, type VendorPayoutRecord, type VendorPayoutSummary } from '../../services/vendorApi';
+import { VendorPayoutMethodFields, type VendorPayoutMethodForm } from '../../components/vendor/VendorPayoutMethodFields';
+import { VendorPayoutSummaryCard } from '../../components/vendor/VendorPayoutSummaryCard';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
 import { iosGroupedPaperSx, iosGroupedSectionHeaderSx } from '../../theme/iosGroupedList';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
@@ -27,10 +29,12 @@ import {
   hasValidSession,
   type SessionUser,
 } from '../../utils/authSession';
+import { formatCurrency } from '../../utils/formatters';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedExpandableRow } from '../../components/ios/GroupedExpandableRow';
+import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { useStaffNavBack } from '../../hooks/useStaffNavBack';
 import { ADMIN_ROUTES, staffHelpPath } from '../../config/staffNav.paths';
@@ -49,7 +53,7 @@ type VendorSettingsForm = {
   receiptHeaderText: string;
   receiptFooterText: string;
   logoUrl: string;
-};
+} & VendorPayoutMethodForm;
 
 const EMPTY_FORM: VendorSettingsForm = {
   name: '',
@@ -65,6 +69,13 @@ const EMPTY_FORM: VendorSettingsForm = {
   receiptHeaderText: '',
   receiptFooterText: '',
   logoUrl: '',
+  payoutMethod: '',
+  payoutMomoNetwork: '',
+  payoutMomoPhone: '',
+  payoutBankName: '',
+  payoutAccountName: '',
+  payoutAccountNumber: '',
+  payoutBankBranch: '',
 };
 
 function formFromVendor(data: Vendor): VendorSettingsForm {
@@ -82,6 +93,13 @@ function formFromVendor(data: Vendor): VendorSettingsForm {
     receiptHeaderText: data.receiptHeaderText || 'Thank you for charging with us!',
     receiptFooterText: data.receiptFooterText || 'For support, please contact us.',
     logoUrl: data.logoUrl || '',
+    payoutMethod: data.payoutMethod || '',
+    payoutMomoNetwork: data.payoutMomoNetwork || '',
+    payoutMomoPhone: data.payoutMomoPhone || '',
+    payoutBankName: data.payoutBankName || '',
+    payoutAccountName: data.payoutAccountName || '',
+    payoutAccountNumber: data.payoutAccountNumber || '',
+    payoutBankBranch: data.payoutBankBranch || '',
   };
 }
 
@@ -128,6 +146,8 @@ export function VendorSettingsPage() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [formData, setFormData] = useState<VendorSettingsForm>(EMPTY_FORM);
   const [savedForm, setSavedForm] = useState<VendorSettingsForm>(EMPTY_FORM);
+  const [payouts, setPayouts] = useState<VendorPayoutRecord[]>([]);
+  const [payoutSummary, setPayoutSummary] = useState<VendorPayoutSummary | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
   const isDirty = useMemo(
@@ -187,6 +207,10 @@ export function VendorSettingsPage() {
         setFormData(next);
         setSavedForm(next);
         setLastSavedAt(new Date(data.updatedAt).getTime());
+        const history = await vendorApi.listOwnPayouts().catch(() => vendorApi.listPayouts(vendorId));
+        setPayouts(history);
+        const summary = await vendorApi.getOwnPayoutSummary().catch(() => vendorApi.getPayoutSummary(vendorId));
+        setPayoutSummary(summary);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load vendor information';
         setError(message);
@@ -227,11 +251,32 @@ export function VendorSettingsPage() {
         setError('No vendor is selected for this account.');
         return;
       }
-      const updated = await vendorApi.update(vendorId, formData);
+      if (formData.payoutMethod === 'mobile_money') {
+        if (!formData.payoutMomoNetwork.trim() || !formData.payoutMomoPhone.trim()) {
+          setError('Enter your MoMo network and number so Clean Motion can pay you.');
+          return;
+        }
+      }
+      if (formData.payoutMethod === 'bank') {
+        if (
+          !formData.payoutBankName.trim() ||
+          !formData.payoutAccountName.trim() ||
+          !formData.payoutAccountNumber.trim()
+        ) {
+          setError('Enter bank name, account name, and account number so Clean Motion can pay you.');
+          return;
+        }
+      }
+      const updated = await vendorApi.update(vendorId, {
+        ...formData,
+        payoutMethod: formData.payoutMethod || null,
+      });
       const next = updated ? formFromVendor(updated) : formData;
       setFormData(next);
       setSavedForm(next);
       setLastSavedAt(Date.now());
+      const summary = await vendorApi.getOwnPayoutSummary().catch(() => vendorApi.getPayoutSummary(vendorId));
+      setPayoutSummary(summary);
     } catch (err: unknown) {
       const responseMessage =
         typeof err === 'object' &&
@@ -279,7 +324,7 @@ export function VendorSettingsPage() {
     }
   };
 
-  const lastSavedLabel = 'Business identity, branding, and receipt copy for your chargers.';
+  const lastSavedLabel = 'Business identity, payout destination, and receipt copy for your chargers.';
   const subtitle = isDirty ? 'Unsaved changes' : lastSavedLabel;
 
   if (loading && !initialLoadDone) {
@@ -433,6 +478,44 @@ export function VendorSettingsPage() {
           sx={(th) => sxObject(th, authFormFieldSx)}
         />
       </VendorSettingsSection>
+
+      {payoutSummary ? (
+        <Box sx={{ mb: 2.5 }}>
+          <VendorPayoutSummaryCard summary={payoutSummary} hideMethodCta />
+        </Box>
+      ) : null}
+
+      <VendorSettingsSection title="Payout">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Clean Motion sets the payout cycle. Add MoMo or bank so they can pay the matured amount above.
+        </Typography>
+        <VendorPayoutMethodFields
+          formData={formData}
+          onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+        />
+      </VendorSettingsSection>
+
+      {payouts.length > 0 ? (
+        <Box component="section" sx={{ mb: 2.5 }}>
+          <Typography component="h2" variant="caption" sx={iosGroupedSectionHeaderSx}>
+            Payout history
+          </Typography>
+          <Paper elevation={0} sx={iosGroupedPaperSx}>
+            {payouts.map((row, index) => (
+              <GroupedListRow
+                key={row.id}
+                divider={index < payouts.length - 1}
+                showChevron={false}
+                primary={formatCurrency(row.amount, row.currency)}
+                secondary={`${new Date(row.paidAt).toLocaleDateString()}${
+                  row.reference ? ` · ${row.reference}` : ''
+                }`}
+                secondaryTypographyProps={{ sx: { fontVariantNumeric: 'tabular-nums' } }}
+              />
+            ))}
+          </Paper>
+        </Box>
+      ) : null}
 
       <VendorSettingsSection title="Branding">
         <Box>

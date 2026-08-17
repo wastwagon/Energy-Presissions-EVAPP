@@ -5,7 +5,6 @@ import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { compactContainedCtaSx, sxObject } from '../../styles/authShell';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
-import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
 import { VendorsReportPanel } from '../../components/reports/VendorsReportPanel';
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
@@ -79,9 +78,8 @@ export function SuperAdminReportsPage() {
           aria-label="Super Admin report sections"
         >
           <Tab label="Export" {...tabA11yProps(0)} />
-          <Tab label="Revenue" {...tabA11yProps(1)} />
-          <Tab label="Vendors" {...tabA11yProps(2)} />
-          <Tab label="Sessions" {...tabA11yProps(3)} />
+          <Tab label="Vendors" {...tabA11yProps(1)} />
+          <Tab label="Sessions" {...tabA11yProps(2)} />
         </Tabs>
 
         <Box
@@ -117,26 +115,13 @@ export function SuperAdminReportsPage() {
           {activeTab === 1 && (
             <Box>
               <Typography variant="h6" gutterBottom>
-                Revenue Report
-              </Typography>
-              <RevenueReportPanel
-                periodDays={periodDays}
-                onPeriodChange={setPeriodDays}
-                hidePeriodControls
-              />
-            </Box>
-          )}
-
-          {activeTab === 2 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
                 Vendor Performance Report
               </Typography>
               <VendorsReportPanel />
             </Box>
           )}
 
-          {activeTab === 3 && (
+          {activeTab === 2 && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 Sessions Report

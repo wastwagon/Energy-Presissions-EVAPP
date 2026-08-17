@@ -22,12 +22,15 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { chargePointsApi, ChargePoint } from '../services/chargePointsApi';
 import { vendorApi, Vendor } from '../services/vendorApi';
+import { getStoredUser } from '../utils/authSession';
+import { formatCurrency } from '../utils/formatters';
 import {
   CELLULAR_PROVIDER_OPTIONS,
   getCellularPreset,
   type CellularProviderId,
 } from '../constants/chargerCellularGhana';
 import { api } from '../services/api';
+import { logger } from '../utils/logger';
 import {
   authFormFieldSx,
   compactContainedCtaSx,
@@ -69,6 +72,7 @@ export function ChargePointSettingsDialog({
     cellularProvider: '',
     cellularApn: '',
   });
+  const isSuperAdmin = getStoredUser()?.accountType === 'SuperAdmin';
 
   useEffect(() => {
     if (!open) {
@@ -78,7 +82,9 @@ export function ChargePointSettingsDialog({
 
   useEffect(() => {
     if (open) {
-      loadVendors();
+      if (getStoredUser()?.accountType === 'SuperAdmin') {
+        void loadVendors();
+      }
       if (chargePoint) {
         setFormData({
           totalCapacityKw: chargePoint.totalCapacityKw?.toString() || '',
@@ -136,15 +142,14 @@ export function ChargePointSettingsDialog({
         updateData.totalCapacityKw = parseFloat(formData.totalCapacityKw);
       }
 
-      if (formData.pricePerKwh) {
-        updateData.pricePerKwh = parseFloat(formData.pricePerKwh);
-      }
-
-      // Always set currency to GHS for Ghana operations
-      updateData.currency = 'GHS';
-
-      if (formData.vendorId) {
-        updateData.vendorId = parseInt(formData.vendorId);
+      if (getStoredUser()?.accountType === 'SuperAdmin') {
+        if (formData.pricePerKwh) {
+          updateData.pricePerKwh = parseFloat(formData.pricePerKwh);
+        }
+        updateData.currency = 'GHS';
+        if (formData.vendorId) {
+          updateData.vendorId = parseInt(formData.vendorId, 10);
+        }
       }
 
       if (formData.locationLatitude && formData.locationLongitude) {
@@ -265,7 +270,7 @@ export function ChargePointSettingsDialog({
             return { lat: parseFloat(response.data.latitude), lng: parseFloat(response.data.longitude) };
           }
         } catch (err) {
-          console.warn('Backend URL resolution not available:', err);
+          logger.warn('Backend URL resolution not available:', err);
         }
 
         // If backend resolution fails, provide helpful instructions
@@ -352,7 +357,7 @@ export function ChargePointSettingsDialog({
         }
       } catch (err) {
         // Silently handle parsing errors - don't show error for empty/invalid URLs
-        console.warn('URL parsing error (non-critical):', err);
+        logger.warn('URL parsing error (non-critical):', err);
       }
     }
   };
@@ -418,28 +423,50 @@ export function ChargePointSettingsDialog({
             />
           </Grid>
 
-          {/* Pricing Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-              Pricing
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Price per kWh"
-              type="number"
-              fullWidth
-              value={formData.pricePerKwh}
-              onChange={(e) => setFormData({ ...formData, pricePerKwh: e.target.value })}
-              helperText="Price per kilowatt-hour in GHS (overrides tariff if set)"
-              InputProps={{
-                startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
-              }}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Grid>
+          {/* Pricing — Super Admin sets this at device commission */}
+          {isSuperAdmin ? (
+            <>
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Pricing
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="Price per kWh"
+                  type="number"
+                  fullWidth
+                  value={formData.pricePerKwh}
+                  onChange={(e) => setFormData({ ...formData, pricePerKwh: e.target.value })}
+                  helperText="Price per kilowatt-hour in GHS (overrides tariff if set)"
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">GHS</InputAdornment>,
+                  }}
+                  sx={(th) => sxObject(th, authFormFieldSx)}
+                />
+              </Grid>
+            </>
+          ) : (
+            <>
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Pricing
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Clean Motion sets the per-kWh rate when this charger is commissioned.
+                </Typography>
+                {chargePoint?.pricePerKwh != null ? (
+                  <Typography variant="body1" sx={{ mt: 0.75, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatCurrency(Number(chargePoint.pricePerKwh), chargePoint.currency || 'GHS')} / kWh
+                  </Typography>
+                ) : null}
+              </Grid>
+            </>
+          )}
 
           {/* Vendor Assignment */}
+          {isSuperAdmin ? (
+            <>
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
               Vendor Assignment
@@ -471,6 +498,8 @@ export function ChargePointSettingsDialog({
               </TextField>
             )}
           </Grid>
+            </>
+          ) : null}
 
           {/* Cellular backhaul (MTN recommended) */}
           <Grid item xs={12}>

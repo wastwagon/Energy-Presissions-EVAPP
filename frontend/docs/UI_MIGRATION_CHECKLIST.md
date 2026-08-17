@@ -172,7 +172,7 @@ See step-by-step scenarios in [`MOBILE_QA.md`](./MOBILE_QA.md).
 
 - [ ] iPhone-class width (375–430px) smoke test in browser or WebViewGold.
 - [ ] Landmarks: skip link → main content (`#main-content` / `APP_MAIN_CONTENT_ID`).
-- [ ] Frosted AppBar + tab bar visible over scroll content.
+- [ ] Opaque AppBar + tab bar visible over scroll content; status-bar strip matches header (no white gap under the clock).
 - [ ] Pull down at top of wallet/history/stations to refresh.
 - [ ] Scroll a large-title page: AppBar shows compact page title after large title leaves view.
 - [ ] Login / legal pages use light chrome consistently.
@@ -180,6 +180,6 @@ See step-by-step scenarios in [`MOBILE_QA.md`](./MOBILE_QA.md).
 - [ ] List rows, toggles, refresh, and drawer nav give light haptic feedback on tap.
 - [ ] Auth titles and body use SF system stack (`authPageTitleSx` / `authPageBodySx`).
 - [ ] Stations detail sheet → “Full station details” opens `/stations/:id`.
-- [ ] `MainLayout` customer routes: frosted bar, compact title, pull-to-refresh, customer bottom nav.
+- [ ] `MainLayout` customer routes: opaque bar, compact title, pull-to-refresh, customer bottom nav.
 - [ ] Pull-to-refresh disabled when `prefers-reduced-motion: reduce`.
 - [ ] With reduced motion on: bottom sheets open without swipe; no card hover lift.

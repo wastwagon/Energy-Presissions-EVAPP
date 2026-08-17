@@ -37,7 +37,8 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { vendorApi, Vendor, VendorStatus, VendorDisablement } from '../../services/vendorApi';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import { vendorApi, PAYOUT_CYCLE_OPTIONS, Vendor, VendorStatus, VendorDisablement, type VendorPayoutCycle, type VendorPayoutSummary, type VendorPayoutRecord } from '../../services/vendorApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
   authFormFieldSx,
@@ -62,7 +63,7 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import { DashboardStaffChromeSkeleton } from '../../components/dashboard/DashboardStaffChromeSkeleton';
 import { TableSurfaceProgress } from '../../components/dashboard/TableSurfaceProgress';
 import { DialogDenseRowsSkeleton } from '../../components/dashboard/BlockContentSkeletons';
-import { getOpsNavPaths } from '../../config/opsNav.paths';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
@@ -81,7 +82,68 @@ function vendorScoreboardLine(vendor: Vendor): string {
   const last = vendor.lastSessionAt
     ? new Date(vendor.lastSessionAt).toLocaleDateString()
     : 'No sessions';
-  return `${stations} station${stations === 1 ? '' : 's'} · ${gmv} GMV · ${last}`;
+  const cycle =
+    vendor.payoutCycle === 'weekly'
+      ? 'Weekly'
+      : vendor.payoutCycle === 'biweekly'
+        ? 'Every 2 weeks'
+        : 'Monthly';
+  return `${stations} station${stations === 1 ? '' : 's'} · ${gmv} sales · ${cycle} payout · ${last}`;
+}
+
+function VendorPayoutScheduleFields({
+  payoutCycle,
+  payoutHoldDays,
+  onChange,
+}: {
+  payoutCycle: VendorPayoutCycle;
+  payoutHoldDays: number;
+  onChange: (patch: { payoutCycle?: VendorPayoutCycle; payoutHoldDays?: number }) => void;
+}) {
+  return (
+    <>
+      <Grid item xs={12}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
+          Payout schedule
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          When Clean Motion settles this vendor. They add MoMo or bank details in their settings.
+        </Typography>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <TextField
+          select
+          label="Payout cycle"
+          fullWidth
+          value={payoutCycle}
+          onChange={(e) => onChange({ payoutCycle: e.target.value as VendorPayoutCycle })}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        >
+          {PAYOUT_CYCLE_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <TextField
+          label="Hold days"
+          type="number"
+          fullWidth
+          value={payoutHoldDays}
+          onChange={(e) =>
+            onChange({
+              payoutHoldDays: Math.min(90, Math.max(0, Number.parseInt(e.target.value, 10) || 0)),
+            })
+          }
+          helperText="Sessions mature after this many days"
+          inputProps={{ min: 0, max: 90 }}
+          sx={(th) => sxObject(th, authFormFieldSx)}
+        />
+      </Grid>
+    </>
+  );
 }
 
 export function VendorManagementPage() {
@@ -124,7 +186,18 @@ export function VendorManagementPage() {
     adminEmail: '',
     password: '',
     confirmPassword: '',
+    payoutCycle: 'monthly' as VendorPayoutCycle,
+    payoutHoldDays: 7,
   });
+  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
+  const [payoutVendor, setPayoutVendor] = useState<Vendor | null>(null);
+  const [payoutSummary, setPayoutSummary] = useState<VendorPayoutSummary | null>(null);
+  const [payoutHistory, setPayoutHistory] = useState<VendorPayoutRecord[]>([]);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutReference, setPayoutReference] = useState('');
+  const [payoutNotes, setPayoutNotes] = useState('');
 
   useEffect(() => {
     void loadVendors();
@@ -214,6 +287,8 @@ export function VendorManagementPage() {
     adminEmail: '',
     password: '',
     confirmPassword: '',
+    payoutCycle: 'monthly' as VendorPayoutCycle,
+    payoutHoldDays: 7,
   });
 
   const handleCreateVendor = () => {
@@ -233,6 +308,8 @@ export function VendorManagementPage() {
       adminEmail: '',
       password: '',
       confirmPassword: '',
+      payoutCycle: vendor.payoutCycle || 'monthly',
+      payoutHoldDays: vendor.payoutHoldDays ?? 7,
     });
     setEditDialogOpen(true);
     try {
@@ -354,23 +431,65 @@ export function VendorManagementPage() {
     if (!pendingLoginVendor) return;
     try {
       setError(null);
-      const result = await vendorApi.loginAsVendor(pendingLoginVendor.id);
-      
-      // Store vendor context in localStorage for the session
+      await vendorApi.loginAsVendor(pendingLoginVendor.id);
+
       localStorage.setItem('currentVendorId', pendingLoginVendor.id.toString());
       localStorage.setItem('currentVendorName', pendingLoginVendor.name);
       localStorage.setItem('isImpersonating', 'true');
-      
-      // Show success message
-      setSuccess(result.message || `Successfully logged in as ${pendingLoginVendor.name}`);
       setLoginAsDialogOpen(false);
       setPendingLoginVendor(null);
-      
-      setTimeout(() => {
-        navigate(getOpsNavPaths(window.location.pathname).opsBase);
-      }, 1000);
+      navigate(ADMIN_ROUTES.vendorPortal);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to login as vendor');
+    }
+  };
+
+  const handleRecordPayout = (vendor: Vendor) => {
+    setPayoutVendor(vendor);
+    setPayoutSummary(null);
+    setPayoutHistory([]);
+    setPayoutAmount('');
+    setPayoutReference('');
+    setPayoutNotes('');
+    setPayoutDialogOpen(true);
+    setPayoutLoading(true);
+    void Promise.all([vendorApi.getPayoutSummary(vendor.id), vendorApi.listPayouts(vendor.id)])
+      .then(([summary, history]) => {
+        setPayoutSummary(summary);
+        setPayoutHistory(history.slice(0, 5));
+        setPayoutAmount(summary.eligible > 0 ? summary.eligible.toFixed(2) : '');
+      })
+      .catch((err: { response?: { data?: { message?: string } }; message?: string }) => {
+        setError(err.response?.data?.message || err.message || 'Failed to load payout summary');
+        setPayoutDialogOpen(false);
+      })
+      .finally(() => setPayoutLoading(false));
+  };
+
+  const confirmRecordPayout = async () => {
+    if (!payoutVendor) return;
+    const amount = Number.parseFloat(payoutAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError('Enter a payout amount greater than zero');
+      return;
+    }
+    try {
+      setPayoutSubmitting(true);
+      setError(null);
+      await vendorApi.recordPayout(payoutVendor.id, {
+        amount,
+        reference: payoutReference.trim() || undefined,
+        notes: payoutNotes.trim() || undefined,
+      });
+      setSuccess(`Recorded payout of ${formatCurrency(amount, 'GHS')} to ${payoutVendor.name}`);
+      setPayoutDialogOpen(false);
+      setPayoutVendor(null);
+      void loadVendors(true);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to record payout');
+    } finally {
+      setPayoutSubmitting(false);
     }
   };
 
@@ -401,7 +520,7 @@ export function VendorManagementPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Vendor Management"
-        subtitle="Open an active vendor to operate as them. Use the row menu for edit, status, and history."
+        subtitle="Open an active vendor’s home. Set payout cycle on create/edit. Record a payout after you send MoMo or bank."
         updatedAt={null}
         refreshing={refreshing}
         onRefresh={() => void loadVendors(true)}
@@ -564,7 +683,7 @@ export function VendorManagementPage() {
                 <TableCell>Vendor</TableCell>
                 <TableCell>Stations</TableCell>
                 <TableCell>Last session</TableCell>
-                <TableCell>GMV</TableCell>
+                <TableCell>Sales</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -669,6 +788,18 @@ export function VendorManagementPage() {
                 <EditIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Edit</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleRecordPayout(menuVendor);
+                closeVendorMenu();
+              }}
+              sx={premiumMenuItemSx}
+            >
+              <ListItemIcon>
+                <PaymentsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Record payout</ListItemText>
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -882,7 +1013,7 @@ export function VendorManagementPage() {
                   fullWidth
                   value={formData.domain}
                   onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                  helperText="Custom domain for white-label portal (e.g., 'vendor1.evcharging.com')"
+                  helperText="Custom domain for a white-label portal (e.g. charging.yourdomain.com)"
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
@@ -916,6 +1047,11 @@ export function VendorManagementPage() {
                   sx={(th) => sxObject(th, authFormFieldSx)}
                 />
               </Grid>
+              <VendorPayoutScheduleFields
+                payoutCycle={formData.payoutCycle}
+                payoutHoldDays={formData.payoutHoldDays}
+                onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+              />
               <Grid item xs={12}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
                   Vendor portal login
@@ -1060,6 +1196,11 @@ export function VendorManagementPage() {
                     sx={(th) => sxObject(th, authFormFieldSx)}
                   />
                 </Grid>
+                <VendorPayoutScheduleFields
+                  payoutCycle={formData.payoutCycle}
+                  payoutHoldDays={formData.payoutHoldDays}
+                  onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+                />
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
                     Vendor portal login
@@ -1127,6 +1268,111 @@ export function VendorManagementPage() {
       </Dialog>
 
       <Dialog
+        open={payoutDialogOpen}
+        onClose={() => !payoutSubmitting && setPayoutDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          Record payout{payoutVendor ? ` · ${payoutVendor.name}` : ''}
+        </DialogTitle>
+        <DialogContent>
+          {payoutLoading ? (
+            <Typography variant="body2" color="text.secondary" sx={{ pt: 2 }}>
+              Loading next payout…
+            </Typography>
+          ) : payoutSummary ? (
+            <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                {payoutSummary.payoutCycleLabel} · {payoutSummary.payoutHoldDays}-day hold · next{' '}
+                {new Date(payoutSummary.nextPayoutAt).toLocaleDateString()}
+              </Typography>
+              <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                Next payout {formatCurrency(payoutSummary.eligible, payoutSummary.currency)} · matured{' '}
+                {formatCurrency(payoutSummary.matured ?? payoutSummary.eligible, payoutSummary.currency)} · still maturing{' '}
+                {formatCurrency(payoutSummary.inHold, payoutSummary.currency)} · paid to date{' '}
+                {formatCurrency(payoutSummary.paidToDate, payoutSummary.currency)}
+              </Typography>
+              <Typography variant="body2">
+                {payoutSummary.payoutMethodReady
+                  ? `Pay to ${payoutSummary.payoutDestinationLabel}`
+                  : 'Vendor has not finished MoMo or bank details. Ask them to complete Vendor settings first.'}
+              </Typography>
+              <TextField
+                label="Amount (GHS)"
+                type="number"
+                fullWidth
+                value={payoutAmount}
+                onChange={(e) => setPayoutAmount(e.target.value)}
+                helperText="Record only after you have sent the MoMo or bank transfer"
+                inputProps={{ min: 0, step: '0.01' }}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+              <TextField
+                label="Transfer reference"
+                fullWidth
+                value={payoutReference}
+                onChange={(e) => setPayoutReference(e.target.value)}
+                helperText="MoMo or bank transaction ID"
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+              <TextField
+                label="Notes (optional)"
+                fullWidth
+                multiline
+                rows={2}
+                value={payoutNotes}
+                onChange={(e) => setPayoutNotes(e.target.value)}
+                sx={(th) => sxObject(th, authFormFieldSx)}
+              />
+              {payoutHistory.length > 0 ? (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Recent payouts
+                  </Typography>
+                  {payoutHistory.map((row) => (
+                    <Typography
+                      key={row.id}
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {formatCurrency(row.amount, row.currency)} · {new Date(row.paidAt).toLocaleDateString()}
+                      {row.reference ? ` · ${row.reference}` : ''}
+                    </Typography>
+                  ))}
+                </Box>
+              ) : null}
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            onClick={() => setPayoutDialogOpen(false)}
+            disabled={payoutSubmitting}
+            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void confirmRecordPayout()}
+            variant="contained"
+            disableElevation
+            disabled={
+              payoutLoading ||
+              payoutSubmitting ||
+              !payoutSummary?.payoutMethodReady ||
+              (payoutSummary?.eligible ?? 0) <= 0
+            }
+            sx={(th) => sxObject(th, compactContainedCtaSx)}
+          >
+            {payoutSubmitting ? 'Recording…' : 'Record payout'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         fullWidth
@@ -1163,12 +1409,12 @@ export function VendorManagementPage() {
         maxWidth="xs"
         PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Login as vendor?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Open vendor home?</DialogTitle>
         <DialogContent>
           <DialogContentText component="div">
             {pendingLoginVendor
-              ? `Switch to vendor "${pendingLoginVendor.name}" context?`
-              : 'Switch to this vendor context?'}
+              ? `Open “${pendingLoginVendor.name}” as that vendor? You can exit from the header.`
+              : 'Open this vendor’s home?'}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
@@ -1182,7 +1428,7 @@ export function VendorManagementPage() {
             disableElevation
             sx={(th) => sxObject(th, compactContainedCtaSx)}
           >
-            Continue
+            Open home
           </Button>
         </DialogActions>
       </Dialog>

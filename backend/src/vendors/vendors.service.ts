@@ -155,7 +155,7 @@ export class VendorsService {
   }
 
   /**
-   * Get all vendors, with station count, last session, and completed-session GMV.
+   * Get all vendors, with station count, last session, and completed-session sales (gmv).
    */
   async findAll(): Promise<Vendor[]> {
     try {
@@ -254,6 +254,8 @@ export class VendorsService {
     metadata?: Record<string, any>;
     adminEmail?: string;
     adminPassword: string;
+    payoutCycle?: 'weekly' | 'biweekly' | 'monthly';
+    payoutHoldDays?: number;
   }): Promise<Vendor> {
     // Check if domain already exists
     if (createVendorDto.domain) {
@@ -285,6 +287,15 @@ export class VendorsService {
       address: createVendorDto.address,
       metadata: createVendorDto.metadata,
       status: 'active',
+      payoutCycle: createVendorDto.payoutCycle === 'weekly' || createVendorDto.payoutCycle === 'biweekly'
+        ? createVendorDto.payoutCycle
+        : 'monthly',
+      payoutHoldDays:
+        typeof createVendorDto.payoutHoldDays === 'number' &&
+        createVendorDto.payoutHoldDays >= 0 &&
+        createVendorDto.payoutHoldDays <= 90
+          ? Math.round(createVendorDto.payoutHoldDays)
+          : 7,
     });
 
     const saved = await this.vendorRepository.save(vendor);

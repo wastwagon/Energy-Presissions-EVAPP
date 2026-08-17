@@ -12,6 +12,8 @@ import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from './config/staffNav.paths';
 import { useVendorStatus } from './hooks/useVendorStatus';
 import { getAppChromeBackground } from './constants/userPreferences';
 import { syncWebViewGoldStatusBar } from './utils/webviewGold';
+import { AppErrorBoundary } from './components/routing/AppErrorBoundary';
+import { OfflineBanner } from './components/system/OfflineBanner';
 
 const MainLayout = lazy(() =>
   import('./layouts/MainLayout').then((m) => ({ default: m.MainLayout })),
@@ -284,7 +286,9 @@ function App() {
   }, []);
 
   return (
-    <VendorStatusGuard>
+    <AppErrorBoundary resetKey={location.pathname}>
+      <OfflineBanner />
+      <VendorStatusGuard>
       <Routes>
         {/* Vendor status pages (no guard) */}
         <Route
@@ -498,7 +502,8 @@ function App() {
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </VendorStatusGuard>
+      </VendorStatusGuard>
+    </AppErrorBoundary>
   );
 }
 

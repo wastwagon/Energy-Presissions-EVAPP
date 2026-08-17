@@ -10,13 +10,15 @@ import { AnalyticsBreakdownCharts } from './AnalyticsBreakdownCharts';
 
 interface AnalyticsBreakdownPanelProps {
   stats: DashboardStats;
+  /** Vendor analytics: operators no longer manage customers from this portal. */
+  hideUserBreakdown?: boolean;
 }
 
-export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps) {
+export function AnalyticsBreakdownPanel({ stats, hideUserBreakdown }: AnalyticsBreakdownPanelProps) {
   const theme = useTheme();
   const useGrouped = useMediaQuery(theme.breakpoints.down('md'));
   const overview = stats.overview;
-  const usersByType = stats.breakdowns?.usersByType ?? [];
+  const usersByType = hideUserBreakdown ? [] : (stats.breakdowns?.usersByType ?? []);
   const cpByStatus = stats.breakdowns?.chargePointsByStatus ?? [];
   const health = stats.connectionHealth;
   const pendingHolds = overview?.pendingWalletReserved ?? 0;
@@ -83,7 +85,7 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
             ))}
           </GroupedListSection>
         )}
-        <AnalyticsBreakdownCharts stats={stats} />
+        <AnalyticsBreakdownCharts stats={stats} hideUserBreakdown={hideUserBreakdown} />
       </Box>
     );
   }
@@ -95,29 +97,25 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
           <StaffMetricCard
             label="Pending wallet holds"
             value={formatCurrency(pendingHolds)}
-            hint="Not included in revenue until sessions complete"
+            hint="Not counted until sessions complete"
             tone="warning"
           />
         </Grid>
       )}
+      {usersByType.length > 0 ? (
       <Grid item xs={12} md={6}>
         <Paper sx={premiumPanelCardSx}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
             Users by account type
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {usersByType.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No breakdown available
-              </Typography>
-            ) : (
-              usersByType.map((row) => (
-                <AppBadge key={row.type} label={`${row.type}: ${row.count}`} tone="neutral" size="small" />
-              ))
-            )}
+            {usersByType.map((row) => (
+              <AppBadge key={row.type} label={`${row.type}: ${row.count}`} tone="neutral" size="small" />
+            ))}
           </Box>
         </Paper>
       </Grid>
+      ) : null}
       <Grid item xs={12} md={6}>
         <Paper sx={premiumPanelCardSx}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
@@ -163,7 +161,7 @@ export function AnalyticsBreakdownPanel({ stats }: AnalyticsBreakdownPanelProps)
         </Grid>
       )}
       <Grid item xs={12}>
-        <AnalyticsBreakdownCharts stats={stats} />
+        <AnalyticsBreakdownCharts stats={stats} hideUserBreakdown={hideUserBreakdown} />
       </Grid>
     </Grid>
   );

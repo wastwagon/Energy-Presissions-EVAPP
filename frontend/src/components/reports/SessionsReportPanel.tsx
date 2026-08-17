@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -35,6 +36,7 @@ import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { StaffPeriodChips, type StaffPeriodDays } from '../dashboard/StaffPeriodChips';
 import { StaffFilterBar } from '../dashboard/StaffFilterBar';
 import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
+import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
 interface SessionsReportPanelProps {
   vendorId?: number;
@@ -51,6 +53,8 @@ export function SessionsReportPanel({
   onPeriodChange,
   hidePeriodControls = false,
 }: SessionsReportPanelProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [localDays, setLocalDays] = useState<StaffPeriodDays>(30);
@@ -150,6 +154,16 @@ export function SessionsReportPanel({
           icon={<EvStationIcon />}
           title="No sessions in this period"
           description={`No charging sessions in the last ${periodDays} days from the current sample.`}
+          primaryAction={{
+            label: 'Open Analytics',
+            onClick: () =>
+              navigate(
+                location.pathname.startsWith('/superadmin')
+                  ? SUPERADMIN_ROUTES.analytics
+                  : ADMIN_ROUTES.analytics,
+              ),
+            variant: 'secondary',
+          }}
         />
       ) : useGroupedList ? (
         <GroupedListSection title={`Sessions (${periodDays}d)`}>
@@ -162,7 +176,7 @@ export function SessionsReportPanel({
               secondary={`${tx.chargePointId} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
               end={
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     {formatSessionCost(tx)}
                   </Typography>
                   <AppBadge

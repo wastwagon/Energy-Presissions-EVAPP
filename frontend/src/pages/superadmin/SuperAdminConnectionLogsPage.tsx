@@ -56,6 +56,7 @@ import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { useStaffPullRefresh } from '../../hooks/useStaffPullRefresh';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { logger } from '../../utils/logger';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { MobileListLoadMore } from '../../components/ios/MobileListLoadMore';
@@ -144,7 +145,7 @@ export function SuperAdminConnectionLogsPage() {
         const e = err as { response?: { data?: { message?: string } }; message?: string };
         const errorMessage = e.response?.data?.message || e.message || 'Failed to load connection logs';
         setError(errorMessage);
-        console.error('Error loading connection logs:', err);
+        logger.error('Error loading connection logs:', err);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -381,7 +382,24 @@ export function SuperAdminConnectionLogsPage() {
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<HubIcon />}
             title="No connection logs found"
-            description="Try another charge point ID or event type filter."
+            description={
+              searchTerm || eventTypeFilter
+                ? 'Try another charge point ID or event type filter.'
+                : 'Events appear after chargers connect to the CSMS.'
+            }
+            primaryAction={
+              searchTerm || eventTypeFilter
+                ? {
+                    label: 'Clear filters',
+                    onClick: () => {
+                      setSearchTerm('');
+                      setEventTypeFilter('');
+                      setPage(1);
+                    },
+                    variant: 'secondary',
+                  }
+                : undefined
+            }
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>

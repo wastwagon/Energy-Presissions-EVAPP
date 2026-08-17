@@ -26,13 +26,17 @@ import { VendorStatusGuard, SkipVendorCheck } from '../common/guards/vendor-stat
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { VendorPayoutsService } from './vendor-payouts.service';
 
 @ApiTags('Vendors')
 @Controller('admin/vendors')
 @UseGuards(JwtAuthGuard, VendorStatusGuard, RolesGuard)
 @ApiBearerAuth()
 export class VendorsController {
-  constructor(private readonly vendorsService: VendorsService) {}
+  constructor(
+    private readonly vendorsService: VendorsService,
+    private readonly vendorPayoutsService: VendorPayoutsService,
+  ) {}
 
   @Get()
   @Roles('SuperAdmin')
@@ -133,6 +137,41 @@ export class VendorsController {
     return this.vendorsService.getStatus(id);
   }
 
+  @Get(':id/payout-summary')
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'Vendor settlement summary (matured next payout vs hold vs paid)' })
+  async getPayoutSummary(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    if (req.user?.accountType !== 'SuperAdmin' && req.user?.vendorId !== id) {
+      throw new HttpException('Forbidden - can only access own vendor', HttpStatus.FORBIDDEN);
+    }
+    const vendor = await this.vendorsService.findOne(id);
+    return this.vendorPayoutsService.getSummary(vendor);
+  }
+
+  @Get(':id/payouts')
+  @Roles('SuperAdmin', 'Admin')
+  @ApiOperation({ summary: 'List recorded vendor payouts' })
+  async listPayouts(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    if (req.user?.accountType !== 'SuperAdmin' && req.user?.vendorId !== id) {
+      throw new HttpException('Forbidden - can only access own vendor', HttpStatus.FORBIDDEN);
+    }
+    return this.vendorPayoutsService.listPayouts(id);
+  }
+
+  @Post(':id/payouts')
+  @Roles('SuperAdmin')
+  @SkipVendorCheck()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Record a manual payout after MoMo or bank transfer' })
+  async recordPayout(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { amount?: number; reference?: string; notes?: string },
+    @Request() req: any,
+  ) {
+    const vendor = await this.vendorsService.findOne(id);
+    return this.vendorPayoutsService.recordPayout(vendor, body, req.user.id);
+  }
+
   @Post()
   @Roles('SuperAdmin')
   @SkipVendorCheck()
@@ -148,6 +187,8 @@ export class VendorsController {
     metadata?: Record<string, any>;
     adminEmail?: string;
     adminPassword: string;
+    payoutCycle?: 'weekly' | 'biweekly' | 'monthly';
+    payoutHoldDays?: number;
   }): Promise<Vendor> {
     if (!createVendorDto.adminPassword?.trim()) {
       throw new BadRequestException('Vendor admin password is required');
@@ -170,7 +211,11 @@ export class VendorsController {
     if (req.user?.accountType !== 'SuperAdmin' && req.user?.vendorId !== id) {
       throw new HttpException('Forbidden - can only update own vendor', HttpStatus.FORBIDDEN);
     }
-    const { adminEmail, adminPassword, ...updateVendorDto } = body;
+    const { adminEmail, adminPassword, ...rest } = body;
+    const updateVendorDto = this.vendorPayoutsService.pickUpdatableFields(
+      rest as Record<string, unknown>,
+      req.user?.accountType === 'SuperAdmin',
+    );
     const portalAdmin =
       req.user?.accountType === 'SuperAdmin' && (adminEmail || adminPassword)
         ? { adminEmail, adminPassword }
@@ -261,6 +306,7 @@ export class VendorPortalController {
   constructor(
     private readonly vendorsService: VendorsService,
     private readonly vendorStatusService: VendorStatusService,
+    private readonly vendorPayoutsService: VendorPayoutsService,
   ) {}
 
   @Get('status')
@@ -280,6 +326,27 @@ export class VendorPortalController {
     
     const status = await this.vendorStatusService.getVendorStatus(vendorId);
     return { status };
+  }
+
+  @Get('payout-summary')
+  @ApiOperation({ summary: 'Settlement summary for the signed-in vendor' })
+  async getOwnPayoutSummary(@Request() req: any) {
+    const vendorId = req.user?.vendorId;
+    if (!vendorId) {
+      throw new HttpException('User has no vendor assigned', HttpStatus.BAD_REQUEST);
+    }
+    const vendor = await this.vendorsService.findOne(vendorId);
+    return this.vendorPayoutsService.getSummary(vendor);
+  }
+
+  @Get('payouts')
+  @ApiOperation({ summary: 'Recorded payouts for the signed-in vendor' })
+  async getOwnPayouts(@Request() req: any) {
+    const vendorId = req.user?.vendorId;
+    if (!vendorId) {
+      throw new HttpException('User has no vendor assigned', HttpStatus.BAD_REQUEST);
+    }
+    return this.vendorPayoutsService.listPayouts(vendorId);
   }
 }
 

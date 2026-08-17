@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+import { SupportContactBlock } from '../../components/legal/SupportContactBlock';
 import { authPagePaperSx, authPageRootSx } from '../../styles/authShell';
 
 export function SuspendedPage() {
@@ -63,15 +64,7 @@ export function SuspendedPage() {
 
         <Divider sx={{ my: 2 }} />
 
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em' }}>
-          SUPPORT
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.55 }}>
-          Email: support@evcharging.com
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
-          Phone: +233 XX XXX XXXX
-        </Typography>
+        <SupportContactBlock />
       </Paper>
     </Box>
   );

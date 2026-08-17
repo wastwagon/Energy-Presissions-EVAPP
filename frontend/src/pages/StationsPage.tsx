@@ -215,39 +215,47 @@ export function StationsPage() {
     userAdjustedMapViewRef.current = true;
   }, []);
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      setLoading(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserLocation({ lat, lng });
-          setLocationError(null);
-          setUserAreaLabel(null);
-          void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
-          loadNearbyStationsRef.current(lat, lng);
-        },
-        (err) => {
-          setLocationError(
-            err.message === 'User denied Geolocation'
-              ? 'Location access is off. Enable location in your browser settings to find nearby chargers, or search by name.'
-              : 'We could not get your location. Search for a station by name or open the map.',
-          );
-          setLoading(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        },
-      );
-    } else {
+  const requestUserLocation = useCallback(() => {
+    if (!navigator.geolocation) {
       setLocationError(
         'Your browser does not support location. Search for a station by name or browse the map.',
       );
+      return;
     }
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setUserLocation({ lat, lng });
+        setLocationError(null);
+        setUserAreaLabel(null);
+        void reverseGeocodeAreaLabel(lat, lng).then((label) => setUserAreaLabel(label));
+        loadNearbyStationsRef.current(lat, lng);
+      },
+      (err) => {
+        setLocationError(
+          err.message === 'User denied Geolocation'
+            ? 'Location access is off. Enable location in your browser settings to find nearby chargers, or search by name.'
+            : 'We could not get your location. Search for a station by name or open the map.',
+        );
+        setLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
   }, []);
+
+  useEffect(() => {
+    requestUserLocation();
+  }, [requestUserLocation]);
+
+  const scrollStationsMapIntoView = () => {
+    mapSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const handleSearch = useCallback(async () => {
     triggerHaptic('light');
@@ -541,9 +549,42 @@ export function StationsPage() {
             illustrationAlt=""
             title="No chargers here"
             description={
-              userLocation
-                ? 'Nothing in this area yet. Search another place or scroll to the map.'
-                : 'Turn on location, or search by area or station ID.'
+              searchTerm.trim()
+                ? 'Nothing matches that search. Try another area or station ID.'
+                : userLocation
+                  ? 'Nothing in this area yet. Search another place or open the map.'
+                  : 'Turn on location, or search by area or station ID.'
+            }
+            primaryAction={
+              searchTerm.trim()
+                ? {
+                    label: 'Clear search',
+                    onClick: () => {
+                      setSearchTerm('');
+                      if (userLocation) {
+                        void loadNearbyStations(userLocation.lat, userLocation.lng);
+                      }
+                    },
+                    variant: 'secondary',
+                  }
+                : userLocation
+                  ? {
+                      label: 'Show map',
+                      onClick: scrollStationsMapIntoView,
+                    }
+                  : {
+                      label: 'Use my location',
+                      onClick: requestUserLocation,
+                    }
+            }
+            secondaryAction={
+              searchTerm.trim() || !userLocation
+                ? {
+                    label: 'Show map',
+                    onClick: scrollStationsMapIntoView,
+                    variant: 'secondary',
+                  }
+                : undefined
             }
           />
         )}

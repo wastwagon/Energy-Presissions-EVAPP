@@ -7,6 +7,8 @@ export type StaffDashboardInsightInput = {
   activeSessions: number;
   pendingWalletReserved: number;
   devicesWithErrors?: number;
+  /** Vendor dashboards use Sales; network uses Revenue. */
+  moneyNoun?: 'Sales' | 'Revenue';
 };
 
 function statusCount(
@@ -32,6 +34,7 @@ export function buildStaffDashboardInsight({
   activeSessions,
   pendingWalletReserved,
   devicesWithErrors = 0,
+  moneyNoun = 'Revenue',
 }: StaffDashboardInsightInput): string {
   if (offlineCount > 0) {
     return `${offlineCount} station${offlineCount === 1 ? ' is' : 's are'} offline — open Devices to reconnect.`;
@@ -40,13 +43,13 @@ export function buildStaffDashboardInsight({
     return `${devicesWithErrors} device${devicesWithErrors === 1 ? '' : 's'} need attention.`;
   }
   if (pendingWalletReserved > 0) {
-    return `${formatCurrency(pendingWalletReserved)} in wallet holds is not counted as revenue until sessions complete.`;
+    return `${formatCurrency(pendingWalletReserved)} in wallet holds is not counted as ${moneyNoun.toLowerCase()} until sessions complete.`;
   }
   if (revenueTrendPercent != null && revenueTrendPercent <= -5) {
-    return `Revenue is down ${Math.abs(Math.round(revenueTrendPercent))}% vs earlier in this ${periodDays}-day period.`;
+    return `${moneyNoun} is down ${Math.abs(Math.round(revenueTrendPercent))}% vs earlier in this ${periodDays}-day period.`;
   }
   if (revenueTrendPercent != null && revenueTrendPercent >= 5) {
-    return `Revenue is up ${Math.round(revenueTrendPercent)}% vs earlier in this ${periodDays}-day period.`;
+    return `${moneyNoun} is up ${Math.round(revenueTrendPercent)}% vs earlier in this ${periodDays}-day period.`;
   }
   if (activeSessions > 0) {
     return `${activeSessions} session${activeSessions === 1 ? '' : 's'} charging now.`;

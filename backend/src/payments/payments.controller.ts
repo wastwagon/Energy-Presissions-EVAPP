@@ -68,8 +68,8 @@ type AuthUser = { id: number; accountType: string };
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  private assertSelfOrStaff(user: AuthUser, userId: number): void {
-    if (isStaffAccount(user.accountType) || user.id === userId) {
+  private assertSelfOrPlatform(user: AuthUser, userId: number): void {
+    if (user.accountType === 'SuperAdmin' || user.id === userId) {
       return;
     }
     throw new ForbiddenException('You cannot access this payment');
@@ -143,7 +143,7 @@ export class PaymentsController {
     @Param('reference') reference: string,
   ) {
     const payment = await this.paymentsService.verifyPayment(reference);
-    this.assertSelfOrStaff(req.user, payment.userId);
+    this.assertSelfOrPlatform(req.user, payment.userId);
     return payment;
   }
 
@@ -197,19 +197,16 @@ export class PaymentsController {
   @Get('all')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Get all payments (Admin/SuperAdmin)' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Get all platform payments (Paystack top-ups and card charges)' })
   @ApiResponse({ status: 200, description: 'List of all payments' })
   async getAllPayments(
-    @Request() req: { user: { accountType: string; vendorId?: number } },
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    const vendorId = req.user.accountType === 'Admin' ? req.user.vendorId : undefined;
     return this.paymentsService.getAllPayments(
       limit ? parseInt(limit.toString(), 10) : 100,
       offset ? parseInt(offset.toString(), 10) : 0,
-      vendorId,
     );
   }
 
@@ -231,7 +228,7 @@ export class PaymentsController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    this.assertSelfOrStaff(req.user, userId);
+    this.assertSelfOrPlatform(req.user, userId);
     return this.paymentsService.getUserPayments(
       userId,
       limit ? parseInt(limit.toString(), 10) : 50,
@@ -250,7 +247,7 @@ export class PaymentsController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     const payment = await this.paymentsService.getPayment(id);
-    this.assertSelfOrStaff(req.user, payment.userId);
+    this.assertSelfOrPlatform(req.user, payment.userId);
     return payment;
   }
 
@@ -286,34 +283,5 @@ export class PaymentsController {
     const userId =
       isStaffAccount(req.user.accountType) && bodyUserId ? bodyUserId : req.user.id;
     return this.paymentsService.processWalletPaymentForTransaction(transactionId, userId);
-  }
-
-  @Post('cash/transaction/:transactionId')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Process cash payment for walk-in customer' })
-  @ApiBody({
-    schema: {
-      properties: {
-        amount: { type: 'number' },
-        receivedBy: { type: 'number' },
-        notes: { type: 'string' },
-      },
-    },
-  })
-  @ApiResponse({ status: 200, description: 'Cash payment processed' })
-  async processCashPayment(
-    @Request() req: { user: AuthUser },
-    @Param('transactionId', ParseIntPipe) transactionId: number,
-    @Body() body: { amount?: number; receivedBy?: number; notes?: string },
-  ) {
-    return this.paymentsService.processCashPayment(
-      transactionId,
-      body.amount,
-      req.user.id,
-      body.notes,
-    );
   }
 }

@@ -29,15 +29,18 @@ export function SuperAdminSecurityLogsPage() {
   const useGroupedList = useMediaQuery(theme.breakpoints.down('md'));
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadLogs();
   }, []);
 
-  const loadLogs = async () => {
+  const loadLogs = async (silent?: boolean) => {
+    const isQuiet = silent === true;
     try {
-      setLoading(true);
+      if (isQuiet) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       const { logs: data } = await auditApi.getLogs(200, 0);
       setLogs(data);
@@ -45,6 +48,7 @@ export function SuperAdminSecurityLogsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load audit logs');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -64,10 +68,10 @@ export function SuperAdminSecurityLogsPage() {
         title="Security & Logs"
         subtitle="Audit trail of system activity"
         updatedAt={null}
-        refreshing={false}
-        onRefresh={() => undefined}
-        showRefresh={false}
+        refreshing={refreshing}
+        onRefresh={() => void loadLogs(true)}
         showLiveMeta={false}
+        refreshSx={{ width: { xs: '100%', sm: 'auto' } }}
       />
 
       {error && (
@@ -77,13 +81,18 @@ export function SuperAdminSecurityLogsPage() {
       )}
 
       <Paper elevation={0} sx={{ ...premiumTableSurfaceSx, position: 'relative' }}>
-        <TableSurfaceProgress active={loading && logs.length > 0} ariaLabel="Loading audit logs" />
+        <TableSurfaceProgress active={(loading || refreshing) && logs.length > 0} ariaLabel="Loading audit logs" />
         {logs.length === 0 ? (
           <AppEmptyState
             sx={{ border: 0, boxShadow: 'none', borderRadius: 0 }}
             icon={<SecurityIcon />}
             title="No audit logs yet"
             description="Logs will appear as users perform actions across the platform."
+            primaryAction={{
+              label: 'Refresh',
+              onClick: () => void loadLogs(true),
+              variant: 'secondary',
+            }}
           />
         ) : useGroupedList ? (
           <Box sx={{ py: 1 }}>

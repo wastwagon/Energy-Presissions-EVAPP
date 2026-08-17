@@ -33,10 +33,8 @@ export class JwtAuthGuard implements CanActivate {
       };
       
       return true;
-    } catch (error: any) {
-      // Provide more detailed error message for debugging
-      const errorMessage = error.message || 'Invalid or expired token';
-      throw new UnauthorizedException(`JWT validation failed: ${errorMessage}`);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }

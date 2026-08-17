@@ -2,7 +2,7 @@ import { createTheme, alpha } from '@mui/material/styles';
 import { iosBrandColors, iosFontStacks, iosRadii, iosMotion } from './iosMobileTokens';
 
 export type AppThemeOptions = {
-  /** SF-only typography on customer shell (no Plus Jakarta). */
+  /** SF-only typography on customer shell. */
   customerTypography?: boolean;
 };
 

@@ -19,8 +19,8 @@ export function StaffFirstRunChecklist({
           onClick: () => navigate(SUPERADMIN_ROUTES.vendors),
         },
         {
-          primary: 'Set a network tariff',
-          secondary: 'Default per-kWh pricing when a vendor has no plan of their own.',
+          primary: 'Set network tariffs',
+          secondary: 'Per-kWh pricing at commission. Vendors cannot change rates.',
           onClick: () => navigate(SUPERADMIN_ROUTES.tariffs),
         },
         {
@@ -36,9 +36,9 @@ export function StaffFirstRunChecklist({
           onClick: () => navigate(ADMIN_ROUTES.vendorSettings),
         },
         {
-          primary: 'Create a tariff',
-          secondary: 'Per-kWh pricing for your charge points.',
-          onClick: () => navigate(ADMIN_ROUTES.tariffs),
+          primary: 'Add payout details',
+          secondary: 'MoMo or bank account so Clean Motion can pay you on the scheduled cycle.',
+          onClick: () => navigate(ADMIN_ROUTES.vendorSettings),
         },
         {
           primary: 'Connect the first charger',

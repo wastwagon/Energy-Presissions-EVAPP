@@ -3,7 +3,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { getPrivacyPolicyLink, getSupportLink, getTermsOfServiceLink } from '../../config/legal.config';
-import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from '../../legal/supportPageContent';
+import { SUPPORT_EMAIL, getSupportPhone } from '../../legal/supportPageContent';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
 import { GroupedListRow } from '../../components/ios/GroupedListRow';
@@ -37,6 +37,7 @@ export function CustomerHelpPage() {
   const privacy = getPrivacyPolicyLink();
   const terms = getTermsOfServiceLink();
   const support = getSupportLink();
+  const phone = getSupportPhone();
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
@@ -64,21 +65,23 @@ export function CustomerHelpPage() {
           primary="Email"
           secondary={SUPPORT_EMAIL}
           showChevron={false}
-          divider
+          divider={Boolean(phone)}
           onClick={() => {
             window.location.href = `mailto:${SUPPORT_EMAIL}`;
           }}
           end={<EmailIcon fontSize="small" color="action" />}
         />
-        <GroupedListRow
-          primary="Phone"
-          secondary={SUPPORT_PHONE_DISPLAY}
-          showChevron={false}
-          onClick={() => {
-            window.location.href = SUPPORT_PHONE_TEL;
-          }}
-          end={<PhoneIcon fontSize="small" color="action" />}
-        />
+        {phone ? (
+          <GroupedListRow
+            primary="Phone"
+            secondary={phone.display}
+            showChevron={false}
+            onClick={() => {
+              window.location.href = phone.tel;
+            }}
+            end={<PhoneIcon fontSize="small" color="action" />}
+          />
+        ) : null}
       </GroupedListSection>
 
       <GroupedListSection title="Privacy & terms">

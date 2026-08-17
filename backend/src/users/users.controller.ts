@@ -46,12 +46,11 @@ export class UsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Get all users' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Get all users (platform Super Admin)' })
   @ApiResponse({ status: 200, description: 'List of users' })
-  async findAll(@Request() req: { user: { accountType: string; vendorId?: number } }): Promise<User[]> {
-    const vendorId = req.user.accountType === 'Admin' ? req.user.vendorId : undefined;
-    return this.usersService.findAll(vendorId);
+  async findAll(): Promise<User[]> {
+    return this.usersService.findAll();
   }
 
   // Register :id/* before bare :id so paths like /users/1/favorites match correctly.
@@ -97,8 +96,8 @@ export class UsersController {
 
   @Put(':id/role')
   @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Change user role (Admin only)' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Change user role (platform Super Admin)' })
   @ApiResponse({ status: 200, description: 'User role updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async changeRole(
@@ -120,8 +119,8 @@ export class UsersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(RolesGuard)
-  @Roles('SuperAdmin', 'Admin')
-  @ApiOperation({ summary: 'Create a new user' })
+  @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Create a new user (platform Super Admin)' })
   @ApiResponse({ status: 201, description: 'User created' })
   async create(@Body() data: Partial<User>): Promise<User> {
     return this.usersService.create(data);

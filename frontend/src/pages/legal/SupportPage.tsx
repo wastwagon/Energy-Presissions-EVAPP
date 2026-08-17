@@ -4,9 +4,8 @@ import { AuthBrandHeader } from '../../components/auth/AuthBrandHeader';
 import {
   SUPPORT_EMAIL,
   SUPPORT_LAST_UPDATED,
-  SUPPORT_PHONE_DISPLAY,
-  SUPPORT_PHONE_TEL,
   SUPPORT_SECTIONS,
+  getSupportPhone,
 } from '../../legal/supportPageContent';
 import {
   authPageBodySx,
@@ -21,6 +20,7 @@ import { iosFontStacks } from '../../theme/iosMobileTokens';
  * Public support page for App Store “Support URL” and in-app deep link /support.
  */
 export function SupportPage() {
+  const phone = getSupportPhone();
   return (
     <Box sx={authPageRootSx}>
       <Container maxWidth="sm" disableGutters sx={{ width: '100%' }}>
@@ -59,9 +59,11 @@ export function SupportPage() {
             <Link href={`mailto:${SUPPORT_EMAIL}`} sx={{ ...authPageLinkSx, display: 'flex', fontWeight: 600 }}>
               {SUPPORT_EMAIL}
             </Link>
-            <Link href={SUPPORT_PHONE_TEL} sx={{ ...authPageLinkSx, display: 'flex', fontWeight: 600 }}>
-              {SUPPORT_PHONE_DISPLAY}
-            </Link>
+            {phone ? (
+              <Link href={phone.tel} sx={{ ...authPageLinkSx, display: 'flex', fontWeight: 600 }}>
+                {phone.display}
+              </Link>
+            ) : null}
           </Box>
 
           <Box sx={{ mt: 2, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5 }}>

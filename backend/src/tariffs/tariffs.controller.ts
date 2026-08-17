@@ -81,6 +81,7 @@ export class TariffsController {
   }
 
   @Post()
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Create a new tariff' })
   @ApiResponse({ status: 201, description: 'Tariff created', type: Tariff })
   async create(
@@ -107,6 +108,7 @@ export class TariffsController {
   }
 
   @Put(':id')
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Update tariff' })
   @ApiResponse({ status: 200, description: 'Tariff updated', type: Tariff })
   async update(
@@ -123,6 +125,7 @@ export class TariffsController {
   }
 
   @Delete(':id')
+  @Roles('SuperAdmin')
   @ApiOperation({ summary: 'Delete tariff' })
   @ApiResponse({ status: 204, description: 'Tariff deleted' })
   async delete(

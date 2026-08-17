@@ -146,7 +146,9 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
   }, [loadAnalytics, loadTrend]);
 
   const trendCompare = useMemo(() => compareRevenueTrend(trendPoints), [trendPoints]);
-  const trendCaption = `vs earlier in ${periodDays}d`;
+  const trendCaption = `vs earlier in ${periodDays} days`;
+  const isVendorView = variant === 'admin' || vendorScope;
+  const moneyLabel = isVendorView ? 'Sales' : 'Revenue';
 
   const createKeyboardNavHandler =
     (path: string) => (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -177,7 +179,7 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
         }
         subtitle={
           variant === 'admin'
-            ? 'Same period as Dashboard — trend and operational breakdowns. Exports live in Reports.'
+            ? 'Same period as Dashboard — sales trend and operational breakdowns. Exports live in Reports.'
             : vendorScope
               ? 'Period trend for the current vendor context. Open Reports to export.'
               : 'Network trend and mix across vendors. Open Reports to export.'
@@ -218,14 +220,14 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
           <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: 2.5 }}>
             <Grid item xs={12} sm={6} md={showVendorsKpi ? 4 : 3}>
               <StaffMetricCard
-                label={`Revenue (${periodDays}d)`}
+                label={`${moneyLabel} (${periodDays} days)`}
                 value={formatCurrency(trendCompare.periodRevenue)}
                 hint="Completed billed sessions in this period"
                 icon={<TrendingUpIcon />}
                 trendPercent={trendCompare.revenueTrendPercent}
                 trendCaption={trendCaption}
                 sparklineValues={trendCompare.sparkRevenue}
-                sparklineLabel="Revenue sparkline"
+                sparklineLabel={`${moneyLabel} sparkline`}
                 ariaLabel="Open reports to export"
                 onClick={() => navigate(reportsPath)}
                 onKeyDown={createKeyboardNavHandler(reportsPath)}
@@ -233,7 +235,7 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
             </Grid>
             <Grid item xs={12} sm={6} md={showVendorsKpi ? 4 : 3}>
               <StaffMetricCard
-                label={`Sessions (${periodDays}d)`}
+                label={`Sessions (${periodDays} days)`}
                 value={trendCompare.periodSessions}
                 icon={<ShowChartIcon />}
                 hint="Completed in selected period"
@@ -320,6 +322,8 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
           <Box sx={{ mb: 2.5 }}>
             <RevenueTrendChart
               days={periodDays}
+              title={`${moneyLabel} trend`}
+              moneyLabel={moneyLabel}
               points={trendPoints}
               loading={trendLoading}
               error={trendError}
@@ -327,7 +331,7 @@ export function StaffAnalyticsPage({ variant = 'superadmin' }: { variant?: Staff
               emptyAction={{ label: 'Open sessions', onClick: () => navigate(sessionsPath) }}
             />
           </Box>
-          <AnalyticsBreakdownPanel stats={stats} />
+          <AnalyticsBreakdownPanel stats={stats} hideUserBreakdown={isVendorView} />
         </>
       )}
     </Box>

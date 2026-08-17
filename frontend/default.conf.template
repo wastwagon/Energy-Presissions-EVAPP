@@ -21,15 +21,22 @@ server {
     gzip_min_length 1024;
     gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/javascript application/json;
 
-    # Security headers
+    # Security headers (repeat in locations that set their own add_header — nginx does not inherit)
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self)" always;
+    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
 
-    # Cache static assets
+    # Cache hashed Vite assets; keep security headers (add_header replaces parent)
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self)" always;
+        add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
     }
 
     # Store / crawler friendly: real HTML without waiting for JS (Google Play, App Store, Sign in with Apple)
@@ -53,6 +60,7 @@ server {
         proxy_ssl_server_name on;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+        add_header Cache-Control "no-store" always;
     }
 
     # Socket.IO (path /ws) — same-origin in the browser
@@ -95,9 +103,15 @@ server {
         add_header Sec-WebSocket-Protocol $upstream_http_sec_websocket_protocol always;
     }
 
-    # Handle React Router - serve index.html for all routes
+    # Handle React Router - serve index.html for all routes (never cache HTML)
     location / {
         try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-store" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self)" always;
+        add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
     }
 
     # Health check endpoint (this container only; not the CSMS API)

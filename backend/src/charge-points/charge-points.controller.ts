@@ -20,12 +20,14 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { isStaffAccount } from '../common/utils/account-type';
+import { resolveStaffVendorScope } from '../common/utils/staff-vendor-scope';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePoint } from '../entities/charge-point.entity';
+import { AdminVendorChargePointGuard } from './admin-vendor-charge-point.guard';
 
 @ApiTags('Charge Points')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminVendorChargePointGuard)
 @Controller('charge-points')
 export class ChargePointsController {
   constructor(private readonly chargePointsService: ChargePointsService) {}
@@ -39,13 +41,17 @@ export class ChargePointsController {
   @ApiHeader({ name: 'X-Vendor-Id', required: false, description: 'Vendor ID for filtering (alternative to query param)' })
   @ApiResponse({ status: 200, description: 'List of charge points' })
   async findAll(
+    @Request() req: { user: { accountType: string; vendorId?: number } },
     @Query('search') search?: string,
     @Query('vendorId') vendorId?: number,
     @Headers('x-vendor-id') vendorIdHeader?: string,
   ): Promise<ChargePoint[]> {
-    const finalVendorId = vendorId || (vendorIdHeader ? parseInt(vendorIdHeader) : undefined);
-
-    return this.chargePointsService.findAll(search, finalVendorId);
+    const user = req.user;
+    const scopedVendorId = resolveStaffVendorScope(user, vendorId ?? vendorIdHeader);
+    if (user.accountType === 'Admin' && scopedVendorId == null) {
+      throw new ForbiddenException('Vendor admin is not assigned to a vendor.');
+    }
+    return this.chargePointsService.findAll(search, scopedVendorId);
   }
 
   @Post('reconcile-vendor-names')
@@ -74,7 +80,16 @@ export class ChargePointsController {
   @Roles('SuperAdmin', 'Admin')
   @ApiOperation({ summary: 'Create a new charge point' })
   @ApiResponse({ status: 201, description: 'Charge point created' })
-  async create(@Body() data: Partial<ChargePoint>): Promise<ChargePoint> {
+  async create(
+    @Body() data: Partial<ChargePoint>,
+    @Request() req: { user: { accountType: string; vendorId?: number } },
+  ): Promise<ChargePoint> {
+    if (req.user.accountType === 'Admin') {
+      if (req.user.vendorId == null) {
+        throw new ForbiddenException('Vendor admin is not assigned to a vendor.');
+      }
+      data = { ...data, vendorId: req.user.vendorId };
+    }
     return this.chargePointsService.create(data);
   }
 
@@ -87,7 +102,12 @@ export class ChargePointsController {
   async update(
     @Param('id') id: string,
     @Body() data: Partial<ChargePoint>,
+    @Request() req: { user: { accountType: string; vendorId?: number } },
   ): Promise<ChargePoint> {
+    if (req.user.accountType === 'Admin') {
+      const { vendorId: _vendorId, pricePerKwh: _price, currency: _currency, ...rest } = data;
+      data = rest;
+    }
     return this.chargePointsService.update(id, data);
   }
 
@@ -226,7 +246,9 @@ export class ChargePointsController {
   async remoteStopTransaction(
     @Param('id') id: string,
     @Body() body: { transactionId: number },
+    @Request() req: { user: { id: number; accountType: string; vendorId?: number } },
   ) {
+    await this.chargePointsService.assertRemoteStopAllowed(id, body.transactionId, req.user);
     return this.chargePointsService.remoteStopTransaction(id, body.transactionId);
   }
 

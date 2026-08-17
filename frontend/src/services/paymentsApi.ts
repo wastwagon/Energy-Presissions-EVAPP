@@ -146,21 +146,4 @@ export const paymentsApi = {
     });
     return response.data;
   },
-
-  /**
-   * Process cash payment (admin only)
-   */
-  processCashPayment: async (
-    transactionId: number,
-    amount: number,
-    receivedBy: number,
-    notes?: string,
-  ): Promise<Payment> => {
-    const response = await api.post(`/payments/cash/transaction/${transactionId}`, {
-      amount,
-      receivedBy,
-      notes,
-    });
-    return response.data;
-  },
 };

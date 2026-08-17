@@ -21,7 +21,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { paymentsApi, Payment } from '../../services/paymentsApi';
+import { Navigate } from 'react-router-dom';
 import { getStoredAccountType } from '../../utils/authSession';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 import { formatCurrency } from '../../utils/formatters';
 import { getPaymentStatusColor } from '../../utils/statusColors';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
@@ -66,10 +68,7 @@ export function AdminPaymentsPage() {
   const [statusTab, setStatusTab] = useState<PaymentStatusTab>('all');
   const [page, setPage] = useState(1);
 
-  const isStaffListApi = useCallback(() => {
-    const accountType = getStoredAccountType();
-    return accountType === 'Admin' || accountType === 'SuperAdmin';
-  }, []);
+  const isStaffListApi = useCallback(() => getStoredAccountType() === 'SuperAdmin', []);
 
   const fetchPaymentsPage = useCallback(
     async (pageNum: number, append: boolean) => {
@@ -188,6 +187,10 @@ export function AdminPaymentsPage() {
   const showStaffPaging =
     isStaffListApi() && totalPayments > PAYMENTS_PAGE_SIZE && statusTab === 'all' && !searchTerm;
 
+  if (getStoredAccountType() === 'Admin') {
+    return <Navigate to={ADMIN_ROUTES.dashboard} replace />;
+  }
+
   if (loading && payments.length === 0) {
     return <DashboardStaffChromeSkeleton preset="adminPayments" />;
   }
@@ -196,7 +199,7 @@ export function AdminPaymentsPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Payments"
-        subtitle="View and manage payment transactions"
+        subtitle="Paystack top-ups and card payments into the Clean Motion account. Vendor settlement is recorded on Vendor Management."
         updatedAt={null}
         refreshing={loading && payments.length > 0}
         refreshDisabled={loading && payments.length === 0}
@@ -299,6 +302,18 @@ export function AdminPaymentsPage() {
               searchTerm || statusTab !== 'all'
                 ? 'Try another status tab or clear the search.'
                 : 'Payment transactions will appear here once customers start charging.'
+            }
+            primaryAction={
+              searchTerm || statusTab !== 'all'
+                ? {
+                    label: 'Clear filters',
+                    onClick: () => {
+                      setSearchTerm('');
+                      setStatusTab('all');
+                    },
+                    variant: 'secondary',
+                  }
+                : undefined
             }
           />
         ) : useGroupedList ? (

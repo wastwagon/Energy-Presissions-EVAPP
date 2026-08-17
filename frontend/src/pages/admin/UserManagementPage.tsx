@@ -58,6 +58,9 @@ import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome
 import { StaffBulkBar, StaffSelectCheckbox } from '../../components/dashboard/StaffBulkBar';
 import { useStaffSelection } from '../../hooks/useStaffSelection';
 import { downloadCsv } from '../../utils/reportExport';
+import { Navigate } from 'react-router-dom';
+import { getStoredAccountType } from '../../utils/authSession';
+import { ADMIN_ROUTES } from '../../config/staffNav.paths';
 
 type UserStatusTab = 'all' | 'Active' | 'Inactive' | 'Suspended';
 type UserRoleTab = 'all' | 'Customer' | 'Admin' | 'SuperAdmin';
@@ -323,6 +326,10 @@ export function UserManagementPage() {
     }
   };
 
+  if (getStoredAccountType() === 'Admin') {
+    return <Navigate to={ADMIN_ROUTES.dashboard} replace />;
+  }
+
   if (loading && users.length === 0) {
     return <DashboardStaffChromeSkeleton preset="userManagement" />;
   }
@@ -331,7 +338,7 @@ export function UserManagementPage() {
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="User Management"
-        subtitle="Manage user accounts, roles, and account status."
+        subtitle="Platform accounts. Vendors cannot see users or credit wallets."
         updatedAt={null}
         refreshing={refreshing}
         onRefresh={() => void loadUsers(true)}

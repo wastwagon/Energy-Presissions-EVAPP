@@ -7,22 +7,53 @@ import { GroupedListRow } from '../../components/ios/GroupedListRow';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { ADMIN_ROUTES, SUPERADMIN_ROUTES } from '../../config/staffNav.paths';
 
-const faqs = [
+const operatorFaqs = [
+  {
+    q: 'How do chargers appear in Devices?',
+    a: 'A charge point shows up after it connects and sends BootNotification, or after you register it. Add coordinates so it also appears on the public Stations map.',
+  },
+  {
+    q: 'How is pricing set?',
+    a: 'Clean Motion sets per-kWh prices when chargers are commissioned. You cannot change tariffs from this dashboard.',
+  },
+  {
+    q: 'How do I get paid?',
+    a: 'Drivers top up a Clean Motion wallet. That money stays with the platform. Your dashboard shows sales from sessions on your chargers, plus the matured amount on your next payout. Add MoMo or bank details in Vendor settings; Clean Motion pays you on the cycle they set.',
+  },
+  {
+    q: 'Where do live sessions live vs history?',
+    a: 'Operations is live stations (online, charging, offline). Sessions is the transaction list. Dashboard is the decision home for period sales and the next matured payout.',
+  },
+  {
+    q: 'How do I export numbers?',
+    a: 'Reports downloads a sessions CSV for the selected period. Super Admin can also export vendors. Analytics keeps live charts and breakdowns.',
+  },
+  {
+    q: 'How do I jump with the keyboard?',
+    a: 'Press ⌘K (Mac) or Ctrl+K (Windows) to search pages. Or press G, then a letter (shown next to each drawer item). Esc closes the jump menu. Touch users can open Jump to from the avatar menu.',
+  },
+];
+
+const networkFaqs = [
   {
     q: 'How do chargers appear in Devices?',
     a: 'A charge point shows up after it connects and sends BootNotification, or after you register it. Add coordinates so it also appears on the public Stations map.',
   },
   {
     q: 'How do I set pricing?',
-    a: 'Open Tariffs and create a per-kWh plan. Network defaults apply when a vendor has no active tariff of their own.',
+    a: 'Open Tariffs and set per-kWh pricing when you commission a device. Vendors cannot edit prices.',
+  },
+  {
+    q: 'How do vendors get paid?',
+    a: 'Customer wallet top-ups and card payments land in the Clean Motion Paystack account. Set each vendor’s payout cycle and hold days when you create or edit them. The vendor adds MoMo or bank details. After you send the transfer, record the payout on Vendor Management so the ledger stays accurate. The vendor dashboard shows their matured next payout.',
   },
   {
     q: 'Where do live sessions live vs history?',
-    a: 'Operations is live stations (online, charging, offline). Sessions is the transaction list. Dashboard is the decision home for period revenue.',
+    a: 'Operations is live stations (online, charging, offline). Sessions is the transaction list. Dashboard is the decision home for period revenue across the network.',
   },
   {
     q: 'How do I export numbers?',
-    a: 'Reports downloads a sessions CSV for the selected period. Analytics keeps live charts and breakdowns.',
+    a: 'Reports downloads a sessions CSV for the selected period. Super Admin can also export vendors. Analytics keeps live charts and breakdowns.',
   },
   {
     q: 'How do I jump with the keyboard?',
@@ -32,15 +63,20 @@ const faqs = [
 
 export function StaffHelpPage({ variant = 'admin' }: { variant?: 'admin' | 'superadmin' }) {
   const navigate = useNavigate();
-  const devices = variant === 'superadmin' ? SUPERADMIN_ROUTES.opsDevices : ADMIN_ROUTES.opsDevices;
-  const tariffs = variant === 'superadmin' ? SUPERADMIN_ROUTES.tariffs : ADMIN_ROUTES.tariffs;
-  const reports = variant === 'superadmin' ? SUPERADMIN_ROUTES.reports : ADMIN_ROUTES.reports;
+  const isNetwork = variant === 'superadmin';
+  const faqs = isNetwork ? networkFaqs : operatorFaqs;
+  const devices = isNetwork ? SUPERADMIN_ROUTES.opsDevices : ADMIN_ROUTES.opsDevices;
+  const reports = isNetwork ? SUPERADMIN_ROUTES.reports : ADMIN_ROUTES.reports;
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
       <LivePageHeader
         title="Operator guide"
-        subtitle="Short answers for running chargers, pricing, and exports."
+        subtitle={
+          isNetwork
+            ? 'Short answers for running chargers, pricing, payouts, and exports.'
+            : 'Short answers for running chargers, payouts, and exports.'
+        }
         updatedAt={null}
         refreshing={false}
         onRefresh={() => undefined}
@@ -66,12 +102,21 @@ export function StaffHelpPage({ variant = 'admin' }: { variant?: 'admin' | 'supe
           divider
           onClick={() => navigate(devices)}
         />
-        <GroupedListRow
-          primary="Tariffs"
-          secondary="Per-kWh pricing"
-          divider
-          onClick={() => navigate(tariffs)}
-        />
+        {isNetwork ? (
+          <GroupedListRow
+            primary="Tariffs"
+            secondary="Per-kWh pricing at device setup"
+            divider
+            onClick={() => navigate(SUPERADMIN_ROUTES.tariffs)}
+          />
+        ) : (
+          <GroupedListRow
+            primary="Vendor settings"
+            secondary="MoMo or bank payout details"
+            divider
+            onClick={() => navigate(ADMIN_ROUTES.vendorSettings)}
+          />
+        )}
         <GroupedListRow
           primary="Reports"
           secondary="Export a sessions CSV"

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearSession } from '../utils/authSession';
+import { clearSession, isAccessTokenExpired } from '../utils/authSession';
 
 // Use environment variable or default to NGINX proxy URL
 // When running in browser, use relative URL to go through NGINX proxy
@@ -60,7 +60,13 @@ api.interceptors.request.use(
       config.url?.includes('/utils/reverse-geocode');
     
     const token = localStorage.getItem('token');
-    if (token && !isPublicEndpoint) {
+    if (token && isAccessTokenExpired(token)) {
+      clearSession();
+      if (!isPublicEndpoint && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+        return Promise.reject(new Error('Session expired'));
+      }
+    } else if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     

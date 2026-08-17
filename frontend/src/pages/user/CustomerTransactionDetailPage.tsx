@@ -15,12 +15,10 @@ import {
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { transactionsApi, Transaction } from '../../services/transactionsApi';
-import PaymentIcon from '@mui/icons-material/Payment';
-import { PaystackPayment } from '../../components/PaystackPayment';
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { AppBadge, chipColorToBadgeTone } from '../../components/ui/AppBadge';
 import { premiumPanelCardSx } from '../../theme/jampackShell';
-import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
+import { compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { getStoredUser } from '../../utils/authSession';
 import { CUSTOMER_ROUTES } from '../../config/customerNav.paths';
 import { formatCurrency } from '../../utils/formatters';
@@ -51,7 +49,6 @@ export function CustomerTransactionDetailPage() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const { loading, refreshing, updatedAt, runWithRefresh } = useLiveRefresh();
   const [error, setError] = useState<string | null>(null);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   const loadTransaction = useCallback(async (silent?: boolean) => {
     await runWithRefresh(async () => {
@@ -133,21 +130,11 @@ export function CustomerTransactionDetailPage() {
     />
   );
 
-  const payCta =
-    transaction.status === 'Completed' && transaction.totalCost ? (
-      <Button
-        variant="contained"
-        disableElevation
-        startIcon={<PaymentIcon />}
-        onClick={() => setPaymentDialogOpen(true)}
-        sx={(th) => ({
-          ...sxObject(th, compactContainedCtaSx),
-          width: { xs: '100%', sm: 'auto' },
-          mt: 1,
-        })}
-      >
-        Pay now
-      </Button>
+  const walletChargedNote =
+    transaction.status === 'Completed' && Number(transaction.totalCost) > 0 ? (
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        Charged to your Clean Motion wallet.
+      </Typography>
     ) : null;
 
   return (
@@ -197,7 +184,7 @@ export function CustomerTransactionDetailPage() {
               <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main', my: 0.75 }}>
                 {formatSessionCost(transaction)}
               </Typography>
-              {payCta}
+              {walletChargedNote}
             </Box>
           </GroupedListSection>
 
@@ -313,7 +300,7 @@ export function CustomerTransactionDetailPage() {
                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', my: 1 }}>
                   {formatSessionCost(transaction)}
                 </Typography>
-                {payCta}
+                {walletChargedNote}
               </Box>
             </Paper>
           </Grid>
@@ -344,21 +331,6 @@ export function CustomerTransactionDetailPage() {
             </Paper>
           </Grid>
         </Grid>
-      )}
-
-      {paymentDialogOpen && transaction && (
-        <PaystackPayment
-          open={paymentDialogOpen}
-          onClose={() => setPaymentDialogOpen(false)}
-          transactionId={transaction.transactionId}
-          amount={transaction.totalCost || 0}
-          currency={transaction.currency}
-          onSuccess={() => {
-            setPaymentDialogOpen(false);
-            void loadTransaction(true);
-          }}
-          onError={(err) => setError(err)}
-        />
       )}
     </Box>
   );

@@ -3,10 +3,10 @@ import { iosRadii } from '../../theme/iosMobileTokens';
 
 export type StaffPeriodDays = 7 | 30 | 90;
 
-const OPTIONS: { value: StaffPeriodDays; label: string }[] = [
-  { value: 7, label: '7d' },
-  { value: 30, label: '30d' },
-  { value: 90, label: '90d' },
+const OPTIONS: { value: StaffPeriodDays; label: string; aria: string }[] = [
+  { value: 7, label: '7 days', aria: 'Last 7 days' },
+  { value: 30, label: '30 days', aria: 'Last 30 days' },
+  { value: 90, label: '90 days', aria: 'Last 90 days' },
 ];
 
 type StaffPeriodChipsProps = {
@@ -29,7 +29,7 @@ export function StaffPeriodChips({ value, onChange, disabled }: StaffPeriodChips
       onChange={(_, next: StaffPeriodDays | null) => {
         if (next != null) onChange(next);
       }}
-      aria-label="Dashboard period"
+      aria-label="Sales period"
       sx={{
         flexWrap: 'wrap',
         gap: 0.5,
@@ -41,7 +41,7 @@ export function StaffPeriodChips({ value, onChange, disabled }: StaffPeriodChips
           px: 1.25,
           py: 0.5,
           minWidth: 44,
-          minHeight: 36,
+          minHeight: 44,
           textTransform: 'none',
           fontWeight: 600,
           fontSize: '0.8125rem',
@@ -56,7 +56,7 @@ export function StaffPeriodChips({ value, onChange, disabled }: StaffPeriodChips
       }}
     >
       {OPTIONS.map((opt) => (
-        <ToggleButton key={opt.value} value={opt.value} aria-label={`Last ${opt.label}`}>
+        <ToggleButton key={opt.value} value={opt.value} aria-label={opt.aria}>
           {opt.label}
         </ToggleButton>
       ))}

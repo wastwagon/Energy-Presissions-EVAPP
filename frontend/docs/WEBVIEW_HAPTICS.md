@@ -1,12 +1,16 @@
-# WebViewGold haptics (optional)
+# WebViewGold haptics
 
-The web app calls `triggerHaptic()` from `frontend/src/utils/haptics.ts` on taps (lists, refresh, FAQ, bottom nav, etc.). In a plain mobile browser this may fall back to a short `navigator.vibrate` where supported.
+The web app calls `triggerHaptic()` from `frontend/src/utils/haptics.ts` on taps (lists, refresh, FAQ, bottom nav, etc.).
 
-For **native-feel feedback in WebViewGold**, wire one of these in your iOS wrapper:
+Order of attempts:
 
-1. **`window.HapticFeedback.impact('light' | 'medium')`** — if your WebViewGold custom JS API exposes it.
-2. **`window.webkit.messageHandlers.haptic.postMessage({ style: 'light' })`** — register a handler named `haptic` in the native shell.
+1. `window.HapticFeedback.impact('light' | 'medium')` / `.notification(...)` if the wrapper injects it.
+2. `window.webkit.messageHandlers.haptic` or `hapticFeedback` `postMessage({ style })`.
+3. URL-scheme image pings (no native rebuild if the wrapper already intercepts custom schemes):
+   - `haptic://light` · `haptic://medium` · `haptic://success`
+   - `hapticfeedback://impactlight` · `impactmedium` · `notificationsuccess`
+4. `navigator.vibrate` on Android / browsers that allow it.
 
-No frontend change is required once the bridge exists; reload the WebView after updating native config.
+**Wrapper config:** add those `haptic://` and `hapticfeedback://` prefixes to WebViewGold custom URL schemes and map them to a light impact. iOS Safari will ignore unknown schemes.
 
-**Quick test:** open Help FAQ or bottom nav in the wrapped app and confirm a light tap sensation. If silent, the bridge is not connected yet.
+**Quick test:** open Help FAQ or the bottom tab bar in the wrapped app and confirm a light tap. If silent, the schemes are not registered yet.

@@ -17,27 +17,17 @@ import {
   useTheme,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PaymentIcon from '@mui/icons-material/Payment';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useOpsBasePath } from '../../hooks/useOpsBasePath';
 import { useStaffNavBack } from '../../hooks/useStaffNavBack';
 import { transactionsApi, Transaction, MeterSample } from '../../services/transactionsApi';
-import { PaystackPayment } from '../../components/PaystackPayment';
-import { paymentsApi } from '../../services/paymentsApi';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { dashboardPageTitleSx, dashboardPageSubtitleSx, premiumPanelCardSx, premiumTableSurfaceSx } from '../../theme/jampackShell';
 import {
-  authFormFieldSx,
-  compactContainedCtaSx,
   compactOutlinedCtaSx,
-  compactSuccessContainedCtaSx,
-  premiumDialogPaperSx,
   sxObject,
 } from '../../styles/authShell';
-import { requireStoredUserId } from '../../utils/authSession';
 import { formatCurrency } from '../../utils/formatters';
 import {
   formatCustomerDisplayName,
@@ -79,11 +69,6 @@ export function TransactionDetailPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [cashPaymentDialogOpen, setCashPaymentDialogOpen] = useState(false);
-  const [cashAmount, setCashAmount] = useState<number>(0);
-  const [cashNotes, setCashNotes] = useState<string>('');
-  const [processingCash, setProcessingCash] = useState(false);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -216,36 +201,11 @@ export function TransactionDetailPage() {
               }
             />
           </GroupedListSection>
-          {transaction.status === 'Completed' && Number(transaction.totalCost) > 0 && (
+          {transaction.status === 'Completed' && Number(transaction.totalCost) > 0 && canManageInvoice && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
               <Button
-                variant="contained"
-                disableElevation
-                startIcon={<PaymentIcon />}
-                onClick={() => setPaymentDialogOpen(true)}
-                sx={(th) => ({
-                  ...sxObject(th, compactContainedCtaSx),
-                  width: '100%',
-                })}
-              >
-                Pay now
-              </Button>
-              <Button
                 variant="outlined"
-                startIcon={<AttachMoneyIcon />}
-                onClick={() => {
-                  setCashAmount(transaction.totalCost || 0);
-                  setCashPaymentDialogOpen(true);
-                }}
-                sx={(th) => ({ ...sxObject(th, compactOutlinedCtaSx), width: '100%' })}
-              >
-                Cash payment
-              </Button>
-              {canManageInvoice && (
-                <>
-                  <Button
-                    variant="outlined"
-                    startIcon={<ReceiptIcon />}
+                startIcon={<ReceiptIcon />}
                     disabled={generatingInvoice}
                     onClick={async () => {
                       setGeneratingInvoice(true);
@@ -291,8 +251,6 @@ export function TransactionDetailPage() {
                       </Button>
                     </>
                   )}
-                </>
-              )}
             </Box>
           )}
         </>
@@ -411,39 +369,8 @@ export function TransactionDetailPage() {
                   <Typography variant="h6" color="primary">
                     {formatCurrency(transaction.totalCost, 'GHS')}
                   </Typography>
-                  {transaction.status === 'Completed' && transaction.totalCost && (
+                  {transaction.status === 'Completed' && transaction.totalCost && canManageInvoice ? (
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        disableElevation
-                        startIcon={<PaymentIcon />}
-                        onClick={() => setPaymentDialogOpen(true)}
-                        sx={(th) => ({
-                          ...sxObject(th, compactContainedCtaSx),
-                          minWidth: { xs: '100%', sm: 180 },
-                          width: { xs: '100%', sm: 'auto' },
-                        })}
-                      >
-                        Pay Now
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<AttachMoneyIcon />}
-                        onClick={() => {
-                          setCashAmount(transaction.totalCost || 0);
-                          setCashPaymentDialogOpen(true);
-                        }}
-                        sx={(th) => ({
-                          ...sxObject(th, compactOutlinedCtaSx),
-                          minWidth: { xs: '100%', sm: 150 },
-                          width: { xs: '100%', sm: 'auto' },
-                        })}
-                      >
-                        Cash Payment
-                      </Button>
-                      {canManageInvoice && (
-                        <>
                           <Button
                             variant="outlined"
                             startIcon={<ReceiptIcon />}
@@ -502,10 +429,8 @@ export function TransactionDetailPage() {
                               Print receipt
                             </Button>
                           )}
-                        </>
-                      )}
                     </Box>
-                  )}
+                  ) : null}
                 </Grid>
                 {transaction.reason && (
                   <Grid item xs={12}>
@@ -579,104 +504,6 @@ export function TransactionDetailPage() {
           )}
         </Paper>
       )}
-
-      {/* Paystack Payment Dialog */}
-      <PaystackPayment
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-        transactionId={transaction.transactionId}
-        amount={transaction.totalCost || 0}
-        currency={transaction.currency}
-        userId={transaction.userId || undefined}
-        onSuccess={() => {
-          setPaymentDialogOpen(false);
-          loadData(true); // Reload to show updated payment status
-        }}
-        onError={(error) => {
-          setError(error);
-        }}
-      />
-
-      {/* Cash Payment Dialog */}
-      <Dialog
-        open={cashPaymentDialogOpen}
-        onClose={() => setCashPaymentDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: (th) => sxObject(th, premiumDialogPaperSx) }}
-      >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Process Cash Payment</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Amount Received"
-              type="number"
-              value={cashAmount}
-              onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)}
-              margin="normal"
-              InputProps={{
-                startAdornment: <Typography sx={{ mr: 1 }}>GHS</Typography>,
-              }}
-              helperText={`Transaction total: ${formatCurrency(transaction.totalCost ?? 0, 'GHS')}`}
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-            <TextField
-              fullWidth
-              label="Notes (optional)"
-              multiline
-              rows={3}
-              value={cashNotes}
-              onChange={(e) => setCashNotes(e.target.value)}
-              margin="normal"
-              placeholder="Additional notes about this cash payment..."
-              sx={(th) => sxObject(th, authFormFieldSx)}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Button
-            onClick={() => setCashPaymentDialogOpen(false)}
-            disabled={processingCash}
-            sx={(th) => sxObject(th, compactOutlinedCtaSx)}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={async () => {
-              try {
-                setProcessingCash(true);
-                setError(null);
-
-                const userId = requireStoredUserId();
-
-                await paymentsApi.processCashPayment(
-                  transaction.transactionId,
-                  cashAmount,
-                  userId,
-                  cashNotes,
-                );
-
-                setCashPaymentDialogOpen(false);
-                setCashAmount(0);
-                setCashNotes('');
-                loadData(true); // Reload to show updated payment status
-              } catch (err: any) {
-                setError(err.response?.data?.message || err.message || 'Failed to process cash payment');
-              } finally {
-                setProcessingCash(false);
-              }
-            }}
-            variant="contained"
-            disableElevation
-            disabled={processingCash || cashAmount <= 0}
-            startIcon={<AttachMoneyIcon />}
-            sx={(th) => sxObject(th, compactSuccessContainedCtaSx)}
-          >
-            {processingCash ? 'Processing...' : 'Process Cash Payment'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

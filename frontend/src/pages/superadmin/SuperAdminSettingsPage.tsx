@@ -446,6 +446,24 @@ function SuperAdminSettingsPage() {
               icon={<AttachMoneyIcon />}
               title="No tariffs found"
               description="Create your first tariff to set energy and time rates."
+              primaryAction={{
+                label: 'Create tariff',
+                onClick: () => {
+                  setEditingTariff(null);
+                  setTariffForm({
+                    name: '',
+                    description: '',
+                    energyRate: '',
+                    timeRate: '',
+                    baseFee: '',
+                    currency: 'GHS',
+                    validFrom: '',
+                    validTo: '',
+                    isActive: true,
+                  });
+                  setTariffDialogOpen(true);
+                },
+              }}
             />
           ) : useGroupedList ? (
             <GroupedListSection>

@@ -16,3 +16,7 @@ export function filterTransactionsByPeriodDays(
 export function reportExportFilename(prefix: string, days: StaffPeriodDays): string {
   return `${prefix}-${days}d-${new Date().toISOString().slice(0, 10)}.csv`;
 }
+
+export function reportSnapshotFilename(prefix: string): string {
+  return `${prefix}-${new Date().toISOString().slice(0, 10)}.csv`;
+}

@@ -215,6 +215,11 @@ export function StaffBillingPage({ variant = 'superadmin' }: { variant?: StaffBi
               icon={<ReceiptIcon />}
               title="No invoices yet"
               description="Generate an invoice from a completed session on the Sessions tab."
+              primaryAction={{
+                label: 'Open Sessions',
+                onClick: () => setTab(1),
+                variant: 'secondary',
+              }}
             />
           ) : useGroupedList ? (
             <>

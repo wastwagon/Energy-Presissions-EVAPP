@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Payment } from '../entities/payment.entity';
 import { Invoice } from '../entities/invoice.entity';
@@ -654,113 +653,6 @@ export class PaymentsService {
     }
 
     return this.processWalletPayment(invoice.id, userId);
-  }
-
-  /**
-   * Process cash payment for walk-in customers
-   */
-  async processCashPayment(
-    transactionId: number,
-    amount: number,
-    receivedBy: number, // Admin user ID who received the cash
-    notes?: string,
-  ): Promise<Payment> {
-    const transaction = await this.transactionRepository.findOne({
-      where: { transactionId },
-    });
-
-    if (!transaction) {
-      throw new NotFoundException(`Transaction ${transactionId} not found`);
-    }
-
-    if (transaction.status !== 'Completed') {
-      throw new BadRequestException('Transaction is not completed');
-    }
-
-    // Get or create walk-in user
-    const walkInUser = await this.getOrCreateWalkInUser(transaction.chargePointId);
-
-    // Generate invoice if not exists
-    let invoice = await this.invoiceRepository.findOne({
-      where: { transactionId },
-    });
-
-    if (!invoice) {
-      invoice = await this.billingService.generateInvoice(transactionId);
-    }
-
-    if (invoice.status === 'Paid') {
-      throw new BadRequestException('Invoice is already paid');
-    }
-
-    // Create payment record for cash payment
-    const payment = this.paymentRepository.create({
-      transactionId: invoice.transactionId,
-      userId: walkInUser.id,
-      amount: amount || invoice.total,
-      currency: invoice.currency || 'GHS',
-      paymentMethod: 'Cash',
-      paymentGateway: 'Cash',
-      paymentGatewayId: `CASH-${Date.now()}`,
-      status: 'Succeeded',
-      processedAt: new Date(),
-      failureReason: notes,
-    });
-
-    const savedPayment = await this.paymentRepository.save(payment);
-
-    // Update invoice status
-    invoice.status = 'Paid';
-    invoice.paidAt = new Date();
-    await this.invoiceRepository.save(invoice);
-
-    // Update transaction user to walk-in user if not already set
-    if (!transaction.userId) {
-      transaction.userId = walkInUser.id;
-      await this.transactionRepository.save(transaction);
-    }
-
-    this.logger.log(`Cash payment processed for transaction ${transactionId}: ${amount} ${invoice.currency}`);
-
-    return savedPayment;
-  }
-
-  /**
-   * Get or create walk-in user for a vendor
-   */
-  private async getOrCreateWalkInUser(_chargePointId: string): Promise<User> {
-    // For now, use default vendor (1)
-    // In production, resolve vendor from charge point
-    const vendorId = 1;
-
-    // Try to find existing walk-in user for vendor
-    const walkInUser = await this.userRepository.findOne({
-      where: { 
-        email: `walkin@vendor${vendorId}.evcharging.com`,
-        accountType: 'WalkIn',
-        vendorId,
-      },
-    });
-
-    if (walkInUser) {
-      return walkInUser;
-    }
-
-    // Create new walk-in user
-    const newWalkInUser = this.userRepository.create({
-      email: `walkin@vendor${vendorId}.evcharging.com`,
-      passwordHash: await bcrypt.hash('walkin123', 10), // Not used for login
-      firstName: 'Walk-In',
-      lastName: 'Customer',
-      accountType: 'WalkIn',
-      balance: 0,
-      currency: 'GHS',
-      status: 'Active',
-      emailVerified: false,
-      vendorId,
-    });
-
-    return this.userRepository.save(newWalkInUser);
   }
 }
 

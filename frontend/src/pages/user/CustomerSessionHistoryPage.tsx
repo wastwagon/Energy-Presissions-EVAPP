@@ -151,7 +151,7 @@ export function CustomerSessionHistoryPage() {
                 secondary={`${new Date(tx.startTime).toLocaleDateString()} · ${formatSessionEnergy(tx)} · ${formatSessionDuration(tx)}`}
                 end={
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                       {formatSessionCost(tx)}
                     </Typography>
                     <AppBadge

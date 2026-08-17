@@ -68,6 +68,7 @@ import {
 import { LivePageHeader } from '../../components/dashboard/LivePageHeader';
 import { getStoredUser } from '../../utils/authSession';
 import { LIVE_DATA_LABELS } from '../../constants/liveDataLabels';
+import { logger } from '../../utils/logger';
 import { OpsLiveDetailSkeleton } from '../../components/dashboard/RouteDetailSkeleton';
 import { ChargerCellularGuide } from '../../components/ops/ChargerCellularGuide';
 import { GroupedListSection } from '../../components/ios/GroupedListSection';
@@ -233,7 +234,7 @@ export function ChargePointDetailPage() {
       setUpdatedAt(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to load charge point details');
-      console.error('Error loading charge point details:', err);
+      logger.error('Error loading charge point details:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -664,6 +665,11 @@ export function ChargePointDetailPage() {
                               icon={<CableIcon />}
                               title="No connectors found"
                               description="Connector status appears after the charger reports StatusNotification."
+                              primaryAction={{
+                                label: 'Refresh status',
+                                onClick: () => void loadData(true),
+                                variant: 'secondary',
+                              }}
                             />
                           ) : useGroupedList ? (
                             <Box sx={{ py: 1 }}>

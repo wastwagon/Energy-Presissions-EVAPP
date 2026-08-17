@@ -28,7 +28,8 @@ interface RevenueTrendChartProps {
   points?: RevenueTrendPoint[] | null;
   loading?: boolean;
   error?: string | null;
-  /** Drill into that day's sessions. */
+  /** Axis / tooltip / empty-state noun. Vendor dashboards use Sales. */
+  moneyLabel?: string;
   onDaySelect?: (isoDate: string) => void;
   emptyAction?: { label: string; onClick: () => void };
 }
@@ -36,6 +37,7 @@ interface RevenueTrendChartProps {
 export function RevenueTrendChart({
   days = 30,
   title = 'Revenue trend',
+  moneyLabel = 'Revenue',
   points: controlledPoints,
   loading: controlledLoading,
   error: controlledError,
@@ -110,7 +112,7 @@ export function RevenueTrendChart({
           animation="wave"
           height={220}
           sx={{ width: '100%', mb: 1 }}
-          aria-label="Loading revenue trend"
+          aria-label={`Loading ${moneyLabel.toLowerCase()} trend`}
         />
       )}
 
@@ -118,7 +120,7 @@ export function RevenueTrendChart({
         <AppEmptyState
           sx={{ border: 0, boxShadow: 'none', borderRadius: 0, py: 2 }}
           icon={<ShowChartIcon />}
-          title="No billed revenue yet"
+          title={`No billed ${moneyLabel.toLowerCase()} yet`}
           description={`No completed paid sessions in the last ${days} days.`}
           primaryAction={
             emptyAction
@@ -154,7 +156,7 @@ export function RevenueTrendChart({
                 />
                 <Tooltip
                   formatter={(value: number, name: string) => {
-                    if (name === 'revenue') return [formatCurrency(value), 'Revenue'];
+                    if (name === 'revenue') return [formatCurrency(value), moneyLabel];
                     return [value, 'Sessions'];
                   }}
                   labelFormatter={(_, payload) => {

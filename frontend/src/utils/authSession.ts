@@ -13,6 +13,19 @@ export interface SessionUser {
   createdAt?: string;
 }
 
+export function isAccessTokenExpired(token: string, skewMs = 30_000): boolean {
+  try {
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) return true;
+    const json = atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(json) as { exp?: number };
+    if (typeof payload.exp !== 'number') return false;
+    return payload.exp * 1000 <= Date.now() + skewMs;
+  } catch {
+    return true;
+  }
+}
+
 export function getStoredUser(): SessionUser | null {
   const userStr = localStorage.getItem('user');
   if (!userStr) return null;
@@ -25,7 +38,11 @@ export function getStoredUser(): SessionUser | null {
 
 export function hasValidSession(): boolean {
   const token = localStorage.getItem('token');
-  return Boolean(token && getStoredUser());
+  if (!token || isAccessTokenExpired(token)) {
+    if (token) clearSession();
+    return false;
+  }
+  return Boolean(getStoredUser());
 }
 
 export function clearSession(): void {

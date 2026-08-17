@@ -1,12 +1,22 @@
 /**
- * Public support copy for /support (web + WebViewGold). Update contact details to match operations.
- * Same values as CustomerHelpPage where possible.
+ * Canonical customer-facing support contacts (web + WebViewGold).
+ * Help, /support, Suspended, and Disabled all read from here.
  */
-export const SUPPORT_LAST_UPDATED = 'April 10, 2026';
+
+export const SUPPORT_LAST_UPDATED = 'August 17, 2026';
 
 export const SUPPORT_EMAIL = 'support@cleanmotionghana.com';
-export const SUPPORT_PHONE_TEL = 'tel:+233244000000';
-export const SUPPORT_PHONE_DISPLAY = '+233 24 400 0000';
+
+/** Display string. Null = hide phone (email-only). */
+export const SUPPORT_PHONE_DISPLAY: string | null = '+233 533 611 611';
+
+/** `tel:` href including country code. Null = hide phone. */
+export const SUPPORT_PHONE_TEL: string | null = 'tel:+233533611611';
+
+export function getSupportPhone(): { display: string; tel: string } | null {
+  if (!SUPPORT_PHONE_DISPLAY || !SUPPORT_PHONE_TEL) return null;
+  return { display: SUPPORT_PHONE_DISPLAY, tel: SUPPORT_PHONE_TEL };
+}
 
 export type SupportSection = {
   id: string;
@@ -26,8 +36,8 @@ export const SUPPORT_SECTIONS: SupportSection[] = [
     id: 'contact',
     title: 'Contact us',
     paragraphs: [
-      'Email is the best way to reach us for billing disputes, session issues, or account problems. Include your registered email or phone number and a short description of what happened.',
-      'For urgent issues at a charging site, use the phone line below during published business hours (update these hours in your operations docs if needed).',
+      'Email or call us for billing disputes, session issues, or account problems. Include your registered email or phone number and a short description of what happened.',
+      'For urgent issues at a charging site, call us or email with the station name and what you see on the charger.',
     ],
   },
   {

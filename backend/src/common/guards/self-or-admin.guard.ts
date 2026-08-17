@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 
 /**
  * Guard that allows access when:
- * - User is Admin or SuperAdmin (full access), OR
+ * - User is SuperAdmin (full access), OR
  * - User is accessing their own resource (param id matches request.user.id)
  */
 @Injectable()
@@ -15,8 +15,7 @@ export class SelfOrAdminGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    const allowedRoles = ['Admin', 'SuperAdmin'];
-    if (allowedRoles.includes(user.accountType)) {
+    if (user.accountType === 'SuperAdmin') {
       return true;
     }
 

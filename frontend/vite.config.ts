@@ -14,6 +14,23 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    sourcemap: false,
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
+          if (id.includes('leaflet') || id.includes('react-leaflet')) return 'map';
+          if (id.includes('recharts')) return 'charts';
+          if (id.includes('socket.io')) return 'realtime';
+          return 'vendor';
+        },
+      },
+    },
+  },
   optimizeDeps: {
     // Ensures ESM prebundle in Vite 5+ when /app/node_modules is a Docker volume
     include: ['react-leaflet', 'leaflet', '@react-leaflet/core'],

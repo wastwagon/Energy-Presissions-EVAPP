@@ -1,4 +1,6 @@
 import { io, Socket } from 'socket.io-client';
+import { logger } from '../utils/logger';
+import { isAccessTokenExpired } from '../utils/authSession';
 
 export type WebSocketEventType =
   | 'chargePointStatus'
@@ -78,12 +80,13 @@ class WebSocketService {
         // Keep original wsUrl if parsing fails
       }
 
-      console.log(`Connecting to WebSocket: ${wsUrl}${path}`);
+      logger.log(`Connecting to WebSocket: ${wsUrl}${path}`);
       const token = localStorage.getItem('token');
+      const usableToken = token && !isAccessTokenExpired(token) ? token : null;
 
       this.socket = io(wsUrl, {
         path,
-        auth: token ? { token: `Bearer ${token}` } : undefined,
+        auth: usableToken ? { token: `Bearer ${usableToken}` } : undefined,
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 10,
@@ -91,19 +94,19 @@ class WebSocketService {
       });
 
       this.socket.on('connect', () => {
-        console.log('WebSocket connected');
+        logger.log('WebSocket connected');
         this.isConnecting = false;
         this.emit({ type: 'connectionStatus', data: { connected: true }, timestamp: new Date().toISOString() });
       });
 
       this.socket.on('disconnect', () => {
-        console.log('WebSocket disconnected');
+        logger.log('WebSocket disconnected');
         this.isConnecting = false;
         this.emit({ type: 'connectionStatus', data: { connected: false }, timestamp: new Date().toISOString() });
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('WebSocket connection error:', error);
+        logger.error('WebSocket connection error:', error);
         this.isConnecting = false;
       });
 
@@ -172,7 +175,7 @@ class WebSocketService {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
-      console.warn('WebSocket is not connected. Message not sent:', event, data);
+      logger.warn('WebSocket is not connected. Message not sent:', event, data);
     }
   }
 
@@ -195,7 +198,7 @@ export const websocketService = new WebSocketService();
 // Connect only when user is authenticated - avoids "Invalid namespace" on login/register
 if (typeof window !== 'undefined') {
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && !isAccessTokenExpired(token)) {
     websocketService.connect();
   }
 }

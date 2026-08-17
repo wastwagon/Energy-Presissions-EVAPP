@@ -392,7 +392,7 @@ export const compactLinkCtaSx: SxProps<Theme> = (theme) => ({
   },
 });
 
-/** Contained CTA — success palette (e.g. confirm cash received). */
+/** Contained CTA — success palette. */
 export const compactSuccessContainedCtaSx: SxProps<Theme> = (theme) => ({
   ...sxObject(theme, compactContainedCtaSx),
   bgcolor: theme.palette.success.main,

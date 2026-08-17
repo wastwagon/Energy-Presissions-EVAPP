@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -710,6 +710,35 @@ export class ChargePointsService {
       message:
         'Remote start was sent. Plug your vehicle into the connector now — your session will appear in the app when the charger confirms. If nothing happens within a minute, try again.',
     };
+  }
+
+  async assertRemoteStopAllowed(
+    chargePointId: string,
+    transactionId: number,
+    user: { id: number; accountType: string; vendorId?: number },
+  ): Promise<void> {
+    if (user.accountType === 'SuperAdmin') {
+      return;
+    }
+    if (user.accountType === 'Admin') {
+      const chargePoint = await this.findOne(chargePointId);
+      if (
+        chargePoint.vendorId == null ||
+        user.vendorId == null ||
+        chargePoint.vendorId !== user.vendorId
+      ) {
+        throw new ForbiddenException(
+          'You can only stop sessions on charge points that belong to your vendor.',
+        );
+      }
+      return;
+    }
+    const transaction = await this.transactionRepository.findOne({
+      where: { transactionId, chargePointId },
+    });
+    if (!transaction || Number(transaction.userId) !== Number(user.id)) {
+      throw new ForbiddenException('You can only stop your own charging session.');
+    }
   }
 
   async remoteStopTransaction(

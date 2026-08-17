@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { Box, Typography, Paper, Alert, Button, Tabs, Tab } from '@mui/material';
-import { dashboardApi } from '../../services/dashboardApi';
 import { premiumTableSurfaceSx } from '../../theme/jampackShell';
 import { staffLargeSubtitleSx, staffLargeTitleSx } from '../../theme/staffChrome';
 import { compactContainedCtaSx, compactOutlinedCtaSx, sxObject } from '../../styles/authShell';
 import { SessionsReportPanel } from '../../components/reports/SessionsReportPanel';
-import { RevenueReportPanel } from '../../components/reports/RevenueReportPanel';
-import { UsersReportPanel } from '../../components/reports/UsersReportPanel';
 import { reportsApi } from '../../services/dashboardApi';
 import { downloadSessionsReportCsv } from '../../utils/reportExport';
 import { filterTransactionsByPeriodDays, reportExportFilename } from '../../utils/reportPeriod';
@@ -95,9 +92,7 @@ export function AdminReportsPage() {
           aria-label="Admin report sections"
         >
           <Tab label="Export" {...tabA11yProps(0)} />
-          <Tab label="Revenue" {...tabA11yProps(1)} />
-          <Tab label="Sessions" {...tabA11yProps(2)} />
-          <Tab label="Users" {...tabA11yProps(3)} />
+          <Tab label="Sessions" {...tabA11yProps(1)} />
         </Tabs>
 
         <Box
@@ -135,20 +130,6 @@ export function AdminReportsPage() {
           {activeTab === 1 && (
             <Box>
               <Typography variant="h6" gutterBottom>
-                Revenue Report
-              </Typography>
-              <RevenueReportPanel
-                loadStats={() => dashboardApi.getVendorStats()}
-                periodDays={periodDays}
-                onPeriodChange={setPeriodDays}
-                hidePeriodControls
-              />
-            </Box>
-          )}
-
-          {activeTab === 2 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
                 Sessions Report
               </Typography>
               <SessionsReportPanel
@@ -156,15 +137,6 @@ export function AdminReportsPage() {
                 onPeriodChange={setPeriodDays}
                 hidePeriodControls
               />
-            </Box>
-          )}
-
-          {activeTab === 3 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Users Report
-              </Typography>
-              <UsersReportPanel vendorId={getStoredUser()?.vendorId} />
             </Box>
           )}
         </Box>

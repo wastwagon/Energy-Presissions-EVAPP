@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ChargePointsService } from './charge-points.service';
 import { ChargePointsController } from './charge-points.controller';
+import { AdminVendorChargePointGuard } from './admin-vendor-charge-point.guard';
 import { ChargePoint } from '../entities/charge-point.entity';
 import { BlockedChargePointId } from '../entities/blocked-charge-point-id.entity';
 import { Vendor } from '../entities/vendor.entity';
@@ -31,7 +32,7 @@ import { resolveJwtSecret } from '../common/utils/jwt-secret';
     }),
   ],
   controllers: [ChargePointsController],
-  providers: [ChargePointsService, JwtAuthGuard, RolesGuard],
+  providers: [ChargePointsService, JwtAuthGuard, RolesGuard, AdminVendorChargePointGuard],
   exports: [ChargePointsService],
 })
 export class ChargePointsModule {}
