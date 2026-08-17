@@ -20,13 +20,13 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
+        // Split only large isolated libs. Do not isolate recharts or dump the rest of
+        // node_modules into a shared "vendor" chunk — that creates circular init
+        // (Cannot access 'A' before initialization) and a blank screen.
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
           if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
           if (id.includes('leaflet') || id.includes('react-leaflet')) return 'map';
-          if (id.includes('recharts')) return 'charts';
-          if (id.includes('socket.io')) return 'realtime';
-          return 'vendor';
         },
       },
     },
