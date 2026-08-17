@@ -28,30 +28,23 @@ class WebSocketService {
 
   constructor() {
     // Use WebSocket URL from environment variable or construct from API URL
-    if (import.meta.env.VITE_WS_URL) {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+      const host = window.location.host;
+
+      if (port === '8080' || host.includes(':8080') || port === '3001' || host.includes(':3001')) {
+        this.wsUrl = window.location.origin;
+      } else if (import.meta.env.VITE_WS_URL) {
+        this.wsUrl = import.meta.env.VITE_WS_URL;
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.wsUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+      }
+    } else if (import.meta.env.VITE_WS_URL) {
       this.wsUrl = import.meta.env.VITE_WS_URL;
     } else {
-      // Construct WebSocket URL based on current location
-      if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        const port = window.location.port;
-        
-        // If accessing via NGINX proxy (port 8080), use relative path
-        if (port === '8080' || window.location.host.includes(':8080')) {
-          // Use relative URL - socket.io will handle the protocol upgrade
-          this.wsUrl = window.location.origin;
-        } else if (port === '3001' || window.location.host.includes(':3001')) {
-          // Same origin as Vite; proxy forwards /ws to Nest (avoids cross-origin WS + wrong host on phones)
-          this.wsUrl = window.location.origin;
-        } else {
-          // Default: use current origin
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          this.wsUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
-        }
-      } else {
-        // Server-side fallback
-        this.wsUrl = 'ws://localhost:3000';
-      }
+      this.wsUrl = 'ws://localhost:3000';
     }
   }
 

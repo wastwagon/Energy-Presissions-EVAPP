@@ -5,35 +5,30 @@ import { clearSession, isAccessTokenExpired } from '../utils/authSession';
 // When running in browser, use relative URL to go through NGINX proxy
 // When running standalone, use the full URL
 const getApiUrl = () => {
-  // Check for explicit VITE_API_URL (production)
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  
-  // If running in browser, determine API URL based on current location (development)
+  // Same-origin through nginx (:8080) or Vite (:3001) wins over VITE_API_URL.
+  // Compose sets VITE_API_URL=http://localhost/api which hits port 80 and fails in the browser.
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const port = window.location.port;
     const host = window.location.host;
-    
-    // If accessing via NGINX proxy (port 8080), use relative path
+
     if (port === '8080' || host.includes(':8080')) {
-      return '/api'; // Relative path goes through NGINX
+      return '/api';
     }
-    
-    // Vite dev server (port 3001): use same-origin /api — vite.config.ts proxies to the Nest API :3000
+
     if (port === '3001' || host.includes(':3001')) {
       return '/api';
     }
-    
-    // If no port specified but on localhost, check if it's likely port 3001
+
     if (!port && hostname === 'localhost') {
-      // Default to direct backend connection for localhost without port
       return 'http://localhost:3000/api';
     }
   }
-  
-  // Default fallback - use NGINX proxy (relative path)
+
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
   return '/api';
 };
 
